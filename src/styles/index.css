@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* === Design tokens === */
+
+/* Grid & cell layout */
+:root {
+  --cell-size: 40px;
+  --cell-number-size: 10px;
+  --cell-marker-width: 2px;
+  --cell-hyphen-size: 10px;
+  --clue-number-width: 4.5rem;
+}

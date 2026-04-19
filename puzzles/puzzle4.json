@@ -1,0 +1,2094 @@
+{
+  "version": 1,
+  "type": "complete",
+  "key": "dbb673d5-5d55-46c7-98b2-516f2d13def0",
+  "gridSize": 15,
+  "grid": [
+    [
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "H",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": true,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "K",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": true,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "G",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "G",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "H",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "C",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": true,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "B",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "F",
+        "spaceRight": false,
+        "spaceBottom": true,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": true,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "K",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "C",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "H",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "X",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "B",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "C",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "D",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "G",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "H",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "H",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "Y",
+        "spaceRight": true,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "letter": "Y",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "letter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "letter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ]
+  ],
+  "words": [
+    {
+      "startRow": 0,
+      "startCol": 0,
+      "direction": "down",
+      "length": 15,
+      "number": 1,
+      "clue": "American woman you heard in country injured lot by fire",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 2,
+      "direction": "down",
+      "length": 9,
+      "number": 2,
+      "clue": "To be beside ancient city after being beheaded, cross American channel",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 4,
+      "direction": "down",
+      "length": 6,
+      "number": 3,
+      "clue": "Evil intentions of country church",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 6,
+      "direction": "down",
+      "length": 5,
+      "number": 4,
+      "clue": "Sketches start to send king in to senility",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 8,
+      "direction": "down",
+      "length": 7,
+      "number": 5,
+      "clue": "Heard during wedding schedule: \"time to drug, love\"",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 10,
+      "direction": "down",
+      "length": 4,
+      "number": 6,
+      "clue": "Not someone else's hole",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 12,
+      "direction": "down",
+      "length": 5,
+      "number": 7,
+      "clue": "A win once more",
+      "nextWord": null
+    },
+    {
+      "startRow": 0,
+      "startCol": 14,
+      "direction": "down",
+      "length": 15,
+      "number": 8,
+      "clue": "Restaurateurs without a hen served those in search of hidden gems",
+      "nextWord": null
+    },
+    {
+      "startRow": 1,
+      "startCol": 0,
+      "direction": "across",
+      "length": 15,
+      "number": 9,
+      "clue": "Musical show technician, holding everyone's first Mike, questioned unsuccessful arsonist",
+      "nextWord": null
+    },
+    {
+      "startRow": 3,
+      "startCol": 0,
+      "direction": "across",
+      "length": 11,
+      "number": 10,
+      "clue": "The Spanish and French almost too closely follow to the West for Italian meal",
+      "nextWord": null
+    },
+    {
+      "startRow": 4,
+      "startCol": 11,
+      "direction": "across",
+      "length": 4,
+      "number": 11,
+      "clue": "No fine northerners stay in these!",
+      "nextWord": null
+    },
+    {
+      "startRow": 4,
+      "startCol": 11,
+      "direction": "down",
+      "length": 3,
+      "number": 11,
+      "clue": "Setter's quiet, annoying child",
+      "nextWord": null
+    },
+    {
+      "startRow": 5,
+      "startCol": 0,
+      "direction": "across",
+      "length": 6,
+      "number": 12,
+      "clue": "Sign of internet joke about liberal bishop making a comeback",
+      "nextWord": null
+    },
+    {
+      "startRow": 5,
+      "startCol": 5,
+      "direction": "down",
+      "length": 4,
+      "number": 13,
+      "clue": "No old saying from the south can be used for making electronic music",
+      "nextWord": null
+    },
+    {
+      "startRow": 6,
+      "startCol": 7,
+      "direction": "across",
+      "length": 8,
+      "number": 14,
+      "clue": "Come back to harvest fruit",
+      "nextWord": null
+    },
+    {
+      "startRow": 6,
+      "startCol": 9,
+      "direction": "down",
+      "length": 4,
+      "number": 15,
+      "clue": "Premium card for a setter unknown",
+      "nextWord": null
+    },
+    {
+      "startRow": 6,
+      "startCol": 12,
+      "direction": "down",
+      "length": 9,
+      "number": 16,
+      "clue": "Jason's boat starts to sail after key Mediterranean delicacies",
+      "nextWord": null
+    },
+    {
+      "startRow": 8,
+      "startCol": 0,
+      "direction": "across",
+      "length": 8,
+      "number": 17,
+      "clue": "As a superior killed or maimed",
+      "nextWord": null
+    },
+    {
+      "startRow": 8,
+      "startCol": 3,
+      "direction": "down",
+      "length": 3,
+      "number": 18,
+      "clue": "Failure, either way",
+      "nextWord": null
+    },
+    {
+      "startRow": 8,
+      "startCol": 6,
+      "direction": "down",
+      "length": 7,
+      "number": 19,
+      "clue": "Required to spend a penny or exotic Yen disk",
+      "nextWord": null
+    },
+    {
+      "startRow": 9,
+      "startCol": 9,
+      "direction": "across",
+      "length": 6,
+      "number": 20,
+      "clue": "Where you might see Kane or Khan finish off pills and party endlessly",
+      "nextWord": null
+    },
+    {
+      "startRow": 9,
+      "startCol": 10,
+      "direction": "down",
+      "length": 6,
+      "number": 21,
+      "clue": "The ability to charm everyone you heard about",
+      "nextWord": null
+    },
+    {
+      "startRow": 10,
+      "startCol": 0,
+      "direction": "across",
+      "length": 4,
+      "number": 22,
+      "clue": "Live notice: small drop of liquid",
+      "nextWord": null
+    },
+    {
+      "startRow": 10,
+      "startCol": 2,
+      "direction": "down",
+      "length": 5,
+      "number": 23,
+      "clue": "Separate a bit",
+      "nextWord": null
+    },
+    {
+      "startRow": 10,
+      "startCol": 8,
+      "direction": "down",
+      "length": 5,
+      "number": 24,
+      "clue": "It's inclined to bend poles",
+      "nextWord": null
+    },
+    {
+      "startRow": 11,
+      "startCol": 4,
+      "direction": "across",
+      "length": 11,
+      "number": 25,
+      "clue": "With this, you can just about see May left in happiness",
+      "nextWord": null
+    },
+    {
+      "startRow": 11,
+      "startCol": 4,
+      "direction": "down",
+      "length": 4,
+      "number": 25,
+      "clue": "Man in range of cryptic happier",
+      "nextWord": null
+    },
+    {
+      "startRow": 13,
+      "startCol": 0,
+      "direction": "across",
+      "length": 15,
+      "number": 26,
+      "clue": "It takes three arguments to express rage, nearly always, recognising you'll initially peak after dramatic performance",
+      "nextWord": null
+    }
+  ],
+  "title": "Puzzle4",
+  "author": "Adam Callison"
+}
