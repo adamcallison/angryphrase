@@ -1,0 +1,850 @@
+{
+  "version": "1.0",
+  "grid": {
+    "size": 15,
+    "whiteCells": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        11
+      ],
+      [
+        0,
+        13
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        1,
+        8
+      ],
+      [
+        1,
+        9
+      ],
+      [
+        1,
+        10
+      ],
+      [
+        1,
+        11
+      ],
+      [
+        1,
+        12
+      ],
+      [
+        1,
+        13
+      ],
+      [
+        1,
+        14
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        11
+      ],
+      [
+        2,
+        13
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        7
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        9
+      ],
+      [
+        3,
+        11
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        13
+      ],
+      [
+        3,
+        14
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        4,
+        11
+      ],
+      [
+        4,
+        13
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        4
+      ],
+      [
+        5,
+        5
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        5,
+        7
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        5,
+        9
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        5,
+        13
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        11
+      ],
+      [
+        6,
+        13
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        7,
+        4
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        7,
+        11
+      ],
+      [
+        7,
+        12
+      ],
+      [
+        7,
+        13
+      ],
+      [
+        7,
+        14
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        8,
+        3
+      ],
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        11
+      ],
+      [
+        8,
+        13
+      ],
+      [
+        9,
+        1
+      ],
+      [
+        9,
+        4
+      ],
+      [
+        9,
+        5
+      ],
+      [
+        9,
+        6
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        9,
+        8
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        9,
+        13
+      ],
+      [
+        10,
+        1
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        10,
+        5
+      ],
+      [
+        10,
+        7
+      ],
+      [
+        10,
+        9
+      ],
+      [
+        10,
+        11
+      ],
+      [
+        10,
+        13
+      ],
+      [
+        11,
+        0
+      ],
+      [
+        11,
+        1
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        11,
+        3
+      ],
+      [
+        11,
+        5
+      ],
+      [
+        11,
+        6
+      ],
+      [
+        11,
+        7
+      ],
+      [
+        11,
+        8
+      ],
+      [
+        11,
+        9
+      ],
+      [
+        11,
+        11
+      ],
+      [
+        11,
+        12
+      ],
+      [
+        11,
+        13
+      ],
+      [
+        11,
+        14
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        12,
+        5
+      ],
+      [
+        12,
+        7
+      ],
+      [
+        12,
+        9
+      ],
+      [
+        12,
+        11
+      ],
+      [
+        12,
+        13
+      ],
+      [
+        13,
+        0
+      ],
+      [
+        13,
+        1
+      ],
+      [
+        13,
+        2
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        4
+      ],
+      [
+        13,
+        5
+      ],
+      [
+        13,
+        6
+      ],
+      [
+        13,
+        7
+      ],
+      [
+        13,
+        8
+      ],
+      [
+        13,
+        9
+      ],
+      [
+        13,
+        10
+      ],
+      [
+        13,
+        11
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        13,
+        13
+      ],
+      [
+        13,
+        14
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        14,
+        5
+      ],
+      [
+        14,
+        7
+      ],
+      [
+        14,
+        9
+      ],
+      [
+        14,
+        11
+      ],
+      [
+        14,
+        13
+      ]
+    ]
+  },
+  "words": [
+    {
+      "startCoords": [
+        1,
+        0
+      ],
+      "direction": "across",
+      "clue": "Choose Republican when first digital pet working for adding power to trains, say",
+      "answer": "ELECTRIFICATION",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        3,
+        0
+      ],
+      "direction": "across",
+      "clue": "I had heard and saw",
+      "answer": "EYED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        3,
+        5
+      ],
+      "direction": "across",
+      "clue": "Sauce made by ChatGPT, for example, with small fruit without starting very early",
+      "answer": "AIOLI",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        3,
+        11
+      ],
+      "direction": "across",
+      "clue": "Study pure adrenaline extract",
+      "answer": "READ",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        5,
+        4
+      ],
+      "direction": "across",
+      "clue": "Indicates unfinished home round Flanders, say, to the west",
+      "answer": "DENOTES",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        0
+      ],
+      "direction": "across",
+      "clue": "Craft Erdinger inside later",
+      "answer": "AFTER",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        10
+      ],
+      "direction": "across",
+      "clue": "Amalgamate second-rate finale after losing first",
+      "answer": "BLEND",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        9,
+        4
+      ],
+      "direction": "across",
+      "clue": "To drink after old writer is honest",
+      "answer": "OPENSUP",
+      "separators": [
+        {
+          "index": 4,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        11,
+        0
+      ],
+      "direction": "across",
+      "clue": "That male artist is divine being",
+      "answer": "HERA",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        11,
+        5
+      ],
+      "direction": "across",
+      "clue": "Calm sports lesson by expert",
+      "answer": "PEACE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        11,
+        11
+      ],
+      "direction": "across",
+      "clue": "Ears can hear once to start, but then again and again!",
+      "answer": "ECHO",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        13,
+        0
+      ],
+      "direction": "across",
+      "clue": "Calamitously, one endless defecation before Gangster appears in this type of crossword? Not right, friend.",
+      "answer": "APOCALYPTICALLY",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        1
+      ],
+      "direction": "down",
+      "clue": "Determined to win pork fees",
+      "answer": "PLAYINGFORKEEPS",
+      "separators": [
+        {
+          "index": 6,
+          "type": "space"
+        },
+        {
+          "index": 9,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        0,
+        3
+      ],
+      "direction": "down",
+      "clue": "These burn a police department second",
+      "answer": "ACIDS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        5
+      ],
+      "direction": "down",
+      "clue": "Make energy consumed after king",
+      "answer": "CREATE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        7
+      ],
+      "direction": "down",
+      "clue": "One often appears alongside to destroy music genre",
+      "answer": "AFROPOP",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        9
+      ],
+      "direction": "down",
+      "clue": "Play on setter's mobile",
+      "answer": "ACTIVE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        11
+      ],
+      "direction": "down",
+      "clue": "Second singer stands up before time to begin",
+      "answer": "START",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        13
+      ],
+      "direction": "down",
+      "clue": "\"Oh, hated tool van\" messy Dave first said when joining",
+      "answer": "TOHAVEANDTOHOLD",
+      "separators": [
+        {
+          "index": 1,
+          "type": "space"
+        },
+        {
+          "index": 5,
+          "type": "space"
+        },
+        {
+          "index": 8,
+          "type": "space"
+        },
+        {
+          "index": 10,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        6,
+        3
+      ],
+      "direction": "down",
+      "clue": "Up the German socialist!",
+      "answer": "RED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        6,
+        11
+      ],
+      "direction": "down",
+      "clue": "Headless white beer",
+      "answer": "ALE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        7
+      ],
+      "direction": "down",
+      "clue": "Regretful peacekeepers laugh over pages unknown",
+      "answer": "UNHAPPY",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        9,
+        5
+      ],
+      "direction": "down",
+      "clue": "They learn to make errors in reverse",
+      "answer": "PUPILS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        9,
+        9
+      ],
+      "direction": "down",
+      "clue": "Passing water, English spies follow old city",
+      "answer": "URESIS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        3
+      ],
+      "direction": "down",
+      "clue": "Soldiers walk for a month",
+      "answer": "MARCH",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        11
+      ],
+      "direction": "down",
+      "clue": "A meal on the go? K', babe",
+      "answer": "KEBAB",
+      "separators": []
+    }
+  ],
+  "metadata": {
+    "title": "Puzzle2",
+    "author": "Adam Callison",
+    "date": "2026-02-05"
+  }
+}

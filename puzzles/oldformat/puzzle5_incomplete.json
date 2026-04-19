@@ -1,0 +1,927 @@
+{
+  "version": "1.0",
+  "grid": {
+    "size": 15,
+    "whiteCells": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        10
+      ],
+      [
+        0,
+        11
+      ],
+      [
+        0,
+        12
+      ],
+      [
+        0,
+        13
+      ],
+      [
+        0,
+        14
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        14
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        14
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        14
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        14
+      ],
+      [
+        7,
+        14
+      ],
+      [
+        8,
+        0
+      ],
+      [
+        8,
+        14
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        14
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        14
+      ],
+      [
+        11,
+        0
+      ],
+      [
+        11,
+        14
+      ],
+      [
+        12,
+        14
+      ],
+      [
+        13,
+        14
+      ],
+      [
+        14,
+        0
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        14,
+        2
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        14,
+        4
+      ],
+      [
+        14,
+        5
+      ],
+      [
+        14,
+        6
+      ],
+      [
+        14,
+        7
+      ],
+      [
+        14,
+        8
+      ],
+      [
+        14,
+        9
+      ],
+      [
+        14,
+        10
+      ],
+      [
+        14,
+        11
+      ],
+      [
+        14,
+        12
+      ],
+      [
+        14,
+        13
+      ],
+      [
+        14,
+        14
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        7,
+        7
+      ],
+      [
+        7,
+        11
+      ],
+      [
+        7,
+        12
+      ],
+      [
+        7,
+        13
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        3,
+        7
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        5,
+        7
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        10,
+        7
+      ],
+      [
+        11,
+        7
+      ],
+      [
+        12,
+        7
+      ],
+      [
+        13,
+        7
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        2,
+        11
+      ],
+      [
+        12,
+        13
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        12,
+        11
+      ],
+      [
+        12,
+        10
+      ],
+      [
+        12,
+        9
+      ],
+      [
+        12,
+        8
+      ],
+      [
+        12,
+        6
+      ],
+      [
+        12,
+        5
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        10,
+        13
+      ],
+      [
+        10,
+        12
+      ],
+      [
+        10,
+        11
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        10,
+        9
+      ],
+      [
+        10,
+        8
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        10,
+        5
+      ],
+      [
+        1,
+        11
+      ],
+      [
+        3,
+        11
+      ],
+      [
+        4,
+        11
+      ],
+      [
+        5,
+        11
+      ],
+      [
+        6,
+        11
+      ],
+      [
+        8,
+        3
+      ],
+      [
+        9,
+        3
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        11,
+        3
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        8,
+        5
+      ],
+      [
+        9,
+        5
+      ],
+      [
+        5,
+        9
+      ],
+      [
+        6,
+        9
+      ],
+      [
+        5,
+        5
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        5,
+        2
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        11,
+        12
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        5,
+        12
+      ],
+      [
+        5,
+        13
+      ],
+      [
+        9,
+        1
+      ],
+      [
+        9,
+        2
+      ],
+      [
+        9,
+        4
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        11,
+        10
+      ],
+      [
+        13,
+        10
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        13,
+        5
+      ],
+      [
+        1,
+        9
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        13
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        11,
+        1
+      ],
+      [
+        1,
+        13
+      ],
+      [
+        2,
+        13
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        13,
+        1
+      ],
+      [
+        8,
+        9
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        6
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        6,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        8,
+        11
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        7,
+        5
+      ],
+      [
+        7,
+        9
+      ]
+    ]
+  },
+  "words": [
+    {
+      "startCoords": [
+        0,
+        0
+      ],
+      "direction": "across",
+      "clue": "Confederate-following father perhaps scratching bottom, the jerk (expressed thusly)",
+      "answer": "PARENTHETICALLY",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        0
+      ],
+      "direction": "down",
+      "clue": "Cleaning setter embroiled in absurd, unfair topic",
+      "answer": "PURIFICATION",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        2
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": "R F"
+    },
+    {
+      "startCoords": [
+        0,
+        4
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": "N E"
+    },
+    {
+      "startCoords": [
+        0,
+        7
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": "E M"
+    },
+    {
+      "startCoords": [
+        0,
+        9
+      ],
+      "direction": "down",
+      "clue": "Before new moon, these might have fewer populated orbitals",
+      "answer": "ION",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        11
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": "A S"
+    },
+    {
+      "startCoords": [
+        0,
+        13
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": "L"
+    },
+    {
+      "startCoords": [
+        2,
+        0
+      ],
+      "direction": "across",
+      "clue": "Provisions for really excellent teaching strategy starts to bring in Americans ready to learn",
+      "answer": "REFRESHMENTS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        3,
+        11
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        3,
+        14
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        4,
+        0
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": "F"
+    },
+    {
+      "startCoords": [
+        4,
+        5
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        4,
+        9
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        5,
+        9
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        6,
+        3
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        6,
+        3
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        7,
+        0
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": "A"
+    },
+    {
+      "startCoords": [
+        7,
+        11
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        8,
+        5
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        9,
+        0
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": "I"
+    },
+    {
+      "startCoords": [
+        9,
+        12
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        10,
+        5
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        10,
+        10
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        11,
+        0
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": "N"
+    },
+    {
+      "startCoords": [
+        11,
+        1
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        12,
+        3
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        12,
+        5
+      ],
+      "direction": "down",
+      "clue": "",
+      "answer": ""
+    },
+    {
+      "startCoords": [
+        14,
+        0
+      ],
+      "direction": "across",
+      "clue": "",
+      "answer": ""
+    }
+  ],
+  "metadata": {
+    "title": "Puzzle5",
+    "author": "Adam Callison",
+    "date": "2026-02-06",
+    "builderState": {
+      "unassignedWords": []
+    }
+  }
+}

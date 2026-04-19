@@ -1,0 +1,953 @@
+{
+  "version": "1.0",
+  "grid": {
+    "size": 15,
+    "whiteCells": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        10
+      ],
+      [
+        0,
+        11
+      ],
+      [
+        0,
+        12
+      ],
+      [
+        0,
+        13
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        8
+      ],
+      [
+        1,
+        10
+      ],
+      [
+        1,
+        12
+      ],
+      [
+        1,
+        14
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        2,
+        11
+      ],
+      [
+        2,
+        12
+      ],
+      [
+        2,
+        13
+      ],
+      [
+        2,
+        14
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        3,
+        14
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        4,
+        11
+      ],
+      [
+        4,
+        12
+      ],
+      [
+        4,
+        13
+      ],
+      [
+        4,
+        14
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        2
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        5,
+        14
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        6,
+        6
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        6,
+        9
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        6,
+        11
+      ],
+      [
+        6,
+        12
+      ],
+      [
+        6,
+        13
+      ],
+      [
+        6,
+        14
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        4
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        7,
+        12
+      ],
+      [
+        7,
+        14
+      ],
+      [
+        8,
+        0
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        3
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        8,
+        5
+      ],
+      [
+        8,
+        6
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        8,
+        9
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        8,
+        11
+      ],
+      [
+        8,
+        12
+      ],
+      [
+        8,
+        13
+      ],
+      [
+        8,
+        14
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        4
+      ],
+      [
+        9,
+        6
+      ],
+      [
+        9,
+        8
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        9,
+        14
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        1
+      ],
+      [
+        10,
+        2
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        10,
+        4
+      ],
+      [
+        10,
+        5
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        10,
+        7
+      ],
+      [
+        10,
+        8
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        10,
+        11
+      ],
+      [
+        10,
+        12
+      ],
+      [
+        10,
+        13
+      ],
+      [
+        10,
+        14
+      ],
+      [
+        11,
+        0
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        11,
+        4
+      ],
+      [
+        11,
+        6
+      ],
+      [
+        11,
+        8
+      ],
+      [
+        11,
+        10
+      ],
+      [
+        11,
+        12
+      ],
+      [
+        11,
+        14
+      ],
+      [
+        12,
+        0
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        12,
+        2
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        12,
+        6
+      ],
+      [
+        12,
+        7
+      ],
+      [
+        12,
+        8
+      ],
+      [
+        12,
+        9
+      ],
+      [
+        12,
+        10
+      ],
+      [
+        12,
+        11
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        12,
+        13
+      ],
+      [
+        12,
+        14
+      ],
+      [
+        13,
+        0
+      ],
+      [
+        13,
+        2
+      ],
+      [
+        13,
+        4
+      ],
+      [
+        13,
+        6
+      ],
+      [
+        13,
+        8
+      ],
+      [
+        13,
+        10
+      ],
+      [
+        13,
+        12
+      ],
+      [
+        13,
+        14
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        14,
+        2
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        14,
+        4
+      ],
+      [
+        14,
+        5
+      ],
+      [
+        14,
+        6
+      ],
+      [
+        14,
+        7
+      ],
+      [
+        14,
+        8
+      ],
+      [
+        14,
+        9
+      ],
+      [
+        14,
+        10
+      ],
+      [
+        14,
+        11
+      ],
+      [
+        14,
+        12
+      ],
+      [
+        14,
+        13
+      ]
+    ]
+  },
+  "words": [
+    {
+      "startCoords": [
+        0,
+        1
+      ],
+      "direction": "across",
+      "clue": "Double bottomed sailor with about six allowances? Not right in short forms",
+      "answer": "ABBREVIATIONS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        2,
+        0
+      ],
+      "direction": "across",
+      "clue": "Curie was one, one surrounded by smell. I smelled them first!",
+      "answer": "SCIENTIST",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        2,
+        10
+      ],
+      "direction": "across",
+      "clue": "Discharge! Discharge your nose into this if there was time",
+      "answer": "ISSUE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        4,
+        0
+      ],
+      "direction": "across",
+      "clue": "A deck shuffled and coated",
+      "answer": "CAKED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        4,
+        6
+      ],
+      "direction": "across",
+      "clue": "Feline's personal problem on the rise with Dennis, say, gets in the way",
+      "answer": "OBSTACLES",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        6,
+        0
+      ],
+      "direction": "across",
+      "clue": "Players love dissolving Bisto second",
+      "answer": "OBOISTS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        6,
+        8
+      ],
+      "direction": "across",
+      "clue": "Don't open slimiest fluid to get snobbery",
+      "answer": "ELITISM",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        0
+      ],
+      "direction": "across",
+      "clue": "Scottish islands heard halfway up goblin's legs",
+      "answer": "ORKNEYS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        8
+      ],
+      "direction": "across",
+      "clue": "Musical group sex round Mexican outlaw",
+      "answer": "BANDITO",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        0
+      ],
+      "direction": "across",
+      "clue": "Easily annoyed, one rocks first back and forth on board",
+      "answer": "IRRITABLE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        10
+      ],
+      "direction": "across",
+      "clue": "Endlessly fib by school boundary",
+      "answer": "LIMIT",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        0
+      ],
+      "direction": "across",
+      "clue": "Fib in article? Out of this world!",
+      "answer": "ALIEN",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        6
+      ],
+      "direction": "across",
+      "clue": "Note that Spanish doesn't drink before and after English politeness",
+      "answer": "ETIQUETTE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        14,
+        1
+      ],
+      "direction": "across",
+      "clue": "Drink it by the sea",
+      "answer": "SEXONTHEBEACH",
+      "separators": [
+        {
+          "index": 2,
+          "type": "space"
+        },
+        {
+          "index": 4,
+          "type": "space"
+        },
+        {
+          "index": 7,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        0,
+        2
+      ],
+      "direction": "down",
+      "clue": "A way of building broken crib before thousands hold the line up",
+      "answer": "BRICKWORK",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        4
+      ],
+      "direction": "down",
+      "clue": "Journalist follows race inscribed with ancient symbols",
+      "answer": "RUNED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        6
+      ],
+      "direction": "down",
+      "clue": "French wine has note on the current people and has prominent blood vessels",
+      "answer": "VEINOUS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        8
+      ],
+      "direction": "down",
+      "clue": "Torture tastier thespian",
+      "answer": "ARTISTE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        10
+      ],
+      "direction": "down",
+      "clue": "Copying setter's sex note? No sex in return",
+      "answer": "IMITATION",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        12
+      ],
+      "direction": "down",
+      "clue": "The French-Spanish saint ascends, whining",
+      "answer": "NASAL",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        1,
+        0
+      ],
+      "direction": "down",
+      "clue": "Mental illness with no time left after South Korean rapper? Sensible",
+      "answer": "PSYCHOLOGICAL",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        1,
+        14
+      ],
+      "direction": "down",
+      "clue": "For each silicon memento first raised afresh, fruit grows here",
+      "answer": "PERSIMMONTREE",
+      "separators": [
+        {
+          "index": 8,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        6,
+        4
+      ],
+      "direction": "down",
+      "clue": "Becoming slow and thin without the German time and love",
+      "answer": "SLENTANDO",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        6,
+        12
+      ],
+      "direction": "down",
+      "clue": "Stupid to get mother to offer vernacular",
+      "answer": "IDIOMATIC",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        6
+      ],
+      "direction": "down",
+      "clue": "Hidden meaning in message from underwater boat?",
+      "answer": "SUBTEXT",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        8
+      ],
+      "direction": "down",
+      "clue": "Live on what I have to find queen's home",
+      "answer": "BEEHIVE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        2
+      ],
+      "direction": "down",
+      "clue": "Artist is English breed",
+      "answer": "RAISE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        10
+      ],
+      "direction": "down",
+      "clue": "Insect left river",
+      "answer": "LOUSE",
+      "separators": []
+    }
+  ],
+  "metadata": {
+    "title": "Puzzle1",
+    "author": "Adam Callison",
+    "date": "2026-02-05"
+  }
+}

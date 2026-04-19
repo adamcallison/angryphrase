@@ -1,0 +1,902 @@
+{
+  "version": "1.0",
+  "grid": {
+    "size": 15,
+    "whiteCells": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        7
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        10
+      ],
+      [
+        0,
+        11
+      ],
+      [
+        0,
+        12
+      ],
+      [
+        0,
+        13
+      ],
+      [
+        0,
+        14
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        1,
+        9
+      ],
+      [
+        1,
+        11
+      ],
+      [
+        1,
+        13
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        2,
+        11
+      ],
+      [
+        2,
+        12
+      ],
+      [
+        2,
+        13
+      ],
+      [
+        2,
+        14
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        7
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        3,
+        13
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        6
+      ],
+      [
+        4,
+        7
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        4,
+        13
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        5,
+        5
+      ],
+      [
+        5,
+        7
+      ],
+      [
+        5,
+        9
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        5,
+        11
+      ],
+      [
+        5,
+        12
+      ],
+      [
+        5,
+        13
+      ],
+      [
+        5,
+        14
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        6,
+        13
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        7,
+        4
+      ],
+      [
+        7,
+        5
+      ],
+      [
+        7,
+        6
+      ],
+      [
+        7,
+        8
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        7,
+        11
+      ],
+      [
+        7,
+        12
+      ],
+      [
+        7,
+        13
+      ],
+      [
+        7,
+        14
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        11
+      ],
+      [
+        8,
+        13
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        1
+      ],
+      [
+        9,
+        2
+      ],
+      [
+        9,
+        3
+      ],
+      [
+        9,
+        4
+      ],
+      [
+        9,
+        5
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        9,
+        11
+      ],
+      [
+        9,
+        13
+      ],
+      [
+        10,
+        1
+      ],
+      [
+        10,
+        4
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        10,
+        7
+      ],
+      [
+        10,
+        8
+      ],
+      [
+        10,
+        9
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        10,
+        11
+      ],
+      [
+        10,
+        12
+      ],
+      [
+        10,
+        13
+      ],
+      [
+        10,
+        14
+      ],
+      [
+        11,
+        1
+      ],
+      [
+        11,
+        4
+      ],
+      [
+        11,
+        7
+      ],
+      [
+        11,
+        9
+      ],
+      [
+        11,
+        13
+      ],
+      [
+        12,
+        0
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        12,
+        2
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        12,
+        5
+      ],
+      [
+        12,
+        7
+      ],
+      [
+        12,
+        8
+      ],
+      [
+        12,
+        9
+      ],
+      [
+        12,
+        10
+      ],
+      [
+        12,
+        11
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        12,
+        13
+      ],
+      [
+        12,
+        14
+      ],
+      [
+        13,
+        1
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        13,
+        5
+      ],
+      [
+        13,
+        7
+      ],
+      [
+        13,
+        9
+      ],
+      [
+        13,
+        11
+      ],
+      [
+        13,
+        13
+      ],
+      [
+        14,
+        0
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        14,
+        2
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        14,
+        4
+      ],
+      [
+        14,
+        5
+      ],
+      [
+        14,
+        6
+      ],
+      [
+        14,
+        7
+      ],
+      [
+        14,
+        8
+      ],
+      [
+        14,
+        9
+      ],
+      [
+        14,
+        10
+      ],
+      [
+        14,
+        11
+      ],
+      [
+        14,
+        12
+      ],
+      [
+        14,
+        13
+      ],
+      [
+        14,
+        14
+      ]
+    ]
+  },
+  "words": [
+    {
+      "startCoords": [
+        0,
+        0
+      ],
+      "direction": "across",
+      "clue": "Making suitable for individual according to partner, painting without method into madness",
+      "answer": "PERSONALISATION",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        2,
+        0
+      ],
+      "direction": "across",
+      "clue": "Extra discussion put in to cease hesitation",
+      "answer": "ADDENDUM",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        2,
+        9
+      ],
+      "direction": "across",
+      "clue": "This person in movement for equality",
+      "answer": "PARITY",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        4,
+        0
+      ],
+      "direction": "across",
+      "clue": "Environment for random cosy meets",
+      "answer": "ECOSYSTEM",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        5,
+        9
+      ],
+      "direction": "across",
+      "clue": "Surprise Doris, perhaps, for the Reverend",
+      "answer": "DISMAY",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        0
+      ],
+      "direction": "across",
+      "clue": "Anonymous auditor fired indiscriminately",
+      "answer": "UNNAMED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        8
+      ],
+      "direction": "across",
+      "clue": "Excited lady spasm",
+      "answer": "FRANTIC",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        9,
+        0
+      ],
+      "direction": "across",
+      "clue": "Spokespeople going off North stage",
+      "answer": "AGENTS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        10,
+        6
+      ],
+      "direction": "across",
+      "clue": "Defeatist nearly satiated after you picked up phone incorrectly",
+      "answer": "UNHOPEFUL",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        0
+      ],
+      "direction": "across",
+      "clue": "Virgin sued UN organisation",
+      "answer": "UNUSED",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        7
+      ],
+      "direction": "across",
+      "clue": "Teri chose to let slip her first kinky secret",
+      "answer": "ESOTERIC",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        14,
+        0
+      ],
+      "direction": "across",
+      "clue": "Man peers chose is running from where one can get shot!",
+      "answer": "ESPRESSOMACHINE",
+      "separators": [
+        {
+          "index": 7,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        0,
+        1
+      ],
+      "direction": "down",
+      "clue": "Lord seen dancing around showing gonads, for example",
+      "answer": "ENDOCRINEGLANDS",
+      "separators": [
+        {
+          "index": 8,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        0,
+        3
+      ],
+      "direction": "down",
+      "clue": "Prosecute Perkins",
+      "answer": "SUE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        5
+      ],
+      "direction": "down",
+      "clue": "Normally under dressed, including shoes, trousers, tops!",
+      "answer": "NUDIST",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        7
+      ],
+      "direction": "down",
+      "clue": "Weakest people sometimes fight last after struggle to move",
+      "answer": "LIMPEST",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        9
+      ],
+      "direction": "down",
+      "clue": "Gullible person to drain fluid from plant",
+      "answer": "SAP",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        11
+      ],
+      "direction": "down",
+      "clue": "Damage the reputation of Russian Emperor without starting to slander",
+      "answer": "TAR",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        0,
+        13
+      ],
+      "direction": "down",
+      "clue": "It's confusing to see gangster following script with no introduction upset America and no-one looking up.",
+      "answer": "OPTICALILLUSION",
+      "separators": [
+        {
+          "index": 6,
+          "type": "space"
+        }
+      ]
+    },
+    {
+      "startCoords": [
+        2,
+        10
+      ],
+      "direction": "down",
+      "clue": "Emperor picked up a part of boat",
+      "answer": "ATTILA",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        4,
+        3
+      ],
+      "direction": "down",
+      "clue": "Adventure in South Africa to collect silver",
+      "answer": "SAGA",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        4
+      ],
+      "direction": "down",
+      "clue": "Second time setter has purpose",
+      "answer": "MOTIVE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        7,
+        11
+      ],
+      "direction": "down",
+      "clue": "Nothing sounds like what comes after \"Hey Nonny\"",
+      "answer": "NONE",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        8,
+        7
+      ],
+      "direction": "down",
+      "clue": "For example, one old Roman guarding over New Zealand",
+      "answer": "NONZERO",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        9,
+        9
+      ],
+      "direction": "down",
+      "clue": "Firm Republican working a cigar",
+      "answer": "CORONA",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        3
+      ],
+      "direction": "down",
+      "clue": "Knight walking back threat to drop king",
+      "answer": "SIR",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        5
+      ],
+      "direction": "down",
+      "clue": "Two Spanish parties",
+      "answer": "DOS",
+      "separators": []
+    },
+    {
+      "startCoords": [
+        12,
+        11
+      ],
+      "direction": "down",
+      "clue": "The mysterious character",
+      "answer": "ETH",
+      "separators": []
+    }
+  ],
+  "metadata": {
+    "title": "Puzzle3",
+    "author": "AdamCallison",
+    "date": "2026-02-05"
+  }
+}
