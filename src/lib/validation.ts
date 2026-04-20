@@ -457,7 +457,6 @@ export function validateIncompletePuzzle(
 export function canExportAsComplete(
   grid: CellData[][],
   words: Word[],
-  gridSize: number
 ): { canExport: boolean; errors: string[] } {
   const errors: string[] = [];
 

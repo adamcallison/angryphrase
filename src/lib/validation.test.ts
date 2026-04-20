@@ -536,39 +536,39 @@ describe("canExportAsComplete", () => {
       { startRow: 2, startCol: 0, direction: "across", length: 3, number: 3, clue: "Clue 3A", nextWord: null },
       { startRow: 0, startCol: 2, direction: "down", length: 3, number: 2, clue: "Clue 2D", nextWord: null },
     ];
-    return { grid, words, gridSize: 3 };
+    return { grid, words };
   }
 
   it("returns canExport: true when all cells have letters and all head words have clues", () => {
-    const { grid, words, gridSize } = makeExportTestData();
-    const result = canExportAsComplete(grid, words, gridSize);
+    const { grid, words } = makeExportTestData();
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it("returns canExport: false with error about empty cell when a white cell is missing a letter", () => {
-    const { grid, words, gridSize } = makeExportTestData();
+    const { grid, words } = makeExportTestData();
     grid[0][0].letter = null;
-    const result = canExportAsComplete(grid, words, gridSize);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     expect(result.errors.some((e) => e.toLowerCase().includes("letter") || e.toLowerCase().includes("cell"))).toBe(true);
   });
 
   it("returns canExport: false when chain head word has empty clue", () => {
-    const { grid, words, gridSize } = makeExportTestData();
+    const { grid, words } = makeExportTestData();
     words[0].clue = "";
-    const result = canExportAsComplete(grid, words, gridSize);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     expect(result.errors.some((e) => e.toLowerCase().includes("clue"))).toBe(true);
   });
 
   it("returns canExport: true when non-head chain word has empty clue", () => {
-    const { grid, words, gridSize } = makeExportTestData();
+    const { grid, words } = makeExportTestData();
     // Chain word 0 → word 2
     words[0].nextWord = { startRow: 2, startCol: 0, direction: "across" };
     // Word 2 is now a non-head, its clue can be empty
     words[2].clue = "";
-    const result = canExportAsComplete(grid, words, gridSize);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -579,26 +579,26 @@ describe("canExportAsComplete", () => {
       [makeBlackCell(), makeBlackCell()],
     ];
     const words: Word[] = [];
-    const result = canExportAsComplete(grid, words, 2);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it("returns canExport: false when multiple white cells missing letters", () => {
-    const { grid, words, gridSize } = makeExportTestData();
+    const { grid, words } = makeExportTestData();
     grid[0][0].letter = null;
     grid[2][2].letter = null;
-    const result = canExportAsComplete(grid, words, gridSize);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     // Should report errors (plural or at least one)
     expect(result.errors.length).toBeGreaterThanOrEqual(1);
   });
 
   it("returns canExport: false when multiple head words missing clues", () => {
-    const { grid, words, gridSize } = makeExportTestData();
+    const { grid, words } = makeExportTestData();
     words[0].clue = "";
     words[1].clue = "";
-    const result = canExportAsComplete(grid, words, gridSize);
+    const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     expect(result.errors.some((e) => e.toLowerCase().includes("clue"))).toBe(true);
   });

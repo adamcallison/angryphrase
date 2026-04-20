@@ -21,8 +21,6 @@ export function reconcileWordsOnGridChange(
   oldWords: Word[],
   newDerivedWords: DerivedWord[],
   oldDisplacedClues: DisplacedClue[],
-  _grid: CellData[][],
-  _gridSize: number
 ): WordChangeResult {
   // Build a lookup map of old words by their WordId
   const oldWordsMap = new Map<string, Word>();

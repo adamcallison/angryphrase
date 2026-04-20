@@ -98,8 +98,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(2);
@@ -129,8 +127,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(2);
@@ -160,8 +156,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(1);
@@ -186,8 +180,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.displacedClues).toHaveLength(0);
@@ -205,8 +197,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(2);
@@ -231,8 +221,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.shortenedWords).toHaveLength(1);
@@ -257,8 +245,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.lengthenedWords).toHaveLength(1);
@@ -289,8 +275,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(1);
@@ -326,8 +310,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     // A's nextWord should be null (was pointing to B, which is destroyed)
@@ -376,8 +358,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       existingDisplaced,
-      plainGrid,
-      gridSize
     );
 
     // Old displaced clue should be preserved
@@ -405,8 +385,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       existingDisplaced,
-      plainGrid,
-      gridSize
     );
 
     expect(result.displacedClues).toHaveLength(2);
@@ -433,8 +411,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(3);
@@ -499,8 +475,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     const updatedA = result.updatedWords.find(
@@ -536,8 +510,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     // B should have clue cleared (was downstream from destroyed A)
@@ -582,8 +554,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     // A's nextWord should be null (was →B, B destroyed)
@@ -638,8 +608,6 @@ describe("reconcileWordsOnGridChange", () => {
       [],
       [],
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(0);
@@ -658,8 +626,6 @@ describe("reconcileWordsOnGridChange", () => {
       [],
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.updatedWords).toHaveLength(2);
@@ -689,8 +655,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       oldDisplaced,
-      plainGrid,
-      gridSize
     );
 
     expect(oldWords).toEqual(oldWordsBefore);
@@ -714,8 +678,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.displacedClues).toHaveLength(2);
@@ -748,8 +710,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     const updatedA = result.updatedWords.find(
@@ -786,8 +746,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     // A's nextWord pointed to (5,5,down) which doesn't exist in new words
@@ -815,8 +773,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      plainGrid,
-      gridSize
     );
 
     expect(result.shortenedWords).toHaveLength(0);

@@ -118,7 +118,7 @@ describe("createEmptyGrid", () => {
 describe("deriveWords", () => {
   it("all-white 5x5 grid produces 5 across and 5 down words", () => {
     const grid = createEmptyGrid(5);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
 
     const acrossWords = words.filter((w) => w.direction === "across");
     const downWords = words.filter((w) => w.direction === "down");
@@ -155,7 +155,7 @@ describe("deriveWords", () => {
       [false, false, true],
       [true, true, true],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
 
     const acrossWords = words.filter((w) => w.direction === "across");
     const downWords = words.filter((w) => w.direction === "down");
@@ -201,7 +201,7 @@ describe("deriveWords", () => {
       [true, true, true],
       [true, false, true],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
 
     // (0,0) is isolated horizontally (right is black) and vertically (below is black) → not a word
     // (0,2) is isolated horizontally (left is black) and vertically (below is black) → not a word
@@ -221,7 +221,7 @@ describe("deriveWords", () => {
       [false, true, false],
       [true, true, true],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
 
     const acrossWords = words.filter((w) => w.direction === "across");
     const downWords = words.filter((w) => w.direction === "down");
@@ -238,7 +238,7 @@ describe("deriveWords", () => {
       [true, true, true],
       [true, true, true],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
     expect(words).toHaveLength(0);
   });
 
@@ -256,7 +256,7 @@ describe("deriveWords", () => {
       [false, false, true, false, false],
       [false, false, true, false, false],
     ]);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
 
     const acrossWords = words.filter((w) => w.direction === "across");
     const downWords = words.filter((w) => w.direction === "down");
@@ -276,7 +276,7 @@ describe("deriveWords", () => {
 
   it("sets number to 0 for all derived words (numbering is separate)", () => {
     const grid = createEmptyGrid(5);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
     for (const word of words) {
       expect(word.number).toBe(0);
     }
@@ -289,7 +289,7 @@ describe("deriveWords", () => {
 describe("assignNumbers", () => {
   it("all-white grid: (0,0) gets number 1 as it starts both across and down", () => {
     const grid = createEmptyGrid(5);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
 
     expect(numbers.get("0-0")).toBe(1);
@@ -298,7 +298,7 @@ describe("assignNumbers", () => {
   it("cell starting both across and down gets ONE number", () => {
     // 3x3 all-white
     const grid = createEmptyGrid(3);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
 
     // (0,0) starts both across and down → gets ONE number, which is 1
@@ -315,7 +315,7 @@ describe("assignNumbers", () => {
   it("numbers are sequential", () => {
     // 5x5 all-white
     const grid = createEmptyGrid(5);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
 
     const allNumbers = Array.from(numbers.values()).sort((a, b) => a - b);
@@ -326,7 +326,7 @@ describe("assignNumbers", () => {
 
   it("returns a Map from row-col string to number", () => {
     const grid = createEmptyGrid(5);
-    const words = deriveWords(grid, 5);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
 
     expect(numbers).toBeInstanceOf(Map);
@@ -345,7 +345,7 @@ describe("assignNumbers", () => {
       [true, true, true],
       [false, true, false],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
     expect(numbers.size).toBe(0);
   });
@@ -360,7 +360,7 @@ describe("assignNumbers", () => {
       [false, false, true],
       [true, true, true],
     ]);
-    const words = deriveWords(grid, 3);
+    const words = deriveWords(grid);
     const numbers = assignNumbers(words);
 
     // (0,0) starts across (length 2) and down (length 2) → number 1
@@ -380,7 +380,7 @@ describe("getWordsAtCell", () => {
   it("cell at intersection returns both across and down words", () => {
     // 3x3 all-white grid: cell (1,1) is in an across and a down word
     const grid = createEmptyGrid(3);
-    const derivedWords = deriveWords(grid, 3);
+    const derivedWords = deriveWords(grid);
     // Create Word objects with metadata for testing
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
@@ -404,7 +404,7 @@ describe("getWordsAtCell", () => {
       [true, true, true],
       [true, true, true],
     ]);
-    const derivedWords = deriveWords(grid, 3);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -422,7 +422,7 @@ describe("getWordsAtCell", () => {
       [false, true],
       [true, true],
     ]);
-    const derivedWords = deriveWords(grid, 2);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -438,7 +438,7 @@ describe("getWordsAtCell", () => {
       [true, false],
       [false, false],
     ]);
-    const derivedWords = deriveWords(grid, 2);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -455,7 +455,7 @@ describe("getWordsAtCell", () => {
 describe("getWordInDirection", () => {
   it("returns the across word for an across cell", () => {
     const grid = createEmptyGrid(3);
-    const derivedWords = deriveWords(grid, 3);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -470,7 +470,7 @@ describe("getWordInDirection", () => {
 
   it("returns the down word for a cell in a down word", () => {
     const grid = createEmptyGrid(3);
-    const derivedWords = deriveWords(grid, 3);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -490,7 +490,7 @@ describe("getWordInDirection", () => {
       [false, false],
       [true, true],
     ]);
-    const derivedWords = deriveWords(grid, 2);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -506,7 +506,7 @@ describe("getWordInDirection", () => {
       [true, false],
       [false, false],
     ]);
-    const derivedWords = deriveWords(grid, 2);
+    const derivedWords = deriveWords(grid);
     const words: Word[] = derivedWords.map((dw) => ({
       ...dw,
       clue: "",
@@ -523,65 +523,118 @@ describe("getWordInDirection", () => {
 describe("advancePosition", () => {
   it("advances within a word (across)", () => {
     // W W W across word at row 0
-    const grid = buildGrid([[false, false, false]]);
-    const result = advancePosition(grid, 0, 0, "across", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 0, "across");
     expect(result).toEqual({ row: 0, col: 1 });
   });
 
   it("advances within a word (down)", () => {
     // Column of 3 white cells
-    const grid = buildGrid([[false], [false], [false]]);
-    const result = advancePosition(grid, 0, 0, "down", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 0, "down");
     expect(result).toEqual({ row: 1, col: 0 });
   });
 
   it("stays at last cell of word (no further advancement across)", () => {
     // W W W — advancing from last white cell stays put
-    const grid = buildGrid([[false, false, false]]);
-    const result = advancePosition(grid, 0, 2, "across", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 2, "across");
     expect(result).toEqual({ row: 0, col: 2 });
   });
 
   it("stays at last cell of word (no further advancement down)", () => {
-    const grid = buildGrid([[false], [false], [false]]);
-    const result = advancePosition(grid, 2, 0, "down", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 2, 0, "down");
     expect(result).toEqual({ row: 2, col: 0 });
   });
 
   it("stops at black cell (across)", () => {
-    // W W B W — advancing from col 1 hits black at col 2
-    const grid = buildGrid([[false, false, true, false]]);
-    const result = advancePosition(grid, 0, 1, "across", 4);
-    expect(result).toEqual({ row: 0, col: 1 });
+    // W B W — advancing from col 0 hits black at col 1
+    const grid = buildGrid(
+      [
+        [false, true, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 0, "across");
+    expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("stops at black cell (down)", () => {
     // W
-    // W
     // B
     // W
-    const grid = buildGrid([[false], [false], [true], [false]]);
-    const result = advancePosition(grid, 1, 0, "down", 4);
-    expect(result).toEqual({ row: 1, col: 0 });
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [true, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 0, "down");
+    expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("stops at grid boundary (across)", () => {
-    const grid = buildGrid([[false, false]]);
-    // At col 1, can't advance further right
-    const result = advancePosition(grid, 0, 1, "across", 2);
-    expect(result).toEqual({ row: 0, col: 1 });
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    // At col 2, can't advance further right
+    const result = advancePosition(grid, 0, 2, "across");
+    expect(result).toEqual({ row: 0, col: 2 });
   });
 
   it("stops at grid boundary (down)", () => {
-    const grid = buildGrid([[false], [false]]);
-    // At row 1, can't advance further down
-    const result = advancePosition(grid, 1, 0, "down", 2);
-    expect(result).toEqual({ row: 1, col: 0 });
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    // At row 2, can't advance further down
+    const result = advancePosition(grid, 2, 0, "down");
+    expect(result).toEqual({ row: 2, col: 0 });
   });
 
   it("returns same position for black cell", () => {
-    const grid = buildGrid([[true, false]]);
-    const result = advancePosition(grid, 0, 0, "across", 2);
+    const grid = buildGrid(
+      [
+        [true, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = advancePosition(grid, 0, 0, "across");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 });
@@ -591,65 +644,115 @@ describe("advancePosition", () => {
 // ============================================================
 describe("retreatPosition", () => {
   it("retreats within a word (across)", () => {
-    const grid = buildGrid([[false, false, false]]);
-    const result = retreatPosition(grid, 0, 2, "across", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 2, "across");
     expect(result).toEqual({ row: 0, col: 1 });
   });
 
   it("retreats within a word (down)", () => {
-    const grid = buildGrid([[false], [false], [false]]);
-    const result = retreatPosition(grid, 2, 0, "down", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 2, 0, "down");
     expect(result).toEqual({ row: 1, col: 0 });
   });
 
   it("stays at first cell of word (across)", () => {
     // W W B — at col 0, can't retreat further left
-    const grid = buildGrid([[false, false, true]]);
-    const result = retreatPosition(grid, 0, 0, "across", 3);
+    const grid = buildGrid(
+      [
+        [false, false, true],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 0, "across");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("stays at first cell of word (down)", () => {
-    const grid = buildGrid([[false], [false], [true]]);
-    const result = retreatPosition(grid, 0, 0, "down", 3);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [true, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 0, "down");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("stops at black cell (across)", () => {
     // B W W — retreating from col 2: col 1 is white, but from col 1, col 0 is black
-    const grid = buildGrid([[true, false, false]]);
-    // From col 2, retreat to col 1
-    const result1 = retreatPosition(grid, 0, 2, "across", 3);
-    expect(result1).toEqual({ row: 0, col: 1 });
-    // From col 1, can't retreat to col 0 (black)
-    const result2 = retreatPosition(grid, 0, 1, "across", 3);
-    expect(result2).toEqual({ row: 0, col: 1 });
+    const grid = buildGrid(
+      [
+        [true, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 1, "across");
+    expect(result).toEqual({ row: 0, col: 1 });
   });
 
   it("stops at black cell (down)", () => {
     // B
     // W
     // W
-    const grid = buildGrid([[true], [false], [false]]);
-    const result = retreatPosition(grid, 1, 0, "down", 3);
+    const grid = buildGrid(
+      [
+        [true, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 1, 0, "down");
     expect(result).toEqual({ row: 1, col: 0 });
   });
 
   it("stops at grid boundary (across)", () => {
-    const grid = buildGrid([[false, false]]);
-    const result = retreatPosition(grid, 0, 0, "across", 2);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 0, "across");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("stops at grid boundary (down)", () => {
-    const grid = buildGrid([[false], [false]]);
-    const result = retreatPosition(grid, 0, 0, "down", 2);
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 0, "down");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 
   it("returns same position for black cell", () => {
-    const grid = buildGrid([[true, false]]);
-    const result = retreatPosition(grid, 0, 0, "across", 2);
+    const grid = buildGrid(
+      [
+        [true, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
+    const result = retreatPosition(grid, 0, 0, "across");
     expect(result).toEqual({ row: 0, col: 0 });
   });
 });
@@ -659,59 +762,43 @@ describe("retreatPosition", () => {
 // ============================================================
 describe("movePosition", () => {
   it("ArrowUp moves row-1", () => {
-    const result = movePosition(2, 3, "across", "ArrowUp", 5);
+    const result = movePosition(5, 2, 3, "down", "backward");
     expect(result).toEqual({ row: 1, col: 3 });
   });
 
   it("ArrowDown moves row+1", () => {
-    const result = movePosition(2, 3, "across", "ArrowDown", 5);
+    const result = movePosition(5, 2, 3, "down", "forward");
     expect(result).toEqual({ row: 3, col: 3 });
   });
 
   it("ArrowLeft moves col-1", () => {
-    const result = movePosition(2, 3, "across", "ArrowLeft", 5);
+    const result = movePosition(5, 2, 3, "across", "backward");
     expect(result).toEqual({ row: 2, col: 2 });
   });
 
   it("ArrowRight moves col+1", () => {
-    const result = movePosition(2, 3, "down", "ArrowRight", 5);
+    const result = movePosition(5, 2, 3, "across", "forward");
     expect(result).toEqual({ row: 2, col: 4 });
   });
 
   it("does not go below 0 for ArrowUp", () => {
-    const result = movePosition(0, 3, "across", "ArrowUp", 5);
+    const result = movePosition(5, 0, 3, "down", "backward");
     expect(result).toEqual({ row: 0, col: 3 });
   });
 
   it("does not go below 0 for ArrowLeft", () => {
-    const result = movePosition(2, 0, "across", "ArrowLeft", 5);
+    const result = movePosition(5, 2, 0, "across", "backward");
     expect(result).toEqual({ row: 2, col: 0 });
   });
 
   it("does not go above gridSize-1 for ArrowDown", () => {
-    const result = movePosition(4, 3, "across", "ArrowDown", 5);
+    const result = movePosition(5, 4, 3, "down", "forward");
     expect(result).toEqual({ row: 4, col: 3 });
   });
 
   it("does not go above gridSize-1 for ArrowRight", () => {
-    const result = movePosition(2, 4, "down", "ArrowRight", 5);
+    const result = movePosition(5, 2, 4, "across", "forward");
     expect(result).toEqual({ row: 2, col: 4 });
-  });
-
-  it("unknown key returns same position", () => {
-    const result = movePosition(2, 3, "across", "Enter", 5);
-    expect(result).toEqual({ row: 2, col: 3 });
-  });
-
-  it("unknown key returns same position for various keys", () => {
-    const result1 = movePosition(1, 1, "across", "a", 5);
-    expect(result1).toEqual({ row: 1, col: 1 });
-
-    const result2 = movePosition(1, 1, "down", "Tab", 5);
-    expect(result2).toEqual({ row: 1, col: 1 });
-
-    const result3 = movePosition(1, 1, "across", "", 5);
-    expect(result3).toEqual({ row: 1, col: 1 });
   });
 });
 

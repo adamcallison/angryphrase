@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
+  import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata, DirectionPolarity } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
@@ -57,7 +57,7 @@
   // === Derived state ===
 
   /** Derive words from grid. */
-  let derivedWords = $derived(deriveWords(grid, gridSize));
+  let derivedWords = $derived(deriveWords(grid));
 
   /** Number map for cell and word numbering. */
   let numberMap = $derived(assignNumbers(derivedWords));
@@ -127,7 +127,7 @@
   let hasClueText = $derived(words.some((w) => w.clue.trim() !== ""));
 
   /** Export readiness. */
-  let exportCheck = $derived(canExportAsComplete(grid, words, gridSize));
+  let exportCheck = $derived(canExportAsComplete(grid, words));
 
   // === Auto-save ===
 
@@ -329,8 +329,8 @@
       grid = newGrid;
 
       // Derive new words and reconcile
-      const newDerived = deriveWords(grid, gridSize);
-      const result = reconcileWordsOnGridChange(oldWords, newDerived, displacedClues, grid, gridSize);
+      const newDerived = deriveWords(grid);
+      const result = reconcileWordsOnGridChange(oldWords, newDerived, displacedClues);
 
       // Update metadata
       syncMetadataFromWords(result.updatedWords);
@@ -387,7 +387,7 @@
         grid = newGrid;
 
         // Advance cursor
-        const next = advancePosition(grid, row, col, selectedDirection, gridSize);
+        const next = advancePosition(grid, row, col, selectedDirection);
         if (next.row !== row || next.col !== col) {
           selectedCell = next;
         }
@@ -404,7 +404,7 @@
           grid = newGrid;
         } else {
           // Retreat and delete
-          const prev = retreatPosition(grid, row, col, selectedDirection, gridSize);
+          const prev = retreatPosition(grid, row, col, selectedDirection);
           if (prev.row !== row || prev.col !== col) {
             newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], letter: null };
             grid = newGrid;
@@ -417,7 +417,25 @@
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
-      const newPos = movePosition(row, col, selectedDirection, key, gridSize);
+
+      let directionPolarity: DirectionPolarity;
+      switch (key) {
+        case "ArrowUp":
+          [selectedDirection, directionPolarity] = ["down", "backward"]
+          break;
+        case "ArrowDown":
+          [selectedDirection, directionPolarity] = ["down", "forward"]
+          break;
+        case "ArrowLeft":
+          [selectedDirection, directionPolarity] = ["across", "backward"]
+          break;
+        case "ArrowRight":
+          [selectedDirection, directionPolarity] = ["across", "forward"]
+        default:
+          directionPolarity = "forward"
+      }
+
+      const newPos = movePosition(gridSize, row, col, selectedDirection, directionPolarity);
       if (isSelectableCell(grid, newPos.row, newPos.col)) {
         selectedCell = newPos;
         if (key === "ArrowLeft" || key === "ArrowRight") {
@@ -626,7 +644,7 @@
           title = puzzle.title;
           author = puzzle.author;
           // Derive words from grid and merge with puzzle's word metadata
-          const dw = deriveWords(grid, gridSize);
+          const dw = deriveWords(grid);
           const md = new Map<string, WordMetadata>();
           for (const w of puzzle.words) {
             const id = toWordId(w);

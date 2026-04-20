@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, PlayerLetters, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, DirectionPolarity, PlayerLetters, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
@@ -48,7 +48,7 @@
 
   // === Derived state ===
 
-  let derivedWords = $derived(deriveWords(grid, gridSize));
+  let derivedWords = $derived(deriveWords(grid));
 
   /** The currently selected word (based on selectedCell and selectedDirection). */
   let selectedWord = $derived.by(() => {
@@ -154,7 +154,7 @@
     grid = puzzle.grid;
 
     // Assign numbers to imported words (they may have number: 0 from serialization)
-    const importedDerived = deriveWords(grid, gridSize);
+    const importedDerived = deriveWords(grid);
     const importedNumbers = assignNumbers(importedDerived);
     words = puzzle.words.map((w) => ({
       ...w,
@@ -229,7 +229,7 @@
         playerLetters = [...playerLetters];
 
         // Advance cursor
-        const next = advancePosition(grid, row, col, selectedDirection, gridSize);
+        const next = advancePosition(grid, row, col, selectedDirection);
         if (next.row !== row || next.col !== col) {
           selectedCell = next;
         }
@@ -249,7 +249,7 @@
         playerLetters = [...playerLetters];
       } else {
         // Retreat and delete
-        const prev = retreatPosition(grid, row, col, selectedDirection, gridSize);
+        const prev = retreatPosition(grid, row, col, selectedDirection);
         if (prev.row !== row || prev.col !== col) {
           playerLetters[prev.row] = [...playerLetters[prev.row]];
           playerLetters[prev.row][prev.col] = null;
@@ -263,7 +263,25 @@
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
-      const newPos = movePosition(row, col, selectedDirection, key, gridSize);
+
+      let directionPolarity: DirectionPolarity;
+      switch (key) {
+        case "ArrowUp":
+          [selectedDirection, directionPolarity] = ["down", "backward"]
+          break;
+        case "ArrowDown":
+          [selectedDirection, directionPolarity] = ["down", "forward"]
+          break;
+        case "ArrowLeft":
+          [selectedDirection, directionPolarity] = ["across", "backward"]
+          break;
+        case "ArrowRight":
+          [selectedDirection, directionPolarity] = ["across", "forward"]
+        default:
+          directionPolarity = "forward"
+      }
+
+      const newPos = movePosition(gridSize, row, col, selectedDirection, directionPolarity);
       if (isSelectableCell(grid, newPos.row, newPos.col)) {
         selectedCell = newPos;
         // Update direction based on arrow key

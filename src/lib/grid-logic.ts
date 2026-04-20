@@ -1,4 +1,4 @@
-import type { CellData, CellPosition, DerivedWord, Direction, Word } from "./types";
+import type { CellData, CellPosition, DerivedWord, Direction, DirectionPolarity, Word } from "./types";
 
 /**
  * Creates an NxN grid of all-white cells with default values.
@@ -28,9 +28,10 @@ export function createEmptyGrid(size: number): CellData[][] {
  * of length ≥ 2 in both the across and down directions.
  * Returns DerivedWord objects with number=0 (assignNumbers sets actual numbers).
  */
-export function deriveWords(grid: CellData[][], gridSize: number): DerivedWord[] {
+export function deriveWords(grid: CellData[][]): DerivedWord[] {
   const words: DerivedWord[] = [];
 
+  const gridSize: number = grid.length 
   // Scan across words (horizontal, row by row)
   for (let r = 0; r < gridSize; r++) {
     let c = 0;
@@ -191,8 +192,9 @@ export function advancePosition(
   row: number,
   col: number,
   direction: Direction,
-  gridSize: number
 ): CellPosition {
+  const gridSize: number = grid.length
+
   // If current cell is black, can't advance
   if (row < 0 || row >= gridSize || col < 0 || col >= gridSize || grid[row][col].black) {
     return { row, col };
@@ -230,8 +232,9 @@ export function retreatPosition(
   row: number,
   col: number,
   direction: Direction,
-  gridSize: number
 ): CellPosition {
+  const gridSize: number = grid.length
+
   // If current cell is black, can't retreat
   if (row < 0 || row >= gridSize || col < 0 || col >= gridSize || grid[row][col].black) {
     return { row, col };
@@ -266,32 +269,40 @@ export function retreatPosition(
  * The `direction` parameter is part of the API but not used for movement calculation.
  */
 export function movePosition(
+  gridSize: number,
   row: number,
   col: number,
-  _direction: Direction,
-  arrowKey: string,
-  gridSize: number
+  direction: Direction,
+  directionPolarity: DirectionPolarity,
 ): CellPosition {
   let newRow = row;
   let newCol = col;
 
-  switch (arrowKey) {
-    case "ArrowUp":
-      newRow = row - 1;
-      break;
-    case "ArrowDown":
-      newRow = row + 1;
-      break;
-    case "ArrowLeft":
-      newCol = col - 1;
-      break;
-    case "ArrowRight":
-      newCol = col + 1;
-      break;
-    default:
+  //switch (arrowKey) {
+  //  case "ArrowUp":
+  //    newRow = row - 1;
+  //    break;
+  //  case "ArrowDown":
+  //    newRow = row + 1;
+  //    break;
+  //  case "ArrowLeft":
+  //    newCol = col - 1;
+  //    break;
+  //  case "ArrowRight":
+  //    newCol = col + 1;
+  //    break;
+  //  default:
       // Unknown key — no movement
-      return { row, col };
-  }
+  //    return { row, col };
+  //}
+
+  const offsets: Record<Direction, Record<DirectionPolarity, [number, number]>> = {
+    down:    { backward: [-1, 0], forward: [1, 0] },
+    across:  { backward: [0, -1], forward: [0, 1] },
+  };
+  const [rowOffset, colOffset] = offsets[direction][directionPolarity];
+  newRow = row + rowOffset;
+  newCol = col + colOffset;
 
   // Clamp to grid bounds
   newRow = Math.max(0, Math.min(gridSize - 1, newRow));
