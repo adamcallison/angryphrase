@@ -182,42 +182,6 @@ export interface CompletePuzzle {
   author: string;
 }
 
-// === Component Props ===
-
-export interface CellProps {
-  isBlack: boolean;
-  letter: string | null;
-  number: number | null;
-  isSelected: boolean;
-  isHighlighted: boolean;
-  spaceRight: boolean;
-  spaceBottom: boolean;
-  hyphenRight: boolean;
-  hyphenBottom: boolean;
-  row: number;
-  col: number;
-}
-
-export interface CrosswordGridProps {
-  grid: CellData[][];
-  gridSize: number;
-  words: Word[];
-  displayLetters: (string | null)[][];
-  selectedCell: CellPosition | null;
-  selectedDirection: Direction;
-  highlightedCells: CellPosition[];
-  mode: "builder-design" | "builder-fill" | "player";
-
-  // Interaction mode flags — when true, grid click behavior changes
-  joinMode: boolean;
-  joinSourceWordId: WordId | null;
-  reattachMode: boolean;
-
-  // Callbacks
-  onCellClick: (row: number, col: number) => void;
-  onKeyDown: (key: string) => void;
-}
-
 // === Validation ===
 
 export interface ValidationResult {

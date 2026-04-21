@@ -1,23 +1,29 @@
 <script lang="ts">
-  import type { CrosswordGridProps } from "../lib/types";
+  import type { CellData, Word, CellPosition } from "../lib/types";
   import { assignNumbers } from "../lib/grid-logic";
   import Cell from "./Cell.svelte";
 
   let {
     grid,
-    gridSize,
     words,
     displayLetters,
     selectedCell,
-    selectedDirection,
     highlightedCells,
-    mode,
     joinMode,
-    joinSourceWordId,
     reattachMode,
     onCellClick,
     onKeyDown,
-  }: CrosswordGridProps = $props();
+  }: {
+    grid: CellData[][];
+    words: Word[];
+    displayLetters: (string | null)[][];
+    selectedCell: CellPosition | null;
+    highlightedCells: CellPosition[];
+    joinMode: boolean;
+    reattachMode: boolean;
+    onCellClick: (row: number, col: number) => void;
+    onKeyDown: (key: string) => void;
+  } = $props();
 
   // Derive cell numbers from words
   let numberedCells = $derived(assignNumbers(words));
@@ -67,9 +73,8 @@
 </script>
 
 <div
-  class="inline-grid outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
-    {joinMode ? 'cursor-pointer' : reattachMode ? 'cursor-crosshair' : ''}"
-  style="grid-template-columns: repeat({gridSize}, 40px)"
+  class="grid focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 {joinMode ? 'grid--join' : reattachMode ? 'grid--reattach' : ''}"
+  style="grid-template-columns: repeat({grid.length}, var(--cell-size))"
   tabindex="0"
   role="grid"
   aria-label="Crossword grid"
@@ -100,3 +105,18 @@
     {/each}
   {/each}
 </div>
+
+<style>
+  .grid {
+    display: inline-grid;
+    outline: none;
+  }
+
+  .grid--join {
+    cursor: pointer;
+  }
+
+  .grid--reattach {
+    cursor: crosshair;
+  }
+</style>

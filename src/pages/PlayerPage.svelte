@@ -369,15 +369,11 @@
           />
           <CrosswordGrid
             {grid}
-            {gridSize}
             {words}
             displayLetters={displayLetters}
             {selectedCell}
-            {selectedDirection}
             {highlightedCells}
-            mode="player"
             joinMode={false}
-            joinSourceWordId={null}
             reattachMode={false}
             onCellClick={handleCellClick}
             onKeyDown={handleKeyDown}

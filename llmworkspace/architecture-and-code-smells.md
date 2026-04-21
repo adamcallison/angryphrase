@@ -191,28 +191,14 @@ All 305 tests are unit tests for logic modules. There are zero Svelte component 
 - Prop reactivity
 - Accessibility tree
 
-### 15. TypeScript Errors in Test Files
-
-**Location:** `src/lib/validation.test.ts` (21 errors per svelte-check)
-**Severity:** Medium
-
-The test file has type mismatches where `CellData` objects are created without all required fields. While tests pass at runtime, this indicates the tests are not type-safe and could mask future regressions.
-
-### 16. `vitest.config.ts` Missing Path Aliases
-
-**Location:** `vitest.config.ts`
-**Severity:** Low
-
-The vitest config doesn't include the `$lib` path alias that `vite.config.ts` defines. This forces test files to use relative imports (`./types`) instead of the cleaner `$lib/types` pattern used in source files. This inconsistency makes it harder to move tests or restructure.
-
-### 17. `vitest.config.ts` Includes Unnecessary Tailwind Plugin
+### 15. `vitest.config.ts` Includes Unnecessary Tailwind Plugin
 
 **Location:** `vitest.config.ts` line 6
 **Severity:** Low
 
 The `tailwindcss()` plugin is included in the Vitest config, which adds overhead to test runs without any benefit since CSS isn't processed in unit tests.
 
-### 18. Artificial Effect Dependency Tracking
+### 16. Artificial Effect Dependency Tracking
 
 **Location:** `src/pages/BuilderPage.svelte` line 138
 **Severity:** Low
@@ -222,42 +208,42 @@ const _ = [key, gridSize, grid, wordMetadata, displacedClues, title, author];
 ```
 This creates an unused array solely to force reactivity tracking. In Svelte 5, `$effect` automatically tracks accessed reactive values, making this pattern unnecessary and confusing. It should simply access the reactive values directly.
 
-### 19. No Bounds Validation on Grid Size Input
+### 17. No Bounds Validation on Grid Size Input
 
 **Location:** `src/components/GridSizeSelector.svelte`
 **Severity:** Medium
 
 The input only has `min="2"` but no `max` attribute. A user could enter 1000, creating a grid that crashes the browser. The `handleSizeChange` function does check `if (newSize < 2) return;` but has no upper bound check.
 
-### 20. `crypto.randomUUID()` Environment Concern
+### 18. `crypto.randomUUID()` Environment Concern
 
 **Locations:** `src/lib/clue-logic.ts` line 153, `src/lib/storage.ts` line 106
 **Severity:** Low
 
 `crypto.randomUUID()` requires a secure context (HTTPS) and isn't available in all environments. While modern browsers support it, this could fail in older browsers or non-HTTPS contexts. Consider a fallback.
 
-### 21. No Toast Animation/Transition
+### 19. No Toast Animation/Transition
 
 **Location:** `src/components/Toast.svelte`
 **Severity:** Low
 
 The Toast component appears/disappears instantly with no CSS transition or Svelte transition. This degrades the UX for important feedback messages.
 
-### 22. Reconcile Test Passes Extra Arguments
+### 20. Reconcile Test Passes Extra Arguments
 
 **Location:** `src/lib/clue-logic.test.ts` line 598 (in `isGridBlank` test)
 **Severity:** Low
 
 One test call to `reconcileWordsOnGridChange` passes 5 arguments when the function only accepts 3. The extra `grid` and `gridSize` parameters are silently ignored. This appears to be a leftover from a previous API signature and should be cleaned up.
 
-### 23. PUZZLE DATA Not Validated or Used in Tests
+### 21. Puzzle Data Not Validated or Used in Tests
 
 **Location:** `puzzles/*.json`
 **Severity:** Low
 
 The JSON puzzle files in `puzzles/` are not used by any automated test. They appear to be fixtures but aren't validated against the current schema programmatically. They could become stale or invalid without detection.
 
-### 24. No Shared Composable for Cursor/Selection Logic
+### 22. No Shared Composable for Cursor/Selection Logic
 
 **Severity:** Medium
 
@@ -269,7 +255,7 @@ Both BuilderPage and PlayerPage implement cursor movement, cell selection, and d
 
 This should be extracted into a shared `useCrosswordCursor` composable.
 
-### 25. Arrow Key Direction Override Has Subtle Semantic Issue
+### 23. Arrow Key Direction Override Has Subtle Semantic Issue
 
 **Location:** `src/pages/BuilderPage.svelte` lines 377-448, `src/pages/PlayerPage.svelte` lines 218-296
 **Severity:** Medium
@@ -287,15 +273,15 @@ The issue: `selectedDirection` is set TWICE — once before `movePosition` (in t
 
 ## Low-Priority / Nit Smells
 
-### 26. Inconsistent Component Prop Definition Style
+### 24. Inconsistent Component Prop Definition Style
 
 Some components use named interfaces (`CrosswordGridProps`, `CellProps` in `types.ts`), while others define props inline in the `<script>` block. Should be consistent.
 
-### 27. No Design Tokens or CSS Custom Properties
+### 25. No Design Tokens or CSS Custom Properties
 
 All styling is via Tailwind utility classes with magic numbers. The cell size (`40px`) is hardcoded in `Cell.svelte` and `CrosswordGrid.svelte`. Should use CSS custom properties for consistency.
 
-### 28. `main.ts` Uses Non-Null Assertion
+### 26. `main.ts` Uses Non-Null Assertion
 
 **Location:** `src/main.ts` line 6
 ```ts
@@ -303,11 +289,11 @@ const app = mount(App, { target: document.getElementById('app')! });
 ```
 Should have a null check for robustness.
 
-### 29. No `onDestroy` Cleanup for Timers
+### 27. No `onDestroy` Cleanup for Timers
 
 Both BuilderPage and PlayerPage manage timers (`toastTimer`, `saveTimer`) as module-level variables. In Svelte 5, these aren't properly cleaned up on component destruction. Should use `$effect` with return cleanup functions.
 
-### 30. CSS Class String Interpolation Hard to Read
+### 28. CSS Class String Interpolation Hard to Read
 
 **Location:** Multiple components (Cell.svelte, ClueEntry.svelte, etc.)
 
@@ -324,10 +310,10 @@ are hard to read and maintain. Consider using a class utility function or Svelte
 | Category | Count |
 |----------|-------|
 | Critical architectural smells | 5 |
-| High-priority code smells | 6 |
-| Medium-priority code smells | 9 |
-| Low-priority code smells | 10 |
-| **Total** | **30** |
+| High-priority code smells | 7 |
+| Medium-priority code smells | 7 |
+| Low-priority code smells | 9 |
+| **Total** | **28** |
 
 ## Key Test Metrics
 
@@ -335,7 +321,7 @@ are hard to read and maintain. Consider using a class utility function or Svelte
 - **Unit tests:** 305 (all passing)
 - **Component tests:** 0
 - **Integration tests:** 0
-- **TypeScript errors:** 21 (all in test files)
+- **svelte-check errors:** 0
 - **Test coverage of components:** 0%
 
 ## Priority Recommendations
@@ -348,6 +334,4 @@ are hard to read and maintain. Consider using a class utility function or Svelte
 
 4. **Write component tests** — Start with `CrosswordGrid`, `Cell`, and `ClueEntry` since they have the most interactions.
 
-5. **Fix TypeScript errors in test files** — Make tests type-safe.
-
-6. **Add routing** — Even a simple hash-based router would improve UX significantly.
+5. **Add routing** — Even a simple hash-based router would improve UX significantly.

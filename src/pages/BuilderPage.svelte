@@ -765,15 +765,11 @@
         <!-- Grid -->
         <CrosswordGrid
           {grid}
-          {gridSize}
           {words}
           {displayLetters}
           {selectedCell}
-          {selectedDirection}
           {highlightedCells}
-          mode={mode === "design" ? "builder-design" : "builder-fill"}
           {joinMode}
-          {joinSourceWordId}
           {reattachMode}
           onCellClick={handleCellClick}
           onKeyDown={handleKeyDown}
