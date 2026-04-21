@@ -589,12 +589,6 @@ describe("reconcileWordsOnGridChange", () => {
       oldWords,
       newDerivedWords,
       [],
-      buildGrid([
-        [true, true, true],
-        [true, true, true],
-        [true, true, true],
-      ]),
-      3
     );
 
     expect(result.updatedWords).toHaveLength(0);

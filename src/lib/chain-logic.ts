@@ -288,9 +288,9 @@ export function validateChains(words: Word[]): boolean {
 
   for (const head of heads) {
     const visited = new Set<WordId>();
-    let current: Word | null = head;
+    let current: Word | undefined = head;
 
-    while (current !== null) {
+    while (current !== undefined) {
       const currentId = toWordId(current);
 
       if (visited.has(currentId)) {

@@ -7,8 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ci": "npm run check && npm run test && npm run build"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",

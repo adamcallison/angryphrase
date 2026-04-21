@@ -81,7 +81,7 @@ function makeBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
     title: overrides.title ?? "Test Puzzle",
     author: overrides.author ?? "Test Author",
     mode: overrides.mode ?? "fill",
-    selectedCell: "selectedCell" in overrides ? overrides.selectedCell : { row: 0, col: 0 },
+    selectedCell: overrides.selectedCell !== undefined ? overrides.selectedCell : { row: 0, col: 0 },
     selectedDirection: overrides.selectedDirection ?? "across",
     reattachMode: overrides.reattachMode ?? false,
     selectedDisplacedClueIndex: overrides.selectedDisplacedClueIndex ?? null,

@@ -118,7 +118,7 @@ describe("validateCompletePuzzle", () => {
 
     it("rejects missing version", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).version;
+      delete (puzzle as unknown as Record<string, unknown>).version;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.toLowerCase().includes("version"))).toBe(true);
@@ -129,7 +129,7 @@ describe("validateCompletePuzzle", () => {
   describe("type field", () => {
     it("rejects wrong type", () => {
       const puzzle = makeValidCompletePuzzle();
-      puzzle.type = "incomplete";
+      (puzzle as unknown as Record<string, unknown>).type = "incomplete";
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.toLowerCase().includes("type"))).toBe(true);
@@ -140,42 +140,42 @@ describe("validateCompletePuzzle", () => {
   describe("required fields", () => {
     it("rejects missing key", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).key;
+      delete (puzzle as unknown as Record<string, unknown>).key;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing gridSize", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).gridSize;
+      delete (puzzle as unknown as Record<string, unknown>).gridSize;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing grid", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).grid;
+      delete (puzzle as unknown as Record<string, unknown>).grid;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing words", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).words;
+      delete (puzzle as unknown as Record<string, unknown>).words;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing title", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).title;
+      delete (puzzle as unknown as Record<string, unknown>).title;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing author", () => {
       const puzzle = makeValidCompletePuzzle();
-      delete (puzzle as Record<string, unknown>).author;
+      delete (puzzle as unknown as Record<string, unknown>).author;
       const result = validateCompletePuzzle(puzzle as unknown as CompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
@@ -382,19 +382,19 @@ describe("validateCompletePuzzle", () => {
       // Remove marker fields from cells — they should default to false
       const grid: CellData[][] = [
         [
-          { black: false, letter: "A" },
-          { black: false, letter: "B" },
-          { black: false, letter: "C" },
+          makeCell({ black: false, letter: "A" }),
+          makeCell({ black: false, letter: "B" }),
+          makeCell({ black: false, letter: "C" }),
         ],
         [
-          { black: false, letter: "D" },
-          { black: true, letter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
-          { black: false, letter: "E" },
+          makeCell({ black: false, letter: "D" }),
+          makeBlackCell(),
+          makeCell({ black: false, letter: "E" }),
         ],
         [
-          { black: false, letter: "F" },
-          { black: false, letter: "G" },
-          { black: false, letter: "H" },
+          makeCell({ black: false, letter: "F" }),
+          makeCell({ black: false, letter: "G" }),
+          makeCell({ black: false, letter: "H" }),
         ],
       ];
       puzzle.grid = grid;
@@ -464,16 +464,16 @@ describe("validateIncompletePuzzle", () => {
       expect(result.errors.some((e) => e.toLowerCase().includes("version"))).toBe(true);
     });
 
-    it("rejects wrong type", () => {
+it("rejects wrong type", () => {
       const puzzle = makeValidIncompletePuzzle();
-      puzzle.type = "complete";
+      (puzzle as unknown as Record<string, unknown>).type = "complete";
       const result = validateIncompletePuzzle(puzzle as unknown as IncompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
 
     it("rejects missing required fields", () => {
       const puzzle = makeValidIncompletePuzzle();
-      delete (puzzle as Record<string, unknown>).key;
+      delete (puzzle as unknown as Record<string, unknown>).key;
       const result = validateIncompletePuzzle(puzzle as unknown as IncompletePuzzleJSON);
       expect(result.valid).toBe(false);
     });
