@@ -337,7 +337,6 @@ export function getWordLengthPattern(
   grid: CellData[][],
   word: Word,
   allWords: Word[],
-  gridSize: number
 ): string {
   // If this word is a chain head with nextWord, show each word's total length
   if (word.nextWord !== null) {
@@ -346,5 +345,5 @@ export function getWordLengthPattern(
   }
 
   // Single word: compute segments based on cell markers
-  return getSingleWordLengthPattern(grid, word, gridSize);
+  return getSingleWordLengthPattern(grid, word);
 }

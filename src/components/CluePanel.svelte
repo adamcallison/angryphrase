@@ -56,7 +56,7 @@
         <ClueEntry
           {word}
           number={word.number}
-          wordLengthPattern={getWordLengthPattern(grid, word, words, gridSize)}
+          wordLengthPattern={getWordLengthPattern(grid, word, words)}
           isEditable={editable}
           isSelected={selectedWordId === toWordId(word)}
           isChainHead={isChainHead(words, word)}
@@ -83,7 +83,7 @@
         <ClueEntry
           {word}
           number={word.number}
-          wordLengthPattern={getWordLengthPattern(grid, word, words, gridSize)}
+          wordLengthPattern={getWordLengthPattern(grid, word, words)}
           isEditable={editable}
           isSelected={selectedWordId === toWordId(word)}
           isChainHead={isChainHead(words, word)}

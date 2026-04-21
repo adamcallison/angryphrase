@@ -103,7 +103,7 @@
   let clueDirection = $derived(selectedWord?.direction ?? null);
   let clueText = $derived(selectedWord?.clue ?? null);
   let wordLengthPattern = $derived(
-    selectedWord ? getWordLengthPattern(grid, selectedWord, words, gridSize) : null
+    selectedWord ? getWordLengthPattern(grid, selectedWord, words) : null
   );
 
   // === Auto-save ===
@@ -309,12 +309,12 @@
 
   function handleCheck(): void {
     if (!puzzleLoaded) return;
-    checkResult = checkPuzzle(grid, playerLetters, gridSize);
+    checkResult = checkPuzzle(grid, playerLetters);
   }
 
   function handleClearErrors(): void {
     if (!checkResult) return;
-    playerLetters = clearErrors(grid, playerLetters, checkResult, gridSize);
+    playerLetters = clearErrors(playerLetters, checkResult);
     checkResult = null;
   }
 

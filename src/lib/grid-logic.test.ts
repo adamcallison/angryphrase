@@ -868,21 +868,28 @@ describe("isSelectableCell", () => {
 // ============================================================
 describe("computeWordLength", () => {
   it("correct length for a horizontal word", () => {
-    // W W W B W
-    const grid = buildGrid([[false, false, false, true, false]]);
-    // Starting from (0,0) across: 3 white cells
-    expect(computeWordLength(grid, 0, 0, "across", 5)).toBe(3);
+    // W W B W
+    const grid = buildGrid(
+      [
+        [false, false, true, false],
+        [false, false, true, false],
+        [false, false, true, false],
+        [false, false, true, false],
+      ]
+    );
+    // Starting from (0,0) across: 2 white cells
+    expect(computeWordLength(grid, 0, 0, "across")).toBe(2);
     // Starting from (0,4) across: 1 white cell (isolated)
-    expect(computeWordLength(grid, 0, 4, "across", 5)).toBe(1);
+    expect(computeWordLength(grid, 0, 3, "across")).toBe(1);
   });
 
   it("correct length for a vertical word", () => {
     // Column: W, W, W, B, W
     const grid = buildGrid([[false], [false], [false], [true], [false]]);
     // Starting from (0,0) down: 3 white cells
-    expect(computeWordLength(grid, 0, 0, "down", 5)).toBe(3);
+    expect(computeWordLength(grid, 0, 0, "down")).toBe(3);
     // Starting from (4,0) down: 1 white cell
-    expect(computeWordLength(grid, 4, 0, "down", 5)).toBe(1);
+    expect(computeWordLength(grid, 4, 0, "down")).toBe(1);
   });
 
   it("length 1 for isolated white cell", () => {
@@ -893,8 +900,8 @@ describe("computeWordLength", () => {
       [true, true, true],
     ]);
     // (0,0) is isolated: no adjacent white cells in any direction
-    expect(computeWordLength(grid, 0, 0, "across", 3)).toBe(1);
-    expect(computeWordLength(grid, 0, 0, "down", 3)).toBe(1);
+    expect(computeWordLength(grid, 0, 0, "across")).toBe(1);
+    expect(computeWordLength(grid, 0, 0, "down")).toBe(1);
   });
 
   it("length 0 for black cell", () => {
@@ -902,27 +909,33 @@ describe("computeWordLength", () => {
       [true, false],
       [false, false],
     ]);
-    expect(computeWordLength(grid, 0, 0, "across", 2)).toBe(0);
-    expect(computeWordLength(grid, 0, 0, "down", 2)).toBe(0);
+    expect(computeWordLength(grid, 0, 0, "across")).toBe(0);
+    expect(computeWordLength(grid, 0, 0, "down")).toBe(0);
   });
 
   it("full row as one word (across)", () => {
     const grid = createEmptyGrid(5);
     // Entire row of 5 white cells
-    expect(computeWordLength(grid, 0, 0, "across", 5)).toBe(5);
+    expect(computeWordLength(grid, 0, 0, "across")).toBe(5);
   });
 
   it("full column as one word (down)", () => {
     const grid = createEmptyGrid(5);
     // Entire column of 5 white cells
-    expect(computeWordLength(grid, 0, 0, "down", 5)).toBe(5);
+    expect(computeWordLength(grid, 0, 0, "down")).toBe(5);
   });
 
   it("correct length starting from middle of word", () => {
-    // W W W W W
-    const grid = buildGrid([[false, false, false, false, false]]);
+    // W W W
+    const grid = buildGrid(
+      [
+        [false, false, false],
+        [false, false, false],
+        [false, false, false],
+      ]
+    );
     // Starting from col 2, going across: 3 white cells (col 2, 3, 4)
-    expect(computeWordLength(grid, 0, 2, "across", 5)).toBe(3);
+    expect(computeWordLength(grid, 0, 1, "across")).toBe(2);
   });
 });
 
@@ -934,13 +947,13 @@ describe("getSingleWordLengthPattern", () => {
     // 5-letter across word, no markers
     const grid = createEmptyGrid(5);
     const word: Word = makeWord(0, 0, "across", 5, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("5");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("5");
   });
 
   it("returns total length for a down word with no markers", () => {
     const grid = createEmptyGrid(5);
     const word: Word = makeWord(0, 0, "down", 4, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("4");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("4");
   });
 
   it("returns segmented pattern with space markers (across)", () => {
@@ -949,7 +962,7 @@ describe("getSingleWordLengthPattern", () => {
     grid[0][1] = { ...grid[0][1], spaceRight: true };
     grid[0][3] = { ...grid[0][3], spaceRight: true };
     const word: Word = makeWord(0, 0, "across", 5, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("2, 2, 1");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("2, 2, 1");
   });
 
   it("returns segmented pattern with hyphen markers (across)", () => {
@@ -957,7 +970,7 @@ describe("getSingleWordLengthPattern", () => {
     const grid = createEmptyGrid(5);
     grid[0][1] = { ...grid[0][1], hyphenRight: true };
     const word: Word = makeWord(0, 0, "across", 5, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("2-3");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("2-3");
   });
 
   it("returns segmented pattern with space markers (down)", () => {
@@ -965,14 +978,14 @@ describe("getSingleWordLengthPattern", () => {
     const grid = createEmptyGrid(5);
     grid[1][0] = { ...grid[1][0], spaceBottom: true };
     const word: Word = makeWord(0, 0, "down", 4, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("2, 2");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("2, 2");
   });
 
   it("returns segmented pattern with hyphen markers (down)", () => {
     const grid = createEmptyGrid(5);
     grid[1][0] = { ...grid[1][0], hyphenBottom: true };
     const word: Word = makeWord(0, 0, "down", 4, 1);
-    expect(getSingleWordLengthPattern(grid, word, 5)).toBe("2-2");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("2-2");
   });
 
   it("handles mixed space and hyphen markers", () => {
@@ -981,6 +994,6 @@ describe("getSingleWordLengthPattern", () => {
     grid[0][1] = { ...grid[0][1], hyphenRight: true };
     grid[0][3] = { ...grid[0][3], spaceRight: true };
     const word: Word = makeWord(0, 0, "across", 6, 1);
-    expect(getSingleWordLengthPattern(grid, word, 6)).toBe("2-2, 2");
+    expect(getSingleWordLengthPattern(grid, word)).toBe("2-2, 2");
   });
 });

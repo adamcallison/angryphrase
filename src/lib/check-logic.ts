@@ -28,13 +28,12 @@ import type {
 export function checkPuzzle(
   grid: CellData[][],
   playerLetters: PlayerLetters,
-  gridSize: number
 ): CheckResult {
   const incorrectCells: CellPosition[] = [];
   const emptyCells: CellPosition[] = [];
 
-  for (let row = 0; row < gridSize; row++) {
-    for (let col = 0; col < gridSize; col++) {
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid.length; col++) {
       const cell = grid[row][col];
 
       // Skip black cells entirely
@@ -77,10 +76,8 @@ export function checkPuzzle(
  * are untouched. The original playerLetters array is NOT mutated.
  */
 export function clearErrors(
-  grid: CellData[][],
   playerLetters: PlayerLetters,
   checkResult: CheckResult,
-  gridSize: number
 ): PlayerLetters {
   // Deep copy playerLetters
   const result: PlayerLetters = playerLetters.map((row) => [...row]);

@@ -77,7 +77,7 @@ describe("checkPuzzle", () => {
       ["C", "D"],
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 2);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-correct");
     expect(result.incorrectCells).toHaveLength(0);
@@ -98,7 +98,7 @@ describe("checkPuzzle", () => {
       ["Y", "D"], // wrong at (1,0)
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 2);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-incorrect");
     expect(result.emptyCells).toHaveLength(0);
@@ -122,7 +122,7 @@ describe("checkPuzzle", () => {
       ["C", null], // empty at (1,1)
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 2);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("incomplete-correct");
     expect(result.incorrectCells).toHaveLength(0);
@@ -145,7 +145,7 @@ describe("checkPuzzle", () => {
       ["X", null], // wrong at (1,0), empty at (1,1)
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 2);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("incomplete-incorrect");
     expect(result.incorrectCells).toHaveLength(1);
@@ -174,7 +174,7 @@ describe("checkPuzzle", () => {
       ["F", "G", "H"],
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 3);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-correct");
     expect(result.incorrectCells).toHaveLength(0);
@@ -186,7 +186,7 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers([["Z"]]);
     const playerLetters = makePlayerLetters([["Z"]]);
 
-    const result = checkPuzzle(grid, playerLetters, 1);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-correct");
   });
@@ -196,7 +196,7 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers([["A"]]);
     const playerLetters: PlayerLetters = [[null]];
 
-    const result = checkPuzzle(grid, playerLetters, 1);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("incomplete-correct");
     expect(result.emptyCells).toHaveLength(1);
@@ -208,7 +208,7 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers([["A"]]);
     const playerLetters = makePlayerLetters([["B"]]);
 
-    const result = checkPuzzle(grid, playerLetters, 1);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-incorrect");
     expect(result.incorrectCells).toHaveLength(1);
@@ -226,7 +226,7 @@ describe("checkPuzzle", () => {
       [null, null],
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 2);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-correct");
     expect(result.incorrectCells).toHaveLength(0);
@@ -238,12 +238,12 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers([["A"]]);
     const playerLetters = makePlayerLetters([["A"]]);
 
-    const result = checkPuzzle(grid, playerLetters, 1);
+    const result = checkPuzzle(grid, playerLetters);
     expect(result.type).toBe("complete-correct");
 
     // Now with empty cell
     const playerLetters2 = makePlayerLetters([[null]]);
-    const result2 = checkPuzzle(grid, playerLetters2, 1);
+    const result2 = checkPuzzle(grid, playerLetters2);
     expect(result2.type).toBe("incomplete-correct");
   });
 
@@ -268,7 +268,7 @@ describe("checkPuzzle", () => {
       [null, "H", "I"],   // (2,0) empty, rest correct
     ]);
 
-    const result = checkPuzzle(grid, playerLetters, 3);
+    const result = checkPuzzle(grid, playerLetters);
 
     // We have both empty and incorrect cells → incomplete-incorrect
     expect(result.type).toBe("incomplete-incorrect");
@@ -290,7 +290,7 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers([["A"]]);
     const playerLetters = makePlayerLetters([["B"]]);
 
-    const result = checkPuzzle(grid, playerLetters, 1);
+    const result = checkPuzzle(grid, playerLetters);
     expect(result.type).toBe("complete-incorrect");
   });
 
@@ -307,7 +307,7 @@ describe("checkPuzzle", () => {
     const grid = buildGridWithAnswers(rows);
     const playerLetters = makePlayerLetters(rows);
 
-    const result = checkPuzzle(grid, playerLetters, 5);
+    const result = checkPuzzle(grid, playerLetters);
 
     expect(result.type).toBe("complete-correct");
     expect(result.incorrectCells).toHaveLength(0);
@@ -321,10 +321,6 @@ describe("checkPuzzle", () => {
 describe("clearErrors", () => {
   it("clears incorrect cells by setting them to null", () => {
     // 2x2: (0,1) is incorrect
-    const grid = buildGridWithAnswers([
-      ["A", "B"],
-      ["C", "D"],
-    ]);
     const playerLetters = makePlayerLetters([
       ["A", "X"],
       ["C", "D"],
@@ -335,7 +331,7 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 2);
+    const result = clearErrors(playerLetters, checkResult);
 
     // (0,1) should be null now
     expect(result[0][1]).toBeNull();
@@ -346,7 +342,6 @@ describe("clearErrors", () => {
   });
 
   it("does not mutate the original playerLetters", () => {
-    const grid = buildGridWithAnswers([["A"]]);
     const playerLetters = makePlayerLetters([["X"]]);
     const checkResult: CheckResult = {
       type: "complete-incorrect",
@@ -357,7 +352,7 @@ describe("clearErrors", () => {
     // Capture original value
     const originalValue = playerLetters[0][0];
 
-    const result = clearErrors(grid, playerLetters, checkResult, 1);
+    const result = clearErrors(playerLetters, checkResult);
 
     // Original should be unchanged
     expect(playerLetters[0][0]).toBe(originalValue);
@@ -367,7 +362,6 @@ describe("clearErrors", () => {
 
   it("leaves empty cells untouched", () => {
     // 1x3: (0,2) is empty, (0,0) is incorrect, (0,1) is correct
-    const grid = buildGridWithAnswers([["A", "B", "C"]]);
     const playerLetters = makePlayerLetters([["X", "B", null]]);
     const checkResult: CheckResult = {
       type: "incomplete-incorrect",
@@ -375,7 +369,7 @@ describe("clearErrors", () => {
       emptyCells: [{ row: 0, col: 2 }],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 3);
+    const result = clearErrors(playerLetters, checkResult);
 
     expect(result[0][0]).toBeNull(); // cleared
     expect(result[0][1]).toBe("B");  // unchanged
@@ -383,7 +377,6 @@ describe("clearErrors", () => {
   });
 
   it("leaves correct cells untouched", () => {
-    const grid = buildGridWithAnswers([["A", "B"]]);
     const playerLetters = makePlayerLetters([["A", "X"]]);
     const checkResult: CheckResult = {
       type: "complete-incorrect",
@@ -391,17 +384,13 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 2);
+    const result = clearErrors(playerLetters, checkResult);
 
     expect(result[0][0]).toBe("A");  // correct, untouched
     expect(result[0][1]).toBeNull(); // cleared
   });
 
   it("clears all incorrect cells when multiple wrong", () => {
-    const grid = buildGridWithAnswers([
-      ["A", "B"],
-      ["C", "D"],
-    ]);
     const playerLetters = makePlayerLetters([
       ["X", "B"],
       ["C", "Y"],
@@ -415,7 +404,7 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 2);
+    const result = clearErrors(playerLetters, checkResult);
 
     expect(result[0][0]).toBeNull();  // cleared
     expect(result[0][1]).toBe("B");   // correct, untouched
@@ -425,11 +414,6 @@ describe("clearErrors", () => {
 
   it("mixed scenario: some correct, some empty, some incorrect", () => {
     // 3x3 grid with various cell states
-    const grid = buildGridWithAnswers([
-      ["A", "B", "C"],
-      ["D", null, "F"],
-      ["G", "H", "I"],
-    ]);
     const playerLetters = makePlayerLetters([
       ["A", "X", null],   // (0,0) correct, (0,1) wrong, (0,2) empty
       ["D", null, "F"],   // (1,0) correct, (1,1) black (null), (1,2) correct
@@ -447,7 +431,7 @@ describe("clearErrors", () => {
       ],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 3);
+    const result = clearErrors(playerLetters, checkResult);
 
     // Incorrect cells cleared to null
     expect(result[0][1]).toBeNull();
@@ -468,7 +452,6 @@ describe("clearErrors", () => {
   });
 
   it("returns result with no modifications when there are no incorrect cells", () => {
-    const grid = buildGridWithAnswers([["A"]]);
     const playerLetters = makePlayerLetters([["A"]]);
     const checkResult: CheckResult = {
       type: "complete-correct",
@@ -476,13 +459,12 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 1);
+    const result = clearErrors(playerLetters, checkResult);
 
     expect(result[0][0]).toBe("A");
   });
 
   it("deep copies the playerLetters array (modifying result does not affect original)", () => {
-    const grid = buildGridWithAnswers([["A", "B"]]);
     const playerLetters = makePlayerLetters([["A", "B"]]);
 
     const checkResult: CheckResult = {
@@ -491,7 +473,7 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 2);
+    const result = clearErrors(playerLetters, checkResult);
 
     // Mutate the result and verify original is unaffected
     result[0][0] = "Z";
@@ -499,10 +481,6 @@ describe("clearErrors", () => {
   });
 
   it("handles an all-black grid (no cells to clear)", () => {
-    const grid = buildGridWithAnswers([
-      [null, null],
-      [null, null],
-    ]);
     const playerLetters = makePlayerLetters([
       [null, null],
       [null, null],
@@ -513,7 +491,7 @@ describe("clearErrors", () => {
       emptyCells: [],
     };
 
-    const result = clearErrors(grid, playerLetters, checkResult, 2);
+    const result = clearErrors(playerLetters, checkResult);
 
     expect(result[0][0]).toBeNull();
     expect(result[1][1]).toBeNull();

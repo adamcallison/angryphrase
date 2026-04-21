@@ -31,7 +31,7 @@ export function createEmptyGrid(size: number): CellData[][] {
 export function deriveWords(grid: CellData[][]): DerivedWord[] {
   const words: DerivedWord[] = [];
 
-  const gridSize: number = grid.length 
+  const gridSize: number = grid.length;
   // Scan across words (horizontal, row by row)
   for (let r = 0; r < gridSize; r++) {
     let c = 0;
@@ -193,7 +193,7 @@ export function advancePosition(
   col: number,
   direction: Direction,
 ): CellPosition {
-  const gridSize: number = grid.length
+  const gridSize: number = grid.length;
 
   // If current cell is black, can't advance
   if (row < 0 || row >= gridSize || col < 0 || col >= gridSize || grid[row][col].black) {
@@ -233,7 +233,7 @@ export function retreatPosition(
   col: number,
   direction: Direction,
 ): CellPosition {
-  const gridSize: number = grid.length
+  const gridSize: number = grid.length;
 
   // If current cell is black, can't retreat
   if (row < 0 || row >= gridSize || col < 0 || col >= gridSize || grid[row][col].black) {
@@ -270,13 +270,12 @@ export function retreatPosition(
  */
 export function movePosition(
   grid: CellData[][],
-  //gridSize: number,
   row: number,
   col: number,
   direction: Direction,
   directionPolarity: DirectionPolarity,
 ): CellPosition {
-  const gridSize: number = grid.length
+  const gridSize: number = grid.length;
 
   let newRow = row;
   let newCol = col;
@@ -342,12 +341,13 @@ export function computeWordLength(
   startRow: number,
   startCol: number,
   direction: Direction,
-  gridSize: number
 ): number {
   // If starting cell is black, length is 0
   if (grid[startRow][startCol].black) {
     return 0;
   }
+
+  const gridSize = grid.length;
 
   let count = 0;
   let r = startRow;
@@ -376,8 +376,8 @@ export function computeWordLength(
 export function getSingleWordLengthPattern(
   grid: CellData[][],
   word: Word,
-  gridSize: number
 ): string {
+  const gridSize = grid.length;
   const segments: number[] = [];
   const separators: string[] = [];
   let currentLength = 0;

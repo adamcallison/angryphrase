@@ -761,7 +761,7 @@ describe("getWordLengthPattern", () => {
   it("returns total length for a single word with no markers", () => {
     const grid = createEmptyGrid(5);
     const word = makeWord(0, 0, "across", 5, 1, "Clue");
-    expect(getWordLengthPattern(grid, word, [word], 5)).toBe("5");
+    expect(getWordLengthPattern(grid, word, [word])).toBe("5");
   });
 
   it("returns comma-separated lengths for a two-word chain", () => {
@@ -774,7 +774,7 @@ describe("getWordLengthPattern", () => {
       direction: "down",
     });
     const words = [wordA, wordB];
-    expect(getWordLengthPattern(grid, wordA, words, 5)).toBe("3,4");
+    expect(getWordLengthPattern(grid, wordA, words)).toBe("3,4");
   });
 
   it("returns comma-separated lengths for a three-word chain", () => {
@@ -791,7 +791,7 @@ describe("getWordLengthPattern", () => {
       direction: "down",
     });
     const words = [wordA, wordB, wordC];
-    expect(getWordLengthPattern(grid, wordA, words, 5)).toBe("3,4,5");
+    expect(getWordLengthPattern(grid, wordA, words)).toBe("3,4,5");
   });
 
   it("delegates to single-word pattern for non-chain words", () => {
@@ -799,12 +799,12 @@ describe("getWordLengthPattern", () => {
     // Word with a space marker
     grid[0][1] = { ...grid[0][1], spaceRight: true };
     const word = makeWord(0, 0, "across", 5, 1, "Clue");
-    expect(getWordLengthPattern(grid, word, [word], 5)).toBe("2, 3");
+    expect(getWordLengthPattern(grid, word, [word])).toBe("2, 3");
   });
 
   it("returns single length for non-chain head word with no nextWord", () => {
     const grid = createEmptyGrid(5);
     const word = makeWord(0, 0, "down", 4, 1, "Clue");
-    expect(getWordLengthPattern(grid, word, [word], 5)).toBe("4");
+    expect(getWordLengthPattern(grid, word, [word])).toBe("4");
   });
 });
