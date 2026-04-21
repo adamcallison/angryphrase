@@ -269,32 +269,17 @@ export function retreatPosition(
  * The `direction` parameter is part of the API but not used for movement calculation.
  */
 export function movePosition(
-  gridSize: number,
+  grid: CellData[][],
+  //gridSize: number,
   row: number,
   col: number,
   direction: Direction,
   directionPolarity: DirectionPolarity,
 ): CellPosition {
+  const gridSize: number = grid.length
+
   let newRow = row;
   let newCol = col;
-
-  //switch (arrowKey) {
-  //  case "ArrowUp":
-  //    newRow = row - 1;
-  //    break;
-  //  case "ArrowDown":
-  //    newRow = row + 1;
-  //    break;
-  //  case "ArrowLeft":
-  //    newCol = col - 1;
-  //    break;
-  //  case "ArrowRight":
-  //    newCol = col + 1;
-  //    break;
-  //  default:
-      // Unknown key — no movement
-  //    return { row, col };
-  //}
 
   const offsets: Record<Direction, Record<DirectionPolarity, [number, number]>> = {
     down:    { backward: [-1, 0], forward: [1, 0] },

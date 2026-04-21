@@ -762,42 +762,42 @@ describe("retreatPosition", () => {
 // ============================================================
 describe("movePosition", () => {
   it("ArrowUp moves row-1", () => {
-    const result = movePosition(5, 2, 3, "down", "backward");
+    const result = movePosition(createEmptyGrid(5), 2, 3, "down", "backward");
     expect(result).toEqual({ row: 1, col: 3 });
   });
 
   it("ArrowDown moves row+1", () => {
-    const result = movePosition(5, 2, 3, "down", "forward");
+    const result = movePosition(createEmptyGrid(5), 2, 3, "down", "forward");
     expect(result).toEqual({ row: 3, col: 3 });
   });
 
   it("ArrowLeft moves col-1", () => {
-    const result = movePosition(5, 2, 3, "across", "backward");
+    const result = movePosition(createEmptyGrid(5), 2, 3, "across", "backward");
     expect(result).toEqual({ row: 2, col: 2 });
   });
 
   it("ArrowRight moves col+1", () => {
-    const result = movePosition(5, 2, 3, "across", "forward");
+    const result = movePosition(createEmptyGrid(5), 2, 3, "across", "forward");
     expect(result).toEqual({ row: 2, col: 4 });
   });
 
   it("does not go below 0 for ArrowUp", () => {
-    const result = movePosition(5, 0, 3, "down", "backward");
+    const result = movePosition(createEmptyGrid(5), 0, 3, "down", "backward");
     expect(result).toEqual({ row: 0, col: 3 });
   });
 
   it("does not go below 0 for ArrowLeft", () => {
-    const result = movePosition(5, 2, 0, "across", "backward");
+    const result = movePosition(createEmptyGrid(5), 2, 0, "across", "backward");
     expect(result).toEqual({ row: 2, col: 0 });
   });
 
   it("does not go above gridSize-1 for ArrowDown", () => {
-    const result = movePosition(5, 4, 3, "down", "forward");
+    const result = movePosition(createEmptyGrid(5), 4, 3, "down", "forward");
     expect(result).toEqual({ row: 4, col: 3 });
   });
 
   it("does not go above gridSize-1 for ArrowRight", () => {
-    const result = movePosition(5, 2, 4, "across", "forward");
+    const result = movePosition(createEmptyGrid(5), 2, 4, "across", "forward");
     expect(result).toEqual({ row: 2, col: 4 });
   });
 });
