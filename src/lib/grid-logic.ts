@@ -332,6 +332,25 @@ export function isSelectableCell(
 }
 
 /**
+ * Returns the list of cell positions that a word occupies.
+ * For an across word, cells go left-to-right in the same row.
+ * For a down word, cells go top-to-bottom in the same column.
+ */
+export function getWordCells(word: Word): CellPosition[] {
+  const cells: CellPosition[] = [];
+  if (word.direction === "across") {
+    for (let c = word.startCol; c < word.startCol + word.length; c++) {
+      cells.push({ row: word.startRow, col: c });
+    }
+  } else {
+    for (let r = word.startRow; r < word.startRow + word.length; r++) {
+      cells.push({ row: r, col: word.startCol });
+    }
+  }
+  return cells;
+}
+
+/**
  * Counts contiguous white cells starting from (startRow, startCol)
  * in the given direction. Returns 0 if the starting cell is black.
  * For "across", counts cells going right (increasing col).

@@ -11,6 +11,7 @@ import {
   isSelectableCell,
   computeWordLength,
   getSingleWordLengthPattern,
+  getWordCells,
 } from "./grid-logic";
 import type { CellData, Word, CellPosition } from "./types";
 
@@ -995,5 +996,61 @@ describe("getSingleWordLengthPattern", () => {
     grid[0][3] = { ...grid[0][3], spaceRight: true };
     const word: Word = makeWord(0, 0, "across", 6, 1);
     expect(getSingleWordLengthPattern(grid, word)).toBe("2-2, 2");
+  });
+});
+
+// ============================================================
+// 12. getWordCells
+// ============================================================
+describe("getWordCells", () => {
+  it("returns horizontal cells for an across word", () => {
+    const word = makeWord(2, 3, "across", 4, 1);
+    const cells = getWordCells(word);
+    expect(cells).toEqual([
+      { row: 2, col: 3 },
+      { row: 2, col: 4 },
+      { row: 2, col: 5 },
+      { row: 2, col: 6 },
+    ]);
+  });
+
+  it("returns vertical cells for a down word", () => {
+    const word = makeWord(1, 4, "down", 3, 5);
+    const cells = getWordCells(word);
+    expect(cells).toEqual([
+      { row: 1, col: 4 },
+      { row: 2, col: 4 },
+      { row: 3, col: 4 },
+    ]);
+  });
+
+  it("returns a single cell for a length-1 word", () => {
+    const across = makeWord(0, 0, "across", 1, 1);
+    expect(getWordCells(across)).toEqual([{ row: 0, col: 0 }]);
+
+    const down = makeWord(5, 7, "down", 1, 3);
+    expect(getWordCells(down)).toEqual([{ row: 5, col: 7 }]);
+  });
+
+  it("returns cells starting at origin for word at (0,0)", () => {
+    const word = makeWord(0, 0, "across", 3, 1);
+    const cells = getWordCells(word);
+    expect(cells).toEqual([
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+      { row: 0, col: 2 },
+    ]);
+  });
+
+  it("returns correct cells for a long down word", () => {
+    const word = makeWord(0, 0, "down", 5, 1);
+    const cells = getWordCells(word);
+    expect(cells).toEqual([
+      { row: 0, col: 0 },
+      { row: 1, col: 0 },
+      { row: 2, col: 0 },
+      { row: 3, col: 0 },
+      { row: 4, col: 0 },
+    ]);
   });
 });

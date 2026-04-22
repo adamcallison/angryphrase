@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata, DirectionPolarity } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue, isGridBlank } from "$lib/clue-logic";
   import { canExportAsComplete, validateIncompletePuzzle } from "$lib/validation";
@@ -91,20 +91,7 @@
   let selectedWordId = $derived(selectedWord ? toWordId(selectedWord) : null);
 
   /** Cells of the currently selected word for highlighting. */
-  let highlightedCells = $derived.by(() => {
-    if (!selectedWord) return [];
-    const cells: CellPosition[] = [];
-    if (selectedWord.direction === "across") {
-      for (let c = selectedWord.startCol; c < selectedWord.startCol + selectedWord.length; c++) {
-        cells.push({ row: selectedWord.startRow, col: c });
-      }
-    } else {
-      for (let r = selectedWord.startRow; r < selectedWord.startRow + selectedWord.length; r++) {
-        cells.push({ row: r, col: selectedWord.startCol });
-      }
-    }
-    return cells;
-  });
+  let highlightedCells = $derived(selectedWord ? getWordCells(selectedWord) : []);
 
   /** Display letters: in builder, show the answers from the grid. */
   let displayLetters = $derived.by(() => {
