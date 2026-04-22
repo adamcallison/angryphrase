@@ -42,16 +42,19 @@
 
   // Toast
   let toastMessage = $state("");
-  let toastVisible = $state(false);
-  let toastTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  let toastTrigger = $state(0);
+
+  $effect(() => {
+    if (toastTrigger === 0) return;
+    const timer = setTimeout(() => {
+      toastTrigger = 0;
+    }, 3000);
+    return () => clearTimeout(timer);
+  });
 
   function showToast(message: string): void {
     toastMessage = message;
-    toastVisible = true;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toastVisible = false;
-    }, 3000);
+    toastTrigger++;
   }
 
   // === Derived state ===
@@ -815,5 +818,5 @@
     </div>
   </div>
 
-  <Toast message={toastMessage} visible={toastVisible} />
+  <Toast message={toastMessage} visible={toastTrigger > 0} />
 </div>
