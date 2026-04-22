@@ -265,12 +265,6 @@
       const newPos = movePosition(grid, row, col, selectedDirection, directionPolarity);
       if (isSelectableCell(grid, newPos.row, newPos.col)) {
         selectedCell = newPos;
-        // Update direction based on arrow key
-        if (key === "ArrowLeft" || key === "ArrowRight") {
-          selectedDirection = "across";
-        } else if (key === "ArrowUp" || key === "ArrowDown") {
-          selectedDirection = "down";
-        }
       }
       return;
     }
