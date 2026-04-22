@@ -12,7 +12,7 @@ import {
   computeWordLength,
   getSingleWordLengthPattern,
 } from "./grid-logic";
-import type { CellData, Word } from "./types";
+import type { CellData, Word, CellPosition } from "./types";
 
 // Helper: create a single white cell with default values
 function whiteCell(): CellData {
@@ -809,9 +809,9 @@ describe("isSelectableCell", () => {
   it("white cell that is part of a word is selectable", () => {
     const grid = createEmptyGrid(5);
     // All cells in a 5x5 all-white grid are part of words
-    expect(isSelectableCell(grid, 0, 0)).toBe(true);
-    expect(isSelectableCell(grid, 2, 2)).toBe(true);
-    expect(isSelectableCell(grid, 4, 4)).toBe(true);
+    expect(isSelectableCell(grid, ({row: 0, col: 0} as CellPosition))).toBe(true);
+    expect(isSelectableCell(grid, ({row: 2, col: 2} as CellPosition))).toBe(true);
+    expect(isSelectableCell(grid, ({row: 4, col: 4} as CellPosition))).toBe(true);
   });
 
   it("black cell is not selectable", () => {
@@ -819,23 +819,23 @@ describe("isSelectableCell", () => {
       [true, false],
       [false, false],
     ]);
-    expect(isSelectableCell(grid, 0, 0)).toBe(false);
+    expect(isSelectableCell(grid, ({row: 0, col: 0} as CellPosition))).toBe(false);
   });
 
   it("isolated single white cell is not selectable", () => {
     // W B W (each cell isolated)
     const grid = buildGrid([[false, true, false]]);
     // (0,0) is isolated - no adjacent white horizontal or vertical
-    expect(isSelectableCell(grid, 0, 0)).toBe(false);
-    expect(isSelectableCell(grid, 0, 2)).toBe(false);
+    expect(isSelectableCell(grid, ({row: 0, col: 0} as CellPosition))).toBe(false);
+    expect(isSelectableCell(grid, ({row: 0, col: 2} as CellPosition))).toBe(false);
   });
 
   it("out of bounds returns false", () => {
     const grid = createEmptyGrid(3);
-    expect(isSelectableCell(grid, -1, 0)).toBe(false);
-    expect(isSelectableCell(grid, 0, -1)).toBe(false);
-    expect(isSelectableCell(grid, 3, 0)).toBe(false);
-    expect(isSelectableCell(grid, 0, 3)).toBe(false);
+    expect(isSelectableCell(grid, ({row: -1, col: 0} as CellPosition))).toBe(false);
+    expect(isSelectableCell(grid, ({row: 0, col: -1} as CellPosition))).toBe(false);
+    expect(isSelectableCell(grid, ({row: 3, col: 0} as CellPosition))).toBe(false);
+    expect(isSelectableCell(grid, ({row: 0, col: 3} as CellPosition))).toBe(false);
   });
 
   it("cell part of across word only is selectable", () => {
@@ -846,8 +846,8 @@ describe("isSelectableCell", () => {
       [true, true],
     ]);
     // (0,0) is part of across word only
-    expect(isSelectableCell(grid, 0, 0)).toBe(true);
-    expect(isSelectableCell(grid, 0, 1)).toBe(true);
+    expect(isSelectableCell(grid, ({row: 0, col: 0} as CellPosition))).toBe(true);
+    expect(isSelectableCell(grid, ({row: 0, col: 1} as CellPosition))).toBe(true);
   });
 
   it("cell part of down word only is selectable", () => {
@@ -858,8 +858,8 @@ describe("isSelectableCell", () => {
       [false, true],
     ]);
     // (0,0) and (1,0) are in a down word only
-    expect(isSelectableCell(grid, 0, 0)).toBe(true);
-    expect(isSelectableCell(grid, 1, 0)).toBe(true);
+    expect(isSelectableCell(grid, ({row: 0, col: 0} as CellPosition))).toBe(true);
+    expect(isSelectableCell(grid, ({row: 1, col: 0} as CellPosition))).toBe(true);
   });
 });
 

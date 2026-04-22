@@ -161,11 +161,13 @@
     puzzleLoaded = true;
   }
 
-  function handleCellClick(row: number, col: number): void {
+  function handleCellClick(cellPosition: CellPosition): void {
     if (!puzzleLoaded) return;
+    const row = cellPosition.row
+    const col = cellPosition.col
     if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
     if (grid[row][col].black) return;
-    if (!isSelectableCell(grid, row, col)) return;
+    if (!isSelectableCell(grid, cellPosition)) return;
 
     if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
       // Clicking an already-selected cell: toggle direction if it's an intersection
@@ -263,7 +265,7 @@
       }
 
       const newPos = movePosition(grid, row, col, selectedDirection, directionPolarity);
-      if (isSelectableCell(grid, newPos.row, newPos.col)) {
+      if (isSelectableCell(grid, newPos)) {
         selectedCell = newPos;
       }
       return;

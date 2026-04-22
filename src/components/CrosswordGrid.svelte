@@ -21,7 +21,7 @@
     highlightedCells: CellPosition[];
     joinMode: boolean;
     reattachMode: boolean;
-    onCellClick: (row: number, col: number) => void;
+    onCellClick: (cellPosition: CellPosition) => void;
     onKeyDown: (key: string) => void;
   } = $props();
 
@@ -66,7 +66,8 @@
       const row = Number(rowAttr);
       const col = Number(colAttr);
       if (!isNaN(row) && !isNaN(col)) {
-        onCellClick(row, col);
+        const cellPosition = ({row: row, col: col} as CellPosition);
+        onCellClick(cellPosition);
       }
     }
   }

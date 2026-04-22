@@ -302,10 +302,11 @@ export function movePosition(
  */
 export function isSelectableCell(
   grid: CellData[][],
-  row: number,
-  col: number
+  cellPosition: CellPosition,
 ): boolean {
   const gridSize = grid.length;
+  const row = cellPosition.row
+  const col = cellPosition.col
 
   // Out of bounds
   if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {

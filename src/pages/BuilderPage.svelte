@@ -210,9 +210,10 @@
   // === Handlers ===
 
   // --- Design mode: toggle cell black/white ---
-  function handleCellClick(row: number, col: number): void {
+  function handleCellClick(cellPosition: CellPosition): void {
+    const row = cellPosition.row
+    const col = cellPosition.col
     if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
-    const cell = grid[row][col];
 
     // === Joint mode ===
     if (joinMode) {
@@ -245,7 +246,6 @@
 
       // If target had a non-empty clue, it needs to be displaced
       // joinWords already handles the nextWord, but we need to handle clue displacement
-      const sourceWord = words.find(w => toWordId(w) === joinSourceWordId);
       const previousTargetClue = words.find(w => toWordId(w) === targetId)?.clue;
       if (previousTargetClue && previousTargetClue.trim() !== "") {
         displacedClues = [...displacedClues, {
@@ -348,7 +348,7 @@
     } else {
       // Fill mode: select cell for typing
       if (grid[row][col].black) return;
-      if (!isSelectableCell(grid, row, col)) return;
+      if (!isSelectableCell(grid, cellPosition)) return;
 
       if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
         // Clicking already-selected cell: toggle direction if intersection
@@ -437,7 +437,7 @@
       }
 
       const newPos = movePosition(grid, row, col, selectedDirection, directionPolarity);
-      if (isSelectableCell(grid, newPos.row, newPos.col)) {
+      if (isSelectableCell(grid, newPos)) {
         selectedCell = newPos;
       }
       return;
