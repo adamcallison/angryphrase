@@ -13,7 +13,6 @@
   import CheckResultDisplay from "../components/CheckResultDisplay.svelte";
   import PlayerActions from "../components/PlayerActions.svelte";
   import ImportScreen from "../components/ImportScreen.svelte";
-  import Toast from "../components/Toast.svelte";
 
   // === State ===
 
@@ -31,20 +30,6 @@
   let checkResult = $state<CheckResult | null>(null);
 
   let importError = $state<string | null>(null);
-
-  // Toast state
-  let toastMessage = $state<string | null>(null);
-  let toastVisible = $state(false);
-  let toastTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-
-  function showToast(message: string): void {
-    toastMessage = message;
-    toastVisible = true;
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toastVisible = false;
-    }, 3000);
-  }
 
   // === Derived state ===
 
@@ -417,7 +402,5 @@
         </div>
       </div>
     </div>
-
-    <Toast message={toastMessage ?? ''} visible={toastVisible} />
   </div>
 {/if}
