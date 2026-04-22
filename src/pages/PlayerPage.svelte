@@ -108,18 +108,13 @@
 
   // === Auto-save ===
 
-  let saveTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-
   $effect(() => {
-    // Subscribe to playerLetters changes for auto-save
-    // We need to read playerLetters to track it, and also puzzleKey and gridSize for the save
     if (!puzzleLoaded) return;
     const _ = playerLetters;
     const _k = puzzleKey;
     const _g = gridSize;
 
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       const progress = {
         key: puzzleKey,
         gridSize: gridSize,
@@ -127,6 +122,7 @@
       };
       savePlayerProgress(puzzleKey, progress);
     }, 500);
+    return () => clearTimeout(timer);
   });
 
   // === Handlers ===
