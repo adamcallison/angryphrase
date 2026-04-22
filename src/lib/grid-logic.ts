@@ -351,6 +351,48 @@ export function getWordCells(word: Word): CellPosition[] {
 }
 
 /**
+ * Computes the result of clicking a cell in the crossword grid.
+ *
+ * - If the clicked cell is already selected and lies at an intersection
+ *   of two words, toggles the selection direction.
+ * - If the clicked cell is a new selection, auto-detects the direction
+ *   from the words at that cell: single word → use that direction;
+ *   intersection → prefer "across".
+ *
+ * Returns the new `selectedCell` and `selectedDirection`.
+ */
+export function handleCellSelection(
+  currentCell: CellPosition | null,
+  currentDirection: Direction,
+  words: Word[],
+  row: number,
+  col: number,
+): { selectedCell: CellPosition; selectedDirection: Direction } {
+  if (currentCell && currentCell.row === row && currentCell.col === col) {
+    // Clicking the already-selected cell
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    if (wordsAtCell.length > 1) {
+      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
+      if (otherWord) {
+        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
+      }
+    }
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
+  } else {
+    // Selecting a new cell
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    let newDirection: Direction = currentDirection;
+    if (wordsAtCell.length === 1) {
+      newDirection = wordsAtCell[0].direction;
+    } else if (wordsAtCell.length > 1) {
+      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
+      newDirection = hasAcross ? "across" : "down";
+    }
+    return { selectedCell: { row, col }, selectedDirection: newDirection };
+  }
+}
+
+/**
  * Counts contiguous white cells starting from (startRow, startCol)
  * in the given direction. Returns 0 if the starting cell is black.
  * For "across", counts cells going right (increasing col).

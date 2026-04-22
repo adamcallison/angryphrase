@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, DirectionPolarity, PlayerLetters, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -156,30 +156,9 @@
     if (grid[row][col].black) return;
     if (!isSelectableCell(grid, cellPosition)) return;
 
-    if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-      // Clicking an already-selected cell: toggle direction if it's an intersection
-      const wordsAtCell = getWordsAtCell(words, row, col);
-      if (wordsAtCell.length > 1) {
-        // Intersection cell: toggle direction
-        const currentDir = selectedDirection;
-        const otherWord = wordsAtCell.find((w) => w.direction !== currentDir);
-        if (otherWord) {
-          selectedDirection = otherWord.direction;
-        }
-      }
-    } else {
-      // Selecting a new cell
-      const wordsAtCell = getWordsAtCell(words, row, col);
-      if (wordsAtCell.length === 1) {
-        // Cell is part of only one word: use that direction
-        selectedDirection = wordsAtCell[0].direction;
-      } else if (wordsAtCell.length > 1) {
-        // Intersection: default to across
-        const hasAcross = wordsAtCell.some((w) => w.direction === "across");
-        selectedDirection = hasAcross ? "across" : "down";
-      }
-      selectedCell = { row, col };
-    }
+    const result = handleCellSelection(selectedCell, selectedDirection, words, row, col);
+    selectedCell = result.selectedCell;
+    selectedDirection = result.selectedDirection;
 
     // Clear check result when user interacts
     checkResult = null;

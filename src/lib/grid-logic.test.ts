@@ -12,6 +12,7 @@ import {
   computeWordLength,
   getSingleWordLengthPattern,
   getWordCells,
+  handleCellSelection,
 } from "./grid-logic";
 import type { CellData, Word, CellPosition } from "./types";
 
@@ -1052,5 +1053,151 @@ describe("getWordCells", () => {
       { row: 3, col: 0 },
       { row: 4, col: 0 },
     ]);
+  });
+});
+
+// ============================================================
+// 13. handleCellSelection
+// ============================================================
+describe("handleCellSelection", () => {
+  // 3x3 all-white grid: 3 across words (row 0, 1, 2) + 3 down words (col 0, 1, 2)
+  // Cell (0,0): starts across #1 and down #1 → intersection
+  // Cell (0,1): part of across #1 and down #2 → intersection
+  // Cell (1,0): part of across #2 and down #1 → intersection
+  // Cell (1,1): part of across #2 and down #2 → intersection
+  const grid = createEmptyGrid(3);
+  const derivedWords = deriveWords(grid);
+  const words: Word[] = derivedWords.map((dw) => ({
+    ...dw,
+    clue: "",
+    nextWord: null,
+  }));
+
+  it("clicking already-selected intersection cell toggles direction to down", () => {
+    const result = handleCellSelection(
+      { row: 0, col: 0 },
+      "across",
+      words,
+      0, 0,
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("down");
+  });
+
+  it("clicking already-selected intersection cell toggles direction to across", () => {
+    const result = handleCellSelection(
+      { row: 0, col: 0 },
+      "down",
+      words,
+      0, 0,
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking already-selected non-intersection cell keeps same direction", () => {
+    // Cell that's in only one word (across-only)
+    // Use a square 3x3 grid with row 0 across word (0,0) and col 0 down word (0,0)
+    // Cell (0,2) is in the across word AND the down word at col 2, so it's an intersection.
+    // Instead, construct words directly: one across word at (0,0) length 3
+    const wordsAtSingle: Word[] = [makeWord(0, 0, "across", 3, 1)];
+    // Cell (0,2) is only in the across word
+    const result = handleCellSelection(
+      { row: 0, col: 2 },
+      "across",
+      wordsAtSingle,
+      0, 2,
+    );
+    // No other direction to toggle to
+    expect(result.selectedCell).toEqual({ row: 0, col: 2 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new cell in a single word auto-detects that direction", () => {
+    // One across word at (0,0) length 3 — cell (0,1) is only in this across word
+    const wordsAtSingle: Word[] = [makeWord(0, 0, "across", 3, 1)];
+    // Currently at (0,0) in "down" mode, click (0,2) which is in the across word only
+    const result = handleCellSelection(
+      { row: 0, col: 0 },
+      "down",
+      wordsAtSingle,
+      0, 2,
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 2 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new intersection cell defaults to across", () => {
+    // In the 3x3 grid, cell (1,1) is at an intersection of across and down
+    // Currently in "down" mode
+    const result = handleCellSelection(
+      null,
+      "down",
+      words,
+      1, 1,
+    );
+    expect(result.selectedCell).toEqual({ row: 1, col: 1 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new intersection cell defaults to across even from across", () => {
+    // Same intersection, already in "across" mode — should still pick across
+    const result = handleCellSelection(
+      null,
+      "across",
+      words,
+      1, 1,
+    );
+    expect(result.selectedCell).toEqual({ row: 1, col: 1 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new cell with no words keeps current direction", () => {
+    // Click on a cell that's not part of any word (isolated single cell)
+    const isolatedGrid = buildGrid([
+      [false, true, false],
+      [true, true, true],
+      [true, true, true],
+    ]);
+    const isolatedWords = deriveWords(isolatedGrid).map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+    // Cell (0,0) is isolated — no words contain it
+    const result = handleCellSelection(
+      null,
+      "across",
+      isolatedWords,
+      0, 0,
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    // No words to detect direction from, so keeps current direction
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new cell when no cell was previously selected", () => {
+    const result = handleCellSelection(
+      null,
+      "across",
+      words,
+      0, 0,
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    // (0,0) is an intersection → defaults to across
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a different cell selects it with auto-detected direction", () => {
+    // Currently at (0,0) going across, click (2,0) which is an intersection
+    const result = handleCellSelection(
+      { row: 0, col: 0 },
+      "across",
+      words,
+      2, 0,
+    );
+    expect(result.selectedCell).toEqual({ row: 2, col: 0 });
+    // (2,0) is an intersection of across and down → defaults to across
+    expect(result.selectedDirection).toBe("across");
   });
 });

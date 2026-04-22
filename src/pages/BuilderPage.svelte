@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata, DirectionPolarity } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue, isGridBlank } from "$lib/clue-logic";
   import { canExportAsComplete, validateIncompletePuzzle } from "$lib/validation";
@@ -337,27 +337,9 @@
       if (grid[row][col].black) return;
       if (!isSelectableCell(grid, cellPosition)) return;
 
-      if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-        // Clicking already-selected cell: toggle direction if intersection
-        const wordsAtCell = getWordsAtCell(words, row, col);
-        if (wordsAtCell.length > 1) {
-          const currentDir = selectedDirection;
-          const otherWord = wordsAtCell.find((w) => w.direction !== currentDir);
-          if (otherWord) {
-            selectedDirection = otherWord.direction;
-          }
-        }
-      } else {
-        // Selecting new cell
-        selectedCell = { row, col };
-        const wordsAtCell = getWordsAtCell(words, row, col);
-        if (wordsAtCell.length === 1) {
-          selectedDirection = wordsAtCell[0].direction;
-        } else if (wordsAtCell.length > 1) {
-          const hasAcross = wordsAtCell.some((w) => w.direction === "across");
-          selectedDirection = hasAcross ? "across" : "down";
-        }
-      }
+      const result = handleCellSelection(selectedCell, selectedDirection, words, row, col);
+      selectedCell = result.selectedCell;
+      selectedDirection = result.selectedDirection;
     }
   }
 
