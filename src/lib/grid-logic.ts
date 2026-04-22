@@ -393,6 +393,53 @@ export function handleCellSelection(
 }
 
 /**
+ * Handles an arrow key press for crossword navigation.
+ *
+ * Maps the arrow key to a new direction and moves the cursor one cell
+ * in that direction. Returns the new direction and cell position (which
+ * may be the same as the input if the target cell is not selectable or
+ * out of bounds).
+ *
+ * Returns null if the key is not an arrow key.
+ */
+export function handleArrowKey(
+  key: string,
+  grid: CellData[][],
+  row: number,
+  col: number,
+): { direction: Direction; cell: CellPosition } | null {
+  let newDirection: Direction;
+  let polarity: DirectionPolarity;
+
+  switch (key) {
+    case "ArrowUp":
+      newDirection = "down";
+      polarity = "backward";
+      break;
+    case "ArrowDown":
+      newDirection = "down";
+      polarity = "forward";
+      break;
+    case "ArrowLeft":
+      newDirection = "across";
+      polarity = "backward";
+      break;
+    case "ArrowRight":
+      newDirection = "across";
+      polarity = "forward";
+      break;
+    default:
+      return null;
+  }
+
+  const newPos = movePosition(grid, row, col, newDirection, polarity);
+  if (isSelectableCell(grid, newPos)) {
+    return { direction: newDirection, cell: newPos };
+  }
+  return { direction: newDirection, cell: { row, col } };
+}
+
+/**
  * Counts contiguous white cells starting from (startRow, startCol)
  * in the given direction. Returns 0 if the starting cell is black.
  * For "across", counts cells going right (increasing col).

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, DirectionPolarity, PlayerLetters, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, PlayerLetters, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -212,27 +212,10 @@
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
-
-      let directionPolarity: DirectionPolarity;
-      switch (key) {
-        case "ArrowUp":
-          [selectedDirection, directionPolarity] = ["down", "backward"]
-          break;
-        case "ArrowDown":
-          [selectedDirection, directionPolarity] = ["down", "forward"]
-          break;
-        case "ArrowLeft":
-          [selectedDirection, directionPolarity] = ["across", "backward"]
-          break;
-        case "ArrowRight":
-          [selectedDirection, directionPolarity] = ["across", "forward"]
-        default:
-          directionPolarity = "forward"
-      }
-
-      const newPos = movePosition(grid, row, col, selectedDirection, directionPolarity);
-      if (isSelectableCell(grid, newPos)) {
-        selectedCell = newPos;
+      const result = handleArrowKey(key, grid, row, col);
+      if (result) {
+        selectedDirection = result.direction;
+        selectedCell = result.cell;
       }
       return;
     }

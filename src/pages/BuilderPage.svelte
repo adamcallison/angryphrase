@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata, DirectionPolarity } from "$lib/types";
+  import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, advancePosition, retreatPosition, movePosition, isSelectableCell } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue, isGridBlank } from "$lib/clue-logic";
   import { canExportAsComplete, validateIncompletePuzzle } from "$lib/validation";
@@ -387,27 +387,10 @@
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
-
-      let directionPolarity: DirectionPolarity;
-      switch (key) {
-        case "ArrowUp":
-          [selectedDirection, directionPolarity] = ["down", "backward"]
-          break;
-        case "ArrowDown":
-          [selectedDirection, directionPolarity] = ["down", "forward"]
-          break;
-        case "ArrowLeft":
-          [selectedDirection, directionPolarity] = ["across", "backward"]
-          break;
-        case "ArrowRight":
-          [selectedDirection, directionPolarity] = ["across", "forward"]
-        default:
-          directionPolarity = "forward"
-      }
-
-      const newPos = movePosition(grid, row, col, selectedDirection, directionPolarity);
-      if (isSelectableCell(grid, newPos)) {
-        selectedCell = newPos;
+      const result = handleArrowKey(key, grid, row, col);
+      if (result) {
+        selectedDirection = result.direction;
+        selectedCell = result.cell;
       }
       return;
     }
