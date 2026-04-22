@@ -131,13 +131,10 @@
 
   // === Auto-save ===
 
-  let saveTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-
   $effect(() => {
     // Depend on all state that should trigger auto-save
     const _ = [key, gridSize, grid, wordMetadata, displacedClues, title, author];
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       const state = {
         key,
         gridSize,
@@ -156,6 +153,7 @@
       };
       saveBuilderState(state);
     }, 500);
+    return () => clearTimeout(timer);
   });
 
   // === Load state on mount ===
