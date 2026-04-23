@@ -85,23 +85,6 @@
   /** Cells of the currently selected word for highlighting. */
   let highlightedCells = $derived(selectedWord ? getWordCells(selectedWord) : []);
 
-  /** Display letters: in builder, show the answers from the grid. */
-  let displayLetters = $derived.by(() => {
-    const letters: (string | null)[][] = [];
-    for (let r = 0; r < gridSize; r++) {
-      const row: (string | null)[] = [];
-      for (let c = 0; c < gridSize; c++) {
-        if (grid[r] && grid[r][c] && !grid[r][c].black) {
-          row.push(grid[r][c].puzzleLetter);
-        } else {
-          row.push(null);
-        }
-      }
-      letters.push(row);
-    }
-    return letters;
-  });
-
   /** Whether the grid is blank (for grid size changes). */
   let gridIsBlank = $derived(isGridBlank(grid, words, displacedClues));
 
@@ -708,7 +691,7 @@
         <CrosswordGrid
           {grid}
           {words}
-          {displayLetters}
+          letterSource="puzzle"
           {selectedCell}
           {highlightedCells}
           reattachMode={interaction.kind === "reattach"}

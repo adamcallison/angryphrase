@@ -14,6 +14,7 @@ import {
   getWordCells,
   handleCellSelection,
   handleArrowKey,
+  deriveDisplayLetters,
 } from "./grid-logic";
 import type { CellData, Word, CellPosition } from "./types";
 
@@ -1276,5 +1277,77 @@ describe("handleArrowKey", () => {
     const result = handleArrowKey("ArrowRight", grid, 0, 0);
     expect(result!.direction).toBe("across"); // direction changed
     expect(result!.cell).toEqual({ row: 0, col: 1 }); // moved right
+  });
+});
+
+// ============================================================
+// deriveDisplayLetters
+// ============================================================
+describe("deriveDisplayLetters", () => {
+  it("returns null for black cells", () => {
+    const grid = createEmptyGrid(2);
+    grid[0][0] = { black: true, puzzleLetter: null, playerLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false };
+
+    const result = deriveDisplayLetters(grid, "puzzle");
+    expect(result[0][0]).toBeNull();
+  });
+
+  it("returns puzzleLetter when source is puzzle", () => {
+    const grid = createEmptyGrid(2);
+    grid[0][0] = { ...grid[0][0], puzzleLetter: "A", playerLetter: "B" };
+
+    const result = deriveDisplayLetters(grid, "puzzle");
+    expect(result[0][0]).toBe("A");
+  });
+
+  it("returns playerLetter when source is player", () => {
+    const grid = createEmptyGrid(2);
+    grid[0][0] = { ...grid[0][0], puzzleLetter: "A", playerLetter: "B" };
+
+    const result = deriveDisplayLetters(grid, "player");
+    expect(result[0][0]).toBe("B");
+  });
+
+  it("returns null for white cell with null letter", () => {
+    const grid = createEmptyGrid(1);
+
+    const result = deriveDisplayLetters(grid, "puzzle");
+    expect(result[0][0]).toBeNull();
+  });
+
+  it("returns null for white cell with null playerLetter", () => {
+    const grid = createEmptyGrid(1);
+
+    const result = deriveDisplayLetters(grid, "player");
+    expect(result[0][0]).toBeNull();
+  });
+
+  it("handles a mixed grid correctly", () => {
+    const grid = createEmptyGrid(3);
+    // Row 0: A B C (puzzle), X Y Z (player)
+    grid[0][0] = { ...grid[0][0], puzzleLetter: "A", playerLetter: "X" };
+    grid[0][1] = { ...grid[0][1], puzzleLetter: "B", playerLetter: null };
+    grid[0][2] = { ...grid[0][2], puzzleLetter: "C", playerLetter: "Z" };
+    // Row 1: black, D, white-empty
+    grid[1][0] = { black: true, puzzleLetter: null, playerLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false };
+    grid[1][1] = { ...grid[1][1], puzzleLetter: "D", playerLetter: "W" };
+    // Row 2: null puzzle, E, black
+    grid[2][0] = { ...grid[2][0], puzzleLetter: null, playerLetter: "Q" };
+    grid[2][1] = { ...grid[2][1], puzzleLetter: "E", playerLetter: null };
+    grid[2][2] = { black: true, puzzleLetter: null, playerLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false };
+
+    const puzzleLetters = deriveDisplayLetters(grid, "puzzle");
+    expect(puzzleLetters).toEqual([
+      ["A", "B", "C"],
+      [null, "D", null],
+      [null, "E", null],
+    ]);
+
+    const playerResult = deriveDisplayLetters(grid, "player");
+    expect(playerResult).toEqual([
+      ["X", null, "Z"],
+      [null, "W", null],
+      ["Q", null, null],
+    ]);
   });
 });

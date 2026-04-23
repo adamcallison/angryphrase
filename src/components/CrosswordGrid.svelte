@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { CellData, Word, CellPosition } from "../lib/types";
-  import { assignNumbers } from "../lib/grid-logic";
+  import { assignNumbers, deriveDisplayLetters } from "../lib/grid-logic";
   import Cell from "./Cell.svelte";
 
   let {
     grid,
     words,
-    displayLetters,
+    letterSource,
     selectedCell,
     highlightedCells,
     reattachMode,
@@ -15,7 +15,7 @@
   }: {
     grid: CellData[][];
     words: Word[];
-    displayLetters: (string | null)[][];
+    letterSource: "puzzle" | "player";
     selectedCell: CellPosition | null;
     highlightedCells: CellPosition[];
     reattachMode: boolean;
@@ -25,6 +25,9 @@
 
   // Derive cell numbers from words
   let numberedCells = $derived(assignNumbers(words));
+
+  // Derive display letters from grid based on letterSource
+  let displayLetters = $derived(deriveDisplayLetters(grid, letterSource));
 
   // Create a Set of highlighted cell keys for efficient O(1) lookup
   let highlightedSet = $derived(

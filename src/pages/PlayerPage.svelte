@@ -24,16 +24,13 @@
   let title = $state("");
   let author = $state("");
 
-let selectedCell = $state<CellPosition | null>(null);
-let selectedDirection = $state<Direction>("across");
-let checkResult = $state<CheckResult | null>(null);
+  let selectedCell = $state<CellPosition | null>(null);
+  let selectedDirection = $state<Direction>("across");
+  let checkResult = $state<CheckResult | null>(null);
 
   let importError = $state<string | null>(null);
 
   // === Derived state ===
-
-  let derivedWords = $derived(deriveWords(grid));
-
   /** The currently selected word (based on selectedCell and selectedDirection). */
   let selectedWord = $derived.by(() => {
     if (!selectedCell) return null;
@@ -47,27 +44,6 @@ let checkResult = $state<CheckResult | null>(null);
 
   /** Cells of the currently selected word for highlighting. */
   let highlightedCells = $derived(selectedWord ? getWordCells(selectedWord) : []);
-
-  /** Display letters: playerLetter for filled cells, null for empty. */
-  let displayLetters = $derived.by(() => {
-    const letters: (string | null)[][] = [];
-    for (let r = 0; r < gridSize; r++) {
-      const row: (string | null)[] = [];
-      for (let c = 0; c < gridSize; c++) {
-        if (grid[r] && grid[r][c]) {
-          if (grid[r][c].black) {
-            row.push(null);
-          } else {
-            row.push(grid[r][c].playerLetter ?? null);
-          }
-        } else {
-          row.push(null);
-        }
-      }
-      letters.push(row);
-    }
-    return letters;
-  });
 
   /** Selected clue info for ActiveClueDisplay. */
   let clueNumber = $derived(selectedWord?.number ?? null);
@@ -315,7 +291,7 @@ let checkResult = $state<CheckResult | null>(null);
           <CrosswordGrid
             {grid}
             {words}
-            displayLetters={displayLetters}
+            letterSource="player"
             {selectedCell}
             {highlightedCells}
             reattachMode={false}

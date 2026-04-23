@@ -25,6 +25,30 @@ export function createEmptyGrid(size: number): CellData[][] {
 }
 
 /**
+ * Derives a 2D array of display letters from the grid.
+ * Black cells produce null; white cells produce the letter from the
+ * specified source field ("puzzleLetter" or "playerLetter").
+ */
+export function deriveDisplayLetters(
+  grid: CellData[][],
+  letterSource: "puzzle" | "player",
+): (string | null)[][] {
+  const letters: (string | null)[][] = [];
+  for (let r = 0; r < grid.length; r++) {
+    const row: (string | null)[] = [];
+    for (let c = 0; c < grid[r].length; c++) {
+      if (grid[r][c].black) {
+        row.push(null);
+      } else {
+        row.push(letterSource === "puzzle" ? grid[r][c].puzzleLetter : grid[r][c].playerLetter);
+      }
+    }
+    letters.push(row);
+  }
+  return letters;
+}
+
+/**
  * Detects all words in the grid: maximal contiguous white-cell sequences
  * of length ≥ 2 in both the across and down directions.
  * Returns DerivedWord objects with number=0 (assignNumbers sets actual numbers).

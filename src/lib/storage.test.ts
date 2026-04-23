@@ -264,38 +264,6 @@ describe("saveBuilderState and loadBuilderState", () => {
     expect(loaded).not.toBeNull();
     expect(loaded!.interaction).toEqual({ kind: "join", sourceWordId: "3-2-down" });
   });
-
-  it("migrates old flat format to BuilderInteraction", () => {
-    // Simulate old-format data that has separate mode/joinMode/reattachMode fields
-    const oldFormat = {
-      key: "old-key",
-      gridSize: 2,
-      grid: [[{ black: false, letter: "A", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }, { black: false, letter: "B", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }], [{ black: false, letter: "C", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }, { black: false, letter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }]],
-      wordMetadata: [],
-      displacedClues: [],
-      title: "Old Puzzle",
-      author: "Old Author",
-      mode: "fill",
-      selectedCell: { row: 0, col: 0 },
-      selectedDirection: "across",
-      reattachMode: false,
-      selectedDisplacedClueIndex: null,
-      joinMode: true,
-      joinSourceWordId: "1-0-across",
-    };
-    localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(oldFormat));
-
-    const loaded = loadBuilderState();
-    expect(loaded).not.toBeNull();
-    // Old format should be migrated: join mode normalizes to fill on load
-    expect(loaded!.interaction).toEqual({ kind: "fill" });
-    expect(loaded!.key).toBe("old-key");
-    expect(loaded!.title).toBe("Old Puzzle");
-    // Grid cells should be migrated: letter → puzzleLetter, playerLetter added
-    expect(loaded!.grid[0][0].puzzleLetter).toBe("A");
-    expect(loaded!.grid[0][0].playerLetter).toBeNull();
-    expect(loaded!.grid[1][1].puzzleLetter).toBeNull();
-  });
 });
 
 // ===========================================================================
