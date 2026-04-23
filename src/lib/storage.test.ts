@@ -9,7 +9,7 @@ import {
   clearPlayerProgress,
   generateUniqueKey,
 } from "./storage";
-import type { BuilderState, PlayerProgress, CellData, WordMetadata } from "./types";
+import type { BuilderInteraction, BuilderState, PlayerProgress, CellData, WordMetadata } from "./types";
 import { BUILDER_STORAGE_KEY, PLAYER_STORAGE_KEY_PREFIX } from "./constants";
 
 // ---------------------------------------------------------------------------
@@ -80,13 +80,9 @@ function makeBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
     displacedClues: overrides.displacedClues ?? [],
     title: overrides.title ?? "Test Puzzle",
     author: overrides.author ?? "Test Author",
-    mode: overrides.mode ?? "fill",
+    interaction: overrides.interaction ?? { kind: "fill" },
     selectedCell: overrides.selectedCell !== undefined ? overrides.selectedCell : { row: 0, col: 0 },
     selectedDirection: overrides.selectedDirection ?? "across",
-    reattachMode: overrides.reattachMode ?? false,
-    selectedDisplacedClueIndex: overrides.selectedDisplacedClueIndex ?? null,
-    joinMode: overrides.joinMode ?? false,
-    joinSourceWordId: overrides.joinSourceWordId ?? null,
   };
 }
 
@@ -135,13 +131,9 @@ describe("saveBuilderState and loadBuilderState", () => {
     expect(loaded!.gridSize).toBe(2);
     expect(loaded!.title).toBe("Test Puzzle");
     expect(loaded!.author).toBe("Test Author");
-    expect(loaded!.mode).toBe("fill");
+    expect(loaded!.interaction).toEqual({ kind: "fill" });
     expect(loaded!.selectedCell).toEqual({ row: 0, col: 0 });
     expect(loaded!.selectedDirection).toBe("across");
-    expect(loaded!.reattachMode).toBe(false);
-    expect(loaded!.selectedDisplacedClueIndex).toBeNull();
-    expect(loaded!.joinMode).toBe(false);
-    expect(loaded!.joinSourceWordId).toBeNull();
   });
 
   it("preserves grid data in round-trip", () => {
@@ -242,38 +234,62 @@ describe("saveBuilderState and loadBuilderState", () => {
   });
 
   it("handles design mode", () => {
-    const state = makeBuilderState({ mode: "design" });
+    const state = makeBuilderState({ interaction: { kind: "design" } });
     saveBuilderState(state);
 
     const loaded = loadBuilderState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.mode).toBe("design");
+    expect(loaded!.interaction).toEqual({ kind: "design" });
   });
 
   it("handles active reattach mode", () => {
     const state = makeBuilderState({
-      reattachMode: true,
-      selectedDisplacedClueIndex: 2,
+      interaction: { kind: "reattach", clueIndex: 2 },
     });
     saveBuilderState(state);
 
     const loaded = loadBuilderState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.reattachMode).toBe(true);
-    expect(loaded!.selectedDisplacedClueIndex).toBe(2);
+    expect(loaded!.interaction).toEqual({ kind: "reattach", clueIndex: 2 });
   });
 
   it("handles active join mode", () => {
     const state = makeBuilderState({
-      joinMode: true,
-      joinSourceWordId: "3-2-down",
+      interaction: { kind: "join", sourceWordId: "3-2-down" },
     });
     saveBuilderState(state);
 
     const loaded = loadBuilderState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.joinMode).toBe(true);
-    expect(loaded!.joinSourceWordId).toBe("3-2-down");
+    expect(loaded!.interaction).toEqual({ kind: "join", sourceWordId: "3-2-down" });
+  });
+
+  it("migrates old flat format to BuilderInteraction", () => {
+    // Simulate old-format data that has separate mode/joinMode/reattachMode fields
+    const oldFormat = {
+      key: "old-key",
+      gridSize: 2,
+      grid: [[{ black: false, letter: "A", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }, { black: false, letter: "B", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }], [{ black: false, letter: "C", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }, { black: false, letter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }]],
+      wordMetadata: [],
+      displacedClues: [],
+      title: "Old Puzzle",
+      author: "Old Author",
+      mode: "fill",
+      selectedCell: { row: 0, col: 0 },
+      selectedDirection: "across",
+      reattachMode: false,
+      selectedDisplacedClueIndex: null,
+      joinMode: true,
+      joinSourceWordId: "1-0-across",
+    };
+    localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(oldFormat));
+
+    const loaded = loadBuilderState();
+    expect(loaded).not.toBeNull();
+    // Old format should be migrated: join mode normalizes to fill on load
+    expect(loaded!.interaction).toEqual({ kind: "fill" });
+    expect(loaded!.key).toBe("old-key");
+    expect(loaded!.title).toBe("Old Puzzle");
   });
 });
 

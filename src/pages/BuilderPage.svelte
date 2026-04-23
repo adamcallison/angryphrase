@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
+  import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
@@ -28,17 +28,9 @@
   let author = $state("");
 
   // === UI state ===
-  let mode = $state<"design" | "fill">("design");
+  let interaction = $state<BuilderInteraction>({ kind: "design" });
   let selectedCell = $state<CellPosition | null>(null);
   let selectedDirection = $state<Direction>("across");
-
-  // Reattach mode
-  let reattachMode = $state(false);
-  let selectedDisplacedClueIndex = $state<number | null>(null);
-
-  // Join mode
-  let joinMode = $state(false);
-  let joinSourceWordId = $state<WordId | null>(null);
 
   // Toast
   let toastMessage = $state("");
@@ -119,13 +111,20 @@
   /** Export readiness. */
   let exportCheck = $derived(canExportAsComplete(grid, words));
 
+  // === Derived mode helpers (for template bindings) ===
+
+  /** Base mode for ModeToggle and conditional rendering. */
+  let baseMode = $derived<"design" | "fill">(
+    interaction.kind === "design" ? "design" : "fill"
+  );
+
   // === Auto-save ===
 
   $effect(() => {
     // Depend on all state that should trigger auto-save
-    const _ = [key, gridSize, grid, wordMetadata, displacedClues, title, author];
+    const _ = [key, gridSize, grid, wordMetadata, displacedClues, title, author, interaction];
     const timer = setTimeout(() => {
-      const state = {
+      const state: BuilderState = {
         key,
         gridSize,
         grid,
@@ -133,13 +132,9 @@
         displacedClues,
         title,
         author,
-        mode,
+        interaction,
         selectedCell,
         selectedDirection,
-        reattachMode,
-        selectedDisplacedClueIndex,
-        joinMode,
-        joinSourceWordId,
       };
       saveBuilderState(state);
     }, 500);
@@ -162,7 +157,8 @@
       displacedClues = saved.displacedClues;
       title = saved.title;
       author = saved.author;
-      mode = saved.mode;
+      // Always restore to the base mode — don't re-enter join/reattach sub-modes
+      interaction = saved.interaction.kind === "design" ? { kind: "design" } : { kind: "fill" };
       selectedCell = saved.selectedCell;
       selectedDirection = saved.selectedDirection;
     }
@@ -172,13 +168,8 @@
 
   function handleGlobalKeyDown(e: KeyboardEvent): void {
     if (e.key === "Escape") {
-      if (joinMode) {
-        joinMode = false;
-        joinSourceWordId = null;
-      }
-      if (reattachMode) {
-        reattachMode = false;
-        selectedDisplacedClueIndex = null;
+      if (interaction.kind === "join" || interaction.kind === "reattach") {
+        interaction = { kind: "fill" };
       }
     }
   }
@@ -196,156 +187,163 @@
 
   // === Handlers ===
 
-  // --- Design mode: toggle cell black/white ---
   function handleCellClick(cellPosition: CellPosition): void {
-    const row = cellPosition.row
-    const col = cellPosition.col
-    if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
-
-    // === Joint mode ===
-    if (joinMode) {
-      // Find the word at this cell in the current direction (or the only direction)
-      const wordsAtCell = getWordsAtCell(words, row, col);
-      if (wordsAtCell.length === 0) {
-        // Clicked on an isolated cell or black cell — cancel join mode
-        joinMode = false;
-        joinSourceWordId = null;
+    switch (interaction.kind) {
+      case "join":
+        handleJoinModeClick(cellPosition, interaction.sourceWordId);
         return;
-      }
-
-      let targetWord: Word;
-      if (wordsAtCell.length === 1) {
-        targetWord = wordsAtCell[0];
-      } else {
-        // Intersection — use selectedDirection or default to across
-        const dirWord = getWordInDirection(words, row, col, selectedDirection);
-        targetWord = dirWord ?? wordsAtCell[0];
-      }
-
-      const targetId = toWordId(targetWord);
-
-      // Validate join
-      const result = joinWords(words, joinSourceWordId!, targetId);
-      if (result === null) {
-        showToast("Cannot join these words. Check that neither word is already in a chain.");
+      case "reattach":
+        handleReattachModeClick(cellPosition, interaction.clueIndex);
         return;
-      }
+      case "design":
+        handleDesignModeClick(cellPosition);
+        return;
+      case "fill":
+        handleFillModeClick(cellPosition);
+        return;
+    }
+  }
 
-      // If target had a non-empty clue, it needs to be displaced
-      // joinWords already handles the nextWord, but we need to handle clue displacement
-      const previousTargetClue = words.find(w => toWordId(w) === targetId)?.clue;
-      if (previousTargetClue && previousTargetClue.trim() !== "") {
-        displacedClues = [...displacedClues, {
-          id: crypto.randomUUID(),
-          clue: previousTargetClue,
-          direction: targetWord.direction,
-        }];
-      }
-
-      // Update metadata from the joined words
-      syncMetadataFromWords(result);
-      joinMode = false;
-      joinSourceWordId = null;
+  // --- Join mode: select target word to chain ---
+  function handleJoinModeClick(cellPosition: CellPosition, sourceWordId: WordId): void {
+    const { row, col } = cellPosition;
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    if (wordsAtCell.length === 0) {
+      // Clicked on an isolated cell or black cell — cancel join mode
+      interaction = { kind: "fill" };
       return;
     }
 
-    // === Reattach mode ===
-    if (reattachMode && selectedDisplacedClueIndex !== null) {
-      const wordsAtCell = getWordsAtCell(words, row, col);
-      if (wordsAtCell.length === 0) {
-        // Clicked on a black cell or isolated cell — cancel reattach mode
-        reattachMode = false;
-        selectedDisplacedClueIndex = null;
-        return;
-      }
-
-      let targetWord: Word;
-      if (wordsAtCell.length === 1) {
-        targetWord = wordsAtCell[0];
-      } else {
-        const dirWord = getWordInDirection(words, row, col, selectedDirection);
-        targetWord = dirWord ?? wordsAtCell[0];
-      }
-
-      const targetId = toWordId(targetWord);
-      const result = reattachClue(words, displacedClues, selectedDisplacedClueIndex, targetId);
-
-      if (result === null) {
-        showToast("This word already has a clue.");
-        return;
-      }
-
-      // Update state from reattachClue result
-      syncMetadataFromWords(result.words);
-      displacedClues = result.displacedClues;
-      reattachMode = false;
-      selectedDisplacedClueIndex = null;
-      return;
-    }
-
-    if (mode === "design") {
-      // Toggle cell black/white
-      const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-      const wasBlack = newGrid[row][col].black;
-
-      if (wasBlack) {
-        // Toggling black → white: make it white with default values
-        newGrid[row][col] = {
-          black: false,
-          letter: null,
-          spaceRight: false,
-          spaceBottom: false,
-          hyphenRight: false,
-          hyphenBottom: false,
-        };
-      } else {
-        // Toggling white → black: clear all cell data
-        newGrid[row][col] = {
-          black: true,
-          letter: null,
-          spaceRight: false,
-          spaceBottom: false,
-          hyphenRight: false,
-          hyphenBottom: false,
-        };
-      }
-
-      // Save old words for reconciliation
-      const oldWords = [...words];
-
-      // Update grid
-      grid = newGrid;
-
-      // Derive new words and reconcile
-      const newDerived = deriveWords(grid);
-      const result = reconcileWordsOnGridChange(oldWords, newDerived, displacedClues);
-
-      // Update metadata
-      syncMetadataFromWords(result.updatedWords);
-      displacedClues = result.displacedClues;
-
-      // Clear selection in design mode
-      selectedCell = null;
-
-      // Show toasts for shortened/lengthened words
-      for (const w of result.shortenedWords) {
-        showToast(`Word ${w.number} ${w.direction === "across" ? "Across" : "Down"} was shortened.`);
-      }
-
+    let targetWord: Word;
+    if (wordsAtCell.length === 1) {
+      targetWord = wordsAtCell[0];
     } else {
-      // Fill mode: select cell for typing
-      if (grid[row][col].black) return;
-      if (!isSelectableCell(grid, cellPosition)) return;
-
-      const result = handleCellSelection(selectedCell, selectedDirection, words, row, col);
-      selectedCell = result.selectedCell;
-      selectedDirection = result.selectedDirection;
+      // Intersection — use selectedDirection or default to across
+      const dirWord = getWordInDirection(words, row, col, selectedDirection);
+      targetWord = dirWord ?? wordsAtCell[0];
     }
+
+    const targetId = toWordId(targetWord);
+
+    // Validate join
+    const result = joinWords(words, sourceWordId, targetId);
+    if (result === null) {
+      showToast("Cannot join these words. Check that neither word is already in a chain.");
+      return;
+    }
+
+    // If target had a non-empty clue, it needs to be displaced
+    // joinWords already handles the nextWord, but we need to handle clue displacement
+    const previousTargetClue = words.find(w => toWordId(w) === targetId)?.clue;
+    if (previousTargetClue && previousTargetClue.trim() !== "") {
+      displacedClues = [...displacedClues, {
+        id: crypto.randomUUID(),
+        clue: previousTargetClue,
+        direction: targetWord.direction,
+      }];
+    }
+
+    // Update metadata from the joined words
+    syncMetadataFromWords(result);
+    interaction = { kind: "fill" };
+  }
+
+  // --- Reattach mode: select target word for displaced clue ---
+  function handleReattachModeClick(cellPosition: CellPosition, clueIndex: number): void {
+    const { row, col } = cellPosition;
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    if (wordsAtCell.length === 0) {
+      // Clicked on a black cell or isolated cell — cancel reattach mode
+      interaction = { kind: "fill" };
+      return;
+    }
+
+    let targetWord: Word;
+    if (wordsAtCell.length === 1) {
+      targetWord = wordsAtCell[0];
+    } else {
+      const dirWord = getWordInDirection(words, row, col, selectedDirection);
+      targetWord = dirWord ?? wordsAtCell[0];
+    }
+
+    const targetId = toWordId(targetWord);
+    const result = reattachClue(words, displacedClues, clueIndex, targetId);
+
+    if (result === null) {
+      showToast("This word already has a clue.");
+      return;
+    }
+
+    // Update state from reattachClue result
+    syncMetadataFromWords(result.words);
+    displacedClues = result.displacedClues;
+    interaction = { kind: "fill" };
+  }
+
+// --- Design mode: toggle cell black/white ---
+  function handleDesignModeClick(cellPosition: CellPosition): void {
+    const { row, col } = cellPosition;
+    const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+    const wasBlack = newGrid[row][col].black;
+
+    if (wasBlack) {
+      // Toggling black → white: make it white with default values
+      newGrid[row][col] = {
+        black: false,
+        letter: null,
+        spaceRight: false,
+        spaceBottom: false,
+        hyphenRight: false,
+        hyphenBottom: false,
+      };
+    } else {
+      // Toggling white → black: clear all cell data
+      newGrid[row][col] = {
+        black: true,
+        letter: null,
+        spaceRight: false,
+        spaceBottom: false,
+        hyphenRight: false,
+        hyphenBottom: false,
+      };
+    }
+
+    // Save old words for reconciliation
+    const oldWords = [...words];
+
+    // Update grid
+    grid = newGrid;
+
+    // Derive new words and reconcile
+    const newDerived = deriveWords(grid);
+    const result = reconcileWordsOnGridChange(oldWords, newDerived, displacedClues);
+
+    // Update metadata
+    syncMetadataFromWords(result.updatedWords);
+    displacedClues = result.displacedClues;
+
+    // Clear selection in design mode
+    selectedCell = null;
+
+    // Show toasts for shortened words
+    for (const w of result.shortenedWords) {
+      showToast(`Word ${w.number} ${w.direction === "across" ? "Across" : "Down"} was shortened.`);
+    }
+  }
+
+  // --- Fill mode: select cell for typing ---
+  function handleFillModeClick(cellPosition: CellPosition): void {
+    if (grid[cellPosition.row][cellPosition.col].black) return;
+    if (!isSelectableCell(grid, cellPosition)) return;
+
+    const result = handleCellSelection(selectedCell, selectedDirection, words, cellPosition.row, cellPosition.col);
+    selectedCell = result.selectedCell;
+    selectedDirection = result.selectedDirection;
   }
 
   // --- Keyboard handler for Fill mode ---
   function handleKeyDown(key: string): void {
-    if (mode !== "fill" || !selectedCell) return;
+    if (interaction.kind === "design" || !selectedCell) return;
     const { row, col } = selectedCell;
 
     // Letter keys (A-Z)
@@ -403,13 +401,7 @@
         return;
       }
     }
-    mode = newMode;
-
-    // Cancel special modes
-    joinMode = false;
-    joinSourceWordId = null;
-    reattachMode = false;
-    selectedDisplacedClueIndex = null;
+    interaction = { kind: newMode };
 
     // Clear selection in design mode
     if (newMode === "design") {
@@ -427,10 +419,7 @@
 
   // --- Join/Unjoin ---
   function handleJoinClick(wordId: WordId): void {
-    joinMode = true;
-    joinSourceWordId = wordId;
-    reattachMode = false;
-    selectedDisplacedClueIndex = null;
+    interaction = { kind: "join", sourceWordId: wordId };
   }
 
   function handleUnjoinClick(wordId: WordId): void {
@@ -444,33 +433,30 @@
   function handleClueClick(wordId: WordId): void {
     const word = words.find((w) => toWordId(w) === wordId);
     if (word) {
-      mode = "fill";
+      // Don't cancel reattach mode - user might click a clue to reattach
+      if (interaction.kind !== "reattach") {
+        interaction = { kind: "fill" };
+      }
       selectedCell = { row: word.startRow, col: word.startCol };
       selectedDirection = word.direction;
-
-      // Cancel special modes
-      joinMode = false;
-      joinSourceWordId = null;
-      // Don't cancel reattach mode - user might click a clue to reattach
     }
   }
 
   // --- Displaced clue panel ---
   function handleDisplacedClueClick(index: number): void {
-    reattachMode = true;
-    selectedDisplacedClueIndex = index;
+    interaction = { kind: "reattach", clueIndex: index };
   }
 
   function handleDisplacedClueDelete(index: number): void {
     displacedClues = displacedClues.filter((_, i) => i !== index);
 
-    // If the deleted clue was selected for reattach, cancel reattach mode
-    if (selectedDisplacedClueIndex === index) {
-      reattachMode = false;
-      selectedDisplacedClueIndex = null;
-    } else if (selectedDisplacedClueIndex !== null && selectedDisplacedClueIndex > index) {
-      // Adjust the selected index since we removed an item before it
-      selectedDisplacedClueIndex = selectedDisplacedClueIndex - 1;
+    // If in reattach mode, adjust or cancel accordingly
+    if (interaction.kind === "reattach") {
+      if (interaction.clueIndex === index) {
+        interaction = { kind: "fill" };
+      } else if (interaction.clueIndex > index) {
+        interaction = { kind: "reattach", clueIndex: interaction.clueIndex - 1 };
+      }
     }
   }
 
@@ -496,7 +482,7 @@
 
   // --- Marker toolbar ---
   function handleToggleMarker(marker: "spaceRight" | "spaceBottom" | "hyphenRight" | "hyphenBottom"): void {
-    if (!selectedCell || mode !== "fill") return;
+    if (!selectedCell || interaction.kind === "design") return;
     const { row, col } = selectedCell;
     if (grid[row][col].black) return;
 
@@ -627,7 +613,7 @@
 
         selectedCell = null;
         selectedDirection = "across";
-        mode = "fill";
+        interaction = { kind: "fill" };
       };
       reader.readAsText(file);
     };
@@ -646,13 +632,9 @@
     displacedClues = [];
     title = "";
     author = "";
-    mode = "design";
+    interaction = { kind: "design" };
     selectedCell = null;
     selectedDirection = "across";
-    joinMode = false;
-    joinSourceWordId = null;
-    reattachMode = false;
-    selectedDisplacedClueIndex = null;
     clearBuilderState();
   }
 </script>
@@ -665,7 +647,7 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <h1 class="text-xl font-bold text-gray-900">Crossword Builder</h1>
       <div class="flex items-center gap-4">
-        <ModeToggle {mode} onModeChange={handleModeChange} />
+        <ModeToggle mode={baseMode} onModeChange={handleModeChange} />
       </div>
     </div>
   </div>
@@ -691,7 +673,7 @@
         />
 
         <!-- Marker toolbar (Fill mode only) -->
-        {#if mode === "fill"}
+        {#if baseMode === "fill"}
           <MarkerToolbar
             cell={selectedCellData}
             onToggleMarker={handleToggleMarker}
@@ -699,12 +681,12 @@
         {/if}
 
         <!-- Mode indicator for reattach/join -->
-        {#if joinMode}
+        {#if interaction.kind === "join"}
           <div class="bg-blue-50 border border-blue-200 rounded px-3 py-2 text-sm text-blue-700">
             Select the next word in the chain. Press Escape to cancel.
           </div>
         {/if}
-        {#if reattachMode}
+        {#if interaction.kind === "reattach"}
           <div class="bg-amber-50 border border-amber-200 rounded px-3 py-2 text-sm text-amber-700">
             Click a word in the grid to attach this clue. Press Escape to cancel.
           </div>
@@ -717,8 +699,8 @@
           {displayLetters}
           {selectedCell}
           {highlightedCells}
-          {joinMode}
-          {reattachMode}
+          joinMode={interaction.kind === "join"}
+          reattachMode={interaction.kind === "reattach"}
           onCellClick={handleCellClick}
           onKeyDown={handleKeyDown}
         />
@@ -732,22 +714,22 @@
             {grid}
             {gridSize}
             {selectedWordId}
-            editable={mode === "fill"}
+            editable={interaction.kind !== "design"}
             onClueClick={handleClueClick}
             onClueChange={handleClueChange}
             onJoinClick={handleJoinClick}
             onUnjoinClick={handleUnjoinClick}
-            {joinMode}
-            {joinSourceWordId}
-            {reattachMode}
+            joinMode={interaction.kind === "join"}
+            joinSourceWordId={interaction.kind === "join" ? interaction.sourceWordId : null}
+            reattachMode={interaction.kind === "reattach"}
           />
         </div>
 
         {#if displacedClues.length > 0}
           <DisplacedCluesPanel
             {displacedClues}
-            {reattachMode}
-            selectedClueIndex={selectedDisplacedClueIndex}
+            reattachMode={interaction.kind === "reattach"}
+            selectedClueIndex={interaction.kind === "reattach" ? interaction.clueIndex : null}
             onReattachClick={handleDisplacedClueClick}
             onDelete={handleDisplacedClueDelete}
           />

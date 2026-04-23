@@ -92,6 +92,16 @@ export interface CheckResult {
   emptyCells: CellPosition[]; // Cells where player has not entered a letter
 }
 
+// === Builder Interaction ===
+
+// Discriminated union representing the builder's current interaction mode.
+// Design: toggling cells black/white. Fill: typing/selecting. Join/Reattach: sub-modes of Fill.
+export type BuilderInteraction =
+  | { kind: "design" }
+  | { kind: "fill" }
+  | { kind: "join"; sourceWordId: WordId }
+  | { kind: "reattach"; clueIndex: number };
+
 // === Builder State ===
 
 export interface BuilderState {
@@ -105,17 +115,9 @@ export interface BuilderState {
   author: string;
 
   // UI state
-  mode: "design" | "fill";
+  interaction: BuilderInteraction;
   selectedCell: CellPosition | null;
   selectedDirection: Direction;
-
-  // Reattach mode
-  reattachMode: boolean;
-  selectedDisplacedClueIndex: number | null;
-
-  // Join mode
-  joinMode: boolean;
-  joinSourceWordId: WordId | null; // The word being linked FROM
 }
 
 // === Player Progress ===

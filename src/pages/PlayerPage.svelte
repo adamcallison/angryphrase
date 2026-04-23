@@ -149,7 +149,6 @@
   }
 
   function handleCellClick(cellPosition: CellPosition): void {
-    if (!puzzleLoaded) return;
     const row = cellPosition.row
     const col = cellPosition.col
     if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
@@ -165,7 +164,7 @@
   }
 
   function handleKeyDown(key: string): void {
-    if (!puzzleLoaded || !selectedCell) return;
+    if (!selectedCell) return;
 
     const { row, col } = selectedCell;
 

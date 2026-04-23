@@ -2,7 +2,7 @@
 // Storage module: localStorage persistence for builder state and player progress.
 // =============================================================================
 
-import type { BuilderState, PlayerProgress, WordMetadata } from "./types";
+import type { BuilderInteraction, BuilderState, PlayerProgress, WordMetadata } from "./types";
 import { BUILDER_STORAGE_KEY, PLAYER_STORAGE_KEY_PREFIX } from "./constants";
 
 /**
@@ -27,9 +27,40 @@ export function saveBuilderState(state: BuilderState): void {
 }
 
 /**
+ * Returns the base mode (design/fill) from a saved state that may use
+ * either the old flat format (mode/joinMode/reattachMode) or the new
+ * BuilderInteraction format.
+ */
+function migrateInteraction(parsed: Record<string, unknown>): BuilderInteraction {
+  // New format: interaction is stored directly
+  if (parsed.interaction && typeof parsed.interaction === "object" && parsed.interaction !== null) {
+    const kind = (parsed.interaction as Record<string, unknown>).kind;
+    if (kind === "design") return { kind: "design" };
+    if (kind === "fill") return { kind: "fill" };
+    if (kind === "join" && typeof (parsed.interaction as Record<string, unknown>).sourceWordId === "string") {
+      return { kind: "join", sourceWordId: (parsed.interaction as Record<string, unknown>).sourceWordId as string };
+    }
+    if (kind === "reattach" && typeof (parsed.interaction as Record<string, unknown>).clueIndex === "number") {
+      return { kind: "reattach", clueIndex: (parsed.interaction as Record<string, unknown>).clueIndex as number };
+    }
+  }
+
+  // Old format: separate mode/joinMode/reattachMode fields
+  if (typeof parsed.mode === "string") {
+    if (parsed.mode === "design") return { kind: "design" };
+    // On load, always normalize to the base fill mode —
+    // join/reattach sub-modes should not persist across sessions.
+    return { kind: "fill" };
+  }
+
+  return { kind: "design" };
+}
+
+/**
  * Loads builder state from localStorage.
  * Returns null if no saved state exists or if the data is corrupt.
  * Reconstructs Map from entries array on load.
+ * Handles migration from old format (mode/joinMode/reattachMode) to new format (interaction).
  */
 export function loadBuilderState(): BuilderState | null {
   const raw = localStorage.getItem(BUILDER_STORAGE_KEY);
@@ -48,10 +79,19 @@ export function loadBuilderState(): BuilderState | null {
       Array.isArray(wordMetadataEntries) ? wordMetadataEntries : [],
     );
 
-    const { wordMetadata: _wm, ...rest } = parsed;
+    const interaction = migrateInteraction(parsed);
+
     return {
-      ...rest,
+      key: parsed.key ?? "",
+      gridSize: parsed.gridSize ?? 5,
+      grid: parsed.grid ?? [],
       wordMetadata,
+      displacedClues: parsed.displacedClues ?? [],
+      title: parsed.title ?? "",
+      author: parsed.author ?? "",
+      interaction,
+      selectedCell: parsed.selectedCell ?? null,
+      selectedDirection: parsed.selectedDirection ?? "across",
     } as BuilderState;
   } catch {
     return null;
