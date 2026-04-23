@@ -56,7 +56,8 @@ beforeEach(() => {
 function makeCell(letter: string | null = null, black = false): CellData {
   return {
     black,
-    letter,
+    puzzleLetter: letter,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -145,7 +146,7 @@ describe("saveBuilderState and loadBuilderState", () => {
 
     const loaded = loadBuilderState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.grid).toEqual([[{ black: false, letter: "Z", spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }]]);
+    expect(loaded!.grid).toEqual([[{ black: false, puzzleLetter: "Z", playerLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false }]]);
   });
 
   it("preserves wordMetadata Map in round-trip", () => {
@@ -290,6 +291,10 @@ describe("saveBuilderState and loadBuilderState", () => {
     expect(loaded!.interaction).toEqual({ kind: "fill" });
     expect(loaded!.key).toBe("old-key");
     expect(loaded!.title).toBe("Old Puzzle");
+    // Grid cells should be migrated: letter → puzzleLetter, playerLetter added
+    expect(loaded!.grid[0][0].puzzleLetter).toBe("A");
+    expect(loaded!.grid[0][0].playerLetter).toBeNull();
+    expect(loaded!.grid[1][1].puzzleLetter).toBeNull();
   });
 });
 

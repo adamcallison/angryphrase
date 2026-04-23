@@ -92,7 +92,7 @@
       const row: (string | null)[] = [];
       for (let c = 0; c < gridSize; c++) {
         if (grid[r] && grid[r][c] && !grid[r][c].black) {
-          row.push(grid[r][c].letter);
+          row.push(grid[r][c].puzzleLetter);
         } else {
           row.push(null);
         }
@@ -248,7 +248,8 @@
       // Toggling black → white: make it white with default values
       newGrid[row][col] = {
         black: false,
-        letter: null,
+        puzzleLetter: null,
+        playerLetter: null,
         spaceRight: false,
         spaceBottom: false,
         hyphenRight: false,
@@ -258,7 +259,8 @@
       // Toggling white → black: clear all cell data
       newGrid[row][col] = {
         black: true,
-        letter: null,
+        puzzleLetter: null,
+        playerLetter: null,
         spaceRight: false,
         spaceBottom: false,
         hyphenRight: false,
@@ -309,7 +311,7 @@
       const letter = key.toUpperCase();
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
         const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-        newGrid[row][col] = { ...newGrid[row][col], letter };
+        newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: letter };
         grid = newGrid;
 
         // Advance cursor
@@ -325,14 +327,14 @@
     if (key === "Backspace") {
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
         const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-        if (grid[row][col].letter) {
-          newGrid[row][col] = { ...newGrid[row][col], letter: null };
+        if (grid[row][col].puzzleLetter) {
+          newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: null };
           grid = newGrid;
         } else {
           // Retreat and delete
           const prev = retreatPosition(grid, row, col, selectedDirection);
           if (prev.row !== row || prev.col !== col) {
-            newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], letter: null };
+            newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], puzzleLetter: null };
             grid = newGrid;
             selectedCell = prev;
           }

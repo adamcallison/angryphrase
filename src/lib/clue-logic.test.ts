@@ -21,7 +21,8 @@ import { toWordId } from "./chain-logic";
 function whiteCell(): CellData {
   return {
     black: false,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -32,7 +33,8 @@ function whiteCell(): CellData {
 function blackCell(): CellData {
   return {
     black: true,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -981,7 +983,7 @@ describe("isGridBlank", () => {
 
   it("returns false when a cell has a letter", () => {
     const grid = createEmptyGrid(5);
-    grid[0][0].letter = "A";
+    grid[0][0].puzzleLetter = "A";
 
     const words: Word[] = [
       makeWord(0, 0, "across", 5, 1, ""),
@@ -1015,7 +1017,7 @@ describe("isGridBlank", () => {
 
   it("returns false when grid has a letter AND clues", () => {
     const grid = createEmptyGrid(5);
-    grid[0][0].letter = "A";
+    grid[0][0].puzzleLetter = "A";
     const words: Word[] = [
       makeWord(0, 0, "across", 5, 1, "Clue text"),
     ];
@@ -1051,7 +1053,7 @@ describe("isGridBlank", () => {
 
   it("returns false when only one cell has a letter among many", () => {
     const grid = createEmptyGrid(10);
-    grid[5][7].letter = "Z";
+    grid[5][7].puzzleLetter = "Z";
 
     const words: Word[] = [];
     const displacedClues: DisplacedClue[] = [];

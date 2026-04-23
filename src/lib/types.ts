@@ -4,7 +4,8 @@
 
 export interface CellData {
   black: boolean;
-  letter: string | null; // Single A-Z character, or null
+  puzzleLetter: string | null; // Single A-Z character, or null
+  playerLetter: string | null;
   spaceRight: boolean;
   spaceBottom: boolean;
   hyphenRight: boolean;
@@ -74,10 +75,6 @@ export interface CellPosition {
 
 // === Player Progress ===
 
-// Player letters stored separately from the puzzle grid
-// playerLetters[row][col] = string | null
-export type PlayerLetters = (string | null)[][];
-
 // === Answer Checking ===
 
 export type CheckResultType =
@@ -140,12 +137,15 @@ export interface WordChangeResult {
 // === JSON Import/Export Formats ===
 
 // Complete puzzle JSON (Player format — includes version and type discriminator)
+// Serial format for CellData — excludes playerLetter (runtime-only data)
+export type SerializedCellData = Omit<CellData, 'playerLetter'>;
+
 export interface CompletePuzzleJSON {
   version: number;
   type: "complete";
   key: string;
   gridSize: number;
-  grid: CellData[][];
+  grid: SerializedCellData[][];
   words: Word[];
   title: string;
   author: string;
@@ -157,7 +157,7 @@ export interface IncompletePuzzleJSON {
   type: "incomplete";
   key: string;
   gridSize: number;
-  grid: CellData[][];
+  grid: SerializedCellData[][];
   words: Word[];
   title: string;
   author: string;

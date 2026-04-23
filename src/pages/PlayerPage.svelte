@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, PlayerLetters, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
+  import { deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -24,10 +24,9 @@
   let title = $state("");
   let author = $state("");
 
-  let playerLetters = $state<PlayerLetters>([]);
-  let selectedCell = $state<CellPosition | null>(null);
-  let selectedDirection = $state<Direction>("across");
-  let checkResult = $state<CheckResult | null>(null);
+let selectedCell = $state<CellPosition | null>(null);
+let selectedDirection = $state<Direction>("across");
+let checkResult = $state<CheckResult | null>(null);
 
   let importError = $state<string | null>(null);
 
@@ -49,7 +48,7 @@
   /** Cells of the currently selected word for highlighting. */
   let highlightedCells = $derived(selectedWord ? getWordCells(selectedWord) : []);
 
-  /** Display letters: playerLetters for filled cells, null for empty. */
+  /** Display letters: playerLetter for filled cells, null for empty. */
   let displayLetters = $derived.by(() => {
     const letters: (string | null)[][] = [];
     for (let r = 0; r < gridSize; r++) {
@@ -59,7 +58,7 @@
           if (grid[r][c].black) {
             row.push(null);
           } else {
-            row.push(playerLetters[r]?.[c] ?? null);
+            row.push(grid[r][c].playerLetter ?? null);
           }
         } else {
           row.push(null);
@@ -82,15 +81,27 @@
 
   $effect(() => {
     if (!puzzleLoaded) return;
-    const _ = playerLetters;
+    const _ = grid;
     const _k = puzzleKey;
     const _g = gridSize;
 
     const timer = setTimeout(() => {
+      const letters: (string | null)[][] = [];
+      for (let r = 0; r < gridSize; r++) {
+        const row: (string | null)[] = [];
+        for (let c = 0; c < gridSize; c++) {
+          if (grid[r] && grid[r][c] && !grid[r][c].black) {
+            row.push(grid[r][c].playerLetter ?? null);
+          } else {
+            row.push(null);
+          }
+        }
+        letters.push(row);
+      }
       const progress = {
         key: puzzleKey,
         gridSize: gridSize,
-        letters: playerLetters,
+        letters,
       };
       savePlayerProgress(puzzleKey, progress);
     }, 500);
@@ -135,12 +146,19 @@
     // Check for saved progress
     const savedProgress = loadPlayerProgress(puzzleKey);
     if (savedProgress && savedProgress.gridSize === puzzle.gridSize) {
-      playerLetters = savedProgress.letters;
+      // Overlay saved letters onto grid cells' playerLetter
+      const newGrid = grid.map((row) => row.map((cell) => ({ ...cell })));
+      for (let r = 0; r < savedProgress.gridSize; r++) {
+        for (let c = 0; c < savedProgress.gridSize; c++) {
+          if (savedProgress.letters[r] && savedProgress.letters[r][c] !== undefined && savedProgress.letters[r][c] !== null) {
+            newGrid[r][c] = { ...newGrid[r][c], playerLetter: savedProgress.letters[r][c] };
+          }
+        }
+      }
+      grid = newGrid;
     } else {
-      // Initialize with empty letters
-      playerLetters = createEmptyGrid(gridSize).map((row) =>
-        row.map(() => null)
-      );
+      // Initialize playerLetter as null on all cells (already the default from parse)
+      // No need to create a separate playerLetters array
     }
 
     selectedCell = null;
@@ -172,9 +190,9 @@
     if (/^[a-zA-Z]$/.test(key)) {
       const letter = key.toUpperCase();
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
-        playerLetters[row] = [...playerLetters[row]];
-        playerLetters[row][col] = letter;
-        playerLetters = [...playerLetters];
+        const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+        newGrid[row][col] = { ...newGrid[row][col], playerLetter: letter };
+        grid = newGrid;
 
         // Advance cursor
         const next = advancePosition(grid, row, col, selectedDirection);
@@ -190,19 +208,20 @@
 
     // Backspace
     if (key === "Backspace") {
-      if (playerLetters[row]?.[col]) {
-        // Delete the current letter
-        playerLetters[row] = [...playerLetters[row]];
-        playerLetters[row][col] = null;
-        playerLetters = [...playerLetters];
-      } else {
-        // Retreat and delete
-        const prev = retreatPosition(grid, row, col, selectedDirection);
-        if (prev.row !== row || prev.col !== col) {
-          playerLetters[prev.row] = [...playerLetters[prev.row]];
-          playerLetters[prev.row][prev.col] = null;
-          playerLetters = [...playerLetters];
-          selectedCell = prev;
+      if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
+        const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+        if (grid[row][col].playerLetter) {
+          // Delete the current letter
+          newGrid[row][col] = { ...newGrid[row][col], playerLetter: null };
+          grid = newGrid;
+        } else {
+          // Retreat and delete
+          const prev = retreatPosition(grid, row, col, selectedDirection);
+          if (prev.row !== row || prev.col !== col) {
+            newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], playerLetter: null };
+            grid = newGrid;
+            selectedCell = prev;
+          }
         }
       }
       checkResult = null;
@@ -234,12 +253,12 @@
 
   function handleCheck(): void {
     if (!puzzleLoaded) return;
-    checkResult = checkPuzzle(grid, playerLetters);
+    checkResult = checkPuzzle(grid);
   }
 
   function handleClearErrors(): void {
     if (!checkResult) return;
-    playerLetters = clearErrors(playerLetters, checkResult);
+    grid = clearErrors(grid, checkResult);
     checkResult = null;
   }
 
@@ -248,8 +267,9 @@
     if (!window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
       return;
     }
-    playerLetters = createEmptyGrid(gridSize).map((row) =>
-      row.map(() => null)
+    // Reset playerLetter to null on all cells
+    grid = grid.map((row) =>
+      row.map((cell) => ({ ...cell, playerLetter: null }))
     );
     selectedCell = null;
     selectedDirection = "across";

@@ -20,7 +20,8 @@ import { CURRENT_VERSION } from "./constants";
 function makeCell(overrides: Partial<CellData> = {}): CellData {
   return {
     black: false,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -30,11 +31,11 @@ function makeCell(overrides: Partial<CellData> = {}): CellData {
 }
 
 function makeBlackCell(): CellData {
-  return makeCell({ black: true, letter: null });
+  return makeCell({ black: true, puzzleLetter: null });
 }
 
 function makeWhiteCell(letter: string): CellData {
-  return makeCell({ black: false, letter });
+  return makeCell({ black: false, puzzleLetter: letter });
 }
 
 /** Create a 3×3 complete puzzle with a cross pattern:
@@ -70,9 +71,9 @@ function makeValidCompletePuzzle(): CompletePuzzleJSON {
 /** Create a 3×3 incomplete puzzle same layout but letters can be null */
 function makeValidIncompletePuzzle(): IncompletePuzzleJSON {
   const grid: CellData[][] = [
-    [makeCell({ black: false, letter: null }), makeCell({ black: false, letter: null }), makeCell({ black: false, letter: null })],
-    [makeCell({ black: false, letter: null }), makeBlackCell(), makeCell({ black: false, letter: null })],
-    [makeCell({ black: false, letter: null }), makeCell({ black: false, letter: null }), makeCell({ black: false, letter: null })],
+    [makeCell({ black: false, puzzleLetter: null }), makeCell({ black: false, puzzleLetter: null }), makeCell({ black: false, puzzleLetter: null })],
+    [makeCell({ black: false, puzzleLetter: null }), makeBlackCell(), makeCell({ black: false, puzzleLetter: null })],
+    [makeCell({ black: false, puzzleLetter: null }), makeCell({ black: false, puzzleLetter: null }), makeCell({ black: false, puzzleLetter: null })],
   ];
   return {
     version: 1,
@@ -211,7 +212,7 @@ describe("validateCompletePuzzle", () => {
   describe("white cell letters", () => {
     it("rejects white cell with null letter", () => {
       const puzzle = makeValidCompletePuzzle();
-      puzzle.grid[0][0].letter = null;
+      puzzle.grid[0][0].puzzleLetter = null;
       const result = validateCompletePuzzle(puzzle);
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.toLowerCase().includes("letter"))).toBe(true);
@@ -219,21 +220,21 @@ describe("validateCompletePuzzle", () => {
 
     it("rejects white cell with non-A-Z letter (number)", () => {
       const puzzle = makeValidCompletePuzzle();
-      puzzle.grid[0][0].letter = "1";
+      puzzle.grid[0][0].puzzleLetter = "1";
       const result = validateCompletePuzzle(puzzle);
       expect(result.valid).toBe(false);
     });
 
     it("rejects white cell with non-A-Z letter (lowercase)", () => {
       const puzzle = makeValidCompletePuzzle();
-      puzzle.grid[0][0].letter = "a";
+      puzzle.grid[0][0].puzzleLetter = "a";
       const result = validateCompletePuzzle(puzzle);
       expect(result.valid).toBe(false);
     });
 
     it("rejects white cell with multi-character letter", () => {
       const puzzle = makeValidCompletePuzzle();
-      puzzle.grid[0][0].letter = "AB";
+      puzzle.grid[0][0].puzzleLetter = "AB";
       const result = validateCompletePuzzle(puzzle);
       expect(result.valid).toBe(false);
     });
@@ -382,19 +383,19 @@ describe("validateCompletePuzzle", () => {
       // Remove marker fields from cells — they should default to false
       const grid: CellData[][] = [
         [
-          makeCell({ black: false, letter: "A" }),
-          makeCell({ black: false, letter: "B" }),
-          makeCell({ black: false, letter: "C" }),
+          makeCell({ black: false, puzzleLetter: "A" }),
+          makeCell({ black: false, puzzleLetter: "B" }),
+          makeCell({ black: false, puzzleLetter: "C" }),
         ],
         [
-          makeCell({ black: false, letter: "D" }),
+          makeCell({ black: false, puzzleLetter: "D" }),
           makeBlackCell(),
-          makeCell({ black: false, letter: "E" }),
+          makeCell({ black: false, puzzleLetter: "E" }),
         ],
         [
-          makeCell({ black: false, letter: "F" }),
-          makeCell({ black: false, letter: "G" }),
-          makeCell({ black: false, letter: "H" }),
+          makeCell({ black: false, puzzleLetter: "F" }),
+          makeCell({ black: false, puzzleLetter: "G" }),
+          makeCell({ black: false, puzzleLetter: "H" }),
         ],
       ];
       puzzle.grid = grid;
@@ -416,7 +417,7 @@ describe("validateCompletePuzzle", () => {
     it("collects multiple errors at once", () => {
       const puzzle = makeValidCompletePuzzle();
       puzzle.version = 2; // wrong version
-      puzzle.grid[0][0].letter = null; // null letter in white cell
+      puzzle.grid[0][0].puzzleLetter = null; // null puzzle letter in white cell
       const result = validateCompletePuzzle(puzzle);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThanOrEqual(2);
@@ -548,7 +549,7 @@ describe("canExportAsComplete", () => {
 
   it("returns canExport: false with error about empty cell when a white cell is missing a letter", () => {
     const { grid, words } = makeExportTestData();
-    grid[0][0].letter = null;
+    grid[0][0].puzzleLetter = null;
     const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     expect(result.errors.some((e) => e.toLowerCase().includes("letter") || e.toLowerCase().includes("cell"))).toBe(true);
@@ -586,8 +587,8 @@ describe("canExportAsComplete", () => {
 
   it("returns canExport: false when multiple white cells missing letters", () => {
     const { grid, words } = makeExportTestData();
-    grid[0][0].letter = null;
-    grid[2][2].letter = null;
+    grid[0][0].puzzleLetter = null;
+    grid[2][2].puzzleLetter = null;
     const result = canExportAsComplete(grid, words);
     expect(result.canExport).toBe(false);
     // Should report errors (plural or at least one)

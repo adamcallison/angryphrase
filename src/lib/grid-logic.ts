@@ -2,7 +2,7 @@ import type { CellData, CellPosition, DerivedWord, Direction, DirectionPolarity,
 
 /**
  * Creates an NxN grid of all-white cells with default values.
- * Each cell has: black=false, letter=null, and all marker flags=false.
+ * Each cell has: black=false, puzzleLetter=null, playerLetter=null, and all marker flags=false.
  */
 export function createEmptyGrid(size: number): CellData[][] {
   const grid: CellData[][] = [];
@@ -11,7 +11,8 @@ export function createEmptyGrid(size: number): CellData[][] {
     for (let c = 0; c < size; c++) {
       row.push({
         black: false,
-        letter: null,
+        puzzleLetter: null,
+        playerLetter: null,
         spaceRight: false,
         spaceBottom: false,
         hyphenRight: false,

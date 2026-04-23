@@ -233,7 +233,7 @@ export function isGridBlank(
   // Check for any cell with a letter
   for (const row of grid) {
     for (const cell of row) {
-      if (cell.letter !== null) {
+      if (cell.puzzleLetter !== null) {
         return false;
       }
     }

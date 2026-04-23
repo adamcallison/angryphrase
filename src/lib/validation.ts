@@ -2,6 +2,7 @@ import type {
   CellData,
   CompletePuzzleJSON,
   IncompletePuzzleJSON,
+  SerializedCellData,
   Word,
   ValidationResult,
 } from "./types";
@@ -141,23 +142,23 @@ export function validateCompletePuzzle(
           continue;
         }
 
-        // White cells must have a single A-Z letter
+        // White cells must have a single A-Z puzzle letter
         if (!cell.black) {
-          if (cell.letter === null || cell.letter === undefined) {
-            errors.push(`White cell at (${r}, ${c}) has no letter`);
+          if (cell.puzzleLetter === null || cell.puzzleLetter === undefined) {
+            errors.push(`White cell at (${r}, ${c}) has no puzzle letter`);
           } else if (
-            typeof cell.letter !== "string" ||
-            cell.letter.length !== 1 ||
-            !/^[A-Z]$/.test(cell.letter)
+            typeof cell.puzzleLetter !== "string" ||
+            cell.puzzleLetter.length !== 1 ||
+            !/^[A-Z]$/.test(cell.puzzleLetter)
           ) {
             errors.push(
-              `White cell at (${r}, ${c}) has invalid letter: "${cell.letter}"`
+              `White cell at (${r}, ${c}) has invalid puzzle letter: "${cell.puzzleLetter}"`
             );
           }
         }
 
         // Marker fields must be booleans if present
-        const markerFields: (keyof CellData)[] = [
+        const markerFields: (keyof SerializedCellData)[] = [
           "spaceRight",
           "spaceBottom",
           "hyphenRight",
@@ -362,7 +363,7 @@ export function validateIncompletePuzzle(
         if (!cell || typeof cell !== "object") continue;
 
         // Marker fields must be booleans if present
-        const markerFields: (keyof CellData)[] = [
+        const markerFields: (keyof SerializedCellData)[] = [
           "spaceRight",
           "spaceBottom",
           "hyphenRight",
@@ -460,23 +461,23 @@ export function canExportAsComplete(
 ): { canExport: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  // --- Check all white cells have letters ---
+  // --- Check all white cells have puzzle letters ---
   for (let r = 0; r < grid.length; r++) {
     for (let c = 0; c < grid[r].length; c++) {
       const cell = grid[r][c];
       if (!cell.black) {
         if (
-          cell.letter === null ||
-          cell.letter === undefined ||
-          cell.letter === ""
+          cell.puzzleLetter === null ||
+          cell.puzzleLetter === undefined ||
+          cell.puzzleLetter === ""
         ) {
-          errors.push(`White cell at (${r}, ${c}) has no letter`);
+          errors.push(`White cell at (${r}, ${c}) has no puzzle letter`);
         } else if (
-          typeof cell.letter !== "string" ||
-          cell.letter.length !== 1 ||
-          !/^[A-Z]$/.test(cell.letter)
+          typeof cell.puzzleLetter !== "string" ||
+          cell.puzzleLetter.length !== 1 ||
+          !/^[A-Z]$/.test(cell.puzzleLetter)
         ) {
-          errors.push(`White cell at (${r}, ${c}) has invalid letter: "${cell.letter}"`);
+          errors.push(`White cell at (${r}, ${c}) has invalid puzzle letter: "${cell.puzzleLetter}"`);
         }
       }
     }

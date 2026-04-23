@@ -6,6 +6,7 @@ import type {
   IncompletePuzzle,
   IncompletePuzzleJSON,
   PuzzleMetadata,
+  SerializedCellData,
   Word,
 } from "./types";
 import { CURRENT_VERSION } from "./constants";
@@ -32,8 +33,8 @@ export function deriveWordAnswer(grid: CellData[][], word: Word): string {
 
     if (row >= 0 && row < grid.length && col >= 0 && col < grid[row].length) {
       const cell = grid[row][col];
-      if (cell.letter !== null && cell.letter !== undefined) {
-        answer += cell.letter;
+      if (cell.puzzleLetter !== null && cell.puzzleLetter !== undefined) {
+        answer += cell.puzzleLetter;
       }
       // null letters contribute nothing (empty string)
     }
@@ -47,8 +48,9 @@ export function deriveWordAnswer(grid: CellData[][], word: Word): string {
 
 /**
  * Serializes builder state into an IncompletePuzzleJSON object.
- * This format includes displacedClues and allows letter: null and empty clues.
- * Marker fields that are false are included as-is (all cell fields preserved).
+ * This format includes displacedClues and allows puzzleLetter: null and empty clues.
+ * Marker fields that are false are included as-is.
+ * playerLetter is excluded from serialization — it's runtime-only data.
  */
 export function serializeIncompletePuzzle(
   grid: CellData[][],
@@ -57,9 +59,16 @@ export function serializeIncompletePuzzle(
   metadata: PuzzleMetadata,
   key: string,
 ): IncompletePuzzleJSON {
-  // Deep clone the grid to avoid mutations
-  const gridCopy: CellData[][] = grid.map((row) =>
-    row.map((cell) => ({ ...cell })),
+  // Deep clone the grid, excluding playerLetter
+  const gridCopy: SerializedCellData[][] = grid.map((row) =>
+    row.map((cell) => ({
+      black: cell.black,
+      puzzleLetter: cell.puzzleLetter,
+      spaceRight: cell.spaceRight,
+      spaceBottom: cell.spaceBottom,
+      hyphenRight: cell.hyphenRight,
+      hyphenBottom: cell.hyphenBottom,
+    }))
   );
 
   // Deep clone words
@@ -106,15 +115,15 @@ export function serializeCompletePuzzle(
   // Validate export readiness
   const errors: string[] = [];
 
-  // Check all white cells have letters
+  // Check all white cells have puzzle letters
   for (let r = 0; r < grid.length; r++) {
     for (let c = 0; c < grid[r].length; c++) {
       const cell = grid[r][c];
       if (!cell.black) {
-        if (cell.letter === null || cell.letter === undefined || cell.letter === "") {
-          errors.push(`White cell at (${r}, ${c}) has no letter`);
-        } else if (!/^[A-Z]$/.test(cell.letter)) {
-          errors.push(`White cell at (${r}, ${c}) has invalid letter: "${cell.letter}"`);
+        if (cell.puzzleLetter === null || cell.puzzleLetter === undefined || cell.puzzleLetter === "") {
+          errors.push(`White cell at (${r}, ${c}) has no puzzle letter`);
+        } else if (!/^[A-Z]$/.test(cell.puzzleLetter)) {
+          errors.push(`White cell at (${r}, ${c}) has invalid puzzle letter: "${cell.puzzleLetter}"`);
         }
       }
     }
@@ -135,9 +144,16 @@ export function serializeCompletePuzzle(
     return { error: errors.join("; ") };
   }
 
-  // Deep clone the grid
-  const gridCopy: CellData[][] = grid.map((row) =>
-    row.map((cell) => ({ ...cell })),
+  // Deep clone the grid, excluding playerLetter
+  const gridCopy: SerializedCellData[][] = grid.map((row) =>
+    row.map((cell) => ({
+      black: cell.black,
+      puzzleLetter: cell.puzzleLetter,
+      spaceRight: cell.spaceRight,
+      spaceBottom: cell.spaceBottom,
+      hyphenRight: cell.hyphenRight,
+      hyphenBottom: cell.hyphenBottom,
+    }))
   );
 
   // Deep clone words
@@ -162,11 +178,24 @@ export function serializeCompletePuzzle(
 // parsePuzzleJSON
 // =============================================================================
 
-/** Fills in default values for missing marker fields on grid cells. */
+/** Fills in default values for missing fields on grid cells.
+ *  Handles backward compatibility: reads `puzzleLetter` if present,
+ *  falls back to `letter` (legacy format).
+ *  Always sets `playerLetter: null` (player data is not in files).
+ *  Removes legacy `letter` from the output.
+ */
 function normalizeCell(cell: Record<string, unknown>): CellData {
+  // Read puzzleLetter if present, fall back to legacy `letter` field
+  const puzzleLetter = cell.puzzleLetter !== undefined
+    ? (cell.puzzleLetter === null ? null : String(cell.puzzleLetter))
+    : (cell.letter !== undefined
+      ? (cell.letter === null ? null : String(cell.letter))
+      : null);
+
   return {
     black: Boolean(cell.black),
-    letter: cell.letter === null || cell.letter === undefined ? null : String(cell.letter),
+    puzzleLetter,
+    playerLetter: null,
     spaceRight: cell.spaceRight === undefined ? false : Boolean(cell.spaceRight),
     spaceBottom: cell.spaceBottom === undefined ? false : Boolean(cell.spaceBottom),
     hyphenRight: cell.hyphenRight === undefined ? false : Boolean(cell.hyphenRight),
@@ -212,11 +241,13 @@ export function parsePuzzleJSON(
     return { error: `Missing or unrecognized type field: "${String(parsed.type ?? "missing")}". Expected "incomplete" or "complete".` };
   }
 
-  // Step 4: Normalize grid cells (fill in default marker values)
+  // Step 4: Normalize grid cells (fill in default marker values, add playerLetter)
   const gridSize = parsed.gridSize;
   const rawGrid = parsed.grid;
+  let normalizedGrid: CellData[][] | undefined;
   if (Array.isArray(rawGrid)) {
-    parsed.grid = normalizeGrid(rawGrid as unknown[][]);
+    normalizedGrid = normalizeGrid(rawGrid as unknown[][]);
+    parsed.grid = normalizedGrid;
   }
 
   // Step 5: Validate based on type
@@ -238,7 +269,7 @@ export function parsePuzzleJSON(
       data: {
         key: puzzle.key,
         gridSize: puzzle.gridSize,
-        grid: puzzle.grid,
+        grid: normalizedGrid ?? puzzle.grid as unknown as CellData[][],
         words: puzzle.words,
         title: puzzle.title,
         author: puzzle.author,
@@ -260,7 +291,7 @@ export function parsePuzzleJSON(
       data: {
         key: puzzle.key,
         gridSize: puzzle.gridSize,
-        grid: puzzle.grid,
+        grid: normalizedGrid ?? puzzle.grid as unknown as CellData[][],
         words: puzzle.words,
         title: puzzle.title,
         author: puzzle.author,

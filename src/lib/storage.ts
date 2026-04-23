@@ -2,8 +2,41 @@
 // Storage module: localStorage persistence for builder state and player progress.
 // =============================================================================
 
-import type { BuilderInteraction, BuilderState, PlayerProgress, WordMetadata } from "./types";
+import type { BuilderInteraction, BuilderState, CellData, PlayerProgress, WordMetadata } from "./types";
 import { BUILDER_STORAGE_KEY, PLAYER_STORAGE_KEY_PREFIX } from "./constants";
+
+/**
+ * Migrates grid cells from the legacy `letter` field to `puzzleLetter`/`playerLetter`.
+ * Old format: { black, letter, spaceRight, ... }
+ * New format: { black, puzzleLetter, playerLetter, spaceRight, ... }
+ */
+function migrateGrid(grid: unknown): CellData[][] | null {
+  if (!Array.isArray(grid)) return null;
+  return grid.map((row: unknown) => {
+    if (!Array.isArray(row)) return [];
+    return row.map((cell: unknown) => {
+      if (!cell || typeof cell !== "object") {
+        return { black: true, puzzleLetter: null, playerLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false } as CellData;
+      }
+      const c = cell as Record<string, unknown>;
+      // Read puzzleLetter if present, fall back to legacy `letter`
+      const puzzleLetter = c.puzzleLetter !== undefined
+        ? (c.puzzleLetter === null ? null : String(c.puzzleLetter))
+        : (c.letter !== undefined
+          ? (c.letter === null ? null : String(c.letter))
+          : null);
+      return {
+        black: Boolean(c.black),
+        puzzleLetter,
+        playerLetter: null,
+        spaceRight: c.spaceRight === undefined ? false : Boolean(c.spaceRight),
+        spaceBottom: c.spaceBottom === undefined ? false : Boolean(c.spaceBottom),
+        hyphenRight: c.hyphenRight === undefined ? false : Boolean(c.hyphenRight),
+        hyphenBottom: c.hyphenBottom === undefined ? false : Boolean(c.hyphenBottom),
+      } as CellData;
+    });
+  });
+}
 
 /**
  * Returns the localStorage key for player progress associated with a puzzle key.
@@ -84,7 +117,7 @@ export function loadBuilderState(): BuilderState | null {
     return {
       key: parsed.key ?? "",
       gridSize: parsed.gridSize ?? 5,
-      grid: parsed.grid ?? [],
+      grid: migrateGrid(parsed.grid) ?? [],
       wordMetadata,
       displacedClues: parsed.displacedClues ?? [],
       title: parsed.title ?? "",

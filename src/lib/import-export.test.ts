@@ -21,7 +21,8 @@ import { CURRENT_VERSION } from "./constants";
 function makeCell(overrides: Partial<CellData> = {}): CellData {
   return {
     black: false,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -31,11 +32,11 @@ function makeCell(overrides: Partial<CellData> = {}): CellData {
 }
 
 function makeBlackCell(): CellData {
-  return makeCell({ black: true, letter: null });
+  return makeCell({ black: true, puzzleLetter: null });
 }
 
 function makeWhiteCell(letter: string): CellData {
-  return makeCell({ black: false, letter });
+  return makeCell({ black: false, puzzleLetter: letter });
 }
 
 /**
@@ -123,23 +124,23 @@ describe("serializeIncompletePuzzle", () => {
     // Check a white cell
     const cell = result.grid[0][0];
     expect(cell.black).toBe(false);
-    expect(cell.letter).toBeNull();
+    expect(cell.puzzleLetter).toBeNull();
     expect(cell.spaceRight).toBe(false);
     expect(cell.spaceBottom).toBe(false);
     expect(cell.hyphenRight).toBe(false);
     expect(cell.hyphenBottom).toBe(false);
   });
 
-  it("preserves letter: null cells in JSON", () => {
+  it("preserves puzzleLetter: null cells in JSON", () => {
     const grid = makeEmptyCrossGrid();
     const words = makeCrossWords();
 
     const result = serializeIncompletePuzzle(grid, words, [], defaultMetadata, "k1");
 
-    // White cells should have letter: null
-    expect(result.grid[0][0].letter).toBeNull();
-    // Black cell should also have letter: null
-    expect(result.grid[1][1].letter).toBeNull();
+    // White cells should have puzzleLetter: null
+    expect(result.grid[0][0].puzzleLetter).toBeNull();
+    // Black cell should also have puzzleLetter: null
+    expect(result.grid[1][1].puzzleLetter).toBeNull();
   });
 
   it("includes words with startRow, startCol, direction, clue, nextWord", () => {
@@ -265,7 +266,7 @@ describe("serializeCompletePuzzle", () => {
 
   it("returns error if any white cell has no letter", () => {
     const grid = makeCrossGrid();
-    grid[0][0].letter = null; // Missing letter in a white cell
+    grid[0][0].puzzleLetter = null; // Missing puzzle letter in a white cell
     const words = makeCrossWords();
 
     const result = serializeCompletePuzzle(grid, words, defaultMetadata, "k1");
@@ -358,9 +359,9 @@ describe("serializeCompletePuzzle", () => {
     const result = serializeCompletePuzzle(grid, words, defaultMetadata, "k1");
 
     if (!("error" in result)) {
-      expect(result.grid[0][0].letter).toBe("A");
-      expect(result.grid[0][1].letter).toBe("B");
-      expect(result.grid[0][2].letter).toBe("C");
+      expect(result.grid[0][0].puzzleLetter).toBe("A");
+      expect(result.grid[0][1].puzzleLetter).toBe("B");
+      expect(result.grid[0][2].puzzleLetter).toBe("C");
     }
   });
 });
@@ -744,7 +745,7 @@ describe("deriveWordAnswer", () => {
   it("handles null letter cells by skipping them in the answer", () => {
     const grid = makeCrossGrid();
     // Set cell (0,1) to null
-    grid[0][1].letter = null;
+    grid[0][1].puzzleLetter = null;
 
     const word: Word = {
       startRow: 0,
@@ -834,7 +835,7 @@ describe("deriveWordAnswer", () => {
 describe("integration: serialize then parse round-trip", () => {
   it("incomplete puzzle survives round-trip", () => {
     const grid = makeEmptyCrossGrid();
-    grid[0][1].letter = "X";
+    grid[0][1].puzzleLetter = "X";
     grid[0][1].spaceRight = true;
     grid[1][0].hyphenBottom = true;
 
@@ -862,7 +863,7 @@ describe("integration: serialize then parse round-trip", () => {
       expect(parsed.data.title).toBe("Round Trip");
       expect(parsed.data.author).toBe("Tester");
       expect(parsed.data.gridSize).toBe(3);
-      expect(parsed.data.grid[0][1].letter).toBe("X");
+      expect(parsed.data.grid[0][1].puzzleLetter).toBe("X");
       expect(parsed.data.grid[0][1].spaceRight).toBe(true);
       expect(parsed.data.grid[1][0].hyphenBottom).toBe(true);
       expect(parsed.data.displacedClues).toHaveLength(1);
@@ -893,8 +894,8 @@ describe("integration: serialize then parse round-trip", () => {
     if ("type" in parsed && parsed.type === "complete") {
       expect(parsed.data.key).toBe("crt-key");
       expect(parsed.data.title).toBe("Complete Round Trip");
-      expect(parsed.data.grid[0][0].letter).toBe("A");
-      expect(parsed.data.grid[0][1].letter).toBe("B");
+      expect(parsed.data.grid[0][0].puzzleLetter).toBe("A");
+      expect(parsed.data.grid[0][1].puzzleLetter).toBe("B");
     }
   });
 });

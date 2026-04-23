@@ -21,7 +21,8 @@ import type { CellData, Word, CellPosition } from "./types";
 function whiteCell(): CellData {
   return {
     black: false,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -33,7 +34,8 @@ function whiteCell(): CellData {
 function blackCell(): CellData {
   return {
     black: true,
-    letter: null,
+    puzzleLetter: null,
+    playerLetter: null,
     spaceRight: false,
     spaceBottom: false,
     hyphenRight: false,
@@ -80,7 +82,7 @@ describe("createEmptyGrid", () => {
       for (let c = 0; c < 15; c++) {
         const cell = grid[r][c];
         expect(cell.black).toBe(false);
-        expect(cell.letter).toBeNull();
+        expect(cell.puzzleLetter).toBeNull();
         expect(cell.spaceRight).toBe(false);
         expect(cell.spaceBottom).toBe(false);
         expect(cell.hyphenRight).toBe(false);

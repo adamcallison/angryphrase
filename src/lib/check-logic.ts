@@ -3,16 +3,15 @@ import type {
   CellPosition,
   CheckResult,
   CheckResultType,
-  PlayerLetters,
 } from "./types";
 
 /**
  * Check the player's answers against the correct answers.
  *
  * Iterates over all cells in the grid. For each white cell (black === false):
- * - If playerLetters[row][col] is null → the cell is empty
- * - If playerLetters[row][col] !== grid[row][col].letter → the cell is incorrect
- * - If playerLetters[row][col] === grid[row][col].letter → the cell is correct
+ * - If cell.playerLetter is null → the cell is empty
+ * - If cell.playerLetter !== cell.puzzleLetter → the cell is incorrect
+ * - If cell.playerLetter === cell.puzzleLetter → the cell is correct
  *
  * Black cells are ignored entirely.
  *
@@ -27,7 +26,6 @@ import type {
  */
 export function checkPuzzle(
   grid: CellData[][],
-  playerLetters: PlayerLetters,
 ): CheckResult {
   const incorrectCells: CellPosition[] = [];
   const emptyCells: CellPosition[] = [];
@@ -41,12 +39,12 @@ export function checkPuzzle(
         continue;
       }
 
-      const playerLetter = playerLetters[row][col];
+      const playerLetter = cell.playerLetter;
 
       if (playerLetter === null) {
         // White cell with no player letter → empty
         emptyCells.push({ row, col });
-      } else if (playerLetter !== cell.letter) {
+      } else if (playerLetter !== cell.puzzleLetter) {
         // White cell with wrong letter → incorrect
         incorrectCells.push({ row, col });
       }
@@ -71,20 +69,22 @@ export function checkPuzzle(
 /**
  * Clear incorrect letters from the player's grid.
  *
- * Returns a new PlayerLetters array (deep copy) where every cell listed in
- * checkResult.incorrectCells is set to null. Empty cells and correct cells
- * are untouched. The original playerLetters array is NOT mutated.
+ * Returns a deep-copied grid where every cell listed in
+ * checkResult.incorrectCells has its playerLetter set to null.
+ * Empty cells and correct cells are untouched. The original grid is NOT mutated.
  */
 export function clearErrors(
-  playerLetters: PlayerLetters,
+  grid: CellData[][],
   checkResult: CheckResult,
-): PlayerLetters {
-  // Deep copy playerLetters
-  const result: PlayerLetters = playerLetters.map((row) => [...row]);
+): CellData[][] {
+  // Deep copy the grid
+  const result: CellData[][] = grid.map((row) =>
+    row.map((cell) => ({ ...cell }))
+  );
 
-  // Set each incorrect cell to null
+  // Set each incorrect cell's playerLetter to null
   for (const { row, col } of checkResult.incorrectCells) {
-    result[row][col] = null;
+    result[row][col] = { ...result[row][col], playerLetter: null };
   }
 
   return result;
