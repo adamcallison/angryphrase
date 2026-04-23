@@ -28,6 +28,12 @@
   let selectedDirection = $state<Direction>("across");
   let checkResult = $state<CheckResult | null>(null);
 
+  // Clear check result whenever the grid changes (player types, deletes, resets, etc.)
+  $effect(() => {
+    const _ = grid;
+    checkResult = null;
+  });
+
   let importError = $state<string | null>(null);
 
   // === Derived state ===
@@ -88,7 +94,6 @@
 
   function handleImport(jsonString: string): void {
     importError = null;
-    checkResult = null;
 
     const result = parsePuzzleJSON(jsonString);
 
@@ -143,18 +148,12 @@
   }
 
   function handleCellClick(cellPosition: CellPosition): void {
-    const row = cellPosition.row
-    const col = cellPosition.col
-    if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return;
-    if (grid[row][col].black) return;
+    if (grid[cellPosition.row][cellPosition.col].black) return;
     if (!isSelectableCell(grid, cellPosition)) return;
 
-    const result = handleCellSelection(selectedCell, selectedDirection, words, row, col);
+    const result = handleCellSelection(selectedCell, selectedDirection, words, cellPosition.row, cellPosition.col);
     selectedCell = result.selectedCell;
     selectedDirection = result.selectedDirection;
-
-    // Clear check result when user interacts
-    checkResult = null;
   }
 
   function handleKeyDown(key: string): void {
@@ -175,9 +174,6 @@
         if (next.row !== row || next.col !== col) {
           selectedCell = next;
         }
-
-        // Clear check result when user types
-        checkResult = null;
       }
       return;
     }
@@ -200,8 +196,6 @@
           }
         }
       }
-      checkResult = null;
-      return;
     }
 
     // Arrow keys
@@ -221,9 +215,6 @@
     if (word) {
       selectedCell = { row: word.startRow, col: word.startCol };
       selectedDirection = word.direction;
-
-      // Clear check result
-      checkResult = null;
     }
   }
 
@@ -235,7 +226,6 @@
   function handleClearErrors(): void {
     if (!checkResult) return;
     grid = clearErrors(grid, checkResult);
-    checkResult = null;
   }
 
   function handleReset(): void {
@@ -249,14 +239,12 @@
     );
     selectedCell = null;
     selectedDirection = "across";
-    checkResult = null;
     clearPlayerProgress(puzzleKey);
   }
 
   function handleImportNew(): void {
     puzzleLoaded = false;
     importError = null;
-    checkResult = null;
     selectedCell = null;
   }
 </script>
