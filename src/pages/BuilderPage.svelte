@@ -4,7 +4,7 @@
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue, isGridBlank } from "$lib/clue-logic";
-  import { canExportAsComplete, validateIncompletePuzzle } from "$lib/validation";
+  import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
 
@@ -190,7 +190,9 @@
   function handleCellClick(cellPosition: CellPosition): void {
     switch (interaction.kind) {
       case "join":
-        handleJoinModeClick(cellPosition, interaction.sourceWordId);
+        // Clicking the grid cancels join mode — joining happens via the clue list
+        interaction = { kind: "fill" };
+        handleFillModeClick(cellPosition);
         return;
       case "reattach":
         handleReattachModeClick(cellPosition, interaction.clueIndex);
@@ -202,50 +204,6 @@
         handleFillModeClick(cellPosition);
         return;
     }
-  }
-
-  // --- Join mode: select target word to chain ---
-  function handleJoinModeClick(cellPosition: CellPosition, sourceWordId: WordId): void {
-    const { row, col } = cellPosition;
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    if (wordsAtCell.length === 0) {
-      // Clicked on an isolated cell or black cell — cancel join mode
-      interaction = { kind: "fill" };
-      return;
-    }
-
-    let targetWord: Word;
-    if (wordsAtCell.length === 1) {
-      targetWord = wordsAtCell[0];
-    } else {
-      // Intersection — use selectedDirection or default to across
-      const dirWord = getWordInDirection(words, row, col, selectedDirection);
-      targetWord = dirWord ?? wordsAtCell[0];
-    }
-
-    const targetId = toWordId(targetWord);
-
-    // Validate join
-    const result = joinWords(words, sourceWordId, targetId);
-    if (result === null) {
-      showToast("Cannot join these words. Check that neither word is already in a chain.");
-      return;
-    }
-
-    // If target had a non-empty clue, it needs to be displaced
-    // joinWords already handles the nextWord, but we need to handle clue displacement
-    const previousTargetClue = words.find(w => toWordId(w) === targetId)?.clue;
-    if (previousTargetClue && previousTargetClue.trim() !== "") {
-      displacedClues = [...displacedClues, {
-        id: crypto.randomUUID(),
-        clue: previousTargetClue,
-        direction: targetWord.direction,
-      }];
-    }
-
-    // Update metadata from the joined words
-    syncMetadataFromWords(result);
-    interaction = { kind: "fill" };
   }
 
   // --- Reattach mode: select target word for displaced clue ---
@@ -343,7 +301,7 @@
 
   // --- Keyboard handler for Fill mode ---
   function handleKeyDown(key: string): void {
-    if (interaction.kind === "design" || !selectedCell) return;
+    if (interaction.kind !== "fill" || !selectedCell) return;
     const { row, col } = selectedCell;
 
     // Letter keys (A-Z)
@@ -431,12 +389,64 @@
 
   // --- Clue click in clue panel ---
   function handleClueClick(wordId: WordId): void {
+    switch (interaction.kind) {
+      case "join":
+        handleClueClickJoinMode(wordId, interaction.sourceWordId);
+        return;
+      case "reattach":
+        handleClueClickReattachMode(wordId);
+        return;
+      case "design":
+        handleClueClickDefault(wordId);
+        return;
+      case "fill":
+        handleClueClickDefault(wordId);
+        return;
+    }
+  }
+
+  // --- Join mode: click target clue to complete chain ---
+  function handleClueClickJoinMode(wordId: WordId, sourceWordId: WordId): void {
+    // Clicking the source clue cancels join
+    if (wordId === sourceWordId) {
+      interaction = { kind: "fill" };
+      return;
+    }
+
+    // Validate and complete the join
+    const result = joinWords(words, sourceWordId, wordId);
+    if (result === null) {
+      showToast("Cannot join these words. Check that neither word is already in a chain.");
+      return;
+    }
+
+    // If target had a non-empty clue, it needs to be displaced
+    const targetWord = words.find(w => toWordId(w) === wordId);
+    if (targetWord && targetWord.clue.trim() !== "") {
+      displacedClues = [...displacedClues, {
+        id: crypto.randomUUID(),
+        clue: targetWord.clue,
+        direction: targetWord.direction,
+      }];
+    }
+
+    syncMetadataFromWords(result);
+    interaction = { kind: "fill" };
+  }
+
+  // --- Reattach mode: navigating clues while selecting reattach target ---
+  function handleClueClickReattachMode(wordId: WordId): void {
     const word = words.find((w) => toWordId(w) === wordId);
     if (word) {
-      // Don't cancel reattach mode - user might click a clue to reattach
-      if (interaction.kind !== "reattach") {
-        interaction = { kind: "fill" };
-      }
+      selectedCell = { row: word.startRow, col: word.startCol };
+      selectedDirection = word.direction;
+    }
+  }
+
+  // --- Default: navigate to the clicked clue ---
+  function handleClueClickDefault(wordId: WordId): void {
+    const word = words.find((w) => toWordId(w) === wordId);
+    if (word) {
       selectedCell = { row: word.startRow, col: word.startCol };
       selectedDirection = word.direction;
     }
@@ -683,7 +693,7 @@
         <!-- Mode indicator for reattach/join -->
         {#if interaction.kind === "join"}
           <div class="bg-blue-50 border border-blue-200 rounded px-3 py-2 text-sm text-blue-700">
-            Select the next word in the chain. Press Escape to cancel.
+            Click the next word in the clue list to link it. Press Escape to cancel.
           </div>
         {/if}
         {#if interaction.kind === "reattach"}
@@ -699,7 +709,6 @@
           {displayLetters}
           {selectedCell}
           {highlightedCells}
-          joinMode={interaction.kind === "join"}
           reattachMode={interaction.kind === "reattach"}
           onCellClick={handleCellClick}
           onKeyDown={handleKeyDown}

@@ -9,7 +9,6 @@
     displayLetters,
     selectedCell,
     highlightedCells,
-    joinMode,
     reattachMode,
     onCellClick,
     onKeyDown,
@@ -19,7 +18,6 @@
     displayLetters: (string | null)[][];
     selectedCell: CellPosition | null;
     highlightedCells: CellPosition[];
-    joinMode: boolean;
     reattachMode: boolean;
     onCellClick: (cellPosition: CellPosition) => void;
     onKeyDown: (key: string) => void;
@@ -74,7 +72,7 @@
 </script>
 
 <div
-  class="grid focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 {joinMode ? 'grid--join' : reattachMode ? 'grid--reattach' : ''}"
+  class="grid focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 {reattachMode ? 'grid--reattach' : ''}"
   style="grid-template-columns: repeat({grid.length}, var(--cell-size))"
   tabindex="0"
   role="grid"
@@ -111,10 +109,6 @@
   .grid {
     display: inline-grid;
     outline: none;
-  }
-
-  .grid--join {
-    cursor: pointer;
   }
 
   .grid--reattach {

@@ -298,7 +298,6 @@
             displayLetters={displayLetters}
             {selectedCell}
             {highlightedCells}
-            joinMode={false}
             reattachMode={false}
             onCellClick={handleCellClick}
             onKeyDown={handleKeyDown}
