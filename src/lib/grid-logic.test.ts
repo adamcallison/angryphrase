@@ -15,8 +15,9 @@ import {
   handleCellSelection,
   handleArrowKey,
   deriveDisplayLetters,
+  isGridBlank,
 } from "./grid-logic";
-import type { CellData, Word, CellPosition } from "./types";
+import type { CellData, Word, CellPosition, DisplacedClue } from "./types";
 
 // Helper: create a single white cell with default values
 function whiteCell(): CellData {
@@ -1349,5 +1350,110 @@ describe("deriveDisplayLetters", () => {
       [null, "W", null],
       ["Q", null, null],
     ]);
+  });
+});
+
+// ============================================================
+// isGridBlank
+// ============================================================
+describe("isGridBlank", () => {
+  it("returns true for a truly blank grid (all white, no letters, no clues)", () => {
+    const grid = createEmptyGrid(5);
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "", nextWord: null },
+      { startRow: 0, startCol: 0, direction: "down", length: 5, number: 1, clue: "", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
+  });
+
+  it("returns false when a cell has a letter", () => {
+    const grid = createEmptyGrid(5);
+    grid[0][0].puzzleLetter = "A";
+
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
+  });
+
+  it("returns false when a word has non-empty clue text", () => {
+    const grid = createEmptyGrid(5);
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "Some clue", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
+  });
+
+  it("returns false when there are displaced clues", () => {
+    const grid = createEmptyGrid(5);
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [
+      { id: "dc-1", clue: "Displaced", direction: "across" },
+    ];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
+  });
+
+  it("returns false when grid has a letter AND clues", () => {
+    const grid = createEmptyGrid(5);
+    grid[0][0].puzzleLetter = "A";
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "Clue text", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [
+      { id: "dc-1", clue: "Displaced", direction: "down" },
+    ];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
+  });
+
+  it("returns true when grid is all black (no words)", () => {
+    const grid = buildGrid([
+      [true, true, true],
+      [true, true, true],
+      [true, true, true],
+    ]);
+
+    const words: Word[] = [];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
+  });
+
+  it("returns true with no words and no displaced clues", () => {
+    const grid = createEmptyGrid(5);
+    const words: Word[] = [];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
+  });
+
+  it("returns false when only one cell has a letter among many", () => {
+    const grid = createEmptyGrid(10);
+    grid[5][7].puzzleLetter = "Z";
+
+    const words: Word[] = [];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
+  });
+
+  it("returns true when words have empty clue strings", () => {
+    const grid = createEmptyGrid(5);
+    const words: Word[] = [
+      { startRow: 0, startCol: 0, direction: "across", length: 5, number: 1, clue: "", nextWord: null },
+      { startRow: 0, startCol: 0, direction: "down", length: 5, number: 1, clue: "", nextWord: null },
+    ];
+    const displacedClues: DisplacedClue[] = [];
+
+    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
   });
 });

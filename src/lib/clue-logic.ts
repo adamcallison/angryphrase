@@ -1,5 +1,4 @@
 import type {
-  CellData,
   DerivedWord,
   DisplacedClue,
   Word,
@@ -205,39 +204,4 @@ export function reattachClue(
     words: newWords,
     displacedClues: newDisplacedClues,
   };
-}
-
-/**
- * Checks if the grid is blank: no letters in any cell,
- * no non-empty clue text in any word, and no displaced clues.
- *
- * Used to determine whether grid size can be changed (FR-08).
- */
-export function isGridBlank(
-  grid: CellData[][],
-  words: Word[],
-  displacedClues: DisplacedClue[]
-): boolean {
-  // Check for displaced clues
-  if (displacedClues.length > 0) {
-    return false;
-  }
-
-  // Check for non-empty clue text
-  for (const word of words) {
-    if (word.clue !== "") {
-      return false;
-    }
-  }
-
-  // Check for any cell with a letter
-  for (const row of grid) {
-    for (const cell of row) {
-      if (cell.puzzleLetter !== null) {
-        return false;
-      }
-    }
-  }
-
-  return true;
 }

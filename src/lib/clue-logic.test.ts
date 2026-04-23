@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   reconcileWordsOnGridChange,
   reattachClue,
-  isGridBlank,
 } from "./clue-logic";
 import type {
   Word,
@@ -42,11 +41,6 @@ function blackCell(): CellData {
   };
 }
 
-function buildGrid(blacks: boolean[][]): CellData[][] {
-  return blacks.map((row) =>
-    row.map((isBlack) => (isBlack ? blackCell() : whiteCell()))
-  );
-}
 
 function makeWord(
   startRow: number,
@@ -963,113 +957,5 @@ describe("reattachClue", () => {
 
     const result = reattachClue(words, [], 0, "0-0-across");
     expect(result).toBeNull();
-  });
-});
-
-// ============================================================
-// 3. isGridBlank
-// ============================================================
-describe("isGridBlank", () => {
-  it("returns true for a truly blank grid (all white, no letters, no clues)", () => {
-    const grid = createEmptyGrid(5);
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, ""),
-      makeWord(0, 0, "down", 5, 1, ""),
-    ];
-    const displacedClues: DisplacedClue[] = [];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
-  });
-
-  it("returns false when a cell has a letter", () => {
-    const grid = createEmptyGrid(5);
-    grid[0][0].puzzleLetter = "A";
-
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, ""),
-    ];
-    const displacedClues: DisplacedClue[] = [];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
-  });
-
-  it("returns false when a word has non-empty clue text", () => {
-    const grid = createEmptyGrid(5);
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, "Some clue"),
-    ];
-    const displacedClues: DisplacedClue[] = [];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
-  });
-
-  it("returns false when there are displaced clues", () => {
-    const grid = createEmptyGrid(5);
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, ""),
-    ];
-    const displacedClues: DisplacedClue[] = [
-      { id: "dc-1", clue: "Displaced", direction: "across" },
-    ];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
-  });
-
-  it("returns false when grid has a letter AND clues", () => {
-    const grid = createEmptyGrid(5);
-    grid[0][0].puzzleLetter = "A";
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, "Clue text"),
-    ];
-    const displacedClues: DisplacedClue[] = [
-      { id: "dc-1", clue: "Displaced", direction: "down" },
-    ];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
-  });
-
-  it("returns true when grid is all black (no words)", () => {
-    // All-black 3x3 grid — no letters (all null), no words, no displaced clues
-    const grid = buildGrid([
-      [true, true, true],
-      [true, true, true],
-      [true, true, true],
-    ]);
-
-    const words: Word[] = [];
-    const displacedClues: DisplacedClue[] = [];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
-  });
-
-  it("returns true with no words and no displaced clues (empty lists)", () => {
-    const grid = createEmptyGrid(5);
-    const words: Word[] = [];
-    const displacedClues: DisplacedClue[] = [];
-
-    // All-white grid with no words (impossible in practice, but tests the function)
-    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
-  });
-
-  it("returns false when only one cell has a letter among many", () => {
-    const grid = createEmptyGrid(10);
-    grid[5][7].puzzleLetter = "Z";
-
-    const words: Word[] = [];
-    const displacedClues: DisplacedClue[] = [];
-
-    expect(isGridBlank(grid, words, displacedClues)).toBe(false);
-  });
-
-  it("returns true when words have empty clue strings", () => {
-    const grid = createEmptyGrid(5);
-    const words: Word[] = [
-      makeWord(0, 0, "across", 5, 1, ""),
-      makeWord(0, 0, "down", 5, 1, ""),
-    ];
-    const displacedClues: DisplacedClue[] = [];
-
-    // Empty strings are not "non-empty" — grid is still blank
-    expect(isGridBlank(grid, words, displacedClues)).toBe(true);
   });
 });

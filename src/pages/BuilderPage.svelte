@@ -3,7 +3,8 @@
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
-  import { reconcileWordsOnGridChange, reattachClue, isGridBlank } from "$lib/clue-logic";
+  import { reconcileWordsOnGridChange, reattachClue } from "$lib/clue-logic";
+  import { isGridBlank } from "$lib/grid-logic";
   import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
