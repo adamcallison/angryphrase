@@ -156,13 +156,15 @@
     selectedDirection = result.selectedDirection;
   }
 
-  function handleKeyDown(key: string): void {
+  function handleKeyDown(event: KeyboardEvent): void {
     if (!selectedCell) return;
 
     const { row, col } = selectedCell;
+    const key = event.key;
 
     // Letter keys (A-Z)
     if (/^[a-zA-Z]$/.test(key)) {
+      event.preventDefault();
       const letter = key.toUpperCase();
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
         const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
@@ -180,6 +182,7 @@
 
     // Backspace
     if (key === "Backspace") {
+      event.preventDefault();
       if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
         const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
         if (grid[row][col].playerLetter) {
@@ -200,6 +203,7 @@
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
+      event.preventDefault();
       const result = handleArrowKey(key, grid, row, col);
       if (result) {
         selectedDirection = result.direction;

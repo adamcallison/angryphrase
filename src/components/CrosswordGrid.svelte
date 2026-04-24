@@ -20,7 +20,7 @@
     highlightedCells: CellPosition[];
     reattachMode: boolean;
     onCellClick: (cellPosition: CellPosition) => void;
-    onKeyDown: (key: string) => void;
+    onKeyDown: (event: KeyboardEvent) => void;
   } = $props();
 
   // Derive cell numbers from words
@@ -33,45 +33,6 @@
   let highlightedSet = $derived(
     new Set(highlightedCells.map((c) => `${c.row}-${c.col}`))
   );
-
-  // Handle keyboard events — intercept letter keys, Backspace, and Arrow keys
-  function handleKeyDown(event: KeyboardEvent) {
-    const key = event.key;
-
-    if (/^[a-zA-Z]$/.test(key)) {
-      event.preventDefault();
-      onKeyDown(key.toUpperCase());
-    } else if (key === "Backspace") {
-      event.preventDefault();
-      onKeyDown("Backspace");
-    } else if (
-      key === "ArrowUp" ||
-      key === "ArrowDown" ||
-      key === "ArrowLeft" ||
-      key === "ArrowRight"
-    ) {
-      event.preventDefault();
-      onKeyDown(key);
-    }
-    // Ignore all other keys (they pass through normally)
-  }
-
-  // Handle cell click via event delegation on the grid container.
-  // Each Cell renders data-row and data-col attributes on its root element.
-  function handleClick(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    const cell = target.closest("[data-row]");
-    if (cell) {
-      const rowAttr = (cell as HTMLElement).getAttribute("data-row");
-      const colAttr = (cell as HTMLElement).getAttribute("data-col");
-      const row = Number(rowAttr);
-      const col = Number(colAttr);
-      if (!isNaN(row) && !isNaN(col)) {
-        const cellPosition = ({row: row, col: col} as CellPosition);
-        onCellClick(cellPosition);
-      }
-    }
-  }
 </script>
 
 <div
@@ -80,8 +41,7 @@
   tabindex="0"
   role="grid"
   aria-label="Crossword grid"
-  onkeydown={handleKeyDown}
-  onclick={handleClick}
+  onkeydown={onKeyDown}
 >
   {#each grid as rowData, row (row)}
     {#each rowData as cellData, col (col)}
@@ -101,8 +61,7 @@
         spaceBottom={cellData.spaceBottom}
         hyphenRight={cellData.hyphenRight}
         hyphenBottom={cellData.hyphenBottom}
-        row={row}
-        col={col}
+        onclick={() => onCellClick({ row, col })}
       />
     {/each}
   {/each}

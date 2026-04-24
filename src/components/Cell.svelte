@@ -9,8 +9,7 @@
     spaceBottom,
     hyphenRight,
     hyphenBottom,
-    row,
-    col,
+    onclick,
   }: {
     isBlack: boolean;
     letter: string | null;
@@ -21,18 +20,21 @@
     spaceBottom: boolean;
     hyphenRight: boolean;
     hyphenBottom: boolean;
-    row: number;
-    col: number;
+    onclick: () => void;
   } = $props()
 </script>
 
 {#if isBlack}
-  <div class="cell cell--black" data-row={row} data-col={col}></div>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_interactive_supports_focus -->
+  <div class="cell cell--black" role="gridcell" onclick={onclick}></div>
 {:else}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_interactive_supports_focus -->
   <div
     class="cell cell--white {isSelected ? 'cell--selected' : isHighlighted ? 'cell--highlighted' : 'cell--default'}"
-    data-row={row}
-    data-col={col}
+    role="gridcell"
+    onclick={onclick}
   >
     {#if number !== null}
       <span class="cell-number">{number}</span>
