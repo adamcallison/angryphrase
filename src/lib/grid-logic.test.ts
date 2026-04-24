@@ -313,7 +313,7 @@ describe("assignNumbers", () => {
     // The number map should not have (0,0) mapped to two different numbers
     // It should appear exactly once
     let count = 0;
-    for (const [key, num] of numbers) {
+    for (const [key, _] of numbers) {
       if (key === "0-0") count++;
     }
     expect(count).toBe(1);

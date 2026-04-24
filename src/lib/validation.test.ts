@@ -11,7 +11,6 @@ import type {
   Word,
   WordPosition,
 } from "./types";
-import { CURRENT_VERSION } from "./constants";
 
 // ============================================================
 // Helpers

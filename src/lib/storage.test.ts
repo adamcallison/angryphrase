@@ -9,7 +9,7 @@ import {
   clearPlayerProgress,
   generateUniqueKey,
 } from "./storage";
-import type { BuilderInteraction, BuilderState, PlayerProgress, CellData, WordMetadata } from "./types";
+import type { BuilderState, PlayerProgress, CellData, WordMetadata } from "./types";
 import { BUILDER_STORAGE_KEY, PLAYER_STORAGE_KEY_PREFIX } from "./constants";
 
 // ---------------------------------------------------------------------------

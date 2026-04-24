@@ -1,4 +1,4 @@
-import type { Direction, Word, WordId, WordPosition } from "./types";
+import type { Word, WordId, WordPosition } from "./types";
 import type { CellData } from "./types";
 import { getSingleWordLengthPattern } from "./grid-logic";
 

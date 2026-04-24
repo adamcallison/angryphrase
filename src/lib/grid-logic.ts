@@ -302,16 +302,13 @@ export function movePosition(
 ): CellPosition {
   const gridSize: number = grid.length;
 
-  let newRow = row;
-  let newCol = col;
-
   const offsets: Record<Direction, Record<DirectionPolarity, [number, number]>> = {
     down:    { backward: [-1, 0], forward: [1, 0] },
     across:  { backward: [0, -1], forward: [0, 1] },
   };
   const [rowOffset, colOffset] = offsets[direction][directionPolarity];
-  newRow = row + rowOffset;
-  newCol = col + colOffset;
+  let newRow = row + rowOffset;
+  let newCol = col + colOffset;
 
   // Clamp to grid bounds
   newRow = Math.max(0, Math.min(gridSize - 1, newRow));

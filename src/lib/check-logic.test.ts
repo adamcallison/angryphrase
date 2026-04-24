@@ -15,19 +15,6 @@ function whiteCellWithLetter(letter: string): CellData {
   };
 }
 
-// Helper: create a white cell with no letters
-function whiteCellEmpty(): CellData {
-  return {
-    black: false,
-    puzzleLetter: null,
-    playerLetter: null,
-    spaceRight: false,
-    spaceBottom: false,
-    hyphenRight: false,
-    hyphenBottom: false,
-  };
-}
-
 // Helper: create a black cell
 function blackCell(): CellData {
   return {

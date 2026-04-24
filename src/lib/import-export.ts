@@ -242,7 +242,6 @@ export function parsePuzzleJSON(
   }
 
   // Step 4: Normalize grid cells (fill in default marker values, add playerLetter)
-  const gridSize = parsed.gridSize;
   const rawGrid = parsed.grid;
   let normalizedGrid: CellData[][] | undefined;
   if (Array.isArray(rawGrid)) {

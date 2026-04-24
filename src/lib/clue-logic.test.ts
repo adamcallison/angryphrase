@@ -6,41 +6,13 @@ import {
 import type {
   Word,
   DerivedWord,
-  CellData,
   DisplacedClue,
   WordPosition,
 } from "./types";
-import { createEmptyGrid } from "./grid-logic";
-import { toWordId } from "./chain-logic";
 
 // ============================================================
 // Helpers
 // ============================================================
-
-function whiteCell(): CellData {
-  return {
-    black: false,
-    puzzleLetter: null,
-    playerLetter: null,
-    spaceRight: false,
-    spaceBottom: false,
-    hyphenRight: false,
-    hyphenBottom: false,
-  };
-}
-
-function blackCell(): CellData {
-  return {
-    black: true,
-    puzzleLetter: null,
-    playerLetter: null,
-    spaceRight: false,
-    spaceBottom: false,
-    hyphenRight: false,
-    hyphenBottom: false,
-  };
-}
-
 
 function makeWord(
   startRow: number,
@@ -76,9 +48,6 @@ function makeDerivedWord(
 // 1. reconcileWordsOnGridChange
 // ============================================================
 describe("reconcileWordsOnGridChange", () => {
-  const gridSize = 5;
-  const plainGrid = createEmptyGrid(gridSize);
-
   it("preserves clue and metadata for unchanged words", () => {
     const oldWords: Word[] = [
       makeWord(0, 0, "across", 5, 1, "Across one"),
