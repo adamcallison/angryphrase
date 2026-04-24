@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Word, WordId } from "$lib/types";
-  import { toWordId, getDisplayClue, getWordLengthPattern } from "$lib/chain-logic";
+  import { toWordId } from "$lib/chain-logic";
 
   let {
     word,

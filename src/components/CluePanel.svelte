@@ -6,7 +6,6 @@
   let {
     words,
     grid,
-    gridSize,
     selectedWordId,
     editable,
     onClueClick,
@@ -15,11 +14,9 @@
     onUnjoinClick,
     joinMode,
     joinSourceWordId,
-    reattachMode,
   }: {
     words: Word[];
     grid: CellData[][];
-    gridSize: number;
     selectedWordId: WordId | null;
     editable: boolean;
     onClueClick: (wordId: WordId) => void;
@@ -28,7 +25,6 @@
     onUnjoinClick: (wordId: WordId) => void;
     joinMode: boolean;
     joinSourceWordId: WordId | null;
-    reattachMode: boolean;
   } = $props();
 
   let acrossWords = $derived(

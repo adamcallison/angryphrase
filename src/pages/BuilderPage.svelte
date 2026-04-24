@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
+  import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
@@ -23,7 +24,7 @@
   let key = $state(generateUniqueKey());
   let gridSize = $state(DEFAULT_GRID_SIZE);
   let grid = $state<CellData[][]>(createEmptyGrid(DEFAULT_GRID_SIZE));
-  let wordMetadata = $state<Map<string, WordMetadata>>(new Map());
+  let wordMetadata = new SvelteMap<string, WordMetadata>();
   let displacedClues = $state<DisplacedClue[]>([]);
   let title = $state("");
   let author = $state("");
@@ -60,14 +61,12 @@
 
   /** Merge derived words with stored metadata and assigned numbers. */
   let words = $derived.by(() => {
-    const md = wordMetadata; // track dependency
-    const nm = numberMap; // track dependency
     const merged: Word[] = derivedWords.map((dw) => {
       const id = toWordId(dw);
-      const meta = md.get(id);
+      const meta = wordMetadata.get(id);
       return {
         ...dw,
-        number: nm.get(`${dw.startRow}-${dw.startCol}`) ?? 0,
+        number: numberMap.get(`${dw.startRow}-${dw.startCol}`) ?? 0,
         clue: meta?.clue ?? "",
         nextWord: meta?.nextWord ?? null,
       };
@@ -137,7 +136,11 @@
       key = saved.key;
       gridSize = saved.gridSize;
       grid = saved.grid;
-      wordMetadata = saved.wordMetadata;
+
+      wordMetadata.clear()
+      for (const [id, wm] of saved.wordMetadata.entries()) {
+        wordMetadata.set(id, wm);
+      }
       displacedClues = saved.displacedClues;
       title = saved.title;
       author = saved.author;
@@ -161,12 +164,11 @@
   // === Helper: update wordMetadata from a words array ===
 
   function syncMetadataFromWords(updatedWords: Word[]): void {
-    const newMd = new Map<string, WordMetadata>();
+    wordMetadata.clear();
     for (const w of updatedWords) {
       const id = toWordId(w);
-      newMd.set(id, { clue: w.clue, nextWord: w.nextWord });
+      wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord });
     }
-    wordMetadata = newMd;
   }
 
   // === Handlers ===
@@ -355,10 +357,8 @@
 
   // --- Clue editing ---
   function handleClueChange(wordId: WordId, newText: string): void {
-    const newMd = new Map(wordMetadata);
-    const existing = newMd.get(wordId) ?? { clue: "", nextWord: null };
-    newMd.set(wordId, { ...existing, clue: newText });
-    wordMetadata = newMd;
+    const existing = wordMetadata.get(wordId) ?? { clue: "", nextWord: null };
+    wordMetadata.set(wordId, { ...existing, clue: newText });
   }
 
   // --- Join/Unjoin ---
@@ -462,7 +462,7 @@
     if (newSize < 2) return;
     gridSize = newSize;
     grid = createEmptyGrid(newSize);
-    wordMetadata = new Map();
+    wordMetadata.clear();
     displacedClues = [];
     selectedCell = null;
   }
@@ -575,19 +575,18 @@
           author = puzzle.author;
           // Derive words from grid and merge with puzzle's word metadata
           const dw = deriveWords(grid);
-          const md = new Map<string, WordMetadata>();
+          wordMetadata.clear()
           for (const w of puzzle.words) {
             const id = toWordId(w);
-            md.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
+            wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
           }
           // Also check derived words not in puzzle
           for (const d of dw) {
             const id = toWordId(d);
-            if (!md.has(id)) {
-              md.set(id, { clue: "", nextWord: null });
+            if (!wordMetadata.has(id)) {
+              wordMetadata.set(id, { clue: "", nextWord: null });
             }
           }
-          wordMetadata = md;
           displacedClues = [];
         } else {
           // Incomplete format
@@ -597,13 +596,11 @@
           grid = puzzle.grid;
           title = puzzle.title;
           author = puzzle.author;
-
-          const md = new Map<string, WordMetadata>();
+          wordMetadata.clear()
           for (const w of puzzle.words) {
             const id = toWordId(w);
-            md.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
+            wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
           }
-          wordMetadata = md;
           displacedClues = puzzle.displacedClues;
         }
 
@@ -624,7 +621,7 @@
     key = generateUniqueKey();
     gridSize = DEFAULT_GRID_SIZE;
     grid = createEmptyGrid(DEFAULT_GRID_SIZE);
-    wordMetadata = new Map();
+    wordMetadata.clear();
     displacedClues = [];
     title = "";
     author = "";
@@ -707,7 +704,6 @@
           <CluePanel
             {words}
             {grid}
-            {gridSize}
             {selectedWordId}
             editable={interaction.kind !== "design"}
             onClueClick={handleClueClick}
@@ -716,7 +712,6 @@
             onUnjoinClick={handleUnjoinClick}
             joinMode={interaction.kind === "join"}
             joinSourceWordId={interaction.kind === "join" ? interaction.sourceWordId : null}
-            reattachMode={interaction.kind === "reattach"}
           />
         </div>
 

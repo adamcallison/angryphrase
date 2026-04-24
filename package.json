@@ -10,7 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint 'src/lib/**/*.ts'",
+    "lint": "eslint 'src/**/*.{ts,svelte}'",
     "ci": "npm run lint && npm run check && npm run test && npm run build"
   },
   "devDependencies": {
@@ -20,8 +20,10 @@
     "@tsconfig/svelte": "^5.0.4",
     "eslint": "^10.2.1",
     "eslint-plugin-svelte": "^3.17.1",
+    "globals": "^17.5.0",
     "svelte": "^5.55.4",
     "svelte-check": "^4.0.0",
+    "svelte-eslint-parser": "^1.6.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.0",

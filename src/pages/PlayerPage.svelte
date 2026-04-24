@@ -300,7 +300,6 @@
             <CluePanel
               {words}
               {grid}
-              {gridSize}
               selectedWordId={selectedWordId}
               editable={false}
               onClueClick={handleClueClick}
@@ -309,7 +308,6 @@
               onUnjoinClick={() => {}}
               joinMode={false}
               joinSourceWordId={null}
-              reattachMode={false}
             />
           </div>
 
