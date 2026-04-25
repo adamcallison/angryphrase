@@ -372,6 +372,29 @@ export function getWordCells(word: Word): CellPosition[] {
   return cells;
 }
 
+
+export function computeSelectionChangeForCellClick(
+  grid: CellData[][],
+  currentCell: CellPosition | null,
+  currentDirection: Direction,
+  words: Word[],
+  cellPosition: CellPosition,
+): { selectedCell: CellPosition | null; selectedDirection: Direction } {
+    if (grid[cellPosition.row][cellPosition.col].black) {
+      return { selectedCell: currentCell, selectedDirection: currentDirection };
+    };
+    if (!isSelectableCell(grid, cellPosition)) {
+      return { selectedCell: currentCell, selectedDirection: currentDirection };
+    };
+    return handleCellSelection(
+      currentCell,
+      currentDirection,
+      words,
+      cellPosition.row,
+      cellPosition.col,
+    )
+}
+
 /**
  * Computes the result of clicking a cell in the crossword grid.
  *

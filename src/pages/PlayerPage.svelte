@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { deriveWords, assignNumbers, getWordInDirection, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
+  import { computeSelectionChangeForCellClick, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleArrowKey, advancePosition, retreatPosition } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -148,10 +148,7 @@
   }
 
   function handleCellClick(cellPosition: CellPosition): void {
-    if (grid[cellPosition.row][cellPosition.col].black) return;
-    if (!isSelectableCell(grid, cellPosition)) return;
-
-    const result = handleCellSelection(selectedCell, selectedDirection, words, cellPosition.row, cellPosition.col);
+    const result = computeSelectionChangeForCellClick(grid, selectedCell, selectedDirection, words, cellPosition);
     selectedCell = result.selectedCell;
     selectedDirection = result.selectedDirection;
   }

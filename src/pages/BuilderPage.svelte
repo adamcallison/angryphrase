@@ -2,7 +2,7 @@
   import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordsAtCell, getWordCells, handleCellSelection, handleArrowKey, advancePosition, retreatPosition, isSelectableCell } from "$lib/grid-logic";
+  import { computeSelectionChangeForCellClick, createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleArrowKey, advancePosition, retreatPosition } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue } from "$lib/clue-logic";
   import { isGridBlank } from "$lib/grid-logic";
@@ -175,53 +175,13 @@
 
   function handleCellClick(cellPosition: CellPosition): void {
     switch (interaction.kind) {
-      case "join":
-        // Clicking the grid cancels join mode — joining happens via the clue list
-        interaction = { kind: "fill" };
-        handleFillModeClick(cellPosition);
-        return;
-      case "reattach":
-        handleReattachModeClick(cellPosition, interaction.clueIndex);
-        return;
       case "design":
         handleDesignModeClick(cellPosition);
         return;
-      case "fill":
+      default:
         handleFillModeClick(cellPosition);
         return;
     }
-  }
-
-  // --- Reattach mode: select target word for displaced clue ---
-  function handleReattachModeClick(cellPosition: CellPosition, clueIndex: number): void {
-    const { row, col } = cellPosition;
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    if (wordsAtCell.length === 0) {
-      // Clicked on a black cell or isolated cell — cancel reattach mode
-      interaction = { kind: "fill" };
-      return;
-    }
-
-    let targetWord: Word;
-    if (wordsAtCell.length === 1) {
-      targetWord = wordsAtCell[0];
-    } else {
-      const dirWord = getWordInDirection(words, row, col, selectedDirection);
-      targetWord = dirWord ?? wordsAtCell[0];
-    }
-
-    const targetId = toWordId(targetWord);
-    const result = reattachClue(words, displacedClues, clueIndex, targetId);
-
-    if (result === null) {
-      showToast("This word already has a clue.");
-      return;
-    }
-
-    // Update state from reattachClue result
-    syncMetadataFromWords(result.words);
-    displacedClues = result.displacedClues;
-    interaction = { kind: "fill" };
   }
 
 // --- Design mode: toggle cell black/white ---
@@ -279,10 +239,7 @@
 
   // --- Fill mode: select cell for typing ---
   function handleFillModeClick(cellPosition: CellPosition): void {
-    if (grid[cellPosition.row][cellPosition.col].black) return;
-    if (!isSelectableCell(grid, cellPosition)) return;
-
-    const result = handleCellSelection(selectedCell, selectedDirection, words, cellPosition.row, cellPosition.col);
+    const result = computeSelectionChangeForCellClick(grid, selectedCell, selectedDirection, words, cellPosition);
     selectedCell = result.selectedCell;
     selectedDirection = result.selectedDirection;
   }
@@ -384,7 +341,7 @@
         handleClueClickJoinMode(wordId, interaction.sourceWordId);
         return;
       case "reattach":
-        handleClueClickReattachMode(wordId);
+        handleClueClickReattachMode(wordId, interaction.clueIndex);
         return;
       case "design":
         handleClueClickDefault(wordId);
@@ -425,13 +382,28 @@
   }
 
   // --- Reattach mode: navigating clues while selecting reattach target ---
-  function handleClueClickReattachMode(wordId: WordId): void {
-    const word = words.find((w) => toWordId(w) === wordId);
-    if (word) {
-      selectedCell = { row: word.startRow, col: word.startCol };
-      selectedDirection = word.direction;
+  function handleClueClickReattachMode(wordId: WordId, clueIndex: number): void {
+
+    const result = reattachClue(words, displacedClues, clueIndex, wordId);
+
+    if (result === null) {
+      showToast("This word already has a clue.");
+      return;
     }
+
+    // Update state from reattachClue result
+    syncMetadataFromWords(result.words);
+    displacedClues = result.displacedClues;
+    interaction = { kind: "fill" };
   }
+
+
+    //const word = words.find((w) => toWordId(w) === wordId);
+    //if (word) {
+    //  selectedCell = { row: word.startRow, col: word.startCol };
+    //  selectedDirection = word.direction;
+    //}
+  //}
 
   // --- Default: navigate to the clicked clue ---
   function handleClueClickDefault(wordId: WordId): void {
