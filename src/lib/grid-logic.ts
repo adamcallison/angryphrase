@@ -1,6 +1,84 @@
 import type { CellData, CellPosition, DerivedWord, Direction, DirectionPolarity, DisplacedClue, Word } from "./types";
 
 /**
+ * Returns true if the cell at (row, col) is a valid selection target.
+ * A cell is selectable if it is white and part of a word (length ≥ 2)
+ * in either the across or down direction.
+ */
+function isSelectableCell(
+  grid: CellData[][],
+  cellPosition: CellPosition,
+): boolean {
+  const gridSize = grid.length;
+  const row = cellPosition.row
+  const col = cellPosition.col
+
+  // Out of bounds
+  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+    return false;
+  }
+
+  // Black cell
+  if (grid[row][col].black) {
+    return false;
+  }
+
+  // Check if part of an across word (at least one horizontal white neighbor)
+  const hasLeftNeighbor = col > 0 && !grid[row][col - 1].black;
+  const hasRightNeighbor = col < gridSize - 1 && !grid[row][col + 1].black;
+  const partOfAcrossWord = hasLeftNeighbor || hasRightNeighbor;
+
+  // Check if part of a down word (at least one vertical white neighbor)
+  const hasTopNeighbor = row > 0 && !grid[row - 1][col].black;
+  const hasBottomNeighbor = row < gridSize - 1 && !grid[row + 1][col].black;
+  const partOfDownWord = hasTopNeighbor || hasBottomNeighbor;
+
+  return partOfAcrossWord || partOfDownWord;
+}
+
+/**
+ * Computes the result of clicking a cell in the crossword grid.
+ *
+ * - If the clicked cell is already selected and lies at an intersection
+ *   of two words, toggles the selection direction.
+ * - If the clicked cell is a new selection, auto-detects the direction
+ *   from the words at that cell: single word → use that direction;
+ *   intersection → prefer "across".
+ *
+ * Returns the new `selectedCell` and `selectedDirection`.
+ */
+function handleCellSelection(
+  currentCell: CellPosition | null,
+  currentDirection: Direction,
+  words: Word[],
+  row: number,
+  col: number,
+): { selectedCell: CellPosition; selectedDirection: Direction } {
+  if (currentCell && currentCell.row === row && currentCell.col === col) {
+    // Clicking the already-selected cell
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    if (wordsAtCell.length > 1) {
+      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
+      if (otherWord) {
+        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
+      }
+    }
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
+  } else {
+    // Selecting a new cell
+    const wordsAtCell = getWordsAtCell(words, row, col);
+    let newDirection: Direction = currentDirection;
+    if (wordsAtCell.length === 1) {
+      newDirection = wordsAtCell[0].direction;
+    } else if (wordsAtCell.length > 1) {
+      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
+      newDirection = hasAcross ? "across" : "down";
+    }
+    return { selectedCell: { row, col }, selectedDirection: newDirection };
+  }
+}
+
+/**
  * Creates an NxN grid of all-white cells with default values.
  * Each cell has: black=false, puzzleLetter=null, playerLetter=null, and all marker flags=false.
  */
@@ -318,42 +396,6 @@ export function movePosition(
 }
 
 /**
- * Returns true if the cell at (row, col) is a valid selection target.
- * A cell is selectable if it is white and part of a word (length ≥ 2)
- * in either the across or down direction.
- */
-export function isSelectableCell(
-  grid: CellData[][],
-  cellPosition: CellPosition,
-): boolean {
-  const gridSize = grid.length;
-  const row = cellPosition.row
-  const col = cellPosition.col
-
-  // Out of bounds
-  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
-    return false;
-  }
-
-  // Black cell
-  if (grid[row][col].black) {
-    return false;
-  }
-
-  // Check if part of an across word (at least one horizontal white neighbor)
-  const hasLeftNeighbor = col > 0 && !grid[row][col - 1].black;
-  const hasRightNeighbor = col < gridSize - 1 && !grid[row][col + 1].black;
-  const partOfAcrossWord = hasLeftNeighbor || hasRightNeighbor;
-
-  // Check if part of a down word (at least one vertical white neighbor)
-  const hasTopNeighbor = row > 0 && !grid[row - 1][col].black;
-  const hasBottomNeighbor = row < gridSize - 1 && !grid[row + 1][col].black;
-  const partOfDownWord = hasTopNeighbor || hasBottomNeighbor;
-
-  return partOfAcrossWord || partOfDownWord;
-}
-
-/**
  * Returns the list of cell positions that a word occupies.
  * For an across word, cells go left-to-right in the same row.
  * For a down word, cells go top-to-bottom in the same column.
@@ -393,48 +435,6 @@ export function computeSelectionChangeForCellClick(
       cellPosition.row,
       cellPosition.col,
     )
-}
-
-/**
- * Computes the result of clicking a cell in the crossword grid.
- *
- * - If the clicked cell is already selected and lies at an intersection
- *   of two words, toggles the selection direction.
- * - If the clicked cell is a new selection, auto-detects the direction
- *   from the words at that cell: single word → use that direction;
- *   intersection → prefer "across".
- *
- * Returns the new `selectedCell` and `selectedDirection`.
- */
-export function handleCellSelection(
-  currentCell: CellPosition | null,
-  currentDirection: Direction,
-  words: Word[],
-  row: number,
-  col: number,
-): { selectedCell: CellPosition; selectedDirection: Direction } {
-  if (currentCell && currentCell.row === row && currentCell.col === col) {
-    // Clicking the already-selected cell
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    if (wordsAtCell.length > 1) {
-      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
-      if (otherWord) {
-        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
-      }
-    }
-    return { selectedCell: currentCell, selectedDirection: currentDirection };
-  } else {
-    // Selecting a new cell
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    let newDirection: Direction = currentDirection;
-    if (wordsAtCell.length === 1) {
-      newDirection = wordsAtCell[0].direction;
-    } else if (wordsAtCell.length > 1) {
-      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
-      newDirection = hasAcross ? "across" : "down";
-    }
-    return { selectedCell: { row, col }, selectedDirection: newDirection };
-  }
 }
 
 /**
