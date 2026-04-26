@@ -37,48 +37,6 @@ function isSelectableCell(
 }
 
 /**
- * Computes the result of clicking a cell in the crossword grid.
- *
- * - If the clicked cell is already selected and lies at an intersection
- *   of two words, toggles the selection direction.
- * - If the clicked cell is a new selection, auto-detects the direction
- *   from the words at that cell: single word → use that direction;
- *   intersection → prefer "across".
- *
- * Returns the new `selectedCell` and `selectedDirection`.
- */
-function handleCellSelection(
-  currentCell: CellPosition | null,
-  currentDirection: Direction,
-  words: Word[],
-  row: number,
-  col: number,
-): { selectedCell: CellPosition; selectedDirection: Direction } {
-  if (currentCell && currentCell.row === row && currentCell.col === col) {
-    // Clicking the already-selected cell
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    if (wordsAtCell.length > 1) {
-      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
-      if (otherWord) {
-        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
-      }
-    }
-    return { selectedCell: currentCell, selectedDirection: currentDirection };
-  } else {
-    // Selecting a new cell
-    const wordsAtCell = getWordsAtCell(words, row, col);
-    let newDirection: Direction = currentDirection;
-    if (wordsAtCell.length === 1) {
-      newDirection = wordsAtCell[0].direction;
-    } else if (wordsAtCell.length > 1) {
-      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
-      newDirection = hasAcross ? "across" : "down";
-    }
-    return { selectedCell: { row, col }, selectedDirection: newDirection };
-  }
-}
-
-/**
  * Creates an NxN grid of all-white cells with default values.
  * Each cell has: black=false, puzzleLetter=null, playerLetter=null, and all marker flags=false.
  */
@@ -422,19 +380,32 @@ export function computeSelectionChangeForCellClick(
   words: Word[],
   cellPosition: CellPosition,
 ): { selectedCell: CellPosition | null; selectedDirection: Direction } {
-    if (grid[cellPosition.row][cellPosition.col].black) {
-      return { selectedCell: currentCell, selectedDirection: currentDirection };
-    };
-    if (!isSelectableCell(grid, cellPosition)) {
-      return { selectedCell: currentCell, selectedDirection: currentDirection };
-    };
-    return handleCellSelection(
-      currentCell,
-      currentDirection,
-      words,
-      cellPosition.row,
-      cellPosition.col,
-    )
+  if (!isSelectableCell(grid, cellPosition)) {
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
+  };
+
+  const wordsAtCell = getWordsAtCell(words, cellPosition.row, cellPosition.col);
+
+  if (currentCell && currentCell.row === cellPosition.row && currentCell.col === cellPosition.col) {
+    // Clicking the already-selected cell
+    if (wordsAtCell.length > 1) {
+      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
+      if (otherWord) {
+        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
+      }
+    }
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
+  } else {
+    // Selecting a new cell
+    let newDirection: Direction = currentDirection;
+    if (wordsAtCell.length === 1) {
+      newDirection = wordsAtCell[0].direction;
+    } else if (wordsAtCell.length > 1) {
+      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
+      newDirection = hasAcross ? "across" : "down";
+    }
+    return { selectedCell: cellPosition, selectedDirection: newDirection };
+  }
 }
 
 /**
