@@ -668,7 +668,6 @@
           letterSource="puzzle"
           {selectedCell}
           {highlightedCells}
-          reattachMode={interaction.kind === "reattach"}
           onCellClick={handleCellClick}
           onKeyDown={handleKeyDown}
         />

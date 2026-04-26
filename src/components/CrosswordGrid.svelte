@@ -9,7 +9,6 @@
     letterSource,
     selectedCell,
     highlightedCells,
-    reattachMode,
     onCellClick,
     onKeyDown,
   }: {
@@ -18,7 +17,6 @@
     letterSource: "puzzle" | "player";
     selectedCell: CellPosition | null;
     highlightedCells: CellPosition[];
-    reattachMode: boolean;
     onCellClick: (cellPosition: CellPosition) => void;
     onKeyDown: (event: KeyboardEvent) => void;
   } = $props();
@@ -36,7 +34,7 @@
 </script>
 
 <div
-  class="grid focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 {reattachMode ? 'grid--reattach' : ''}"
+  class="grid focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
   style="grid-template-columns: repeat({grid.length}, var(--cell-size))"
   tabindex="0"
   role="grid"
@@ -71,9 +69,5 @@
   .grid {
     display: inline-grid;
     outline: none;
-  }
-
-  .grid--reattach {
-    cursor: crosshair;
   }
 </style>

@@ -283,7 +283,6 @@
             letterSource="player"
             {selectedCell}
             {highlightedCells}
-            reattachMode={false}
             onCellClick={handleCellClick}
             onKeyDown={handleKeyDown}
           />
