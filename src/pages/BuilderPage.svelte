@@ -244,59 +244,80 @@
     selectedDirection = result.selectedDirection;
   }
 
+  function enterLetterInGrid(upperLetter: string): void {
+    if (!selectedCell) return;
+    const { row, col } = selectedCell;
+
+    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
+      const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+      newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: upperLetter };
+      grid = newGrid;
+
+      // Advance cursor
+      const next = advancePosition(grid, row, col, selectedDirection);
+      if (next.row !== row || next.col !== col) {
+        selectedCell = next;
+      }
+    }
+    return;
+  }
+
+  function deleteInGrid(): void {
+    if (!selectedCell) return;
+    const { row, col } = selectedCell;
+    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
+      const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+      if (grid[row][col].puzzleLetter) {
+        newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: null };
+        grid = newGrid;
+      } else {
+        // Retreat and delete
+        const prev = retreatPosition(grid, row, col, selectedDirection);
+        if (prev.row !== row || prev.col !== col) {
+          newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], puzzleLetter: null };
+          grid = newGrid;
+          selectedCell = prev;
+        }
+      }
+    }
+    return;
+  }
+
+  function arrowInGrid(arrowKey: string): void {
+    if (!selectedCell) return;
+    const { row, col } = selectedCell;
+    const result = handleArrowKey(arrowKey, grid, row, col);
+    if (result) {
+      selectedDirection = result.direction;
+      selectedCell = result.cell;
+    }
+    return;
+  }
+
   // --- Keyboard handler for Fill mode ---
   function handleKeyDown(event: KeyboardEvent): void {
     if (interaction.kind !== "fill" || !selectedCell) return;
-    const { row, col } = selectedCell;
     const key = event.key;
 
     // Letter keys (A-Z)
     if (/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
       const letter = key.toUpperCase();
-      if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
-        const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-        newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: letter };
-        grid = newGrid;
-
-        // Advance cursor
-        const next = advancePosition(grid, row, col, selectedDirection);
-        if (next.row !== row || next.col !== col) {
-          selectedCell = next;
-        }
-      }
+      enterLetterInGrid(letter);
       return;
     }
 
     // Backspace
     if (key === "Backspace") {
       event.preventDefault();
-      if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-        const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-        if (grid[row][col].puzzleLetter) {
-          newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: null };
-          grid = newGrid;
-        } else {
-          // Retreat and delete
-          const prev = retreatPosition(grid, row, col, selectedDirection);
-          if (prev.row !== row || prev.col !== col) {
-            newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], puzzleLetter: null };
-            grid = newGrid;
-            selectedCell = prev;
-          }
-        }
-      }
+      deleteInGrid();
       return;
     }
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
       event.preventDefault();
-      const result = handleArrowKey(key, grid, row, col);
-      if (result) {
-        selectedDirection = result.direction;
-        selectedCell = result.cell;
-      }
+      arrowInGrid(key);
       return;
     }
   }
