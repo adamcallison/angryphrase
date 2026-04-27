@@ -324,13 +324,7 @@
               {words}
               {grid}
               selectedWordId={selectedWordId}
-              editable={false}
               onClueClick={handleClueClick}
-              onClueChange={() => {}}
-              onJoinClick={() => {}}
-              onUnjoinClick={() => {}}
-              joinMode={false}
-              joinSourceWordId={null}
             />
           </div>
 

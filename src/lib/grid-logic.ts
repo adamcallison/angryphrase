@@ -586,3 +586,22 @@ export function isGridBlank(
 
   return true;
 }
+
+/**
+ * Splits an array of words into across and down arrays, each sorted by number.
+ * Returns an object with `across` and `down` properties.
+ */
+export function splitWordsByDirection(words: Word[]): {
+  across: Word[];
+  down: Word[];
+} {
+  const across = words
+    .filter((w) => w.direction === "across")
+    .sort((a, b) => a.number - b.number);
+
+  const down = words
+    .filter((w) => w.direction === "down")
+    .sort((a, b) => a.number - b.number);
+
+  return { across, down };
+}

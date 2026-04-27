@@ -10,8 +10,8 @@
     isSelected,
     isChainHead,
     displayClue,
-    onClueChange,
     onClueClick,
+    onClueChange,
     onJoinClick,
     onUnjoinClick,
     joinMode,
@@ -24,12 +24,12 @@
     isSelected: boolean;
     isChainHead: boolean;
     displayClue: string;
-    onClueChange: (wordId: WordId, newText: string) => void;
     onClueClick: (wordId: WordId) => void;
-    onJoinClick: (wordId: WordId) => void;
-    onUnjoinClick: (wordId: WordId) => void;
-    joinMode: boolean;
-    joinSourceWordId: WordId | null;
+    onClueChange?: (wordId: WordId, newText: string) => void;
+    onJoinClick?: (wordId: WordId) => void;
+    onUnjoinClick?: (wordId: WordId) => void;
+    joinMode?: boolean;
+    joinSourceWordId?: WordId | null;
   } = $props();
 
   let wordId = $derived(toWordId(word));
@@ -62,17 +62,17 @@
 
   function handleInputChange(e: Event): void {
     const target = e.currentTarget as HTMLInputElement;
-    onClueChange(wordId, target.value);
+    onClueChange?.(wordId, target.value);
   }
 
   function handleJoinClick(e: MouseEvent): void {
     e.stopPropagation();
-    onJoinClick(wordId);
+    onJoinClick?.(wordId);
   }
 
   function handleUnjoinClick(e: MouseEvent): void {
     e.stopPropagation();
-    onUnjoinClick(wordId);
+    onUnjoinClick?.(wordId);
   }
 
   function handleInputClick(e: MouseEvent): void {

@@ -15,6 +15,7 @@ import {
   handleArrowKey,
   deriveDisplayLetters,
   isGridBlank,
+  splitWordsByDirection,
 } from "./grid-logic";
 import type { CellData, Word, DisplacedClue } from "./types";
 
@@ -1469,5 +1470,90 @@ describe("isGridBlank", () => {
     const displacedClues: DisplacedClue[] = [];
 
     expect(isGridBlank(grid, words, displacedClues)).toBe(true);
+  });
+});
+
+// ============================================================
+// splitWordsByDirection
+// ============================================================
+describe("splitWordsByDirection", () => {
+  function makeWord(
+    startRow: number,
+    startCol: number,
+    direction: "across" | "down",
+    number: number,
+  ): Word {
+    return {
+      startRow,
+      startCol,
+      direction,
+      length: 3,
+      number,
+      clue: "",
+      nextWord: null,
+    };
+  }
+
+  it("returns empty arrays for empty input", () => {
+    const result = splitWordsByDirection([]);
+    expect(result.across).toEqual([]);
+    expect(result.down).toEqual([]);
+  });
+
+  it("splits across and down words correctly", () => {
+    const words = [
+      makeWord(0, 0, "across", 1),
+      makeWord(0, 0, "down", 1),
+      makeWord(1, 0, "across", 2),
+      makeWord(0, 2, "down", 2),
+    ];
+
+    const result = splitWordsByDirection(words);
+
+    expect(result.across).toHaveLength(2);
+    expect(result.down).toHaveLength(2);
+    expect(result.across.map((w) => w.number)).toEqual([1, 2]);
+    expect(result.down.map((w) => w.number)).toEqual([1, 2]);
+  });
+
+  it("sorts across words by number", () => {
+    const words = [
+      makeWord(2, 0, "across", 3),
+      makeWord(0, 0, "across", 1),
+      makeWord(1, 0, "across", 2),
+    ];
+
+    const result = splitWordsByDirection(words);
+
+    expect(result.across.map((w) => w.number)).toEqual([1, 2, 3]);
+    expect(result.down).toEqual([]);
+  });
+
+  it("sorts down words by number", () => {
+    const words = [
+      makeWord(0, 2, "down", 3),
+      makeWord(0, 0, "down", 1),
+      makeWord(0, 1, "down", 2),
+    ];
+
+    const result = splitWordsByDirection(words);
+
+    expect(result.down.map((w) => w.number)).toEqual([1, 2, 3]);
+    expect(result.across).toEqual([]);
+  });
+
+  it("handles mixed unsorted input", () => {
+    const words = [
+      makeWord(1, 1, "down", 5),
+      makeWord(0, 0, "across", 1),
+      makeWord(2, 2, "down", 3),
+      makeWord(1, 0, "across", 4),
+      makeWord(0, 1, "across", 2),
+    ];
+
+    const result = splitWordsByDirection(words);
+
+    expect(result.across.map((w) => w.number)).toEqual([1, 2, 4]);
+    expect(result.down.map((w) => w.number)).toEqual([3, 5]);
   });
 });

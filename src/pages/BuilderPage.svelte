@@ -11,7 +11,7 @@
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
-  import CluePanel from "../components/CluePanel.svelte";
+  import EditableCluePanel from "../components/EditableCluePanel.svelte";
   import DisplacedCluesPanel from "../components/DisplacedCluesPanel.svelte";
   import ModeToggle from "../components/ModeToggle.svelte";
   import MarkerToolbar from "../components/MarkerToolbar.svelte";
@@ -697,11 +697,10 @@
       <!-- Right: Clues + Actions -->
       <div class="flex-1 min-w-0 flex flex-col gap-4">
         <div class="flex-1 overflow-y-auto" style="max-height: 60vh;">
-          <CluePanel
+          <EditableCluePanel
             {words}
             {grid}
             {selectedWordId}
-            editable={interaction.kind !== "design"}
             onClueClick={handleClueClick}
             onClueChange={handleClueChange}
             onJoinClick={handleJoinClick}

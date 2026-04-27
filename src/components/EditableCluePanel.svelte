@@ -7,11 +7,21 @@
     grid,
     selectedWordId,
     onClueClick,
+    onClueChange,
+    onJoinClick,
+    onUnjoinClick,
+    joinMode,
+    joinSourceWordId,
   }: {
     words: Word[];
     grid: CellData[][];
     selectedWordId: WordId | null;
     onClueClick: (wordId: WordId) => void;
+    onClueChange: (wordId: WordId, newText: string) => void;
+    onJoinClick: (wordId: WordId) => void;
+    onUnjoinClick: (wordId: WordId) => void;
+    joinMode: boolean;
+    joinSourceWordId: WordId | null;
   } = $props();
 </script>
 
@@ -19,6 +29,11 @@
   {words}
   {grid}
   {selectedWordId}
-  isEditable={false}
+  isEditable={true}
   {onClueClick}
+  {onClueChange}
+  {onJoinClick}
+  {onUnjoinClick}
+  {joinMode}
+  {joinSourceWordId}
 />
