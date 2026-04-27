@@ -99,6 +99,16 @@ export type BuilderInteraction =
   | { kind: "join"; sourceWordId: WordId }
   | { kind: "reattach"; clueIndex: number };
 
+/**
+ * Discriminated union representing the interaction mode for clue panel components.
+ * Only one mode can be active at a time (mutually exclusive).
+ * This is a view-specific type derived from BuilderInteraction.
+ */
+export type ClueInteractionMode =
+  | { kind: "idle" }
+  | { kind: "join"; sourceWordId: WordId }
+  | { kind: "reattach"; displacedClueId: string };
+
 // === Builder State ===
 
 export interface BuilderState {

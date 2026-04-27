@@ -209,6 +209,36 @@ src/components/
    - Files sort together in editors
    - Clear visual distinction from public components
 
+3. **Discriminated union for interaction mode**
+
+   After initial implementation, we identified that `joinMode` (boolean) and `joinSourceWordId` (WordId | null) were independent props even though the latter is meaningless without the former. We replaced them with a discriminated union:
+
+   ```ts
+   // _CluePanelInternal.svelte
+   export type ClueInteractionMode =
+     | { kind: "idle" }
+     | { kind: "join"; sourceWordId: WordId }
+     | { kind: "reattach"; displacedClueId: string };
+   ```
+
+   **Benefits:**
+   - **Mutually exclusive** — TypeScript enforces only one mode at a time
+   - **Type-safe state** — Each mode carries exactly the data it needs
+   - **Extensible** — Adding `"reattach"` mode is trivial (already defined)
+   - **Prevents invalid states** — Impossible to have `joinMode={true}` with `joinSourceWordId={null}`
+
+   **Usage:**
+   ```svelte
+   <!-- BuilderPage.svelte -->
+   <EditableCluePanel
+     interactionMode={
+       interaction.kind === "join"
+         ? { kind: "join", sourceWordId: interaction.sourceWordId }
+         : { kind: "idle" }
+     }
+   />
+   ```
+
 ### Tradeoffs Considered
 
 | Approach | Pros | Cons |
@@ -216,12 +246,18 @@ src/components/
 | Optional props (original recommendation) | Simple, one component | Type safety weakened, interface still conflates modes |
 | Component split (chosen) | Full type safety, clear intent | Extra files, template indirection |
 | Snippets | No wrapper overhead | Complex types, less idiomatic |
+| **Discriminated union for mode** (refinement) | **Mutually exclusive modes, type-safe state** | **Slightly more verbose construction** |
 
 We chose component split because:
 - **Type safety is enforced at component boundaries**, not runtime guards
 - **No-op callbacks eliminated entirely**, not just defaulted
 - **Template DRY preserved** via `_CluePanelInternal`
 - **Each public component is self-documenting**
+
+The discriminated union refinement ensures:
+- **`joinMode` and `joinSourceWordId` cannot be inconsistent** — they're now a single atomic value
+- **Future modes (reattach) are trivial to add** — already defined in the union
+- **Invalid states are unrepresentable** — TypeScript prevents `kind: "join"` without `sourceWordId`
 
 ### Verification
 

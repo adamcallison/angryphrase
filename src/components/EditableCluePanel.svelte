@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, Word, WordId } from "$lib/types";
+  import type { CellData, Word, WordId, ClueInteractionMode } from "$lib/types";
   import CluePanelInternal from "./_CluePanelInternal.svelte";
 
   let {
@@ -10,8 +10,7 @@
     onClueChange,
     onJoinClick,
     onUnjoinClick,
-    joinMode,
-    joinSourceWordId,
+    interactionMode = { kind: "idle" } as ClueInteractionMode,
   }: {
     words: Word[];
     grid: CellData[][];
@@ -20,8 +19,7 @@
     onClueChange: (wordId: WordId, newText: string) => void;
     onJoinClick: (wordId: WordId) => void;
     onUnjoinClick: (wordId: WordId) => void;
-    joinMode: boolean;
-    joinSourceWordId: WordId | null;
+    interactionMode?: ClueInteractionMode;
   } = $props();
 </script>
 
@@ -34,6 +32,5 @@
   {onClueChange}
   {onJoinClick}
   {onUnjoinClick}
-  {joinMode}
-  {joinSourceWordId}
+  {interactionMode}
 />

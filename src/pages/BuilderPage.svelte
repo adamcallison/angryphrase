@@ -705,8 +705,11 @@
             onClueChange={handleClueChange}
             onJoinClick={handleJoinClick}
             onUnjoinClick={handleUnjoinClick}
-            joinMode={interaction.kind === "join"}
-            joinSourceWordId={interaction.kind === "join" ? interaction.sourceWordId : null}
+            interactionMode={
+              interaction.kind === "join"
+                ? { kind: "join", sourceWordId: interaction.sourceWordId }
+                : { kind: "idle" }
+            }
           />
         </div>
 

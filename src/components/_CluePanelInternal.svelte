@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, Word, WordId } from "$lib/types";
+  import type { CellData, Word, WordId, ClueInteractionMode } from "$lib/types";
   import { toWordId, getDisplayClue, isChainHead, getWordLengthPattern } from "$lib/chain-logic";
   import { splitWordsByDirection } from "$lib/grid-logic";
   import ClueEntry from "./ClueEntry.svelte";
@@ -13,8 +13,7 @@
     onClueChange,
     onJoinClick,
     onUnjoinClick,
-    joinMode,
-    joinSourceWordId,
+    interactionMode = { kind: "idle" } as ClueInteractionMode,
   }: {
     words: Word[];
     grid: CellData[][];
@@ -24,11 +23,16 @@
     onClueChange?: (wordId: WordId, newText: string) => void;
     onJoinClick?: (wordId: WordId) => void;
     onUnjoinClick?: (wordId: WordId) => void;
-    joinMode?: boolean;
-    joinSourceWordId?: WordId | null;
+    interactionMode?: ClueInteractionMode;
   } = $props();
 
   let { across: acrossWords, down: downWords } = $derived(splitWordsByDirection(words));
+
+  // Helper to check current mode
+  let isJoinMode = $derived(interactionMode.kind === "join");
+  let joinSourceWordId = $derived(
+    interactionMode.kind === "join" ? interactionMode.sourceWordId : null
+  );
 </script>
 
 <div class="flex flex-col gap-4 overflow-y-auto max-h-full">
@@ -48,12 +52,12 @@
           isSelected={selectedWordId === toWordId(word)}
           isChainHead={isChainHead(words, word)}
           displayClue={getDisplayClue(word, words)}
-          {onClueClick}
-          {onClueChange}
-          {onJoinClick}
-          {onUnjoinClick}
-          {joinMode}
-          {joinSourceWordId}
+          onClueClick={onClueClick}
+          onClueChange={onClueChange}
+          onJoinClick={onJoinClick}
+          onUnjoinClick={onUnjoinClick}
+          joinMode={isJoinMode}
+          joinSourceWordId={joinSourceWordId}
         />
       {/each}
     </div>
@@ -75,12 +79,12 @@
           isSelected={selectedWordId === toWordId(word)}
           isChainHead={isChainHead(words, word)}
           displayClue={getDisplayClue(word, words)}
-          {onClueClick}
-          {onClueChange}
-          {onJoinClick}
-          {onUnjoinClick}
-          {joinMode}
-          {joinSourceWordId}
+          onClueClick={onClueClick}
+          onClueChange={onClueChange}
+          onJoinClick={onJoinClick}
+          onUnjoinClick={onUnjoinClick}
+          joinMode={isJoinMode}
+          joinSourceWordId={joinSourceWordId}
         />
       {/each}
     </div>

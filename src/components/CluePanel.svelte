@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, Word, WordId } from "$lib/types";
+  import type { CellData, Word, WordId, ClueInteractionMode } from "$lib/types";
   import CluePanelInternal from "./_CluePanelInternal.svelte";
 
   let {
@@ -13,6 +13,8 @@
     selectedWordId: WordId | null;
     onClueClick: (wordId: WordId) => void;
   } = $props();
+
+  const interactionMode: ClueInteractionMode = { kind: "idle" };
 </script>
 
 <CluePanelInternal
@@ -21,4 +23,5 @@
   {selectedWordId}
   isEditable={false}
   {onClueClick}
+  {interactionMode}
 />
