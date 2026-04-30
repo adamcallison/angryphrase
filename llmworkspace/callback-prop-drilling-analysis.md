@@ -263,7 +263,7 @@ The discriminated union refinement ensures:
 
 ```bash
 npm run check   # 0 errors, 0 warnings
-npm test        # 334 tests passed (including 5 new tests)
+npm test        # 370 tests passed (including 36 new tests)
 ```
 
 ### Files Changed
@@ -276,3 +276,89 @@ npm test        # 334 tests passed (including 5 new tests)
 - `src/lib/grid-logic.test.ts` — added 5 tests
 - `src/pages/PlayerPage.svelte` — removed 6 lines of no-op props
 - `src/pages/BuilderPage.svelte` — switched to `EditableCluePanel`
+
+---
+
+## Problem 3: Implicit State Machine — Resolution
+
+### Problem
+
+`BuilderInteraction` has 4 states (`design`, `fill`, `join`, `reattach`) with transitions scattered across 6+ handlers in BuilderPage. No single place defines legal transitions or guards. It was possible to write code that attempted illegal transitions (e.g., entering join mode from reattach mode).
+
+### Solution: Explicit State Machine in `interaction-machine.ts`
+
+Created a pure function `transitionInteraction(current, event)` that:
+- Takes the current state and an event
+- Returns the new state, or `null` if the transition is illegal
+- Centralizes all legal transition rules in one testable module
+
+```ts
+export type InteractionEvent =
+  | { kind: "switchMode"; mode: "design" | "fill" }
+  | { kind: "startJoin"; sourceWordId: WordId }
+  | { kind: "finishJoin" }
+  | { kind: "startReattach"; clueIndex: number }
+  | { kind: "finishReattach" }
+  | { kind: "cancel" }           // Escape key
+  | { kind: "activeClueDeleted" }
+  | { kind: "clueIndexChanged"; newIndex: number };
+
+export function transitionInteraction(
+  current: BuilderInteraction,
+  event: InteractionEvent,
+): BuilderInteraction | null { ... }
+```
+
+### Legal Transitions (Now in One Place)
+
+```
+design    ↔ fill          (switchMode)
+fill      → join           (startJoin)
+join      → fill           (finishJoin, cancel)
+fill      → reattach       (startReattach)
+reattach  → fill           (finishReattach, cancel, activeClueDeleted)
+reattach  → reattach       (clueIndexChanged — adjusts index)
+```
+
+All transitions use `switchMode`, even resets:
+- Reset → `switchMode: "design"` (from any state)
+- Import → `switchMode: "fill"` (from any state)
+- Load from storage → `switchMode: "design"` or `switchMode: "fill"` (from any state, never restores sub-modes)
+
+### Before vs After
+
+**Before** — scattered transitions, no guards:
+```ts
+// In handleJoinClick — no guard
+interaction = { kind: "join", sourceWordId: wordId };
+
+// In handleGlobalKeyDown — manual kind check
+if (interaction.kind === "join" || interaction.kind === "reattach") {
+  interaction = { kind: "fill" };
+}
+```
+
+**After** — centralized transitions, illegal transitions blocked:
+```ts
+// In handleJoinClick — state machine guards
+const next = transitionInteraction(interaction, { kind: "startJoin", sourceWordId: wordId });
+if (next) interaction = next;
+
+// In handleGlobalKeyDown — generic cancel
+const next = transitionInteraction(interaction, { kind: "cancel" });
+if (next) interaction = next;
+```
+
+### Test Coverage
+
+36 tests covering:
+- Every legal transition from every starting state
+- Every illegal transition that returns `null`
+- Edge cases (preserving event data like `sourceWordId` and `clueIndex`)
+- Same-mode transitions (cancel from non-sub-mode states)
+
+### Files Changed
+
+- `src/lib/interaction-machine.ts` — new, state machine module
+- `src/lib/interaction-machine.test.ts` — new, 36 tests
+- `src/pages/BuilderPage.svelte` — all transitions now use `transitionInteraction()`, forced transitions annotated with comments

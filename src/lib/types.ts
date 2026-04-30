@@ -100,6 +100,21 @@ export type BuilderInteraction =
   | { kind: "reattach"; clueIndex: number };
 
 /**
+ * Events that can trigger interaction state transitions.
+ * These represent user intents, not side effects. Handlers perform
+ * side effects and then call transitionInteraction() to update state.
+ */
+export type InteractionEvent =
+  | { kind: "switchMode"; mode: "design" | "fill" }
+  | { kind: "startJoin"; sourceWordId: WordId }
+  | { kind: "finishJoin" }
+  | { kind: "startReattach"; clueIndex: number }
+  | { kind: "finishReattach" }
+  | { kind: "cancel" }
+  | { kind: "activeClueDeleted" }
+  | { kind: "clueIndexChanged"; newIndex: number };
+
+/**
  * Discriminated union representing the interaction mode for clue panel components.
  * Only one mode can be active at a time (mutually exclusive).
  * This is a view-specific type derived from BuilderInteraction.

@@ -9,6 +9,7 @@
   import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
+  import { transitionInteraction } from "$lib/interaction-machine";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import EditableCluePanel from "../components/EditableCluePanel.svelte";
@@ -145,7 +146,9 @@
       title = saved.title;
       author = saved.author;
       // Always restore to the base mode — don't re-enter join/reattach sub-modes
-      interaction = saved.interaction.kind === "design" ? { kind: "design" } : { kind: "fill" };
+      const restoredMode = saved.interaction.kind === "design" ? "design" as const : "fill" as const;
+      const next = transitionInteraction(interaction, { kind: "switchMode", mode: restoredMode });
+      if (next) interaction = next;
       selectedCell = saved.selectedCell;
       selectedDirection = saved.selectedDirection;
     }
@@ -155,9 +158,8 @@
 
   function handleGlobalKeyDown(e: KeyboardEvent): void {
     if (e.key === "Escape") {
-      if (interaction.kind === "join" || interaction.kind === "reattach") {
-        interaction = { kind: "fill" };
-      }
+      const next = transitionInteraction(interaction, { kind: "cancel" });
+      if (next) interaction = next;
     }
   }
 
@@ -329,7 +331,8 @@
         return;
       }
     }
-    interaction = { kind: newMode };
+    const next = transitionInteraction(interaction, { kind: "switchMode", mode: newMode });
+    if (next) interaction = next;
 
     // Clear selection in design mode
     if (newMode === "design") {
@@ -345,7 +348,8 @@
 
   // --- Join/Unjoin ---
   function handleJoinClick(wordId: WordId): void {
-    interaction = { kind: "join", sourceWordId: wordId };
+    const next = transitionInteraction(interaction, { kind: "startJoin", sourceWordId: wordId });
+    if (next) interaction = next;
   }
 
   function handleUnjoinClick(wordId: WordId): void {
@@ -377,7 +381,8 @@
   function handleClueClickJoinMode(wordId: WordId, sourceWordId: WordId): void {
     // Clicking the source clue cancels join
     if (wordId === sourceWordId) {
-      interaction = { kind: "fill" };
+      const next = transitionInteraction(interaction, { kind: "finishJoin" });
+      if (next) interaction = next;
       return;
     }
 
@@ -399,7 +404,8 @@
     }
 
     syncMetadataFromWords(result);
-    interaction = { kind: "fill" };
+    const next = transitionInteraction(interaction, { kind: "finishJoin" });
+    if (next) interaction = next;
   }
 
   // --- Reattach mode: navigating clues while selecting reattach target ---
@@ -415,7 +421,8 @@
     // Update state from reattachClue result
     syncMetadataFromWords(result.words);
     displacedClues = result.displacedClues;
-    interaction = { kind: "fill" };
+    const next = transitionInteraction(interaction, { kind: "finishReattach" });
+    if (next) interaction = next;
   }
 
 
@@ -437,7 +444,8 @@
 
   // --- Displaced clue panel ---
   function handleDisplacedClueClick(index: number): void {
-    interaction = { kind: "reattach", clueIndex: index };
+    const next = transitionInteraction(interaction, { kind: "startReattach", clueIndex: index });
+    if (next) interaction = next;
   }
 
   function handleDisplacedClueDelete(index: number): void {
@@ -446,9 +454,14 @@
     // If in reattach mode, adjust or cancel accordingly
     if (interaction.kind === "reattach") {
       if (interaction.clueIndex === index) {
-        interaction = { kind: "fill" };
+        const next = transitionInteraction(interaction, { kind: "activeClueDeleted" });
+        if (next) interaction = next;
       } else if (interaction.clueIndex > index) {
-        interaction = { kind: "reattach", clueIndex: interaction.clueIndex - 1 };
+        const next = transitionInteraction(interaction, {
+          kind: "clueIndexChanged",
+          newIndex: interaction.clueIndex - 1,
+        });
+        if (next) interaction = next;
       }
     }
   }
@@ -603,7 +616,8 @@
 
         selectedCell = null;
         selectedDirection = "across";
-        interaction = { kind: "fill" };
+        const next = transitionInteraction(interaction, { kind: "switchMode", mode: "fill" });
+        if (next) interaction = next;
       };
       reader.readAsText(file);
     };
@@ -622,7 +636,8 @@
     displacedClues = [];
     title = "";
     author = "";
-    interaction = { kind: "design" };
+    const next = transitionInteraction(interaction, { kind: "switchMode", mode: "design" });
+    if (next) interaction = next;
     selectedCell = null;
     selectedDirection = "across";
     clearBuilderState();
