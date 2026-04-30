@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { computeSelectionChangeForCellClick, deriveWords, assignNumbers, getWordInDirection, getWordCells, handleArrowKey, advancePosition, retreatPosition } from "$lib/grid-logic";
+  import { computeSelectionChangeForCellClick, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
   import { savePlayerProgress, loadPlayerProgress, clearPlayerProgress } from "$lib/storage";
+  import { enterLetter, deleteLetter, moveCursor } from "$lib/cursor-logic";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import CluePanel from "../components/CluePanel.svelte";
@@ -153,58 +154,6 @@
     selectedDirection = result.selectedDirection;
   }
 
-  function enterLetterInGrid(upperLetter: string): void {
-    if (!selectedCell) return;
-    const { row, col } = selectedCell;
-
-    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize && !grid[row][col].black) {
-      const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-      newGrid[row][col] = { ...newGrid[row][col], playerLetter: upperLetter };
-      grid = newGrid;
-
-      // Advance cursor
-      const next = advancePosition(grid, row, col, selectedDirection);
-      if (next.row !== row || next.col !== col) {
-        selectedCell = next;
-      }
-    }
-    return;
-  }
-
-  function deleteInGrid(): void {
-    if (!selectedCell) return;
-    const { row, col } = selectedCell;
-    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
-      const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-      if (grid[row][col].playerLetter) {
-        // Delete the current letter
-        newGrid[row][col] = { ...newGrid[row][col], playerLetter: null };
-        grid = newGrid;
-      } else {
-        // Retreat and delete
-        const prev = retreatPosition(grid, row, col, selectedDirection);
-        if (prev.row !== row || prev.col !== col) {
-          newGrid[prev.row][prev.col] = { ...newGrid[prev.row][prev.col], playerLetter: null };
-          grid = newGrid;
-          selectedCell = prev;
-        }
-      }
-    }
-    return;
-  }
-
-  function arrowInGrid(arrowKey: string): void {
-    if (!selectedCell) return;
-    const { row, col } = selectedCell;
-    const result = handleArrowKey(arrowKey, grid, row, col);
-    if (result) {
-      selectedDirection = result.direction;
-      selectedCell = result.cell;
-    }
-    return;
-  }
-
-
   function handleKeyDown(event: KeyboardEvent): void {
     if (!selectedCell) return;
 
@@ -213,22 +162,30 @@
     // Letter keys (A-Z)
     if (/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
-      const letter = key.toUpperCase();
-      enterLetterInGrid(letter);
+      const result = enterLetter(grid, selectedCell, selectedDirection, key.toUpperCase(), "player");
+      grid = result.grid;
+      selectedCell = result.nextCell;
+      selectedDirection = result.nextDirection;
       return;
     }
 
     // Backspace
     if (key === "Backspace") {
       event.preventDefault();
-      deleteInGrid();
+      const result = deleteLetter(grid, selectedCell, selectedDirection, "player");
+      grid = result.grid;
+      selectedCell = result.nextCell;
+      selectedDirection = result.nextDirection;
       return;
     }
 
     // Arrow keys
     if (key.startsWith("Arrow")) {
       event.preventDefault();
-      arrowInGrid(key);
+      const result = moveCursor(grid, selectedCell, key);
+      grid = result.grid;
+      selectedCell = result.nextCell;
+      selectedDirection = result.nextDirection;
       return;
     }
   }

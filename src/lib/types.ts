@@ -89,6 +89,18 @@ export interface CheckResult {
   emptyCells: CellPosition[]; // Cells where player has not entered a letter
 }
 
+// === Cursor Logic ===
+
+/** Which letter field to read/write on a cell. */
+export type LetterSource = "puzzle" | "player";
+
+/** Result of a cursor operation. Always returns a result — never null. */
+export interface CursorResult {
+  grid: CellData[][];
+  nextCell: CellPosition;
+  nextDirection: Direction;
+}
+
 // === Builder Interaction ===
 
 // Discriminated union representing the builder's current interaction mode.

@@ -361,4 +361,89 @@ if (next) interaction = next;
 
 - `src/lib/interaction-machine.ts` — new, state machine module
 - `src/lib/interaction-machine.test.ts` — new, 36 tests
-- `src/pages/BuilderPage.svelte` — all transitions now use `transitionInteraction()`, forced transitions annotated with comments
+- `src/pages/BuilderPage.svelte` — all transitions now use `transitionInteraction()`
+
+---
+
+## Recommendation 2: Extract Shared Cursor Logic — Resolution
+
+### Problem
+
+Near-identical `enterLetterInGrid`, `deleteInGrid`, and `arrowInGrid` functions existed in both BuilderPage and PlayerPage. The only difference was which letter field they operated on (`puzzleLetter` vs `playerLetter`).
+
+### Solution: Pure Functions in `cursor-logic.ts`
+
+Created `src/lib/cursor-logic.ts` with two pure, testable functions parameterized by `LetterSource`:
+
+```ts
+export type LetterSource = "puzzle" | "player";
+
+export function enterLetter(
+  grid: CellData[][],
+  cell: CellPosition,
+  direction: Direction,
+  letter: string,
+  letterSource: LetterSource,
+): CursorResult | null;
+
+export function deleteLetter(
+  grid: CellData[][],
+  cell: CellPosition,
+  direction: Direction,
+  letterSource: LetterSource,
+): CursorResult | null;
+```
+
+These functions are pure: they take the current grid and return a new grid + next cursor position, or `null` if no change. The caller applies the state updates.
+
+### Before vs After
+
+**Before (duplicated in each page):**
+```ts
+// BuilderPage.svelte (puzzleLetter)
+function enterLetterInGrid(upperLetter: string): void {
+  if (!selectedCell) return;
+  const { row, col } = selectedCell;
+  if (row >= 0 && row < gridSize && ...) {
+    const newGrid = grid.map(r => r.map(c => ({ ...c })));
+    newGrid[row][col] = { ...newGrid[row][col], puzzleLetter: upperLetter };
+    // ... 8 more lines
+  }
+}
+
+// PlayerPage.svelte (playerLetter) — identical except playerLetter
+```
+
+**After (shared, pure, tested):**
+```ts
+// BuilderPage.svelte
+function enterLetterInGrid(upperLetter: string): void {
+  if (!selectedCell) return;
+  const result = enterLetter(grid, selectedCell, selectedDirection, upperLetter, "puzzle");
+  if (result) { grid = result.grid; selectedCell = result.nextCell; }
+}
+
+// PlayerPage.svelte
+function enterLetterInGrid(upperLetter: string): void {
+  if (!selectedCell) return;
+  const result = enterLetter(grid, selectedCell, selectedDirection, upperLetter, "player");
+  if (result) { grid = result.grid; selectedCell = result.nextCell; }
+}
+```
+
+### What Was NOT Extracted
+
+`arrowInGrid` was left in both pages — it's already a thin wrapper around `handleArrowKey` from `grid-logic.ts`, and the page needs to set reactive `selectedCell`/`selectedDirection` directly.
+
+### Test Coverage
+
+19 tests in `cursor-logic.test.ts`:
+- `enterLetter`: 9 tests (valid cell, black cell, out-of-bounds, both letter sources, overwrite, direction, immutability)
+- `deleteLetter`: 10 tests (delete current, retreat and delete, can't retreat, out-of-bounds, both sources, cross-field isolation, direction, immutability)
+
+### Files Changed
+
+- `src/lib/cursor-logic.ts` — new, pure cursor functions
+- `src/lib/cursor-logic.test.ts` — new, 19 tests
+- `src/pages/BuilderPage.svelte` — replaced inline functions with `enterLetter`/`deleteLetter` calls, removed unused `advancePosition`/`retreatPosition` imports
+- `src/pages/PlayerPage.svelte` — same
