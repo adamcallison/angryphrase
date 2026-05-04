@@ -101,6 +101,21 @@ export interface CursorResult {
   nextDirection: Direction;
 }
 
+// === Player Interaction ===
+
+// Discriminated union representing the player's current interaction mode.
+// noPuzzle: shows the import screen. playing: interacting with a loaded puzzle.
+export type PlayerInteraction =
+  | { kind: "noPuzzle" }
+  | { kind: "playing" };
+
+/**
+ * Events that can trigger player interaction state transitions.
+ */
+export type PlayerInteractionEvent =
+  | { kind: "importSuccess" }
+  | { kind: "goToImport" };
+
 // === Builder Interaction ===
 
 // Discriminated union representing the builder's current interaction mode.
@@ -114,7 +129,7 @@ export type BuilderInteraction =
 /**
  * Events that can trigger interaction state transitions.
  * These represent user intents, not side effects. Handlers perform
- * side effects and then call transitionInteraction() to update state.
+ * side effects and then call transitionBuilderInteraction() to update state.
  */
 export type InteractionEvent =
   | { kind: "switchMode"; mode: "design" | "fill" }

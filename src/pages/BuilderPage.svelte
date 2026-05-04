@@ -9,7 +9,7 @@
   import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
-  import { transitionInteraction } from "$lib/interaction-machine";
+  import { transitionBuilderInteraction } from "$lib/interaction-machine";
   import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
@@ -148,7 +148,7 @@
       author = saved.author;
       // Always restore to the base mode — don't re-enter join/reattach sub-modes
       const restoredMode = saved.interaction.kind === "design" ? "design" as const : "fill" as const;
-      const next = transitionInteraction(interaction, { kind: "switchMode", mode: restoredMode });
+      const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: restoredMode });
       if (next) interaction = next;
       selectedCell = saved.selectedCell;
       selectedDirection = saved.selectedDirection;
@@ -159,7 +159,7 @@
 
   function handleGlobalKeyDown(e: KeyboardEvent): void {
     if (e.key === "Escape") {
-      const next = transitionInteraction(interaction, { kind: "cancel" });
+      const next = transitionBuilderInteraction(interaction, { kind: "cancel" });
       if (next) interaction = next;
     }
   }
@@ -299,7 +299,7 @@
         return;
       }
     }
-    const next = transitionInteraction(interaction, { kind: "switchMode", mode: newMode });
+    const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: newMode });
     if (next) interaction = next;
 
     // Clear selection in design mode
@@ -316,7 +316,7 @@
 
   // --- Join/Unjoin ---
   function handleJoinClick(wordId: WordId): void {
-    const next = transitionInteraction(interaction, { kind: "startJoin", sourceWordId: wordId });
+    const next = transitionBuilderInteraction(interaction, { kind: "startJoin", sourceWordId: wordId });
     if (next) interaction = next;
   }
 
@@ -349,7 +349,7 @@
   function handleClueClickJoinMode(wordId: WordId, sourceWordId: WordId): void {
     // Clicking the source clue cancels join
     if (wordId === sourceWordId) {
-      const next = transitionInteraction(interaction, { kind: "finishJoin" });
+      const next = transitionBuilderInteraction(interaction, { kind: "finishJoin" });
       if (next) interaction = next;
       return;
     }
@@ -372,7 +372,7 @@
     }
 
     syncMetadataFromWords(result);
-    const next = transitionInteraction(interaction, { kind: "finishJoin" });
+    const next = transitionBuilderInteraction(interaction, { kind: "finishJoin" });
     if (next) interaction = next;
   }
 
@@ -389,17 +389,9 @@
     // Update state from reattachClue result
     syncMetadataFromWords(result.words);
     displacedClues = result.displacedClues;
-    const next = transitionInteraction(interaction, { kind: "finishReattach" });
+    const next = transitionBuilderInteraction(interaction, { kind: "finishReattach" });
     if (next) interaction = next;
   }
-
-
-    //const word = words.find((w) => toWordId(w) === wordId);
-    //if (word) {
-    //  selectedCell = { row: word.startRow, col: word.startCol };
-    //  selectedDirection = word.direction;
-    //}
-  //}
 
   // --- Default: navigate to the clicked clue ---
   function handleClueClickDefault(wordId: WordId): void {
@@ -412,7 +404,7 @@
 
   // --- Displaced clue panel ---
   function handleDisplacedClueClick(index: number): void {
-    const next = transitionInteraction(interaction, { kind: "startReattach", clueIndex: index });
+    const next = transitionBuilderInteraction(interaction, { kind: "startReattach", clueIndex: index });
     if (next) interaction = next;
   }
 
@@ -422,10 +414,10 @@
     // If in reattach mode, adjust or cancel accordingly
     if (interaction.kind === "reattach") {
       if (interaction.clueIndex === index) {
-        const next = transitionInteraction(interaction, { kind: "activeClueDeleted" });
+        const next = transitionBuilderInteraction(interaction, { kind: "activeClueDeleted" });
         if (next) interaction = next;
       } else if (interaction.clueIndex > index) {
-        const next = transitionInteraction(interaction, {
+        const next = transitionBuilderInteraction(interaction, {
           kind: "clueIndexChanged",
           newIndex: interaction.clueIndex - 1,
         });
@@ -584,7 +576,7 @@
 
         selectedCell = null;
         selectedDirection = "across";
-        const next = transitionInteraction(interaction, { kind: "switchMode", mode: "fill" });
+        const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "fill" });
         if (next) interaction = next;
       };
       reader.readAsText(file);
@@ -604,7 +596,7 @@
     displacedClues = [];
     title = "";
     author = "";
-    const next = transitionInteraction(interaction, { kind: "switchMode", mode: "design" });
+    const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "design" });
     if (next) interaction = next;
     selectedCell = null;
     selectedDirection = "across";

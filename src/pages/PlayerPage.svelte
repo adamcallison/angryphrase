@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, PlayerInteraction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
@@ -7,6 +7,7 @@
   import { parsePuzzleJSON } from "$lib/import-export";
   import { savePlayerProgress, loadPlayerProgress, clearPlayerProgress } from "$lib/storage";
   import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
+  import { transitionPlayerInteraction } from "$lib/interaction-machine";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import CluePanel from "../components/CluePanel.svelte";
@@ -17,7 +18,7 @@
 
   // === State ===
 
-  let puzzleLoaded = $state(false);
+  let interaction = $state<PlayerInteraction>({ kind: "noPuzzle" });
   let puzzleKey = $state("");
   let gridSize = $state(DEFAULT_GRID_SIZE);
   let grid = $state<CellData[][]>([]);
@@ -63,7 +64,7 @@
   // === Auto-save ===
 
   $effect(() => {
-    if (!puzzleLoaded) return;
+    if (interaction.kind !== "playing") return;
     const _ = grid;
     const _k = puzzleKey;
     const _g = gridSize;
@@ -145,7 +146,8 @@
 
     selectedCell = null;
     selectedDirection = "across";
-    puzzleLoaded = true;
+    const next = transitionPlayerInteraction(interaction, { kind: "importSuccess" });
+    if (next) interaction = next;
   }
 
   function handleCellClick(cellPosition: CellPosition): void {
@@ -209,7 +211,7 @@
   }
 
   function handleCheck(): void {
-    if (!puzzleLoaded) return;
+    if (interaction.kind !== "playing") return;
     checkResult = checkPuzzle(grid);
   }
 
@@ -219,7 +221,7 @@
   }
 
   function handleReset(): void {
-    if (!puzzleLoaded) return;
+    if (interaction.kind !== "playing") return;
     if (!window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
       return;
     }
@@ -233,13 +235,14 @@
   }
 
   function handleImportNew(): void {
-    puzzleLoaded = false;
+    const next = transitionPlayerInteraction(interaction, { kind: "goToImport" });
+    if (next) interaction = next;
     importError = null;
     selectedCell = null;
   }
 </script>
 
-{#if !puzzleLoaded}
+{#if interaction.kind === "noPuzzle"}
   <ImportScreen onImport={handleImport} error={importError} />
 {:else}
   <div class="min-h-screen bg-slate-50">
@@ -305,7 +308,7 @@
             onCheck={handleCheck}
             onReset={handleReset}
             onImportNew={handleImportNew}
-            puzzleLoaded={puzzleLoaded}
+            puzzleLoaded={interaction.kind === "playing"}
           />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import type { BuilderInteraction, InteractionEvent } from "./types";
+import type { BuilderInteraction, InteractionEvent, PlayerInteraction, PlayerInteractionEvent } from "./types";
 
 /**
  * Pure state transition function for the builder interaction state machine.
@@ -13,7 +13,7 @@ import type { BuilderInteraction, InteractionEvent } from "./types";
  *
  * Returns the new state, or null if the transition is illegal.
  */
-export function transitionInteraction(
+export function transitionBuilderInteraction(
   current: BuilderInteraction,
   event: InteractionEvent,
 ): BuilderInteraction | null {
@@ -50,5 +50,29 @@ export function transitionInteraction(
     case "clueIndexChanged":
       if (current.kind !== "reattach") return null;
       return { kind: "reattach", clueIndex: event.newIndex };
+  }
+}
+
+/**
+ * Pure state transition function for the player interaction state machine.
+ *
+ * States:
+ *   noPuzzle — no puzzle is loaded; shows the import screen
+ *   playing  — a puzzle is loaded; player is interacting with it
+ *
+ * Legal transitions:
+ *   noPuzzle → playing  (importSuccess)
+ *   playing  → noPuzzle (goToImport)
+ */
+export function transitionPlayerInteraction(
+  current: PlayerInteraction,
+  event: PlayerInteractionEvent,
+): PlayerInteraction | null {
+  switch (event.kind) {
+    case "importSuccess":
+      return { kind: "playing" };
+    case "goToImport":
+      if (current.kind !== "playing") return null;
+      return { kind: "noPuzzle" };
   }
 }

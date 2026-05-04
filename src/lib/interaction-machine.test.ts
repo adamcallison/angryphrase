@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { transitionInteraction } from "./interaction-machine";
+import { transitionBuilderInteraction } from "./interaction-machine";
 import type { BuilderInteraction, WordId } from "./types";
 
 describe("transitionInteraction", () => {
@@ -12,27 +12,27 @@ describe("transitionInteraction", () => {
 
   describe("switchMode", () => {
     it("transitions from design to fill", () => {
-      const next = transitionInteraction(designState, { kind: "switchMode", mode: "fill" });
+      const next = transitionBuilderInteraction(designState, { kind: "switchMode", mode: "fill" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("transitions from fill to design", () => {
-      const next = transitionInteraction(fillState, { kind: "switchMode", mode: "design" });
+      const next = transitionBuilderInteraction(fillState, { kind: "switchMode", mode: "design" });
       expect(next).toEqual({ kind: "design" });
     });
 
     it("transitions from join to design (cancels join)", () => {
-      const next = transitionInteraction(joinState, { kind: "switchMode", mode: "design" });
+      const next = transitionBuilderInteraction(joinState, { kind: "switchMode", mode: "design" });
       expect(next).toEqual({ kind: "design" });
     });
 
     it("transitions from reattach to fill (cancels reattach)", () => {
-      const next = transitionInteraction(reattachState, { kind: "switchMode", mode: "fill" });
+      const next = transitionBuilderInteraction(reattachState, { kind: "switchMode", mode: "fill" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("can switch to the same mode (idempotent)", () => {
-      const next = transitionInteraction(fillState, { kind: "switchMode", mode: "fill" });
+      const next = transitionBuilderInteraction(fillState, { kind: "switchMode", mode: "fill" });
       expect(next).toEqual({ kind: "fill" });
     });
   });
@@ -41,7 +41,7 @@ describe("transitionInteraction", () => {
 
   describe("startJoin", () => {
     it("transitions from fill to join", () => {
-      const next = transitionInteraction(fillState, {
+      const next = transitionBuilderInteraction(fillState, {
         kind: "startJoin",
         sourceWordId: "0-3-down" as WordId,
       });
@@ -49,7 +49,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, {
+      const next = transitionBuilderInteraction(designState, {
         kind: "startJoin",
         sourceWordId: "0-3-down" as WordId,
       });
@@ -57,7 +57,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from join mode (already joining)", () => {
-      const next = transitionInteraction(joinState, {
+      const next = transitionBuilderInteraction(joinState, {
         kind: "startJoin",
         sourceWordId: "0-3-down" as WordId,
       });
@@ -65,7 +65,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from reattach mode", () => {
-      const next = transitionInteraction(reattachState, {
+      const next = transitionBuilderInteraction(reattachState, {
         kind: "startJoin",
         sourceWordId: "0-3-down" as WordId,
       });
@@ -77,22 +77,22 @@ describe("transitionInteraction", () => {
 
   describe("finishJoin", () => {
     it("transitions from join to fill", () => {
-      const next = transitionInteraction(joinState, { kind: "finishJoin" });
+      const next = transitionBuilderInteraction(joinState, { kind: "finishJoin" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("rejects from fill mode (not joining)", () => {
-      const next = transitionInteraction(fillState, { kind: "finishJoin" });
+      const next = transitionBuilderInteraction(fillState, { kind: "finishJoin" });
       expect(next).toBeNull();
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, { kind: "finishJoin" });
+      const next = transitionBuilderInteraction(designState, { kind: "finishJoin" });
       expect(next).toBeNull();
     });
 
     it("rejects from reattach mode", () => {
-      const next = transitionInteraction(reattachState, { kind: "finishJoin" });
+      const next = transitionBuilderInteraction(reattachState, { kind: "finishJoin" });
       expect(next).toBeNull();
     });
   });
@@ -101,7 +101,7 @@ describe("transitionInteraction", () => {
 
   describe("startReattach", () => {
     it("transitions from fill to reattach", () => {
-      const next = transitionInteraction(fillState, {
+      const next = transitionBuilderInteraction(fillState, {
         kind: "startReattach",
         clueIndex: 3,
       });
@@ -109,7 +109,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, {
+      const next = transitionBuilderInteraction(designState, {
         kind: "startReattach",
         clueIndex: 3,
       });
@@ -117,7 +117,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from join mode", () => {
-      const next = transitionInteraction(joinState, {
+      const next = transitionBuilderInteraction(joinState, {
         kind: "startReattach",
         clueIndex: 3,
       });
@@ -125,7 +125,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from reattach mode (already reattaching)", () => {
-      const next = transitionInteraction(reattachState, {
+      const next = transitionBuilderInteraction(reattachState, {
         kind: "startReattach",
         clueIndex: 3,
       });
@@ -137,22 +137,22 @@ describe("transitionInteraction", () => {
 
   describe("finishReattach", () => {
     it("transitions from reattach to fill", () => {
-      const next = transitionInteraction(reattachState, { kind: "finishReattach" });
+      const next = transitionBuilderInteraction(reattachState, { kind: "finishReattach" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("rejects from fill mode (not reattaching)", () => {
-      const next = transitionInteraction(fillState, { kind: "finishReattach" });
+      const next = transitionBuilderInteraction(fillState, { kind: "finishReattach" });
       expect(next).toBeNull();
     });
 
     it("rejects from join mode", () => {
-      const next = transitionInteraction(joinState, { kind: "finishReattach" });
+      const next = transitionBuilderInteraction(joinState, { kind: "finishReattach" });
       expect(next).toBeNull();
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, { kind: "finishReattach" });
+      const next = transitionBuilderInteraction(designState, { kind: "finishReattach" });
       expect(next).toBeNull();
     });
   });
@@ -161,22 +161,22 @@ describe("transitionInteraction", () => {
 
   describe("cancel", () => {
     it("transitions from join to fill", () => {
-      const next = transitionInteraction(joinState, { kind: "cancel" });
+      const next = transitionBuilderInteraction(joinState, { kind: "cancel" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("transitions from reattach to fill", () => {
-      const next = transitionInteraction(reattachState, { kind: "cancel" });
+      const next = transitionBuilderInteraction(reattachState, { kind: "cancel" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("rejects from fill mode (nothing to cancel)", () => {
-      const next = transitionInteraction(fillState, { kind: "cancel" });
+      const next = transitionBuilderInteraction(fillState, { kind: "cancel" });
       expect(next).toBeNull();
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, { kind: "cancel" });
+      const next = transitionBuilderInteraction(designState, { kind: "cancel" });
       expect(next).toBeNull();
     });
   });
@@ -185,22 +185,22 @@ describe("transitionInteraction", () => {
 
   describe("activeClueDeleted", () => {
     it("transitions from reattach to fill (active clue was deleted)", () => {
-      const next = transitionInteraction(reattachState, { kind: "activeClueDeleted" });
+      const next = transitionBuilderInteraction(reattachState, { kind: "activeClueDeleted" });
       expect(next).toEqual({ kind: "fill" });
     });
 
     it("rejects from fill mode", () => {
-      const next = transitionInteraction(fillState, { kind: "activeClueDeleted" });
+      const next = transitionBuilderInteraction(fillState, { kind: "activeClueDeleted" });
       expect(next).toBeNull();
     });
 
     it("rejects from join mode", () => {
-      const next = transitionInteraction(joinState, { kind: "activeClueDeleted" });
+      const next = transitionBuilderInteraction(joinState, { kind: "activeClueDeleted" });
       expect(next).toBeNull();
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, { kind: "activeClueDeleted" });
+      const next = transitionBuilderInteraction(designState, { kind: "activeClueDeleted" });
       expect(next).toBeNull();
     });
   });
@@ -209,7 +209,7 @@ describe("transitionInteraction", () => {
 
   describe("clueIndexChanged", () => {
     it("adjusts clueIndex in reattach mode", () => {
-      const next = transitionInteraction(reattachState, {
+      const next = transitionBuilderInteraction(reattachState, {
         kind: "clueIndexChanged",
         newIndex: 1,
       });
@@ -217,7 +217,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from fill mode", () => {
-      const next = transitionInteraction(fillState, {
+      const next = transitionBuilderInteraction(fillState, {
         kind: "clueIndexChanged",
         newIndex: 1,
       });
@@ -225,7 +225,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from join mode", () => {
-      const next = transitionInteraction(joinState, {
+      const next = transitionBuilderInteraction(joinState, {
         kind: "clueIndexChanged",
         newIndex: 1,
       });
@@ -233,7 +233,7 @@ describe("transitionInteraction", () => {
     });
 
     it("rejects from design mode", () => {
-      const next = transitionInteraction(designState, {
+      const next = transitionBuilderInteraction(designState, {
         kind: "clueIndexChanged",
         newIndex: 1,
       });
@@ -246,7 +246,7 @@ describe("transitionInteraction", () => {
   describe("edge cases", () => {
     it("startJoin preserves the sourceWordId", () => {
       const wordId = "3-5-across" as WordId;
-      const next = transitionInteraction(fillState, {
+      const next = transitionBuilderInteraction(fillState, {
         kind: "startJoin",
         sourceWordId: wordId,
       });
@@ -254,7 +254,7 @@ describe("transitionInteraction", () => {
     });
 
     it("startReattach preserves the clueIndex", () => {
-      const next = transitionInteraction(fillState, {
+      const next = transitionBuilderInteraction(fillState, {
         kind: "startReattach",
         clueIndex: 7,
       });
@@ -266,7 +266,7 @@ describe("transitionInteraction", () => {
         kind: "join",
         sourceWordId: "5-1-down" as WordId,
       };
-      const next = transitionInteraction(joinWithDifferentSource, { kind: "cancel" });
+      const next = transitionBuilderInteraction(joinWithDifferentSource, { kind: "cancel" });
       expect(next).toEqual({ kind: "fill" });
     });
   });
