@@ -2,7 +2,7 @@
   import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { computeSelectionChangeForCellClick, createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reconcileWordsOnGridChange, reattachClue } from "$lib/clue-logic";
   import { isGridBlank } from "$lib/grid-logic";
@@ -10,7 +10,7 @@
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
   import { transitionInteraction } from "$lib/interaction-machine";
-  import { enterLetter, deleteLetter, moveCursor } from "$lib/cursor-logic";
+  import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import EditableCluePanel from "../components/EditableCluePanel.svelte";

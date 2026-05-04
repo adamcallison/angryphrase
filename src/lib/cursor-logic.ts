@@ -1,6 +1,101 @@
-import type { CellData, CellPosition, CursorResult, Direction, LetterSource, MoveDirection } from "./types";
-import { isSelectableCell } from "./grid-logic";
+import type { CellData, CellPosition, CursorResult, Direction, LetterSource, MoveDirection, Word } from "./types";
 
+/**
+ * Returns true if the cell at (row, col) is a valid selection target.
+ * A cell is selectable if it is white and part of a word (length ≥ 2)
+ * in either the across or down direction.
+ */
+function isSelectableCell(
+  grid: CellData[][],
+  cellPosition: CellPosition,
+): boolean {
+  const gridSize = grid.length;
+  const row = cellPosition.row
+  const col = cellPosition.col
+
+  // Out of bounds
+  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+    return false;
+  }
+
+  // Black cell
+  if (grid[row][col].black) {
+    return false;
+  }
+
+  // Check if part of an across word (at least one horizontal white neighbor)
+  const hasLeftNeighbor = col > 0 && !grid[row][col - 1].black;
+  const hasRightNeighbor = col < gridSize - 1 && !grid[row][col + 1].black;
+  const partOfAcrossWord = hasLeftNeighbor || hasRightNeighbor;
+
+  // Check if part of a down word (at least one vertical white neighbor)
+  const hasTopNeighbor = row > 0 && !grid[row - 1][col].black;
+  const hasBottomNeighbor = row < gridSize - 1 && !grid[row + 1][col].black;
+  const partOfDownWord = hasTopNeighbor || hasBottomNeighbor;
+
+  return partOfAcrossWord || partOfDownWord;
+}
+
+/**
+ * Returns the words that contain the cell at (row, col).
+ */
+function getWordsAtCell(words: Word[], row: number, col: number): Word[] {
+  return words.filter((word) => {
+    if (word.direction === "across") {
+      return (
+        row === word.startRow &&
+        col >= word.startCol &&
+        col < word.startCol + word.length
+      );
+    } else {
+      return (
+        col === word.startCol &&
+        row >= word.startRow &&
+        row < word.startRow + word.length
+      );
+    }
+  });
+}
+
+/** Read the letter from a cell based on the source. */
+function getLetter(cell: CellData, source: LetterSource): string | null {
+  return source === "puzzle" ? cell.puzzleLetter : cell.playerLetter;
+}
+
+/** Create a copy of the cell with the letter field set. */
+function setLetter(cell: CellData, source: LetterSource, value: string | null): CellData {
+  return source === "puzzle"
+    ? { ...cell, puzzleLetter: value }
+    : { ...cell, playerLetter: value };
+}
+
+/**
+ * Shifts the cursor position one cell in the given direction.
+ * Positive step advances, negative step retreats.
+ * If the target cell is out of bounds or not selectable, returns the
+ * current position unchanged.
+ */
+function shiftPosition(
+  grid: CellData[][],
+  row: number,
+  col: number,
+  direction: Direction,
+  step: number,
+): CellPosition {
+  let targetRow = row;
+  let targetCol = col;
+
+  if (direction === "across") {
+    targetCol += step;
+  } else {
+    targetRow += step;
+  }
+
+  if (isSelectableCell(grid, { row: targetRow, col: targetCol })) {
+    return { row: targetRow, col: targetCol };
+  }
+  return { row, col };
+}
 
 /**
  * Enters a letter at the given cell position and advances the cursor.
@@ -28,7 +123,7 @@ export function enterLetter(
   const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
   newGrid[row][col] = setLetter(newGrid[row][col], letterSource, letter);
 
-  const nextCell = advancePosition(newGrid, row, col, direction);
+  const nextCell = shiftPosition(newGrid, row, col, direction, 1);
   return { grid: newGrid, nextCell, nextDirection: direction };
 }
 
@@ -61,7 +156,7 @@ export function deleteLetter(
     newGrid[row][col] = setLetter(newGrid[row][col], letterSource, null);
     return { grid: newGrid, nextCell: cell, nextDirection: direction };
   } else {
-    const prev = retreatPosition(grid, row, col, direction);
+    const prev = shiftPosition(grid, row, col, direction, -1);
     if (prev.row !== row || prev.col !== col) {
       newGrid[prev.row][prev.col] = setLetter(newGrid[prev.row][prev.col], letterSource, null);
       return { grid: newGrid, nextCell: prev, nextDirection: direction };
@@ -82,97 +177,48 @@ export function moveCursor(
   cell: CellPosition,
   moveDirection: MoveDirection,
 ): CursorResult {
-  const { row, col } = cell;
-  const gridSize = grid.length;
-  let newRow = row;
-  let newCol = col;
-  let newDirection: Direction;
-
-  switch (moveDirection) {
-    case "up":
-      newDirection = "down";
-      newRow = Math.max(0, row - 1);
-      break;
-    case "down":
-      newDirection = "down";
-      newRow = Math.min(gridSize - 1, row + 1);
-      break;
-    case "left":
-      newDirection = "across";
-      newCol = Math.max(0, col - 1);
-      break;
-    case "right":
-      newDirection = "across";
-      newCol = Math.min(gridSize - 1, col + 1);
-      break;
-  }
-
-  const newPos: CellPosition = { row: newRow, col: newCol };
-  const nextCell = isSelectableCell(grid, newPos) ? newPos : cell;
-  return { grid, nextCell, nextDirection: newDirection };
+  const directionMap: Record<MoveDirection, { direction: Direction; step: number }> = {
+    up:    { direction: "down",    step: -1 },
+    down:  { direction: "down",    step: 1 },
+    left:  { direction: "across",   step: -1 },
+    right: { direction: "across",   step: 1 },
+  };
+  const { direction, step } = directionMap[moveDirection];
+  const nextCell = shiftPosition(grid, cell.row, cell.col, direction, step);
+  return { grid, nextCell, nextDirection: direction };
 }
 
-
-/** Read the letter from a cell based on the source. */
-function getLetter(cell: CellData, source: LetterSource): string | null {
-  return source === "puzzle" ? cell.puzzleLetter : cell.playerLetter;
-}
-
-/** Create a copy of the cell with the letter field set. */
-function setLetter(cell: CellData, source: LetterSource, value: string | null): CellData {
-  return source === "puzzle"
-    ? { ...cell, puzzleLetter: value }
-    : { ...cell, playerLetter: value };
-}
-
-/**
- * Advances the cursor position one cell in the given direction.
- * If the next cell is out of bounds or not selectable, returns the
- * current position unchanged.
- */
-function advancePosition(
+export function computeSelectionChangeForCellClick(
   grid: CellData[][],
-  row: number,
-  col: number,
-  direction: Direction,
-): CellPosition {
-  let nextRow = row;
-  let nextCol = col;
+  currentCell: CellPosition | null,
+  currentDirection: Direction,
+  words: Word[],
+  cellPosition: CellPosition,
+): { selectedCell: CellPosition | null; selectedDirection: Direction } {
+  if (!isSelectableCell(grid, cellPosition)) {
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
+  };
 
-  if (direction === "across") {
-    nextCol = col + 1;
+  const wordsAtCell = getWordsAtCell(words, cellPosition.row, cellPosition.col);
+
+  if (currentCell && currentCell.row === cellPosition.row && currentCell.col === cellPosition.col) {
+    // Clicking the already-selected cell
+    if (wordsAtCell.length > 1) {
+      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
+      if (otherWord) {
+        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
+      }
+    }
+    return { selectedCell: currentCell, selectedDirection: currentDirection };
   } else {
-    nextRow = row + 1;
+    // Selecting a new cell
+    let newDirection: Direction = currentDirection;
+    if (wordsAtCell.length === 1) {
+      newDirection = wordsAtCell[0].direction;
+    } else if (wordsAtCell.length > 1) {
+      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
+      newDirection = hasAcross ? "across" : "down";
+    }
+    return { selectedCell: cellPosition, selectedDirection: newDirection };
   }
-
-  if (isSelectableCell(grid, { row: nextRow, col: nextCol })) {
-    return { row: nextRow, col: nextCol };
-  }
-  return { row, col };
-}
-
-/**
- * Retreats the cursor position one cell in the opposite direction.
- * If the previous cell is out of bounds or not selectable, returns the
- * current position unchanged.
- */
-function retreatPosition(
-  grid: CellData[][],
-  row: number,
-  col: number,
-  direction: Direction,
-): CellPosition {
-  let prevRow = row;
-  let prevCol = col;
-
-  if (direction === "across") {
-    prevCol = col - 1;
-  } else {
-    prevRow = row - 1;
-  }
-
-  if (isSelectableCell(grid, { row: prevRow, col: prevCol })) {
-    return { row: prevRow, col: prevCol };
-  }
-  return { row, col };
 }

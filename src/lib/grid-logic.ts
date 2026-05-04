@@ -1,42 +1,6 @@
 import type { CellData, CellPosition, DerivedWord, Direction, DisplacedClue, Word } from "./types";
 
 /**
- * Returns true if the cell at (row, col) is a valid selection target.
- * A cell is selectable if it is white and part of a word (length ≥ 2)
- * in either the across or down direction.
- */
-export function isSelectableCell(
-  grid: CellData[][],
-  cellPosition: CellPosition,
-): boolean {
-  const gridSize = grid.length;
-  const row = cellPosition.row
-  const col = cellPosition.col
-
-  // Out of bounds
-  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
-    return false;
-  }
-
-  // Black cell
-  if (grid[row][col].black) {
-    return false;
-  }
-
-  // Check if part of an across word (at least one horizontal white neighbor)
-  const hasLeftNeighbor = col > 0 && !grid[row][col - 1].black;
-  const hasRightNeighbor = col < gridSize - 1 && !grid[row][col + 1].black;
-  const partOfAcrossWord = hasLeftNeighbor || hasRightNeighbor;
-
-  // Check if part of a down word (at least one vertical white neighbor)
-  const hasTopNeighbor = row > 0 && !grid[row - 1][col].black;
-  const hasBottomNeighbor = row < gridSize - 1 && !grid[row + 1][col].black;
-  const partOfDownWord = hasTopNeighbor || hasBottomNeighbor;
-
-  return partOfAcrossWord || partOfDownWord;
-}
-
-/**
  * Creates an NxN grid of all-white cells with default values.
  * Each cell has: black=false, puzzleLetter=null, playerLetter=null, and all marker flags=false.
  */
@@ -188,30 +152,6 @@ export function assignNumbers(words: DerivedWord[]): Map<string, number> {
  * (from startRow/startCol to startRow + length - 1 for across,
  *  or startCol + length - 1 for down) and matches the direction.
  */
-export function getWordsAtCell(
-  words: Word[],
-  row: number,
-  col: number
-): Word[] {
-  return words.filter((word) => {
-    if (word.direction === "across") {
-      // Word spans: (startRow, startCol) to (startRow, startCol + length - 1)
-      return (
-        row === word.startRow &&
-        col >= word.startCol &&
-        col < word.startCol + word.length
-      );
-    } else {
-      // Word spans: (startRow, startCol) to (startRow + length - 1, startCol)
-      return (
-        col === word.startCol &&
-        row >= word.startRow &&
-        row < word.startRow + word.length
-      );
-    }
-  });
-}
-
 /**
  * Returns the word at (row, col) in the given direction, or null if
  * no word of that direction contains the cell.
@@ -263,40 +203,7 @@ export function getWordCells(word: Word): CellPosition[] {
 }
 
 
-export function computeSelectionChangeForCellClick(
-  grid: CellData[][],
-  currentCell: CellPosition | null,
-  currentDirection: Direction,
-  words: Word[],
-  cellPosition: CellPosition,
-): { selectedCell: CellPosition | null; selectedDirection: Direction } {
-  if (!isSelectableCell(grid, cellPosition)) {
-    return { selectedCell: currentCell, selectedDirection: currentDirection };
-  };
 
-  const wordsAtCell = getWordsAtCell(words, cellPosition.row, cellPosition.col);
-
-  if (currentCell && currentCell.row === cellPosition.row && currentCell.col === cellPosition.col) {
-    // Clicking the already-selected cell
-    if (wordsAtCell.length > 1) {
-      const otherWord = wordsAtCell.find((w) => w.direction !== currentDirection);
-      if (otherWord) {
-        return { selectedCell: currentCell, selectedDirection: otherWord.direction };
-      }
-    }
-    return { selectedCell: currentCell, selectedDirection: currentDirection };
-  } else {
-    // Selecting a new cell
-    let newDirection: Direction = currentDirection;
-    if (wordsAtCell.length === 1) {
-      newDirection = wordsAtCell[0].direction;
-    } else if (wordsAtCell.length > 1) {
-      const hasAcross = wordsAtCell.some((w) => w.direction === "across");
-      newDirection = hasAcross ? "across" : "down";
-    }
-    return { selectedCell: cellPosition, selectedDirection: newDirection };
-  }
-}
 
 /**
  * Counts contiguous white cells starting from (startRow, startCol)

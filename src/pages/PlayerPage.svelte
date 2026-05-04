@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { computeSelectionChangeForCellClick, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
+  import { deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
   import { savePlayerProgress, loadPlayerProgress, clearPlayerProgress } from "$lib/storage";
-  import { enterLetter, deleteLetter, moveCursor } from "$lib/cursor-logic";
+  import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import CluePanel from "../components/CluePanel.svelte";

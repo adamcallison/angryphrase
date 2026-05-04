@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { enterLetter, deleteLetter, moveCursor } from "./cursor-logic";
-import type { CellData, CellPosition } from "./types";
-import { createEmptyGrid } from "./grid-logic";
+import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "./cursor-logic";
+import type { CellData, CellPosition, Word } from "./types";
+import { createEmptyGrid, deriveWords } from "./grid-logic";
 
 /** Helper: create a single black cell. */
 function blackCell(): CellData {
@@ -458,5 +458,213 @@ describe("moveCursor", () => {
 
     expect(result.nextCell).toEqual({ row: 2, col: 4 });
     expect(result.nextDirection).toBe("across");
+  });
+});
+
+/** Helper: create a Word for testing. */
+function makeWord(
+  startRow: number,
+  startCol: number,
+  direction: "across" | "down",
+  length: number,
+  number: number,
+  clue = "",
+): Word {
+  return {
+    startRow,
+    startCol,
+    direction,
+    length,
+    number,
+    clue,
+    nextWord: null,
+  };
+}
+
+// ============================================================
+// computeSelectionChangeForCellClick
+// ============================================================
+describe("computeSelectionChangeForCellClick", () => {
+  // 3x3 all-white grid: 3 across words (row 0, 1, 2) + 3 down words (col 0, 1, 2)
+  const grid = createEmptyGrid(3);
+  const derivedWords = deriveWords(grid);
+  const words: Word[] = derivedWords.map((dw) => ({
+    ...dw,
+    clue: "",
+    nextWord: null,
+  }));
+
+  it("clicking already-selected intersection cell toggles direction to down", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      { row: 0, col: 0 },
+      "across",
+      words,
+      { row: 0, col: 0 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("down");
+  });
+
+  it("clicking already-selected intersection cell toggles direction to across", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      { row: 0, col: 0 },
+      "down",
+      words,
+      { row: 0, col: 0 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking already-selected non-intersection cell keeps same direction", () => {
+    const wordsAtSingle: Word[] = [makeWord(0, 0, "across", 3, 1)];
+    const gridAtSingle = buildGrid([
+      [false, false, false],
+      [true, true, true],
+      [true, true, true],
+    ]);
+    const result = computeSelectionChangeForCellClick(
+      gridAtSingle,
+      { row: 0, col: 2 },
+      "across",
+      wordsAtSingle,
+      { row: 0, col: 2 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 2 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new cell in a single word auto-detects that direction", () => {
+    const wordsAtSingle: Word[] = [makeWord(0, 0, "across", 3, 1)];
+    const gridAtSingle = buildGrid([
+      [false, false, false],
+      [true, true, true],
+      [true, true, true],
+    ]);
+    const result = computeSelectionChangeForCellClick(
+      gridAtSingle,
+      { row: 0, col: 0 },
+      "down",
+      wordsAtSingle,
+      { row: 0, col: 2 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 2 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new intersection cell defaults to across", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      null,
+      "down",
+      words,
+      { row: 1, col: 1 },
+    );
+    expect(result.selectedCell).toEqual({ row: 1, col: 1 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new intersection cell defaults to across even from across", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      null,
+      "across",
+      words,
+      { row: 1, col: 1 },
+    );
+    expect(result.selectedCell).toEqual({ row: 1, col: 1 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a black cell when no cell was previously selected keeps selection null", () => {
+    const gridWithBlack = buildGrid([
+      [false, true, false],
+      [true, true, true],
+      [true, true, true],
+    ]);
+    const wordsWithBlack = deriveWords(gridWithBlack).map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+    const result = computeSelectionChangeForCellClick(
+      gridWithBlack,
+      null,
+      "across",
+      wordsWithBlack,
+      { row: 0, col: 0 },
+    );
+    expect(result.selectedCell).toBeNull();
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a new cell when no cell was previously selected", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      null,
+      "across",
+      words,
+      { row: 0, col: 0 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a different cell selects it with auto-detected direction", () => {
+    const result = computeSelectionChangeForCellClick(
+      grid,
+      { row: 0, col: 0 },
+      "across",
+      words,
+      { row: 2, col: 0 },
+    );
+    expect(result.selectedCell).toEqual({ row: 2, col: 0 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a black cell returns unchanged selection", () => {
+    const gridWithBlack = buildGrid([
+      [true, true, true],
+      [true, false, true],
+      [true, true, true],
+    ]);
+    const wordsWithBlack = deriveWords(gridWithBlack).map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+    const result = computeSelectionChangeForCellClick(
+      gridWithBlack,
+      { row: 0, col: 0 },
+      "across",
+      wordsWithBlack,
+      { row: 1, col: 1 },
+    );
+    expect(result.selectedCell).toEqual({ row: 0, col: 0 });
+    expect(result.selectedDirection).toBe("across");
+  });
+
+  it("clicking a non-selectable isolated cell returns unchanged selection", () => {
+    const gridWithIsolated = buildGrid([
+      [false, true, false],
+      [true, false, true],
+      [true, true, true],
+    ]);
+    const wordsIsolated = deriveWords(gridWithIsolated).map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+    const result = computeSelectionChangeForCellClick(
+      gridWithIsolated,
+      { row: 1, col: 0 },
+      "down",
+      wordsIsolated,
+      { row: 0, col: 0 },
+    );
+    expect(result.selectedCell).toEqual({ row: 1, col: 0 });
+    expect(result.selectedDirection).toBe("down");
   });
 });
