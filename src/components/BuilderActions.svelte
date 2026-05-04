@@ -11,9 +11,37 @@
     exportErrors: string[];
     onSave: () => void;
     onExportComplete: () => void;
-    onImport: () => void;
+    onImport: (jsonString: string) => void;
     onReset: () => void;
   } = $props();
+
+  let fileInput: HTMLInputElement | undefined = $state();
+
+  /** Reads a File as text. Rejects if the read fails. */
+  function readFileAsText(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
+  async function handleFileChange(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      const content = await readFileAsText(file);
+      onImport(content);
+    } catch {
+      // FileReader errors are rare; the validation layer handles bad content
+    }
+
+    // Reset the input so the same file can be re-imported
+    input.value = "";
+  }
 </script>
 
 <div class="actions">
@@ -45,7 +73,7 @@
     <button
       type="button"
       class="btn btn--secondary"
-      onclick={onImport}
+      onclick={() => fileInput?.click()}
     >
       Import
     </button>
@@ -58,6 +86,15 @@
       Reset
     </button>
   </div>
+
+  <!-- Hidden file input -->
+  <input
+    type="file"
+    accept=".json"
+    bind:this={fileInput}
+    onchange={handleFileChange}
+    class="hidden"
+  />
 
   {#if !canExportComplete && exportErrors.length > 0}
     <p class="actions__error-hint">

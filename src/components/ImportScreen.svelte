@@ -7,22 +7,29 @@
     error: string | null;
   } = $props();
 
+  /** Reads a File as text. Rejects if the read fails. */
+  function readFileAsText(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  }
+
   let fileInput: HTMLInputElement | undefined = $state();
 
-  function handleFileChange(event: Event): void {
+  async function handleFileChange(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const content = reader.result as string;
+    try {
+      const content = await readFileAsText(file);
       onImport(content);
-    };
-    reader.onerror = () => {
+    } catch {
       // FileReader errors are rare; the validation layer handles bad content
-    };
-    reader.readAsText(file);
+    }
 
     // Reset the input so the same file can be re-imported
     input.value = "";
@@ -32,26 +39,17 @@
     fileInput?.click();
   }
 
-  function handleDrop(event: DragEvent): void {
+  async function handleDrop(event: DragEvent): Promise<void> {
     event.preventDefault();
     const file = event.dataTransfer?.files[0];
     if (!file) return;
 
-    if (!file.name.endsWith(".json")) {
-      // Let the validation layer handle non-JSON files
-      const reader = new FileReader();
-      reader.onload = () => {
-        onImport(reader.result as string);
-      };
-      reader.readAsText(file);
-      return;
+    try {
+      const content = await readFileAsText(file);
+      onImport(content);
+    } catch {
+      // FileReader errors are rare; the validation layer handles bad content
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      onImport(reader.result as string);
-    };
-    reader.readAsText(file);
   }
 
   function handleDragOver(event: DragEvent): void {

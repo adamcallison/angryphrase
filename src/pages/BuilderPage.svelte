@@ -511,77 +511,59 @@
   }
 
   // --- Import ---
-  function handleImport(): void {
-    // Check if current puzzle has content
+  function handleImport(jsonString: string): void {
     if (!gridIsBlank) {
       if (!window.confirm("Importing will replace your current puzzle. Continue?")) {
         return;
       }
     }
 
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const content = reader.result as string;
-        const result = parsePuzzleJSON(content);
+    const result = parsePuzzleJSON(jsonString);
 
-        if ("error" in result) {
-          showToast(`Import failed: ${result.error}`);
-          return;
+    if ("error" in result) {
+      showToast(`Import failed: ${result.error}`);
+      return;
+    }
+
+    if (result.type === "complete") {
+      const puzzle = result.data;
+      key = puzzle.key;
+      gridSize = puzzle.gridSize;
+      grid = puzzle.grid;
+      title = puzzle.title;
+      author = puzzle.author;
+      const dw = deriveWords(grid);
+      wordMetadata.clear()
+      for (const w of puzzle.words) {
+        const id = toWordId(w);
+        wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
+      }
+      for (const d of dw) {
+        const id = toWordId(d);
+        if (!wordMetadata.has(id)) {
+          wordMetadata.set(id, { clue: "", nextWord: null });
         }
+      }
+      displacedClues = [];
+    } else {
+      const puzzle = result.data;
+      key = puzzle.key;
+      gridSize = puzzle.gridSize;
+      grid = puzzle.grid;
+      title = puzzle.title;
+      author = puzzle.author;
+      wordMetadata.clear()
+      for (const w of puzzle.words) {
+        const id = toWordId(w);
+        wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
+      }
+      displacedClues = puzzle.displacedClues;
+    }
 
-        if (result.type === "complete") {
-          const puzzle = result.data;
-          // Convert complete puzzle to builder state
-          key = puzzle.key;
-          gridSize = puzzle.gridSize;
-          grid = puzzle.grid;
-          title = puzzle.title;
-          author = puzzle.author;
-          // Derive words from grid and merge with puzzle's word metadata
-          const dw = deriveWords(grid);
-          wordMetadata.clear()
-          for (const w of puzzle.words) {
-            const id = toWordId(w);
-            wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
-          }
-          // Also check derived words not in puzzle
-          for (const d of dw) {
-            const id = toWordId(d);
-            if (!wordMetadata.has(id)) {
-              wordMetadata.set(id, { clue: "", nextWord: null });
-            }
-          }
-          displacedClues = [];
-        } else {
-          // Incomplete format
-          const puzzle = result.data;
-          key = puzzle.key;
-          gridSize = puzzle.gridSize;
-          grid = puzzle.grid;
-          title = puzzle.title;
-          author = puzzle.author;
-          wordMetadata.clear()
-          for (const w of puzzle.words) {
-            const id = toWordId(w);
-            wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
-          }
-          displacedClues = puzzle.displacedClues;
-        }
-
-        selectedCell = null;
-        selectedDirection = "across";
-        const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "fill" });
-        if (next) interaction = next;
-      };
-      reader.readAsText(file);
-    };
-    input.click();
+    selectedCell = null;
+    selectedDirection = "across";
+    const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "fill" });
+    if (next) interaction = next;
   }
 
   // --- Reset ---
