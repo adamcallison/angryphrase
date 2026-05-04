@@ -21,7 +21,7 @@ export type WordId = string; // `${startRow}-${startCol}-${direction}`
 
 export type Direction = "across" | "down";
 
-export type DirectionPolarity = "forward" | "backward";
+export type MoveDirection = "up" | "down" | "left" | "right";
 
 export interface WordPosition {
   startRow: number;

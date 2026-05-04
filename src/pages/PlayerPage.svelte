@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { computeSelectionChangeForCellClick, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
@@ -182,10 +182,19 @@
     // Arrow keys
     if (key.startsWith("Arrow")) {
       event.preventDefault();
-      const result = moveCursor(grid, selectedCell, key);
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const keyToDirection: Record<string, MoveDirection> = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+      };
+      const direction = keyToDirection[key];
+      if (direction) {
+        const result = moveCursor(grid, selectedCell, direction);
+        grid = result.grid;
+        selectedCell = result.nextCell;
+        selectedDirection = result.nextDirection;
+      }
       return;
     }
   }

@@ -7,12 +7,11 @@ import {
   getWordInDirection,
   advancePosition,
   retreatPosition,
-  movePosition,
+  
   computeWordLength,
   getSingleWordLengthPattern,
   getWordCells,
   computeSelectionChangeForCellClick,
-  handleArrowKey,
   deriveDisplayLetters,
   isGridBlank,
   splitWordsByDirection,
@@ -764,50 +763,7 @@ describe("retreatPosition", () => {
   });
 });
 
-// ============================================================
-// 8. movePosition
-// ============================================================
-describe("movePosition", () => {
-  it("ArrowUp moves row-1", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 3, "down", "backward");
-    expect(result).toEqual({ row: 1, col: 3 });
-  });
 
-  it("ArrowDown moves row+1", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 3, "down", "forward");
-    expect(result).toEqual({ row: 3, col: 3 });
-  });
-
-  it("ArrowLeft moves col-1", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 3, "across", "backward");
-    expect(result).toEqual({ row: 2, col: 2 });
-  });
-
-  it("ArrowRight moves col+1", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 3, "across", "forward");
-    expect(result).toEqual({ row: 2, col: 4 });
-  });
-
-  it("does not go below 0 for ArrowUp", () => {
-    const result = movePosition(createEmptyGrid(5), 0, 3, "down", "backward");
-    expect(result).toEqual({ row: 0, col: 3 });
-  });
-
-  it("does not go below 0 for ArrowLeft", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 0, "across", "backward");
-    expect(result).toEqual({ row: 2, col: 0 });
-  });
-
-  it("does not go above gridSize-1 for ArrowDown", () => {
-    const result = movePosition(createEmptyGrid(5), 4, 3, "down", "forward");
-    expect(result).toEqual({ row: 4, col: 3 });
-  });
-
-  it("does not go above gridSize-1 for ArrowRight", () => {
-    const result = movePosition(createEmptyGrid(5), 2, 4, "across", "forward");
-    expect(result).toEqual({ row: 2, col: 4 });
-  });
-});
 
 
 // ============================================================
@@ -1219,80 +1175,6 @@ describe("computeSelectionChangeForCellClick", () => {
     // Selection should remain unchanged
     expect(result.selectedCell).toEqual({ row: 1, col: 0 });
     expect(result.selectedDirection).toBe("down");
-  });
-});
-
-// ============================================================
-// 14. handleArrowKey
-// ============================================================
-describe("handleArrowKey", () => {
-  const grid = createEmptyGrid(5);
-
-  it("returns null for non-arrow keys", () => {
-    expect(handleArrowKey("a", grid, 2, 2)).toBeNull();
-    expect(handleArrowKey("Enter", grid, 2, 2)).toBeNull();
-    expect(handleArrowKey("Backspace", grid, 2, 2)).toBeNull();
-  });
-
-  it("ArrowRight moves right and switches to across", () => {
-    const result = handleArrowKey("ArrowRight", grid, 2, 2);
-    expect(result).not.toBeNull();
-    expect(result!.direction).toBe("across");
-    expect(result!.cell).toEqual({ row: 2, col: 3 });
-  });
-
-  it("ArrowLeft moves left and switches to across", () => {
-    const result = handleArrowKey("ArrowLeft", grid, 2, 2);
-    expect(result).not.toBeNull();
-    expect(result!.direction).toBe("across");
-    expect(result!.cell).toEqual({ row: 2, col: 1 });
-  });
-
-  it("ArrowDown moves down and switches to down", () => {
-    const result = handleArrowKey("ArrowDown", grid, 2, 2);
-    expect(result).not.toBeNull();
-    expect(result!.direction).toBe("down");
-    expect(result!.cell).toEqual({ row: 3, col: 2 });
-  });
-
-  it("ArrowUp moves up and switches to down", () => {
-    const result = handleArrowKey("ArrowUp", grid, 2, 2);
-    expect(result).not.toBeNull();
-    expect(result!.direction).toBe("down");
-    expect(result!.cell).toEqual({ row: 1, col: 2 });
-  });
-
-  it("returns same cell when target is not selectable (black cell)", () => {
-    // Grid with black cell at (1,2)
-    const blockedGrid = buildGrid([
-      [false, false, false, false, false],
-      [false, false, true, false, false],
-      [false, false, false, false, false],
-      [false, false, false, false, false],
-      [false, false, false, false, false],
-    ]);
-    // Moving up from (2,2) → target (1,2) is black
-    const result = handleArrowKey("ArrowUp", blockedGrid, 2, 2);
-    expect(result!.direction).toBe("down");
-    expect(result!.cell).toEqual({ row: 2, col: 2 }); // stays in place
-  });
-
-  it("returns same cell when at grid boundary", () => {
-    // At top-left corner, ArrowUp and ArrowLeft stay in place
-    const resultUp = handleArrowKey("ArrowUp", grid, 0, 0);
-    expect(resultUp!.direction).toBe("down");
-    expect(resultUp!.cell).toEqual({ row: 0, col: 0 });
-
-    const resultLeft = handleArrowKey("ArrowLeft", grid, 0, 0);
-    expect(resultLeft!.direction).toBe("across");
-    expect(resultLeft!.cell).toEqual({ row: 0, col: 0 });
-  });
-
-  it("still returns new direction even when cell doesn't move", () => {
-    // Even when you can't move, pressing an arrow key changes direction
-    const result = handleArrowKey("ArrowRight", grid, 0, 0);
-    expect(result!.direction).toBe("across"); // direction changed
-    expect(result!.cell).toEqual({ row: 0, col: 1 }); // moved right
   });
 });
 

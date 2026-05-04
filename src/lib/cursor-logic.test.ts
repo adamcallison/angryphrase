@@ -229,25 +229,45 @@ describe("deleteLetter", () => {
 // moveCursor
 // ============================================================
 describe("moveCursor", () => {
-  it("moves cursor right on ArrowRight", () => {
+  it("moves cursor right", () => {
     const grid = createEmptyGrid(5);
     const cell: CellPosition = { row: 0, col: 0 };
 
-    const result = moveCursor(grid, cell, "ArrowRight");
+    const result = moveCursor(grid, cell, "right");
 
     expect(result.nextCell.col).toBe(1);
     expect(result.nextCell.row).toBe(0);
     expect(result.nextDirection).toBe("across");
   });
 
-  it("moves cursor down on ArrowDown", () => {
+  it("moves cursor down", () => {
     const grid = createEmptyGrid(5);
     const cell: CellPosition = { row: 0, col: 0 };
 
-    const result = moveCursor(grid, cell, "ArrowDown");
+    const result = moveCursor(grid, cell, "down");
 
     expect(result.nextCell.row).toBe(1);
     expect(result.nextCell.col).toBe(0);
+    expect(result.nextDirection).toBe("down");
+  });
+
+  it("moves cursor left", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 2, col: 2 };
+
+    const result = moveCursor(grid, cell, "left");
+
+    expect(result.nextCell).toEqual({ row: 2, col: 1 });
+    expect(result.nextDirection).toBe("across");
+  });
+
+  it("moves cursor up", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 2, col: 2 };
+
+    const result = moveCursor(grid, cell, "up");
+
+    expect(result.nextCell).toEqual({ row: 1, col: 2 });
     expect(result.nextDirection).toBe("down");
   });
 
@@ -255,27 +275,62 @@ describe("moveCursor", () => {
     const grid = createEmptyGrid(5);
     const cell: CellPosition = { row: 0, col: 0 };
 
-    const result = moveCursor(grid, cell, "ArrowRight");
+    const result = moveCursor(grid, cell, "right");
 
     expect(result.grid).toBe(grid);
   });
 
-  it("throws for unrecognized key", () => {
+  it("stays in place but changes direction on up from top row", () => {
     const grid = createEmptyGrid(5);
     const cell: CellPosition = { row: 0, col: 0 };
 
-    expect(() => moveCursor(grid, cell, "a")).toThrow();
-  });
-
-  it("stays in place but changes direction on ArrowUp from across word", () => {
-    const grid = createEmptyGrid(5);
-    const cell: CellPosition = { row: 0, col: 0 };
-
-    // ArrowUp from (0,0) — can't go up, stays at (0,0) but switches to down direction
-    const result = moveCursor(grid, cell, "ArrowUp");
+    // up from (0,0) — can't go up, stays at (0,0) but switches to down direction
+    const result = moveCursor(grid, cell, "up");
 
     expect(result.nextCell.row).toBe(0);
     expect(result.nextCell.col).toBe(0);
     expect(result.nextDirection).toBe("down");
+  });
+
+  it("stays in place but changes direction on left from leftmost column", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = moveCursor(grid, cell, "left");
+
+    expect(result.nextCell).toEqual({ row: 0, col: 0 });
+    expect(result.nextDirection).toBe("across");
+  });
+
+  it("stays in place when target is a black cell", () => {
+    const grid = createEmptyGrid(5);
+    grid[1][2].black = true;
+    const cell: CellPosition = { row: 2, col: 2 };
+
+    // Moving up from (2,2) → target (1,2) is black
+    const result = moveCursor(grid, cell, "up");
+
+    expect(result.nextCell).toEqual({ row: 2, col: 2 }); // stays in place
+    expect(result.nextDirection).toBe("down");
+  });
+
+  it("does not go past bottom edge", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 4, col: 2 };
+
+    const result = moveCursor(grid, cell, "down");
+
+    expect(result.nextCell).toEqual({ row: 4, col: 2 });
+    expect(result.nextDirection).toBe("down");
+  });
+
+  it("does not go past right edge", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 2, col: 4 };
+
+    const result = moveCursor(grid, cell, "right");
+
+    expect(result.nextCell).toEqual({ row: 2, col: 4 });
+    expect(result.nextDirection).toBe("across");
   });
 });

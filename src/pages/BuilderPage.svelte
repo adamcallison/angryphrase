@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
+  import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { computeSelectionChangeForCellClick, createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
@@ -275,10 +275,19 @@
     // Arrow keys
     if (key.startsWith("Arrow")) {
       event.preventDefault();
-      const result = moveCursor(grid, selectedCell, key);
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const keyToDirection: Record<string, MoveDirection> = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+      };
+      const direction = keyToDirection[key];
+      if (direction) {
+        const result = moveCursor(grid, selectedCell, direction);
+        grid = result.grid;
+        selectedCell = result.nextCell;
+        selectedDirection = result.nextDirection;
+      }
       return;
     }
   }

@@ -1,11 +1,11 @@
-import type { CellData, CellPosition, DerivedWord, Direction, DirectionPolarity, DisplacedClue, Word } from "./types";
+import type { CellData, CellPosition, DerivedWord, Direction, DisplacedClue, Word } from "./types";
 
 /**
  * Returns true if the cell at (row, col) is a valid selection target.
  * A cell is selectable if it is white and part of a word (length ≥ 2)
  * in either the across or down direction.
  */
-function isSelectableCell(
+export function isSelectableCell(
   grid: CellData[][],
   cellPosition: CellPosition,
 ): boolean {
@@ -324,36 +324,6 @@ export function retreatPosition(
 }
 
 /**
- * Moves the cursor position based on an arrow key press.
- * Movement is NOT constrained to word direction — it simply moves
- * one cell in the arrow direction, clamped to grid bounds [0, gridSize-1].
- * The `direction` parameter is part of the API but not used for movement calculation.
- */
-export function movePosition(
-  grid: CellData[][],
-  row: number,
-  col: number,
-  direction: Direction,
-  directionPolarity: DirectionPolarity,
-): CellPosition {
-  const gridSize: number = grid.length;
-
-  const offsets: Record<Direction, Record<DirectionPolarity, [number, number]>> = {
-    down:    { backward: [-1, 0], forward: [1, 0] },
-    across:  { backward: [0, -1], forward: [0, 1] },
-  };
-  const [rowOffset, colOffset] = offsets[direction][directionPolarity];
-  let newRow = row + rowOffset;
-  let newCol = col + colOffset;
-
-  // Clamp to grid bounds
-  newRow = Math.max(0, Math.min(gridSize - 1, newRow));
-  newCol = Math.max(0, Math.min(gridSize - 1, newCol));
-
-  return { row: newRow, col: newCol };
-}
-
-/**
  * Returns the list of cell positions that a word occupies.
  * For an across word, cells go left-to-right in the same row.
  * For a down word, cells go top-to-bottom in the same column.
@@ -406,53 +376,6 @@ export function computeSelectionChangeForCellClick(
     }
     return { selectedCell: cellPosition, selectedDirection: newDirection };
   }
-}
-
-/**
- * Handles an arrow key press for crossword navigation.
- *
- * Maps the arrow key to a new direction and moves the cursor one cell
- * in that direction. Returns the new direction and cell position (which
- * may be the same as the input if the target cell is not selectable or
- * out of bounds).
- *
- * Returns null if the key is not an arrow key.
- */
-export function handleArrowKey(
-  key: string,
-  grid: CellData[][],
-  row: number,
-  col: number,
-): { direction: Direction; cell: CellPosition } | null {
-  let newDirection: Direction;
-  let polarity: DirectionPolarity;
-
-  switch (key) {
-    case "ArrowUp":
-      newDirection = "down";
-      polarity = "backward";
-      break;
-    case "ArrowDown":
-      newDirection = "down";
-      polarity = "forward";
-      break;
-    case "ArrowLeft":
-      newDirection = "across";
-      polarity = "backward";
-      break;
-    case "ArrowRight":
-      newDirection = "across";
-      polarity = "forward";
-      break;
-    default:
-      return null;
-  }
-
-  const newPos = movePosition(grid, row, col, newDirection, polarity);
-  if (isSelectableCell(grid, newPos)) {
-    return { direction: newDirection, cell: newPos };
-  }
-  return { direction: newDirection, cell: { row, col } };
 }
 
 /**

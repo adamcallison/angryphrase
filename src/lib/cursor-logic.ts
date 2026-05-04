@@ -1,5 +1,5 @@
-import type { CellData, CellPosition, CursorResult, Direction, LetterSource } from "./types";
-import { advancePosition, retreatPosition, handleArrowKey } from "./grid-logic";
+import type { CellData, CellPosition, CursorResult, Direction, LetterSource, MoveDirection } from "./types";
+import { advancePosition, isSelectableCell, retreatPosition } from "./grid-logic";
 
 /** Read the letter from a cell based on the source. */
 function getLetter(cell: CellData, source: LetterSource): string | null {
@@ -83,25 +83,42 @@ export function deleteLetter(
 }
 
 /**
- * Moves the cursor in response to an arrow key.
+ * Moves the cursor one cell in the given direction.
  *
  * Returns the updated cell position and direction.
  * If the target cell is not selectable, stays in place but changes direction.
- *
- * Throws if the key is not a recognized arrow key.
  */
 export function moveCursor(
   grid: CellData[][],
   cell: CellPosition,
-  key: string,
+  moveDirection: MoveDirection,
 ): CursorResult {
-  const result = handleArrowKey(key, grid, cell.row, cell.col);
-  if (!result) {
-    throw new Error(`moveCursor: unrecognized arrow key "${key}"`);
+  const { row, col } = cell;
+  const gridSize = grid.length;
+  let newRow = row;
+  let newCol = col;
+  let newDirection: Direction;
+
+  switch (moveDirection) {
+    case "up":
+      newDirection = "down";
+      newRow = Math.max(0, row - 1);
+      break;
+    case "down":
+      newDirection = "down";
+      newRow = Math.min(gridSize - 1, row + 1);
+      break;
+    case "left":
+      newDirection = "across";
+      newCol = Math.max(0, col - 1);
+      break;
+    case "right":
+      newDirection = "across";
+      newCol = Math.min(gridSize - 1, col + 1);
+      break;
   }
-  return {
-    grid,
-    nextCell: result.cell,
-    nextDirection: result.direction,
-  };
+
+  const newPos: CellPosition = { row: newRow, col: newCol };
+  const nextCell = isSelectableCell(grid, newPos) ? newPos : cell;
+  return { grid, nextCell, nextDirection: newDirection };
 }
