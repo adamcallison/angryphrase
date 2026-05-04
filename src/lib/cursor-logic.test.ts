@@ -3,6 +3,39 @@ import { enterLetter, deleteLetter, moveCursor } from "./cursor-logic";
 import type { CellData, CellPosition } from "./types";
 import { createEmptyGrid } from "./grid-logic";
 
+/** Helper: create a single black cell. */
+function blackCell(): CellData {
+  return {
+    black: true,
+    puzzleLetter: null,
+    playerLetter: null,
+    spaceRight: false,
+    spaceBottom: false,
+    hyphenRight: false,
+    hyphenBottom: false,
+  };
+}
+
+/** Helper: create a single white cell. */
+function whiteCell(): CellData {
+  return {
+    black: false,
+    puzzleLetter: null,
+    playerLetter: null,
+    spaceRight: false,
+    spaceBottom: false,
+    hyphenRight: false,
+    hyphenBottom: false,
+  };
+}
+
+/** Helper: build a grid from a 2D boolean array (true = black). */
+function buildGrid(blacks: boolean[][]): CellData[][] {
+  return blacks.map((row) =>
+    row.map((isBlack) => (isBlack ? blackCell() : whiteCell()))
+  );
+}
+
 /** Helper: create a grid with a letter placed at a specific cell. */
 function gridWithLetter(
   size: number,
@@ -114,6 +147,54 @@ describe("enterLetter", () => {
     expect(result.nextCell.row).toBe(1);
     expect(result.nextCell.col).toBe(0);
   });
+
+  it("stays in place when next cell is black (across)", () => {
+    const grid = buildGrid([
+      [false, true],
+      [false, false],
+    ]);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = enterLetter(grid, cell, "across", "A", source);
+
+    expect(result.nextCell).toEqual({ row: 0, col: 0 });
+  });
+
+  it("stays in place when next cell is black (down)", () => {
+    const grid = buildGrid([
+      [false, false],
+      [true, false],
+    ]);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = enterLetter(grid, cell, "down", "A", source);
+
+    expect(result.nextCell).toEqual({ row: 0, col: 0 });
+  });
+
+  it("stays in place when at grid boundary (across)", () => {
+    const grid = buildGrid([
+      [false, false],
+      [false, false],
+    ]);
+    const cell: CellPosition = { row: 0, col: 1 };
+
+    const result = enterLetter(grid, cell, "across", "A", source);
+
+    expect(result.nextCell).toEqual({ row: 0, col: 1 });
+  });
+
+  it("stays in place when at grid boundary (down)", () => {
+    const grid = buildGrid([
+      [false, false],
+      [false, false],
+    ]);
+    const cell: CellPosition = { row: 1, col: 0 };
+
+    const result = enterLetter(grid, cell, "down", "A", source);
+
+    expect(result.nextCell).toEqual({ row: 1, col: 0 });
+  });
 });
 
 // ============================================================
@@ -222,6 +303,51 @@ describe("deleteLetter", () => {
     const result = deleteLetter(grid, cell, "down", source);
 
     expect(result.nextDirection).toBe("down");
+  });
+
+  it("stays in place when retreat target is a black cell (across)", () => {
+    const grid = buildGrid([
+      [true, false],
+      [false, false],
+    ]);
+    const cell: CellPosition = { row: 0, col: 1 };
+
+    const result = deleteLetter(grid, cell, "across", source);
+
+    // Can't retreat left past the black cell, and current cell has no letter
+    expect(result.nextCell).toEqual({ row: 0, col: 1 });
+    expect(result.grid[0][1].puzzleLetter).toBeNull();
+  });
+
+  it("stays in place when retreat target is a black cell (down)", () => {
+    const grid = buildGrid([
+      [true, false],
+      [false, false],
+    ]);
+    const cell: CellPosition = { row: 1, col: 0 };
+
+    const result = deleteLetter(grid, cell, "down", source);
+
+    expect(result.nextCell).toEqual({ row: 1, col: 0 });
+  });
+
+  it("stays in place when at grid boundary (across)", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = deleteLetter(grid, cell, "across", source);
+
+    // At col 0, can't retreat further left, and current cell has no letter
+    expect(result.nextCell).toEqual({ row: 0, col: 0 });
+  });
+
+  it("stays in place when at grid boundary (down)", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = deleteLetter(grid, cell, "down", source);
+
+    expect(result.nextCell).toEqual({ row: 0, col: 0 });
   });
 });
 

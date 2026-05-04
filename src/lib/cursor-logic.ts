@@ -1,17 +1,6 @@
 import type { CellData, CellPosition, CursorResult, Direction, LetterSource, MoveDirection } from "./types";
-import { advancePosition, isSelectableCell, retreatPosition } from "./grid-logic";
+import { isSelectableCell } from "./grid-logic";
 
-/** Read the letter from a cell based on the source. */
-function getLetter(cell: CellData, source: LetterSource): string | null {
-  return source === "puzzle" ? cell.puzzleLetter : cell.playerLetter;
-}
-
-/** Create a copy of the cell with the letter field set. */
-function setLetter(cell: CellData, source: LetterSource, value: string | null): CellData {
-  return source === "puzzle"
-    ? { ...cell, puzzleLetter: value }
-    : { ...cell, playerLetter: value };
-}
 
 /**
  * Enters a letter at the given cell position and advances the cursor.
@@ -121,4 +110,69 @@ export function moveCursor(
   const newPos: CellPosition = { row: newRow, col: newCol };
   const nextCell = isSelectableCell(grid, newPos) ? newPos : cell;
   return { grid, nextCell, nextDirection: newDirection };
+}
+
+
+/** Read the letter from a cell based on the source. */
+function getLetter(cell: CellData, source: LetterSource): string | null {
+  return source === "puzzle" ? cell.puzzleLetter : cell.playerLetter;
+}
+
+/** Create a copy of the cell with the letter field set. */
+function setLetter(cell: CellData, source: LetterSource, value: string | null): CellData {
+  return source === "puzzle"
+    ? { ...cell, puzzleLetter: value }
+    : { ...cell, playerLetter: value };
+}
+
+/**
+ * Advances the cursor position one cell in the given direction.
+ * If the next cell is out of bounds or not selectable, returns the
+ * current position unchanged.
+ */
+function advancePosition(
+  grid: CellData[][],
+  row: number,
+  col: number,
+  direction: Direction,
+): CellPosition {
+  let nextRow = row;
+  let nextCol = col;
+
+  if (direction === "across") {
+    nextCol = col + 1;
+  } else {
+    nextRow = row + 1;
+  }
+
+  if (isSelectableCell(grid, { row: nextRow, col: nextCol })) {
+    return { row: nextRow, col: nextCol };
+  }
+  return { row, col };
+}
+
+/**
+ * Retreats the cursor position one cell in the opposite direction.
+ * If the previous cell is out of bounds or not selectable, returns the
+ * current position unchanged.
+ */
+function retreatPosition(
+  grid: CellData[][],
+  row: number,
+  col: number,
+  direction: Direction,
+): CellPosition {
+  let prevRow = row;
+  let prevCol = col;
+
+  if (direction === "across") {
+    prevCol = col - 1;
+  } else {
+    prevRow = row - 1;
+  }
+
+  if (isSelectableCell(grid, { row: prevRow, col: prevCol })) {
+    return { row: prevRow, col: prevCol };
+  }
+  return { row, col };
 }
