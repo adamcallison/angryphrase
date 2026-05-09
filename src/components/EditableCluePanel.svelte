@@ -19,7 +19,7 @@
     onClueChange: (wordId: WordId, newText: string) => void;
     onJoinClick: (wordId: WordId) => void;
     onUnjoinClick: (wordId: WordId) => void;
-    interactionMode?: ClueInteractionMode;
+    interactionMode: ClueInteractionMode;
   } = $props();
 </script>
 
