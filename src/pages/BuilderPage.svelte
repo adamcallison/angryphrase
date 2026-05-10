@@ -9,6 +9,7 @@
   import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
+  import { hydrateBuilderStateFromImport } from "$lib/builder-state";
   import { transitionBuilderInteraction } from "$lib/interaction-machine";
   import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
 
@@ -456,32 +457,17 @@
       return;
     }
 
-    if (result.type === "complete") {
-      const puzzle = result.data;
-      key = puzzle.key;
-      gridSize = puzzle.gridSize;
-      grid = puzzle.grid;
-      title = puzzle.title;
-      author = puzzle.author;
-      const dw = deriveWords(grid);
-      syncMetadataFromWords(puzzle.words);
-      for (const d of dw) {
-        const id = toWordId(d);
-        if (!wordMetadata.has(id)) {
-          wordMetadata.set(id, { clue: "", nextWord: null });
-        }
-      }
-      displacedClues = [];
-    } else {
-      const puzzle = result.data;
-      key = puzzle.key;
-      gridSize = puzzle.gridSize;
-      grid = puzzle.grid;
-      title = puzzle.title;
-      author = puzzle.author;
-      syncMetadataFromWords(puzzle.words);
-      displacedClues = puzzle.displacedClues;
+    const snapshot = hydrateBuilderStateFromImport(result.data, result.type === "complete");
+    key = snapshot.key;
+    gridSize = snapshot.gridSize;
+    grid = snapshot.grid;
+    title = snapshot.title;
+    author = snapshot.author;
+    wordMetadata.clear();
+    for (const [id, wm] of snapshot.wordMetadata.entries()) {
+      wordMetadata.set(id, wm);
     }
+    displacedClues = snapshot.displacedClues;
 
     selectedCell = null;
     selectedDirection = "across";
