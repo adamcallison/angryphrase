@@ -13,6 +13,7 @@ import {
   isGridBlank,
   splitWordsByDirection,
   toggleCellBlack,
+  toggleMarker,
 } from "./grid-logic";
 import type { CellData, CellPosition, Word, DisplacedClue } from "./types";
 
@@ -1109,5 +1110,155 @@ describe("toggleCellBlack", () => {
     );
     expect(secondResult.grid[0][0].black).toBe(false);
     expect(secondResult.grid[0][0].puzzleLetter).toBeNull();
+  });
+});
+
+// ============================================================
+// toggleMarker
+// ============================================================
+describe("toggleMarker", () => {
+  it("toggles spaceRight on", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceRight");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceRight).toBe(true);
+    expect(result![0][0].hyphenRight).toBe(false);
+  });
+
+  it("toggles spaceRight off", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], spaceRight: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceRight");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceRight).toBe(false);
+  });
+
+  it("toggles hyphenRight on and clears spaceRight (mutual exclusion)", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], spaceRight: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "hyphenRight");
+    expect(result).not.toBeNull();
+    expect(result![0][0].hyphenRight).toBe(true);
+    expect(result![0][0].spaceRight).toBe(false);
+  });
+
+  it("toggles spaceRight on and clears hyphenRight (mutual exclusion)", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], hyphenRight: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceRight");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceRight).toBe(true);
+    expect(result![0][0].hyphenRight).toBe(false);
+  });
+
+  it("toggles spaceBottom on and clears hyphenBottom (mutual exclusion)", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], hyphenBottom: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceBottom");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceBottom).toBe(true);
+    expect(result![0][0].hyphenBottom).toBe(false);
+  });
+
+  it("toggles hyphenBottom on and clears spaceBottom (mutual exclusion)", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], spaceBottom: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "hyphenBottom");
+    expect(result).not.toBeNull();
+    expect(result![0][0].hyphenBottom).toBe(true);
+    expect(result![0][0].spaceBottom).toBe(false);
+  });
+
+  it("does not affect other markers when toggling spaceRight", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], spaceBottom: true, hyphenBottom: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceRight");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceRight).toBe(true);
+    expect(result![0][0].spaceBottom).toBe(true);
+    expect(result![0][0].hyphenBottom).toBe(true);
+  });
+
+  it("does not affect horizontal markers when toggling spaceBottom", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], spaceRight: true, hyphenRight: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleMarker(grid, cell, "spaceBottom");
+    expect(result).not.toBeNull();
+    expect(result![0][0].spaceBottom).toBe(true);
+    // The horizontal markers should be untouched (even though having both
+    // spaceRight and hyphenRight true is an invalid state, that's not this
+    // function's concern — it only enforces exclusion within its own toggle)
+    expect(result![0][0].spaceRight).toBe(true);
+    expect(result![0][0].hyphenRight).toBe(true);
+  });
+
+  it("returns null for a black cell", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0] = { ...grid[0][0], black: true };
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    expect(toggleMarker(grid, cell, "spaceRight")).toBeNull();
+  });
+
+  it("returns null for out-of-bounds row", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: -1, col: 0 };
+
+    expect(toggleMarker(grid, cell, "spaceRight")).toBeNull();
+  });
+
+  it("returns null for out-of-bounds column", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: 0, col: 5 };
+
+    expect(toggleMarker(grid, cell, "spaceRight")).toBeNull();
+  });
+
+  it("does not mutate the original grid", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: 1, col: 1 };
+
+    const originalState = { ...grid[1][1] };
+    toggleMarker(grid, cell, "spaceRight");
+
+    expect(grid[1][1].spaceRight).toBe(originalState.spaceRight);
+  });
+
+  it("round-trips: toggling spaceRight on then off restores original state", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: 1, col: 1 };
+
+    const firstResult = toggleMarker(grid, cell, "spaceRight");
+    expect(firstResult).not.toBeNull();
+    expect(firstResult![1][1].spaceRight).toBe(true);
+
+    const secondResult = toggleMarker(firstResult!, cell, "spaceRight");
+    expect(secondResult).not.toBeNull();
+    expect(secondResult![1][1].spaceRight).toBe(false);
+  });
+
+  it("works on any cell in the grid", () => {
+    const grid = createEmptyGrid(5);
+    const cell: CellPosition = { row: 3, col: 2 };
+
+    const result = toggleMarker(grid, cell, "hyphenBottom");
+    expect(result).not.toBeNull();
+    expect(result![3][2].hyphenBottom).toBe(true);
   });
 });

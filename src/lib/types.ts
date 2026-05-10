@@ -14,6 +14,10 @@ export interface CellData {
 
 // Grid is CellData[][] — a flat 2D array indexed grid[row][col]
 
+// The names of marker fields on a CellData, used by marker toggle logic.
+// spaceRight and hyphenRight are mutually exclusive; spaceBottom and hyphenBottom are mutually exclusive.
+export type CellMarker = "spaceRight" | "spaceBottom" | "hyphenRight" | "hyphenBottom";
+
 // === Words ===
 
 // Word identifier: unique key for a word position

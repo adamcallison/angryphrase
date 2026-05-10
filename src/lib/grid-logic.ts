@@ -1,4 +1,4 @@
-import type { CellData, CellPosition, DerivedWord, Direction, DisplacedClue, Word, WordChangeResult } from "./types";
+import type { CellData, CellMarker, CellPosition, DerivedWord, Direction, DisplacedClue, Word, WordChangeResult } from "./types";
 import { reconcileWordsOnGridChange } from "./clue-logic";
 
 /**
@@ -404,4 +404,55 @@ export function toggleCellBlack(
   const result = reconcileWordsOnGridChange(currentWords, newDerived, displacedClues);
 
   return { grid: newGrid, result };
+}
+
+/**
+ * Toggles a marker on a cell, enforcing mutual exclusion rules:
+ * - spaceRight and hyphenRight are mutually exclusive
+ * - spaceBottom and hyphenBottom are mutually exclusive
+ *
+ * Returns a new grid with the marker toggled, or null if the cell is black
+ * or out of bounds. Does not mutate the input grid.
+ */
+export function toggleMarker(
+  grid: CellData[][],
+  cell: CellPosition,
+  marker: CellMarker,
+): CellData[][] | null {
+  const { row, col } = cell;
+
+  // Out of bounds check
+  if (row < 0 || row >= grid.length || col < 0 || col >= grid[0].length) {
+    return null;
+  }
+
+  // Black cells cannot have markers
+  if (grid[row][col].black) {
+    return null;
+  }
+
+  const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+  const cellData = newGrid[row][col];
+
+  // Toggle the requested marker and enforce mutual exclusion
+  switch (marker) {
+    case "spaceRight":
+      cellData.spaceRight = !cellData.spaceRight;
+      if (cellData.spaceRight) cellData.hyphenRight = false;
+      break;
+    case "hyphenRight":
+      cellData.hyphenRight = !cellData.hyphenRight;
+      if (cellData.hyphenRight) cellData.spaceRight = false;
+      break;
+    case "spaceBottom":
+      cellData.spaceBottom = !cellData.spaceBottom;
+      if (cellData.spaceBottom) cellData.hyphenBottom = false;
+      break;
+    case "hyphenBottom":
+      cellData.hyphenBottom = !cellData.hyphenBottom;
+      if (cellData.hyphenBottom) cellData.spaceBottom = false;
+      break;
+  }
+
+  return newGrid;
 }

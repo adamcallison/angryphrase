@@ -1,22 +1,16 @@
 <script lang="ts">
-  import type { CellData } from "../lib/types";
-
-  type MarkerName =
-    | "spaceRight"
-    | "spaceBottom"
-    | "hyphenRight"
-    | "hyphenBottom";
+  import type { CellData, CellMarker } from "../lib/types";
 
   let {
     cell,
     onToggleMarker,
   }: {
     cell: CellData | null;
-    onToggleMarker: (marker: MarkerName) => void;
+    onToggleMarker: (marker: CellMarker) => void;
   } = $props();
 
   interface MarkerButton {
-    name: MarkerName;
+    name: CellMarker;
     label: string;
   }
 
@@ -27,7 +21,7 @@
     { name: "hyphenBottom", label: "Hyphen Bottom" },
   ];
 
-  function isActive(marker: MarkerName): boolean {
+  function isActive(marker: CellMarker): boolean {
     if (!cell) return false;
     return cell[marker] === true;
   }

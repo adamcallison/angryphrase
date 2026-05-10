@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
+  import type { BuilderInteraction, BuilderState, CellData, CellMarker, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack, toggleMarker } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
   import { reattachClue } from "$lib/clue-logic";
   import { isGridBlank } from "$lib/grid-logic";
@@ -407,32 +407,11 @@
     author = newAuthor;
   }
 
-  // --- Marker toolbar ---
-  function handleToggleMarker(marker: "spaceRight" | "spaceBottom" | "hyphenRight" | "hyphenBottom"): void {
+// --- Marker toolbar ---
+  function handleToggleMarker(marker: CellMarker): void {
     if (!selectedCell || interaction.kind === "design") return;
-    const { row, col } = selectedCell;
-    if (grid[row][col].black) return;
-
-    const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-    const cell = { ...newGrid[row][col] };
-
-    // Mutually exclusive: spaceRight vs hyphenRight, spaceBottom vs hyphenBottom
-    if (marker === "spaceRight") {
-      cell.spaceRight = !cell.spaceRight;
-      if (cell.spaceRight) cell.hyphenRight = false;
-    } else if (marker === "hyphenRight") {
-      cell.hyphenRight = !cell.hyphenRight;
-      if (cell.hyphenRight) cell.spaceRight = false;
-    } else if (marker === "spaceBottom") {
-      cell.spaceBottom = !cell.spaceBottom;
-      if (cell.spaceBottom) cell.hyphenBottom = false;
-    } else if (marker === "hyphenBottom") {
-      cell.hyphenBottom = !cell.hyphenBottom;
-      if (cell.hyphenBottom) cell.spaceBottom = false;
-    }
-
-    newGrid[row][col] = cell;
-    grid = newGrid;
+    const result = toggleMarker(grid, selectedCell, marker);
+    if (result) grid = result;
   }
 
   // Selected cell data for MarkerToolbar
