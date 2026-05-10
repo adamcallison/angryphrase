@@ -1,4 +1,4 @@
-import type { Word, WordId, WordPosition } from "./types";
+import type { Word, WordId, WordPosition, DisplacedClue } from "./types";
 import type { CellData } from "./types";
 import { getSingleWordLengthPattern } from "./grid-logic";
 
@@ -107,7 +107,7 @@ export function getDisplayClue(word: Word, words: Word[]): string {
  * - Source and target must be different words
  * - Both source and target must exist in the words array
  */
-export function joinWords(
+function joinWords(
   words: Word[],
   sourceId: WordId,
   targetId: WordId
@@ -346,4 +346,43 @@ export function getWordLengthPattern(
 
   // Single word: compute segments based on cell markers
   return getSingleWordLengthPattern(grid, word);
+}
+
+/**
+ * Joins source→target words and, if the target had a non-empty clue,
+ * displaces that clue so it can be reattached later.
+ *
+ * Returns null if the join is invalid (same word, already chained, etc.).
+ * Otherwise returns the updated words array and the updated displaced clues.
+ * Pure function — does not mutate any input.
+ */
+export function joinWordsAndDisplace(
+  words: Word[],
+  sourceWordId: WordId,
+  targetWordId: WordId,
+  existingDisplacedClues: DisplacedClue[],
+): { words: Word[]; displacedClues: DisplacedClue[] } | null {
+  // Same-word join is invalid
+  if (sourceWordId === targetWordId) {
+    return null;
+  }
+
+  // Attempt the join
+  const joinedWords = joinWords(words, sourceWordId, targetWordId);
+  if (joinedWords === null) {
+    return null;
+  }
+
+  // If the target had a non-empty clue, displace it
+  const targetWord = findWordById(words, targetWordId);
+  const newDisplacedClue: DisplacedClue | null =
+    targetWord && targetWord.clue.trim() !== ""
+      ? { id: crypto.randomUUID(), clue: targetWord.clue, direction: targetWord.direction }
+      : null;
+
+  const displacedClues = newDisplacedClue
+    ? [...existingDisplacedClues, newDisplacedClue]
+    : [...existingDisplacedClues];
+
+  return { words: joinedWords, displacedClues };
 }

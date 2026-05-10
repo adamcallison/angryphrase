@@ -3,7 +3,7 @@
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack, toggleMarker } from "$lib/grid-logic";
-  import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
+  import { toWordId, joinWordsAndDisplace, unjoinWord } from "$lib/chain-logic";
   import { reattachClue } from "$lib/clue-logic";
   import { isGridBlank } from "$lib/grid-logic";
   import { canExportAsComplete } from "$lib/validation";
@@ -315,24 +315,15 @@
       return;
     }
 
-    // Validate and complete the join
-    const result = joinWords(words, sourceWordId, wordId);
+    // Validate and complete the join, displacing the target's clue if non-empty
+    const result = joinWordsAndDisplace(words, sourceWordId, wordId, displacedClues);
     if (result === null) {
       showToast("Cannot join these words. Check that neither word is already in a chain.");
       return;
     }
 
-    // If target had a non-empty clue, it needs to be displaced
-    const targetWord = words.find(w => toWordId(w) === wordId);
-    if (targetWord && targetWord.clue.trim() !== "") {
-      displacedClues = [...displacedClues, {
-        id: crypto.randomUUID(),
-        clue: targetWord.clue,
-        direction: targetWord.direction,
-      }];
-    }
-
-    syncMetadataFromWords(result);
+    syncMetadataFromWords(result.words);
+    displacedClues = result.displacedClues;
     const next = transitionBuilderInteraction(interaction, { kind: "finishJoin" });
     if (next) interaction = next;
   }

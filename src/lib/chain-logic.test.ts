@@ -5,14 +5,14 @@ import {
   getChainHead,
   isChainHead,
   getDisplayClue,
-  joinWords,
   unjoinWord,
   breakChainAtWord,
   validateChains,
   getWordLengthPattern,
+  joinWordsAndDisplace,
 } from "./chain-logic";
 import { createEmptyGrid } from "./grid-logic";
-import type { Word, WordPosition } from "./types";
+import type { Word, WordPosition, DisplacedClue } from "./types";
 
 // Helper: create a Word for testing
 function makeWord(
@@ -277,110 +277,6 @@ describe("getDisplayClue", () => {
 });
 
 // ============================================================
-// 6. joinWords
-// ============================================================
-describe("joinWords", () => {
-  it("valid join creates nextWord link", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
-    const words = [wordA, wordB];
-
-    const result = joinWords(words, toWordId(wordA), toWordId(wordB));
-
-    expect(result).not.toBeNull();
-    const sourceWord = findWord(result!, toWordId(wordA));
-    expect(sourceWord!.nextWord).toEqual({
-      startRow: 0,
-      startCol: 3,
-      direction: "down",
-    });
-    // Target should remain unchanged (its nextWord remains null)
-    const targetWord = findWord(result!, toWordId(wordB));
-    expect(targetWord!.nextWord).toBeNull();
-  });
-
-  it("returns null if source already has nextWord", () => {
-    const wordC = makeWord(1, 0, "across", 5, 3, "Clue C");
-    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A", {
-      startRow: 0,
-      startCol: 3,
-      direction: "down",
-    });
-    const words = [wordA, wordB, wordC];
-
-    // A already points to B, trying to join A→C should fail
-    const result = joinWords(words, toWordId(wordA), toWordId(wordC));
-    expect(result).toBeNull();
-  });
-
-  it("returns null if target is already pointed to by another word", () => {
-    const wordC = makeWord(1, 0, "across", 5, 3, "Clue C");
-    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A", {
-      startRow: 0,
-      startCol: 3,
-      direction: "down",
-    });
-    const words = [wordA, wordB, wordC];
-
-    // A already points to B, trying to join C→B should fail
-    const result = joinWords(words, toWordId(wordC), toWordId(wordB));
-    expect(result).toBeNull();
-  });
-
-  it("returns null if source and target are the same word", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const words = [wordA];
-
-    const result = joinWords(words, toWordId(wordA), toWordId(wordA));
-    expect(result).toBeNull();
-  });
-
-  it("join works across directions (across→down)", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const wordB = makeWord(0, 0, "down", 4, 1, "Clue B");
-    const words = [wordA, wordB];
-
-    const result = joinWords(words, toWordId(wordA), toWordId(wordB));
-
-    expect(result).not.toBeNull();
-    const sourceWord = findWord(result!, toWordId(wordA));
-    expect(sourceWord!.nextWord).toEqual({
-      startRow: 0,
-      startCol: 0,
-      direction: "down",
-    });
-  });
-
-  it("returns null if source word ID is not found", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const words = [wordA];
-
-    const result = joinWords(words, "99-99-across", toWordId(wordA));
-    expect(result).toBeNull();
-  });
-
-  it("returns null if target word ID is not found", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const words = [wordA];
-
-    const result = joinWords(words, toWordId(wordA), "99-99-down");
-    expect(result).toBeNull();
-  });
-
-  it("does not mutate the input array", () => {
-    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
-    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
-    const words = [wordA, wordB];
-
-    const originalNextWord = wordA.nextWord;
-    joinWords(words, toWordId(wordA), toWordId(wordB));
-
-    expect(wordA.nextWord).toBe(originalNextWord);
-  });
-});
-
 // ============================================================
 // 7. unjoinWord
 // ============================================================
@@ -806,5 +702,226 @@ describe("getWordLengthPattern", () => {
     const grid = createEmptyGrid(5);
     const word = makeWord(0, 0, "down", 4, 1, "Clue");
     expect(getWordLengthPattern(grid, word, [word])).toBe("4");
+  });
+});
+
+// ============================================================
+// joinWordsAndDisplace
+// ============================================================
+describe("joinWordsAndDisplace", () => {
+  it("joins two words and returns displaced clues unchanged if target has empty clue", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, ""); // empty clue
+    const words = [wordA, wordB];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      [],
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.words).toHaveLength(2);
+    expect(result!.displacedClues).toHaveLength(0);
+
+    const sourceWord = findWord(result!.words, toWordId(wordA));
+    expect(sourceWord!.nextWord).toEqual({
+      startRow: 0,
+      startCol: 3,
+      direction: "down",
+    });
+  });
+
+  it("joins two words and displaces the target's clue when non-empty", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, "Target Clue");
+    const words = [wordA, wordB];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      [],
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.words).toHaveLength(2);
+    expect(result!.displacedClues).toHaveLength(1);
+    expect(result!.displacedClues[0].clue).toBe("Target Clue");
+    expect(result!.displacedClues[0].direction).toBe("down");
+    expect(result!.displacedClues[0].id).toBeTruthy();
+  });
+
+  it("preserves existing displaced clues and appends new one", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, "Target Clue");
+    const words = [wordA, wordB];
+    const existingDisplacedClues: DisplacedClue[] = [
+      { id: "existing-1", clue: "Old Clue", direction: "across" },
+    ];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      existingDisplacedClues,
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.displacedClues).toHaveLength(2);
+    expect(result!.displacedClues[0].id).toBe("existing-1");
+    expect(result!.displacedClues[1].clue).toBe("Target Clue");
+  });
+
+  it("does not displace clue when target clue is whitespace-only", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, "   "); // whitespace only
+    const words = [wordA, wordB];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      [],
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.displacedClues).toHaveLength(0);
+  });
+
+  it("returns null when joining a word to itself", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const words = [wordA];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordA),
+      [],
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null for invalid join (source already has nextWord)", () => {
+    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A", {
+      startRow: 0,
+      startCol: 3,
+      direction: "down",
+    });
+    const wordC = makeWord(1, 0, "across", 5, 3, "Clue C");
+    const words = [wordA, wordB, wordC];
+
+    // A already points to B, trying to join A→C should fail
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordC),
+      [],
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null for invalid source ID", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const words = [wordA];
+
+    const result = joinWordsAndDisplace(
+      words,
+      "99-99-across",
+      toWordId(wordA),
+      [],
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null for invalid target ID", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const words = [wordA];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      "99-99-down",
+      [],
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("does not mutate the input words array", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, "Target Clue");
+    const words = [wordA, wordB];
+    const originalNextWord = wordA.nextWord;
+
+    joinWordsAndDisplace(words, toWordId(wordA), toWordId(wordB), []);
+
+    expect(wordA.nextWord).toBe(originalNextWord);
+  });
+
+  it("does not mutate the input displacedClues array", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 3, "down", 4, 2, "Target Clue");
+    const words = [wordA, wordB];
+    const existingDisplacedClues: DisplacedClue[] = [
+      { id: "existing-1", clue: "Old Clue", direction: "across" },
+    ];
+
+    joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      existingDisplacedClues,
+    );
+
+    expect(existingDisplacedClues).toHaveLength(1);
+    expect(existingDisplacedClues[0].id).toBe("existing-1");
+  });
+
+  it("returns null if target is already pointed to by another word", () => {
+    const wordC = makeWord(1, 0, "across", 5, 3, "Clue C");
+    const wordB = makeWord(0, 3, "down", 4, 2, "Clue B");
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A", {
+      startRow: 0,
+      startCol: 3,
+      direction: "down",
+    });
+    const words = [wordA, wordB, wordC];
+
+    // A already points to B, trying to join C→B should fail
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordC),
+      toWordId(wordB),
+      [],
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("join works across directions (across→down)", () => {
+    const wordA = makeWord(0, 0, "across", 3, 1, "Clue A");
+    const wordB = makeWord(0, 0, "down", 4, 1, "Clue B");
+    const words = [wordA, wordB];
+
+    const result = joinWordsAndDisplace(
+      words,
+      toWordId(wordA),
+      toWordId(wordB),
+      [],
+    );
+
+    expect(result).not.toBeNull();
+    const sourceWord = findWord(result!.words, toWordId(wordA));
+    expect(sourceWord!.nextWord).toEqual({
+      startRow: 0,
+      startCol: 0,
+      direction: "down",
+    });
   });
 });
