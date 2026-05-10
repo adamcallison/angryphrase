@@ -14,8 +14,9 @@ import {
   splitWordsByDirection,
   toggleCellBlack,
   toggleMarker,
+  applyPlayerProgress,
 } from "./grid-logic";
-import type { CellData, CellPosition, Word, DisplacedClue } from "./types";
+import type { CellData, CellPosition, Word, DisplacedClue, PlayerProgress } from "./types";
 
 // Helper: create a single white cell with default values
 function whiteCell(): CellData {
@@ -1260,5 +1261,136 @@ describe("toggleMarker", () => {
     const result = toggleMarker(grid, cell, "hyphenBottom");
     expect(result).not.toBeNull();
     expect(result![3][2].hyphenBottom).toBe(true);
+  });
+});
+
+// ============================================================
+// applyPlayerProgress
+// ============================================================
+describe("applyPlayerProgress", () => {
+  it("overlays saved letters onto white cells", () => {
+    const grid = createEmptyGrid(2);
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 2,
+      letters: [["A", "B"], [null, "D"]],
+    };
+
+    const result = applyPlayerProgress(grid, progress);
+
+    expect(result[0][0].playerLetter).toBe("A");
+    expect(result[0][1].playerLetter).toBe("B");
+    expect(result[1][0].playerLetter).toBeNull();
+    expect(result[1][1].playerLetter).toBe("D");
+  });
+
+  it("overlays playerLetter onto cells regardless of black status", () => {
+    const grid = createEmptyGrid(2);
+    grid[0][0] = { ...grid[0][0], black: true };
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 2,
+      letters: [["X", "B"], ["C", "D"]],
+    };
+
+    const result = applyPlayerProgress(grid, progress);
+
+    // Black cells still get playerLetter overlaid if progress has one
+    expect(result[0][0].black).toBe(true);
+    expect(result[0][0].playerLetter).toBe("X");
+    expect(result[0][1].playerLetter).toBe("B");
+  });
+
+  it("does not mutate the original grid", () => {
+    const grid = createEmptyGrid(2);
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 2,
+      letters: [["A", null], [null, null]],
+    };
+
+    applyPlayerProgress(grid, progress);
+
+    // Original grid should be unchanged
+    expect(grid[0][0].playerLetter).toBeNull();
+  });
+
+  it("handles progress smaller than grid (truncates)", () => {
+    const grid = createEmptyGrid(3);
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 2,
+      letters: [["A", "B"], ["C", "D"]],
+    };
+
+    const result = applyPlayerProgress(grid, progress);
+
+    expect(result[0][0].playerLetter).toBe("A");
+    expect(result[0][1].playerLetter).toBe("B");
+    // Row/col beyond progress.gridSize are untouched
+    expect(result[0][2].playerLetter).toBeNull();
+    expect(result[2][2].playerLetter).toBeNull();
+  });
+
+  it("skips null and undefined entries in letters", () => {
+    const grid = createEmptyGrid(3);
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 3,
+      letters: [["A", null, undefined as unknown as null], [null, "E", "F"], ["G", "H", "I"]],
+    };
+
+    const result = applyPlayerProgress(grid, progress);
+
+    expect(result[0][0].playerLetter).toBe("A");
+    expect(result[0][1].playerLetter).toBeNull();
+    expect(result[0][2].playerLetter).toBeNull();
+  });
+
+  it("preserves other cell fields (puzzleLetter, markers)", () => {
+    const grid = createEmptyGrid(2);
+    grid[0][0] = {
+      black: false,
+      puzzleLetter: "A",
+      playerLetter: null,
+      spaceRight: true,
+      spaceBottom: false,
+      hyphenRight: false,
+      hyphenBottom: false,
+    };
+    const progress: PlayerProgress = {
+      key: "test",
+      gridSize: 2,
+      letters: [["Z", null], [null, null]],
+    };
+
+    const result = applyPlayerProgress(grid, progress);
+
+    expect(result[0][0].playerLetter).toBe("Z");
+    expect(result[0][0].puzzleLetter).toBe("A");
+    expect(result[0][0].spaceRight).toBe(true);
+  });
+
+  it("round-trips with deriveDisplayLetters player mode", () => {
+    // Set up a grid with some player letters
+    const grid = createEmptyGrid(3);
+    grid[0][1] = { ...grid[0][1], playerLetter: "B" };
+    grid[1][0] = { ...grid[1][0], playerLetter: "C" };
+    grid[2][2] = { ...grid[2][2], black: true, playerLetter: null };
+
+    // Extract player letters
+    const letters = deriveDisplayLetters(grid, "player");
+    const progress: PlayerProgress = { key: "test", gridSize: 3, letters };
+
+    // Apply to a fresh grid
+    const freshGrid = createEmptyGrid(3);
+    freshGrid[2][2] = { ...freshGrid[2][2], black: true };
+    const restored = applyPlayerProgress(freshGrid, progress);
+
+    // Only white cells should have their player letters restored
+    expect(restored[0][0].playerLetter).toBeNull();
+    expect(restored[0][1].playerLetter).toBe("B");
+    expect(restored[1][0].playerLetter).toBe("C");
+    expect(restored[2][2].playerLetter).toBeNull(); // black cell untouched
   });
 });

@@ -1,4 +1,4 @@
-import type { CellData, CellMarker, CellPosition, DerivedWord, Direction, DisplacedClue, Word, WordChangeResult } from "./types";
+import type { CellData, CellMarker, CellPosition, DerivedWord, Direction, DisplacedClue, PlayerProgress, Word, WordChangeResult } from "./types";
 import { reconcileWordsOnGridChange } from "./clue-logic";
 
 /**
@@ -452,6 +452,30 @@ export function toggleMarker(
       cellData.hyphenBottom = !cellData.hyphenBottom;
       if (cellData.hyphenBottom) cellData.spaceBottom = false;
       break;
+  }
+
+  return newGrid;
+}
+
+/**
+ * Applies saved player progress to a grid by overlaying player letters
+ * onto each cell's playerLetter field.
+ *
+ * Only overwrites playerLetter for cells that have a non-null, non-undefined
+ * letter in the saved progress. Black cells and cells without saved data
+ * retain their original playerLetter value.
+ *
+ * Pure function — does not mutate the input grid; returns a new grid.
+ */
+export function applyPlayerProgress(grid: CellData[][], progress: PlayerProgress): CellData[][] {
+  const newGrid = grid.map((row) => row.map((cell) => ({ ...cell })));
+
+  for (let r = 0; r < progress.gridSize; r++) {
+    for (let c = 0; c < progress.gridSize; c++) {
+      if (progress.letters[r] && progress.letters[r][c] !== undefined && progress.letters[r][c] !== null) {
+        newGrid[r][c] = { ...newGrid[r][c], playerLetter: progress.letters[r][c] };
+      }
+    }
   }
 
   return newGrid;

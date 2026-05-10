@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, PlayerInteraction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { deriveWords, assignNumbers, getWordInDirection, getWordCells, deriveDisplayLetters } from "$lib/grid-logic";
+  import { deriveWords, assignNumbers, getWordInDirection, getWordCells, deriveDisplayLetters, applyPlayerProgress } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -118,19 +118,7 @@
     // Check for saved progress
     const savedProgress = loadPlayerProgress(puzzleKey);
     if (savedProgress && savedProgress.gridSize === puzzle.gridSize) {
-      // Overlay saved letters onto grid cells' playerLetter
-      const newGrid = grid.map((row) => row.map((cell) => ({ ...cell })));
-      for (let r = 0; r < savedProgress.gridSize; r++) {
-        for (let c = 0; c < savedProgress.gridSize; c++) {
-          if (savedProgress.letters[r] && savedProgress.letters[r][c] !== undefined && savedProgress.letters[r][c] !== null) {
-            newGrid[r][c] = { ...newGrid[r][c], playerLetter: savedProgress.letters[r][c] };
-          }
-        }
-      }
-      grid = newGrid;
-    } else {
-      // Initialize playerLetter as null on all cells (already the default from parse)
-      // No need to create a separate playerLetters array
+      grid = applyPlayerProgress(grid, savedProgress);
     }
 
     selectedCell = null;
