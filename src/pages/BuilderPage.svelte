@@ -139,7 +139,7 @@
       gridSize = saved.gridSize;
       grid = saved.grid;
 
-      wordMetadata.clear()
+      wordMetadata.clear();
       for (const [id, wm] of saved.wordMetadata.entries()) {
         wordMetadata.set(id, wm);
       }
@@ -164,13 +164,13 @@
     }
   }
 
-  // === Helper: update wordMetadata from a words array ===
+  // === Helpers: wordMetadata population ===
 
   function syncMetadataFromWords(updatedWords: Word[]): void {
     wordMetadata.clear();
     for (const w of updatedWords) {
       const id = toWordId(w);
-      wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord });
+      wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
     }
   }
 
@@ -464,11 +464,7 @@
       title = puzzle.title;
       author = puzzle.author;
       const dw = deriveWords(grid);
-      wordMetadata.clear()
-      for (const w of puzzle.words) {
-        const id = toWordId(w);
-        wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
-      }
+      syncMetadataFromWords(puzzle.words);
       for (const d of dw) {
         const id = toWordId(d);
         if (!wordMetadata.has(id)) {
@@ -483,11 +479,7 @@
       grid = puzzle.grid;
       title = puzzle.title;
       author = puzzle.author;
-      wordMetadata.clear()
-      for (const w of puzzle.words) {
-        const id = toWordId(w);
-        wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
-      }
+      syncMetadataFromWords(puzzle.words);
       displacedClues = puzzle.displacedClues;
     }
 
