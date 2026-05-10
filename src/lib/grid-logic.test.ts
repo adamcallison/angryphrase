@@ -12,8 +12,9 @@ import {
   deriveDisplayLetters,
   isGridBlank,
   splitWordsByDirection,
+  toggleCellBlack,
 } from "./grid-logic";
-import type { CellData, Word, DisplacedClue } from "./types";
+import type { CellData, CellPosition, Word, DisplacedClue } from "./types";
 
 // Helper: create a single white cell with default values
 function whiteCell(): CellData {
@@ -898,5 +899,215 @@ describe("splitWordsByDirection", () => {
 
     expect(result.across.map((w) => w.number)).toEqual([1, 2, 4]);
     expect(result.down.map((w) => w.number)).toEqual([3, 5]);
+  });
+});
+
+// ============================================================
+// toggleCellBlack
+// ============================================================
+describe("toggleCellBlack", () => {
+  // Helper: build words with metadata from derived words
+  function wordsFromGrid(grid: CellData[][]): Word[] {
+    return deriveWords(grid).map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+  }
+
+  it("toggles a white cell to black", () => {
+    const grid = createEmptyGrid(3);
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    expect(result.grid[0][0].black).toBe(true);
+    expect(result.grid[0][0].puzzleLetter).toBeNull();
+    // Other cells untouched
+    expect(result.grid[0][1].black).toBe(false);
+    expect(result.grid[1][0].black).toBe(false);
+  });
+
+  it("toggles a black cell to white", () => {
+    const grid = createEmptyGrid(3);
+    grid[0][0].black = true;
+
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    expect(result.grid[0][0].black).toBe(false);
+    expect(result.grid[0][0].puzzleLetter).toBeNull();
+    expect(result.grid[0][0].spaceRight).toBe(false);
+    expect(result.grid[0][0].spaceBottom).toBe(false);
+  });
+
+  it("does not mutate the original grid", () => {
+    const grid = createEmptyGrid(3);
+    const originalCell = { ...grid[1][1] };
+
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 1, col: 1 };
+
+    toggleCellBlack(grid, cell, words, []);
+
+    // Original grid should not be modified
+    expect(grid[1][1].black).toBe(originalCell.black);
+    expect(grid[1][1].puzzleLetter).toBe(originalCell.puzzleLetter);
+  });
+
+  it("clears letter and markers when toggling white to black", () => {
+    const grid = createEmptyGrid(3);
+    grid[1][1] = {
+      black: false,
+      puzzleLetter: "A",
+      playerLetter: "B",
+      spaceRight: true,
+      spaceBottom: true,
+      hyphenRight: true,
+      hyphenBottom: true,
+    };
+
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 1, col: 1 };
+
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    expect(result.grid[1][1].black).toBe(true);
+    expect(result.grid[1][1].puzzleLetter).toBeNull();
+    expect(result.grid[1][1].playerLetter).toBeNull();
+    expect(result.grid[1][1].spaceRight).toBe(false);
+    expect(result.grid[1][1].spaceBottom).toBe(false);
+    expect(result.grid[1][1].hyphenRight).toBe(false);
+    expect(result.grid[1][1].hyphenBottom).toBe(false);
+  });
+
+  it("clears letter and markers when toggling black to white", () => {
+    const grid = createEmptyGrid(3);
+    grid[1][1] = {
+      black: true,
+      puzzleLetter: "Z",
+      playerLetter: "X",
+      spaceRight: true,
+      spaceBottom: true,
+      hyphenRight: true,
+      hyphenBottom: true,
+    };
+
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 1, col: 1 };
+
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    expect(result.grid[1][1].black).toBe(false);
+    expect(result.grid[1][1].puzzleLetter).toBeNull();
+    expect(result.grid[1][1].playerLetter).toBeNull();
+    expect(result.grid[1][1].spaceRight).toBe(false);
+    expect(result.grid[1][1].spaceBottom).toBe(false);
+    expect(result.grid[1][1].hyphenRight).toBe(false);
+    expect(result.grid[1][1].hyphenBottom).toBe(false);
+  });
+
+  it("returns updated words when toggling a cell to black (word shortened)", () => {
+    // 5x5 all-white grid — toggling (0,4) shortens the across word at (0,0)
+    // from length 5 to length 4
+    const grid = createEmptyGrid(5);
+    const words = wordsFromGrid(grid);
+    const cell: CellPosition = { row: 0, col: 4 };
+
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    // The result should have shortened words (the across word starting at (0,0))
+    expect(result.result.shortenedWords.length).toBeGreaterThan(0);
+    // The updated words should reflect the new grid
+    expect(result.result.updatedWords.length).toBeGreaterThan(0);
+  });
+
+  it("preserves clue metadata for surviving words when toggling cell to black", () => {
+    // 5x5 grid — toggle cell at (0,4) shortens the across word at (0,0)
+    // from length 5 to length 4, but doesn't destroy it
+    const grid = createEmptyGrid(5);
+    const derivedWords = deriveWords(grid);
+    const words: Word[] = derivedWords.map((dw) => ({
+      ...dw,
+      clue:
+        dw.startRow === 0 && dw.startCol === 0 && dw.direction === "across"
+          ? "Test clue"
+          : "",
+      nextWord: null,
+    }));
+
+    const cell: CellPosition = { row: 0, col: 4 };
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    // The across word at (0,0) still exists but shorter — its clue should be preserved
+    const survivingWord = result.result.updatedWords.find(
+      (w) => w.startRow === 0 && w.startCol === 0 && w.direction === "across"
+    );
+    expect(survivingWord).toBeDefined();
+    expect(survivingWord!.clue).toBe("Test clue");
+    expect(survivingWord!.length).toBe(4);
+  });
+
+  it("creates displaced clues when a word with a clue is destroyed", () => {
+    // 2x2 grid: toggle (1,0) to black destroys the down word starting at (0,0)
+    const grid = createEmptyGrid(2);
+    const derivedWords = deriveWords(grid);
+    const words: Word[] = derivedWords.map((dw) => ({
+      ...dw,
+      clue: "",
+      nextWord: null,
+    }));
+
+    // Give a clue to the down word starting at (0, 0)
+    const downWord = words.find(
+      (w) => w.startRow === 0 && w.startCol === 0 && w.direction === "down"
+    );
+    if (downWord) downWord.clue = "Down clue";
+
+    // Toggle (1, 0) — this should destroy the down word
+    const cell: CellPosition = { row: 1, col: 0 };
+    const result = toggleCellBlack(grid, cell, words, []);
+
+    // The destroyed down word should produce a displaced clue
+    expect(result.result.displacedClues.length).toBeGreaterThanOrEqual(1);
+    expect(result.result.displacedClues.some((dc) => dc.clue === "Down clue")).toBe(true);
+  });
+
+  it("passes through existing displaced clues", () => {
+    const grid = createEmptyGrid(3);
+    const words = wordsFromGrid(grid);
+    const existingDisplaced: DisplacedClue[] = [
+      { id: "existing-1", clue: "Old clue", direction: "across" },
+    ];
+
+    const cell: CellPosition = { row: 1, col: 1 };
+    const result = toggleCellBlack(grid, cell, words, existingDisplaced);
+
+    // Existing displaced clue should be preserved in the result
+    expect(result.result.displacedClues).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: "existing-1" })])
+    );
+  });
+
+  it("round-trips: toggling black then white restores a white cell", () => {
+    const grid = createEmptyGrid(3);
+    const cell: CellPosition = { row: 0, col: 0 };
+
+    // Toggle white → black
+    const firstResult = toggleCellBlack(grid, cell, wordsFromGrid(grid), []);
+    expect(firstResult.grid[0][0].black).toBe(true);
+
+    // Toggle black → white
+    const secondResult = toggleCellBlack(
+      firstResult.grid,
+      cell,
+      wordsFromGrid(firstResult.grid),
+      firstResult.result.displacedClues,
+    );
+    expect(secondResult.grid[0][0].black).toBe(false);
+    expect(secondResult.grid[0][0].puzzleLetter).toBeNull();
   });
 });

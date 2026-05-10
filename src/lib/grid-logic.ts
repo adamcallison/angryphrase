@@ -1,4 +1,5 @@
-import type { CellData, CellPosition, DerivedWord, Direction, DisplacedClue, Word } from "./types";
+import type { CellData, CellPosition, DerivedWord, Direction, DisplacedClue, Word, WordChangeResult } from "./types";
+import { reconcileWordsOnGridChange } from "./clue-logic";
 
 /**
  * Creates an NxN grid of all-white cells with default values.
@@ -354,4 +355,53 @@ export function splitWordsByDirection(words: Word[]): {
     .sort((a, b) => a.number - b.number);
 
   return { across, down };
+}
+
+/**
+ * Toggles a cell between black and white in design mode.
+ *
+ * If the cell was black, it becomes a default white cell (all markers off, no letter).
+ * If the cell was white, it becomes a black cell (all fields cleared).
+ *
+ * Returns the new grid with the cell toggled and the reconciliation results
+ * for word metadata updates.
+ */
+export function toggleCellBlack(
+  grid: CellData[][],
+  cell: CellPosition,
+  currentWords: Word[],
+  displacedClues: DisplacedClue[],
+): { grid: CellData[][]; result: WordChangeResult } {
+  const { row, col } = cell;
+  const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+  const wasBlack = newGrid[row][col].black;
+
+  if (wasBlack) {
+    // Toggling black → white: make it white with default values
+    newGrid[row][col] = {
+      black: false,
+      puzzleLetter: null,
+      playerLetter: null,
+      spaceRight: false,
+      spaceBottom: false,
+      hyphenRight: false,
+      hyphenBottom: false,
+    };
+  } else {
+    // Toggling white → black: clear all cell data
+    newGrid[row][col] = {
+      black: true,
+      puzzleLetter: null,
+      playerLetter: null,
+      spaceRight: false,
+      spaceBottom: false,
+      hyphenRight: false,
+      hyphenBottom: false,
+    };
+  }
+
+  const newDerived = deriveWords(newGrid);
+  const result = reconcileWordsOnGridChange(currentWords, newDerived, displacedClues);
+
+  return { grid: newGrid, result };
 }

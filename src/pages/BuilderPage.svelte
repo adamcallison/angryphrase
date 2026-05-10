@@ -2,9 +2,9 @@
   import type { BuilderInteraction, BuilderState, CellData, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
+  import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack } from "$lib/grid-logic";
   import { toWordId, joinWords, unjoinWord } from "$lib/chain-logic";
-  import { reconcileWordsOnGridChange, reattachClue } from "$lib/clue-logic";
+  import { reattachClue } from "$lib/clue-logic";
   import { isGridBlank } from "$lib/grid-logic";
   import { canExportAsComplete } from "$lib/validation";
   import { serializeIncompletePuzzle, serializeCompletePuzzle, parsePuzzleJSON } from "$lib/import-export";
@@ -189,52 +189,13 @@
 
 // --- Design mode: toggle cell black/white ---
   function handleDesignModeClick(cellPosition: CellPosition): void {
-    const { row, col } = cellPosition;
-    const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
-    const wasBlack = newGrid[row][col].black;
+    const { grid: newGrid, result } = toggleCellBlack(grid, cellPosition, words, displacedClues);
 
-    if (wasBlack) {
-      // Toggling black → white: make it white with default values
-      newGrid[row][col] = {
-        black: false,
-        puzzleLetter: null,
-        playerLetter: null,
-        spaceRight: false,
-        spaceBottom: false,
-        hyphenRight: false,
-        hyphenBottom: false,
-      };
-    } else {
-      // Toggling white → black: clear all cell data
-      newGrid[row][col] = {
-        black: true,
-        puzzleLetter: null,
-        playerLetter: null,
-        spaceRight: false,
-        spaceBottom: false,
-        hyphenRight: false,
-        hyphenBottom: false,
-      };
-    }
-
-    // Save old words for reconciliation
-    const oldWords = [...words];
-
-    // Update grid
     grid = newGrid;
-
-    // Derive new words and reconcile
-    const newDerived = deriveWords(grid);
-    const result = reconcileWordsOnGridChange(oldWords, newDerived, displacedClues);
-
-    // Update metadata
     syncMetadataFromWords(result.updatedWords);
     displacedClues = result.displacedClues;
-
-    // Clear selection in design mode
     selectedCell = null;
 
-    // Show toasts for shortened words
     for (const w of result.shortenedWords) {
       showToast(`Word ${w.number} ${w.direction === "across" ? "Across" : "Down"} was shortened.`);
     }
