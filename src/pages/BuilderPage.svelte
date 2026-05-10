@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BuilderInteraction, BuilderState, CellData, CellMarker, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
+  import type { BuilderInteraction, CellData, CellMarker, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack, toggleMarker } from "$lib/grid-logic";
@@ -106,23 +106,23 @@
 
   // === Auto-save ===
 
+  let stateSnapshot = $derived.by(() => ({
+    key,
+    gridSize,
+    grid,
+    wordMetadata,
+    displacedClues,
+    title,
+    author,
+    interaction,
+    selectedCell,
+    selectedDirection,
+  }));
+
   $effect(() => {
-    // Depend on all state that should trigger auto-save
-    const _ = [key, gridSize, grid, wordMetadata, displacedClues, title, author, interaction];
+    const _ = stateSnapshot;
     const timer = setTimeout(() => {
-      const state: BuilderState = {
-        key,
-        gridSize,
-        grid,
-        wordMetadata,
-        displacedClues,
-        title,
-        author,
-        interaction,
-        selectedCell,
-        selectedDirection,
-      };
-      saveBuilderState(state);
+      saveBuilderState(_);
     }, 500);
     return () => clearTimeout(timer);
   });

@@ -63,20 +63,24 @@
 
   // === Auto-save ===
 
-  $effect(() => {
-    if (interaction.kind !== "playing") return;
-    const _ = grid;
-    const _k = puzzleKey;
-    const _g = gridSize;
+  let playerStateSnapshot = $derived.by(() => ({
+    playing: interaction.kind === "playing",
+    puzzleKey,
+    gridSize,
+    grid,
+  }));
 
+  $effect(() => {
+    if (!playerStateSnapshot.playing) return;
+    const _ = playerStateSnapshot;
     const timer = setTimeout(() => {
-      const letters = deriveDisplayLetters(grid, "player");
+      const letters = deriveDisplayLetters(_.grid, "player");
       const progress = {
-        key: puzzleKey,
-        gridSize: gridSize,
+        key: _.puzzleKey,
+        gridSize: _.gridSize,
         letters,
       };
-      savePlayerProgress(puzzleKey, progress);
+      savePlayerProgress(_.puzzleKey, progress);
     }, 500);
     return () => clearTimeout(timer);
   });
