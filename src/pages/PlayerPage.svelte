@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, PlayerInteraction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE } from "$lib/constants";
-  import { deriveWords, assignNumbers, getWordInDirection, getWordCells } from "$lib/grid-logic";
+  import { deriveWords, assignNumbers, getWordInDirection, getWordCells, deriveDisplayLetters } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
@@ -70,18 +70,7 @@
     const _g = gridSize;
 
     const timer = setTimeout(() => {
-      const letters: (string | null)[][] = [];
-      for (let r = 0; r < gridSize; r++) {
-        const row: (string | null)[] = [];
-        for (let c = 0; c < gridSize; c++) {
-          if (grid[r] && grid[r][c] && !grid[r][c].black) {
-            row.push(grid[r][c].playerLetter ?? null);
-          } else {
-            row.push(null);
-          }
-        }
-        letters.push(row);
-      }
+      const letters = deriveDisplayLetters(grid, "player");
       const progress = {
         key: puzzleKey,
         gridSize: gridSize,
