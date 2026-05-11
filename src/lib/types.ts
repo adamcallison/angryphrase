@@ -157,6 +157,11 @@ export type ClueInteractionMode =
 
 // === Builder State ===
 
+export interface CursorState {
+  cell: CellPosition | null;
+  direction: Direction;
+}
+
 export interface BuilderState {
   // Core data
   key: string; // Unique puzzle identifier
@@ -169,8 +174,7 @@ export interface BuilderState {
 
   // UI state
   interaction: BuilderInteraction;
-  selectedCell: CellPosition | null;
-  selectedDirection: Direction;
+  cursor: CursorState;
 }
 
 // === Player Progress ===

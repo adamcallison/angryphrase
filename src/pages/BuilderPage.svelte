@@ -24,18 +24,19 @@
   import Toast from "../components/Toast.svelte";
 
   // === Core data state ===
-  let key = $state(generateUniqueKey());
-  let gridSize = $state(DEFAULT_GRID_SIZE);
-  let grid = $state<CellData[][]>(createEmptyGrid(DEFAULT_GRID_SIZE));
-  let wordMetadata = new SvelteMap<string, WordMetadata>();
-  let displacedClues = $state<DisplacedClue[]>([]);
-  let title = $state("");
-  let author = $state("");
+  let builderData = $state({
+    key: generateUniqueKey(),
+    gridSize: DEFAULT_GRID_SIZE,
+    grid: createEmptyGrid(DEFAULT_GRID_SIZE) as CellData[][],
+    wordMetadata: new SvelteMap<string, WordMetadata>(),
+    displacedClues: [] as DisplacedClue[],
+    title: "",
+    author: "",
+  });
 
   // === UI state ===
   let interaction = $state<BuilderInteraction>({ kind: "design" });
-  let selectedCell = $state<CellPosition | null>(null);
-  let selectedDirection = $state<Direction>("across");
+  let cursor = $state<{ cell: CellPosition | null; direction: Direction }>({ cell: null, direction: "across" });
 
   // Toast
   let toastMessage = $state("");
@@ -57,7 +58,7 @@
   // === Derived state ===
 
   /** Derive words from grid. */
-  let derivedWords = $derived(deriveWords(grid));
+  let derivedWords = $derived(deriveWords(builderData.grid));
 
   /** Number map for cell and word numbering. */
   let numberMap = $derived(assignNumbers(derivedWords));
@@ -66,7 +67,7 @@
   let words = $derived.by(() => {
     const merged: Word[] = derivedWords.map((dw) => {
       const id = toWordId(dw);
-      const meta = wordMetadata.get(id);
+      const meta = builderData.wordMetadata.get(id);
       return {
         ...dw,
         number: numberMap.get(`${dw.startRow}-${dw.startCol}`) ?? 0,
@@ -79,23 +80,23 @@
 
   /** Currently selected word. */
   let selectedWord = $derived.by(() => {
-    if (!selectedCell) return null;
-    return getWordInDirection(words, selectedCell.row, selectedCell.col, selectedDirection);
+    if (!cursor.cell) return null;
+    return getWordInDirection(words, cursor.cell.row, cursor.cell.col, cursor.direction);
   });
 
-  let selectedWordId = $derived(selectedWord ? toWordId(selectedWord) : null);
+  let selectedWordId = $derived(cursor.cell ? toWordId(selectedWord!) : null);
 
   /** Cells of the currently selected word for highlighting. */
   let highlightedCells = $derived(selectedWord ? getWordCells(selectedWord) : []);
 
   /** Whether the grid is blank (for grid size changes). */
-  let gridIsBlank = $derived(isGridBlank(grid, words, displacedClues));
+  let gridIsBlank = $derived(isGridBlank(builderData.grid, words, builderData.displacedClues));
 
   /** Whether any word has non-empty clue text (for mode switch confirmation). */
   let hasClueText = $derived(words.some((w) => w.clue.trim() !== ""));
 
   /** Export readiness. */
-  let exportCheck = $derived(canExportAsComplete(grid, words));
+  let exportCheck = $derived(canExportAsComplete(builderData.grid, words));
 
   // === Derived mode helpers (for template bindings) ===
 
@@ -107,16 +108,15 @@
   // === Auto-save ===
 
   let stateSnapshot = $derived.by(() => ({
-    key,
-    gridSize,
-    grid,
-    wordMetadata,
-    displacedClues,
-    title,
-    author,
+    key: builderData.key,
+    gridSize: builderData.gridSize,
+    grid: builderData.grid,
+    wordMetadata: builderData.wordMetadata,
+    displacedClues: builderData.displacedClues,
+    title: builderData.title,
+    author: builderData.author,
     interaction,
-    selectedCell,
-    selectedDirection,
+    cursor: { cell: cursor.cell, direction: cursor.direction },
   }));
 
   $effect(() => {
@@ -136,23 +136,23 @@
     hasLoaded = true;
     const saved = loadBuilderState();
     if (saved) {
-      key = saved.key;
-      gridSize = saved.gridSize;
-      grid = saved.grid;
+      builderData.key = saved.key;
+      builderData.gridSize = saved.gridSize;
+      builderData.grid = saved.grid;
 
-      wordMetadata.clear();
+      builderData.wordMetadata.clear();
       for (const [id, wm] of saved.wordMetadata.entries()) {
-        wordMetadata.set(id, wm);
+        builderData.wordMetadata.set(id, wm);
       }
-      displacedClues = saved.displacedClues;
-      title = saved.title;
-      author = saved.author;
+      builderData.displacedClues = saved.displacedClues;
+      builderData.title = saved.title;
+      builderData.author = saved.author;
       // Always restore to the base mode — don't re-enter join/reattach sub-modes
       const restoredMode = saved.interaction.kind === "design" ? "design" as const : "fill" as const;
       const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: restoredMode });
       if (next) interaction = next;
-      selectedCell = saved.selectedCell;
-      selectedDirection = saved.selectedDirection;
+      cursor.cell = saved.cursor.cell;
+      cursor.direction = saved.cursor.direction;
     }
   });
 
@@ -168,10 +168,10 @@
   // === Helpers: wordMetadata population ===
 
   function syncMetadataFromWords(updatedWords: Word[]): void {
-    wordMetadata.clear();
+    builderData.wordMetadata.clear();
     for (const w of updatedWords) {
       const id = toWordId(w);
-      wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
+      builderData.wordMetadata.set(id, { clue: w.clue, nextWord: w.nextWord ?? null });
     }
   }
 
@@ -190,12 +190,12 @@
 
 // --- Design mode: toggle cell black/white ---
   function handleDesignModeClick(cellPosition: CellPosition): void {
-    const { grid: newGrid, result } = toggleCellBlack(grid, cellPosition, words, displacedClues);
+    const { grid: newGrid, result } = toggleCellBlack(builderData.grid, cellPosition, words, builderData.displacedClues);
 
-    grid = newGrid;
+    builderData.grid = newGrid;
     syncMetadataFromWords(result.updatedWords);
-    displacedClues = result.displacedClues;
-    selectedCell = null;
+    builderData.displacedClues = result.displacedClues;
+    cursor.cell = null;
 
     for (const w of result.shortenedWords) {
       showToast(`Word ${w.number} ${w.direction === "across" ? "Across" : "Down"} was shortened.`);
@@ -204,33 +204,33 @@
 
   // --- Fill mode: select cell for typing ---
   function handleFillModeClick(cellPosition: CellPosition): void {
-    const result = computeSelectionChangeForCellClick(grid, selectedCell, selectedDirection, words, cellPosition);
-    selectedCell = result.selectedCell;
-    selectedDirection = result.selectedDirection;
+    const result = computeSelectionChangeForCellClick(builderData.grid, cursor.cell, cursor.direction, words, cellPosition);
+    cursor.cell = result.selectedCell;
+    cursor.direction = result.selectedDirection;
   }
 
   // --- Keyboard handler for Fill mode ---
   function handleKeyDown(event: KeyboardEvent): void {
-    if (interaction.kind !== "fill" || !selectedCell) return;
+    if (interaction.kind !== "fill" || !cursor.cell) return;
     const key = event.key;
 
     // Letter keys (A-Z)
     if (/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
-      const result = enterLetter(grid, selectedCell, selectedDirection, key.toUpperCase(), "puzzle");
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const result = enterLetter(builderData.grid, cursor.cell, cursor.direction, key.toUpperCase(), "puzzle");
+      builderData.grid = result.grid;
+      cursor.cell = result.nextCell;
+      cursor.direction = result.nextDirection;
       return;
     }
 
     // Backspace
     if (key === "Backspace") {
       event.preventDefault();
-      const result = deleteLetter(grid, selectedCell, selectedDirection, "puzzle");
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const result = deleteLetter(builderData.grid, cursor.cell, cursor.direction, "puzzle");
+      builderData.grid = result.grid;
+      cursor.cell = result.nextCell;
+      cursor.direction = result.nextDirection;
       return;
     }
 
@@ -245,10 +245,10 @@
       };
       const direction = keyToDirection[key];
       if (direction) {
-        const result = moveCursor(grid, selectedCell, direction);
-        grid = result.grid;
-        selectedCell = result.nextCell;
-        selectedDirection = result.nextDirection;
+        const result = moveCursor(builderData.grid, cursor.cell, direction);
+        builderData.grid = result.grid;
+        cursor.cell = result.nextCell;
+        cursor.direction = result.nextDirection;
       }
       return;
     }
@@ -266,14 +266,14 @@
 
     // Clear selection in design mode
     if (newMode === "design") {
-      selectedCell = null;
+      cursor.cell = null;
     }
   }
 
   // --- Clue editing ---
   function handleClueChange(wordId: WordId, newText: string): void {
-    const existing = wordMetadata.get(wordId) ?? { clue: "", nextWord: null };
-    wordMetadata.set(wordId, { ...existing, clue: newText });
+    const existing = builderData.wordMetadata.get(wordId) ?? { clue: "", nextWord: null };
+    builderData.wordMetadata.set(wordId, { ...existing, clue: newText });
   }
 
   // --- Join/Unjoin ---
@@ -317,14 +317,14 @@
     }
 
     // Validate and complete the join, displacing the target's clue if non-empty
-    const result = joinWordsAndDisplace(words, sourceWordId, wordId, displacedClues);
+    const result = joinWordsAndDisplace(words, sourceWordId, wordId, builderData.displacedClues);
     if (result === null) {
       showToast("Cannot join these words. Check that neither word is already in a chain.");
       return;
     }
 
     syncMetadataFromWords(result.words);
-    displacedClues = result.displacedClues;
+    builderData.displacedClues = result.displacedClues;
     const next = transitionBuilderInteraction(interaction, { kind: "finishJoin" });
     if (next) interaction = next;
   }
@@ -332,7 +332,7 @@
   // --- Reattach mode: navigating clues while selecting reattach target ---
   function handleClueClickReattachMode(wordId: WordId, clueIndex: number): void {
 
-    const result = reattachClue(words, displacedClues, clueIndex, wordId);
+    const result = reattachClue(words, builderData.displacedClues, clueIndex, wordId);
 
     if (result === null) {
       showToast("This word already has a clue.");
@@ -341,7 +341,7 @@
 
     // Update state from reattachClue result
     syncMetadataFromWords(result.words);
-    displacedClues = result.displacedClues;
+    builderData.displacedClues = result.displacedClues;
     const next = transitionBuilderInteraction(interaction, { kind: "finishReattach" });
     if (next) interaction = next;
   }
@@ -350,8 +350,8 @@
   function handleClueClickDefault(wordId: WordId): void {
     const word = words.find((w) => toWordId(w) === wordId);
     if (word) {
-      selectedCell = { row: word.startRow, col: word.startCol };
-      selectedDirection = word.direction;
+      cursor.cell = { row: word.startRow, col: word.startCol };
+      cursor.direction = word.direction;
     }
   }
 
@@ -362,7 +362,7 @@
   }
 
   function handleDisplacedClueDelete(index: number): void {
-    displacedClues = displacedClues.filter((_, i) => i !== index);
+    builderData.displacedClues = builderData.displacedClues.filter((_, i) => i !== index);
 
     // If in reattach mode, adjust or cancel accordingly
     if (interaction.kind === "reattach") {
@@ -383,51 +383,51 @@
   function handleSizeChange(newSize: number): void {
     if (!gridIsBlank) return;
     if (newSize < 2) return;
-    gridSize = newSize;
-    grid = createEmptyGrid(newSize);
-    wordMetadata.clear();
-    displacedClues = [];
-    selectedCell = null;
+    builderData.gridSize = newSize;
+    builderData.grid = createEmptyGrid(newSize);
+    builderData.wordMetadata.clear();
+    builderData.displacedClues = [];
+    cursor.cell = null;
   }
 
   // --- Metadata ---
   function handleTitleChange(newTitle: string): void {
-    title = newTitle;
+    builderData.title = newTitle;
   }
 
   function handleAuthorChange(newAuthor: string): void {
-    author = newAuthor;
+    builderData.author = newAuthor;
   }
 
 // --- Marker toolbar ---
   function handleToggleMarker(marker: CellMarker): void {
-    if (!selectedCell || interaction.kind === "design") return;
-    const result = toggleMarker(grid, selectedCell, marker);
-    if (result) grid = result;
+    if (!cursor.cell || interaction.kind === "design") return;
+    const result = toggleMarker(builderData.grid, cursor.cell, marker);
+    if (result) builderData.grid = result;
   }
 
   // Selected cell data for MarkerToolbar
   let selectedCellData = $derived.by(() => {
-    if (!selectedCell) return null;
-    const { row, col } = selectedCell;
-    if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) return null;
-    return grid[row][col];
+    if (!cursor.cell) return null;
+    const { row, col } = cursor.cell;
+    if (row < 0 || row >= builderData.gridSize || col < 0 || col >= builderData.gridSize) return null;
+    return builderData.grid[row][col];
   });
 
   // --- Save/Export ---
   function handleSave(): void {
-    const json = serializeIncompletePuzzle(grid, words, displacedClues, { title, author }, key);
-    downloadJSON(json, `puzzle-${key.slice(0, 8)}-incomplete.json`);
+    const json = serializeIncompletePuzzle(builderData.grid, words, builderData.displacedClues, { title: builderData.title, author: builderData.author }, builderData.key);
+    downloadJSON(json, `puzzle-${builderData.key.slice(0, 8)}-incomplete.json`);
   }
 
   function handleExportComplete(): void {
     if (!exportCheck.canExport) return;
-    const result = serializeCompletePuzzle(grid, words, { title, author }, key);
+    const result = serializeCompletePuzzle(builderData.grid, words, { title: builderData.title, author: builderData.author }, builderData.key);
     if ("error" in result) {
       showToast(result.error);
       return;
     }
-    downloadJSON(result, `puzzle-${key.slice(0, 8)}-complete.json`);
+    downloadJSON(result, `puzzle-${builderData.key.slice(0, 8)}-complete.json`);
   }
 
   function downloadJSON(data: object, filename: string): void {
@@ -458,19 +458,19 @@
     }
 
     const snapshot = hydrateBuilderStateFromImport(result.data, result.type === "complete");
-    key = snapshot.key;
-    gridSize = snapshot.gridSize;
-    grid = snapshot.grid;
-    title = snapshot.title;
-    author = snapshot.author;
-    wordMetadata.clear();
+    builderData.key = snapshot.key;
+    builderData.gridSize = snapshot.gridSize;
+    builderData.grid = snapshot.grid;
+    builderData.title = snapshot.title;
+    builderData.author = snapshot.author;
+    builderData.wordMetadata.clear();
     for (const [id, wm] of snapshot.wordMetadata.entries()) {
-      wordMetadata.set(id, wm);
+      builderData.wordMetadata.set(id, wm);
     }
-    displacedClues = snapshot.displacedClues;
+    builderData.displacedClues = snapshot.displacedClues;
 
-    selectedCell = null;
-    selectedDirection = "across";
+    cursor.cell = null;
+    cursor.direction = "across";
     const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "fill" });
     if (next) interaction = next;
   }
@@ -480,17 +480,17 @@
     if (!window.confirm("Reset to initial state? This will clear all work and cannot be undone.")) {
       return;
     }
-    key = generateUniqueKey();
-    gridSize = DEFAULT_GRID_SIZE;
-    grid = createEmptyGrid(DEFAULT_GRID_SIZE);
-    wordMetadata.clear();
-    displacedClues = [];
-    title = "";
-    author = "";
+    builderData.key = generateUniqueKey();
+    builderData.gridSize = DEFAULT_GRID_SIZE;
+    builderData.grid = createEmptyGrid(DEFAULT_GRID_SIZE);
+    builderData.wordMetadata.clear();
+    builderData.displacedClues = [];
+    builderData.title = "";
+    builderData.author = "";
     const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: "design" });
     if (next) interaction = next;
-    selectedCell = null;
-    selectedDirection = "across";
+    cursor.cell = null;
+    cursor.direction = "across";
     clearBuilderState();
   }
 </script>
@@ -515,15 +515,15 @@
       <div class="flex-shrink-0 flex flex-col gap-3">
         <!-- Metadata -->
         <PuzzleMetadataForm
-          {title}
-          {author}
+          title={builderData.title}
+          author={builderData.author}
           onTitleChange={handleTitleChange}
           onAuthorChange={handleAuthorChange}
         />
 
         <!-- Grid size -->
         <GridSizeSelector
-          {gridSize}
+          gridSize={builderData.gridSize}
           isBlank={gridIsBlank}
           onSizeChange={handleSizeChange}
         />
@@ -550,10 +550,10 @@
 
         <!-- Grid -->
         <CrosswordGrid
-          {grid}
+          grid={builderData.grid}
           {words}
           letterSource="puzzle"
-          {selectedCell}
+          selectedCell={cursor.cell}
           {highlightedCells}
           onCellClick={handleCellClick}
           onKeyDown={handleKeyDown}
@@ -565,7 +565,7 @@
         <div class="flex-1 overflow-y-auto" style="max-height: 60vh;">
           <EditableCluePanel
             {words}
-            {grid}
+            grid={builderData.grid}
             {selectedWordId}
             onClueClick={handleClueClick}
             onClueChange={handleClueChange}
@@ -579,9 +579,9 @@
           />
         </div>
 
-        {#if displacedClues.length > 0}
+        {#if builderData.displacedClues.length > 0}
           <DisplacedCluesPanel
-            {displacedClues}
+            displacedClues={builderData.displacedClues}
             reattachMode={interaction.kind === "reattach"}
             selectedClueIndex={interaction.kind === "reattach" ? interaction.clueIndex : null}
             onReattachClick={handleDisplacedClueClick}

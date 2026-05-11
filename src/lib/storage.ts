@@ -57,8 +57,11 @@ export function loadBuilderState(): BuilderState | null {
       title: parsed.title ?? "",
       author: parsed.author ?? "",
       interaction: parsed.interaction ?? { kind: "design" },
-      selectedCell: parsed.selectedCell ?? null,
-      selectedDirection: parsed.selectedDirection ?? "across",
+      // Migrate from flat selectedCell/selectedDirection to cursor object
+      cursor: parsed.cursor ?? {
+        cell: parsed.selectedCell ?? null,
+        direction: parsed.selectedDirection ?? "across",
+      },
     } as BuilderState;
   } catch {
     return null;

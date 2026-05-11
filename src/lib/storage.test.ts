@@ -82,8 +82,10 @@ function makeBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
     title: overrides.title ?? "Test Puzzle",
     author: overrides.author ?? "Test Author",
     interaction: overrides.interaction ?? { kind: "fill" },
-    selectedCell: overrides.selectedCell !== undefined ? overrides.selectedCell : { row: 0, col: 0 },
-    selectedDirection: overrides.selectedDirection ?? "across",
+    cursor: overrides.cursor ?? {
+      cell: { row: 0, col: 0 },
+      direction: "across" as const,
+    },
   };
 }
 
@@ -133,8 +135,7 @@ describe("saveBuilderState and loadBuilderState", () => {
     expect(loaded!.title).toBe("Test Puzzle");
     expect(loaded!.author).toBe("Test Author");
     expect(loaded!.interaction).toEqual({ kind: "fill" });
-    expect(loaded!.selectedCell).toEqual({ row: 0, col: 0 });
-    expect(loaded!.selectedDirection).toBe("across");
+    expect(loaded!.cursor).toEqual({ cell: { row: 0, col: 0 }, direction: "across" });
   });
 
   it("preserves grid data in round-trip", () => {
@@ -226,12 +227,12 @@ describe("saveBuilderState and loadBuilderState", () => {
   });
 
   it("handles null selectedCell", () => {
-    const state = makeBuilderState({ selectedCell: null });
+    const state = makeBuilderState({ cursor: { cell: null, direction: "across" } });
     saveBuilderState(state);
 
     const loaded = loadBuilderState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.selectedCell).toBeNull();
+    expect(loaded!.cursor.cell).toBeNull();
   });
 
   it("handles design mode", () => {
