@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { BuilderInteraction, CellData, CellMarker, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
+  import type { BuilderInteraction, CellData, CellMarker, CellPosition, Direction, DisplacedClue, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
   import { DEFAULT_GRID_SIZE, TOAST_DURATION_MS, AUTOSAVE_DELAY_MS } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack, toggleMarker } from "$lib/grid-logic";
@@ -11,7 +11,8 @@
   import { saveBuilderState, loadBuilderState, clearBuilderState, generateUniqueKey } from "$lib/storage";
   import { hydrateBuilderStateFromImport } from "$lib/builder-state";
   import { transitionBuilderInteraction } from "$lib/interaction-machine";
-  import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
+  import { computeSelectionChangeForCellClick } from "$lib/cursor-logic";
+  import { handleKeyInput } from "$lib/keypress-logic";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
   import EditableCluePanel from "../components/EditableCluePanel.svelte";
@@ -211,45 +212,12 @@
   // --- Keyboard handler for Fill mode ---
   function handleKeyDown(event: KeyboardEvent): void {
     if (interaction.kind !== "fill" || !cursor.cell) return;
-    const key = event.key;
-
-    // Letter keys (A-Z)
-    if (/^[a-zA-Z]$/.test(key)) {
+    const result = handleKeyInput(event.key, builderData.grid, cursor.cell, cursor.direction, "puzzle");
+    if (result) {
       event.preventDefault();
-      const result = enterLetter(builderData.grid, cursor.cell, cursor.direction, key.toUpperCase(), "puzzle");
       builderData.grid = result.grid;
       cursor.cell = result.nextCell;
       cursor.direction = result.nextDirection;
-      return;
-    }
-
-    // Backspace
-    if (key === "Backspace") {
-      event.preventDefault();
-      const result = deleteLetter(builderData.grid, cursor.cell, cursor.direction, "puzzle");
-      builderData.grid = result.grid;
-      cursor.cell = result.nextCell;
-      cursor.direction = result.nextDirection;
-      return;
-    }
-
-    // Arrow keys
-    if (key.startsWith("Arrow")) {
-      event.preventDefault();
-      const keyToDirection: Record<string, MoveDirection> = {
-        ArrowUp: "up",
-        ArrowDown: "down",
-        ArrowLeft: "left",
-        ArrowRight: "right",
-      };
-      const direction = keyToDirection[key];
-      if (direction) {
-        const result = moveCursor(builderData.grid, cursor.cell, direction);
-        builderData.grid = result.grid;
-        cursor.cell = result.nextCell;
-        cursor.direction = result.nextDirection;
-      }
-      return;
     }
   }
 

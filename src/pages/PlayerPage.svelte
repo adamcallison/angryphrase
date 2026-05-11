@@ -1,12 +1,13 @@
 <script lang="ts">
-  import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, PlayerInteraction, Word } from "$lib/types";
+  import type { CellData, CellPosition, CheckResult, Direction, PlayerInteraction, Word } from "$lib/types";
   import { DEFAULT_GRID_SIZE, AUTOSAVE_DELAY_MS } from "$lib/constants";
   import { deriveWords, assignNumbers, getWordInDirection, getWordCells, deriveDisplayLetters, applyPlayerProgress } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
   import { parsePuzzleJSON } from "$lib/import-export";
   import { savePlayerProgress, loadPlayerProgress, clearPlayerProgress } from "$lib/storage";
-  import { enterLetter, deleteLetter, moveCursor, computeSelectionChangeForCellClick } from "$lib/cursor-logic";
+  import { computeSelectionChangeForCellClick } from "$lib/cursor-logic";
+  import { handleKeyInput } from "$lib/keypress-logic";
   import { transitionPlayerInteraction } from "$lib/interaction-machine";
 
   import CrosswordGrid from "../components/CrosswordGrid.svelte";
@@ -140,46 +141,12 @@
 
   function handleKeyDown(event: KeyboardEvent): void {
     if (!cursor.cell) return;
-
-    const key = event.key;
-
-    // Letter keys (A-Z)
-    if (/^[a-zA-Z]$/.test(key)) {
+    const result = handleKeyInput(event.key, playerData.grid, cursor.cell, cursor.direction, "player");
+    if (result) {
       event.preventDefault();
-      const result = enterLetter(playerData.grid, cursor.cell, cursor.direction, key.toUpperCase(), "player");
       playerData.grid = result.grid;
       cursor.cell = result.nextCell;
       cursor.direction = result.nextDirection;
-      return;
-    }
-
-    // Backspace
-    if (key === "Backspace") {
-      event.preventDefault();
-      const result = deleteLetter(playerData.grid, cursor.cell, cursor.direction, "player");
-      playerData.grid = result.grid;
-      cursor.cell = result.nextCell;
-      cursor.direction = result.nextDirection;
-      return;
-    }
-
-    // Arrow keys
-    if (key.startsWith("Arrow")) {
-      event.preventDefault();
-      const keyToDirection: Record<string, MoveDirection> = {
-        ArrowUp: "up",
-        ArrowDown: "down",
-        ArrowLeft: "left",
-        ArrowRight: "right",
-      };
-      const direction = keyToDirection[key];
-      if (direction) {
-        const result = moveCursor(playerData.grid, cursor.cell, direction);
-        playerData.grid = result.grid;
-        cursor.cell = result.nextCell;
-        cursor.direction = result.nextDirection;
-      }
-      return;
     }
   }
 
