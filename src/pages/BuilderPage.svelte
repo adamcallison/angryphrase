@@ -39,20 +39,19 @@
   let cursor = $state<{ cell: CellPosition | null; direction: Direction }>({ cell: null, direction: "across" });
 
   // Toast
-  let toastMessage = $state("");
-  let toastTrigger = $state(0);
+  let toast = $state({ message: "", trigger: 0 });
 
   $effect(() => {
-    if (toastTrigger === 0) return;
+    if (toast.trigger === 0) return;
     const timer = setTimeout(() => {
-      toastTrigger = 0;
+      toast.trigger = 0;
     }, TOAST_DURATION_MS);
     return () => clearTimeout(timer);
   });
 
   function showToast(message: string): void {
-    toastMessage = message;
-    toastTrigger++;
+    toast.message = message;
+    toast.trigger++;
   }
 
   // === Derived state ===
@@ -601,5 +600,5 @@
     </div>
   </div>
 
-  <Toast message={toastMessage} visible={toastTrigger > 0} />
+  <Toast message={toast.message} visible={toast.trigger > 0} />
 </div>
