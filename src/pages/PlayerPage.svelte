@@ -169,11 +169,7 @@
     playerData.grid = clearErrors(playerData.grid, checkResult);
   }
 
-  function handleReset(): void {
-    if (interaction.kind !== "playing") return;
-    if (!window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
-      return;
-    }
+  function resetPlayer(): void {
     // Reset playerLetter to null on all cells
     playerData.grid = playerData.grid.map((row) =>
       row.map((cell) => ({ ...cell, playerLetter: null }))
@@ -181,6 +177,14 @@
     cursor.cell = null;
     cursor.direction = "across";
     clearPlayerProgress(playerData.puzzleKey);
+  }
+
+  function handleReset(): void {
+    if (interaction.kind !== "playing") return;
+    if (!window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
+      return;
+    }
+    resetPlayer();
   }
 
   function handleImportNew(): void {

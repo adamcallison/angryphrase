@@ -221,6 +221,15 @@
     }
   }
 
+  function switchMode(newMode: "design" | "fill"): void {
+    const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: newMode });
+    if (next) interaction = next;
+
+    if (newMode === "design") {
+      cursor.cell = null;
+    }
+  }
+
   // --- Mode switching ---
   function handleModeChange(newMode: "design" | "fill"): void {
     if (newMode === "design" && hasClueText) {
@@ -228,13 +237,7 @@
         return;
       }
     }
-    const next = transitionBuilderInteraction(interaction, { kind: "switchMode", mode: newMode });
-    if (next) interaction = next;
-
-    // Clear selection in design mode
-    if (newMode === "design") {
-      cursor.cell = null;
-    }
+    switchMode(newMode);
   }
 
   // --- Clue editing ---
@@ -410,13 +413,7 @@
   }
 
   // --- Import ---
-  function handleImport(jsonString: string): void {
-    if (!gridIsBlank) {
-      if (!window.confirm("Importing will replace your current puzzle. Continue?")) {
-        return;
-      }
-    }
-
+  function importPuzzle(jsonString: string): void {
     const result = parsePuzzleJSON(jsonString);
 
     if ("error" in result) {
@@ -442,11 +439,16 @@
     if (next) interaction = next;
   }
 
-  // --- Reset ---
-  function handleReset(): void {
-    if (!window.confirm("Reset to initial state? This will clear all work and cannot be undone.")) {
-      return;
+  function handleImport(jsonString: string): void {
+    if (!gridIsBlank) {
+      if (!window.confirm("Importing will replace your current puzzle. Continue?")) {
+        return;
+      }
     }
+    importPuzzle(jsonString);
+  }
+
+  function resetBuilder(): void {
     builderData.key = generateUniqueKey();
     builderData.gridSize = DEFAULT_GRID_SIZE;
     builderData.grid = createEmptyGrid(DEFAULT_GRID_SIZE);
@@ -459,6 +461,14 @@
     cursor.cell = null;
     cursor.direction = "across";
     clearBuilderState();
+  }
+
+  // --- Reset ---
+  function handleReset(): void {
+    if (!window.confirm("Reset to initial state? This will clear all work and cannot be undone.")) {
+      return;
+    }
+    resetBuilder();
   }
 </script>
 
