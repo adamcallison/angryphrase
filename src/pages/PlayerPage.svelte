@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CellData, CellPosition, CheckResult, Direction, MoveDirection, PlayerInteraction, Word } from "$lib/types";
-  import { DEFAULT_GRID_SIZE } from "$lib/constants";
+  import { DEFAULT_GRID_SIZE, AUTOSAVE_DELAY_MS } from "$lib/constants";
   import { deriveWords, assignNumbers, getWordInDirection, getWordCells, deriveDisplayLetters, applyPlayerProgress } from "$lib/grid-logic";
   import { toWordId, getWordLengthPattern } from "$lib/chain-logic";
   import { checkPuzzle, clearErrors } from "$lib/check-logic";
@@ -82,7 +82,7 @@
         letters,
       };
       savePlayerProgress(_.puzzleKey, progress);
-    }, 500);
+    }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
   });
 

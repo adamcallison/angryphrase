@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { BuilderInteraction, CellData, CellMarker, CellPosition, Direction, DisplacedClue, MoveDirection, Word, WordId, WordMetadata } from "$lib/types";
   import { SvelteMap } from "svelte/reactivity";
-  import { DEFAULT_GRID_SIZE } from "$lib/constants";
+  import { DEFAULT_GRID_SIZE, TOAST_DURATION_MS, AUTOSAVE_DELAY_MS } from "$lib/constants";
   import { createEmptyGrid, deriveWords, assignNumbers, getWordInDirection, getWordCells, toggleCellBlack, toggleMarker } from "$lib/grid-logic";
   import { toWordId, joinWordsAndDisplace, unjoinWord } from "$lib/chain-logic";
   import { reattachClue } from "$lib/clue-logic";
@@ -46,7 +46,7 @@
     if (toastTrigger === 0) return;
     const timer = setTimeout(() => {
       toastTrigger = 0;
-    }, 3000);
+    }, TOAST_DURATION_MS);
     return () => clearTimeout(timer);
   });
 
@@ -123,7 +123,7 @@
     const _ = stateSnapshot;
     const timer = setTimeout(() => {
       saveBuilderState(_);
-    }, 500);
+    }, AUTOSAVE_DELAY_MS);
     return () => clearTimeout(timer);
   });
 
