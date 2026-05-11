@@ -19,30 +19,31 @@
   // === State ===
 
   let interaction = $state<PlayerInteraction>({ kind: "noPuzzle" });
-  let puzzleKey = $state("");
-  let gridSize = $state(DEFAULT_GRID_SIZE);
-  let grid = $state<CellData[][]>([]);
-  let words = $state<Word[]>([]);
-  let title = $state("");
-  let author = $state("");
+  let playerData = $state({
+    puzzleKey: "",
+    gridSize: DEFAULT_GRID_SIZE,
+    grid: [] as CellData[][],
+    words: [] as Word[],
+    title: "",
+    author: "",
+  });
 
-  let selectedCell = $state<CellPosition | null>(null);
-  let selectedDirection = $state<Direction>("across");
+  let cursor = $state<{ cell: CellPosition | null; direction: Direction }>({ cell: null, direction: "across" });
   let checkResult = $state<CheckResult | null>(null);
 
   // Clear check result whenever the grid changes (player types, deletes, resets, etc.)
   $effect(() => {
-    const _ = grid;
+    const _ = playerData.grid;
     checkResult = null;
   });
 
   let importError = $state<string | null>(null);
 
   // === Derived state ===
-  /** The currently selected word (based on selectedCell and selectedDirection). */
+  /** The currently selected word (based on cursor state). */
   let selectedWord = $derived.by(() => {
-    if (!selectedCell) return null;
-    return getWordInDirection(words, selectedCell.row, selectedCell.col, selectedDirection);
+    if (!cursor.cell) return null;
+    return getWordInDirection(playerData.words, cursor.cell.row, cursor.cell.col, cursor.direction);
   });
 
   let selectedWordId = $derived.by(() => {
@@ -58,16 +59,16 @@
   let clueDirection = $derived(selectedWord?.direction ?? null);
   let clueText = $derived(selectedWord?.clue ?? null);
   let wordLengthPattern = $derived(
-    selectedWord ? getWordLengthPattern(grid, selectedWord, words) : null
+    selectedWord ? getWordLengthPattern(playerData.grid, selectedWord, playerData.words) : null
   );
 
   // === Auto-save ===
 
   let playerStateSnapshot = $derived.by(() => ({
     playing: interaction.kind === "playing",
-    puzzleKey,
-    gridSize,
-    grid,
+    puzzleKey: playerData.puzzleKey,
+    gridSize: playerData.gridSize,
+    grid: playerData.grid,
   }));
 
   $effect(() => {
@@ -104,61 +105,61 @@
 
     // result.type === "complete"
     const puzzle = result.data;
-    puzzleKey = puzzle.key;
-    gridSize = puzzle.gridSize;
-    grid = puzzle.grid;
+    playerData.puzzleKey = puzzle.key;
+    playerData.gridSize = puzzle.gridSize;
+    playerData.grid = puzzle.grid;
 
     // Assign numbers to imported words (they may have number: 0 from serialization)
-    const importedDerived = deriveWords(grid);
+    const importedDerived = deriveWords(playerData.grid);
     const importedNumbers = assignNumbers(importedDerived);
-    words = puzzle.words.map((w) => ({
+    playerData.words = puzzle.words.map((w) => ({
       ...w,
       number: importedNumbers.get(`${w.startRow}-${w.startCol}`) ?? w.number,
     }));
 
-    title = puzzle.title;
-    author = puzzle.author;
+    playerData.title = puzzle.title;
+    playerData.author = puzzle.author;
 
     // Check for saved progress
-    const savedProgress = loadPlayerProgress(puzzleKey);
+    const savedProgress = loadPlayerProgress(playerData.puzzleKey);
     if (savedProgress && savedProgress.gridSize === puzzle.gridSize) {
-      grid = applyPlayerProgress(grid, savedProgress);
+      playerData.grid = applyPlayerProgress(playerData.grid, savedProgress);
     }
 
-    selectedCell = null;
-    selectedDirection = "across";
+    cursor.cell = null;
+    cursor.direction = "across";
     const next = transitionPlayerInteraction(interaction, { kind: "importSuccess" });
     if (next) interaction = next;
   }
 
   function handleCellClick(cellPosition: CellPosition): void {
-    const result = computeSelectionChangeForCellClick(grid, selectedCell, selectedDirection, words, cellPosition);
-    selectedCell = result.selectedCell;
-    selectedDirection = result.selectedDirection;
+    const result = computeSelectionChangeForCellClick(playerData.grid, cursor.cell, cursor.direction, playerData.words, cellPosition);
+    cursor.cell = result.selectedCell;
+    cursor.direction = result.selectedDirection;
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
-    if (!selectedCell) return;
+    if (!cursor.cell) return;
 
     const key = event.key;
 
     // Letter keys (A-Z)
     if (/^[a-zA-Z]$/.test(key)) {
       event.preventDefault();
-      const result = enterLetter(grid, selectedCell, selectedDirection, key.toUpperCase(), "player");
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const result = enterLetter(playerData.grid, cursor.cell, cursor.direction, key.toUpperCase(), "player");
+      playerData.grid = result.grid;
+      cursor.cell = result.nextCell;
+      cursor.direction = result.nextDirection;
       return;
     }
 
     // Backspace
     if (key === "Backspace") {
       event.preventDefault();
-      const result = deleteLetter(grid, selectedCell, selectedDirection, "player");
-      grid = result.grid;
-      selectedCell = result.nextCell;
-      selectedDirection = result.nextDirection;
+      const result = deleteLetter(playerData.grid, cursor.cell, cursor.direction, "player");
+      playerData.grid = result.grid;
+      cursor.cell = result.nextCell;
+      cursor.direction = result.nextDirection;
       return;
     }
 
@@ -173,10 +174,10 @@
       };
       const direction = keyToDirection[key];
       if (direction) {
-        const result = moveCursor(grid, selectedCell, direction);
-        grid = result.grid;
-        selectedCell = result.nextCell;
-        selectedDirection = result.nextDirection;
+        const result = moveCursor(playerData.grid, cursor.cell, direction);
+        playerData.grid = result.grid;
+        cursor.cell = result.nextCell;
+        cursor.direction = result.nextDirection;
       }
       return;
     }
@@ -184,21 +185,21 @@
 
   function handleClueClick(wordId: string): void {
     // Find the word and select its first cell
-    const word = words.find((w) => toWordId(w) === wordId);
+    const word = playerData.words.find((w) => toWordId(w) === wordId);
     if (word) {
-      selectedCell = { row: word.startRow, col: word.startCol };
-      selectedDirection = word.direction;
+      cursor.cell = { row: word.startRow, col: word.startCol };
+      cursor.direction = word.direction;
     }
   }
 
   function handleCheck(): void {
     if (interaction.kind !== "playing") return;
-    checkResult = checkPuzzle(grid);
+    checkResult = checkPuzzle(playerData.grid);
   }
 
   function handleClearErrors(): void {
     if (!checkResult) return;
-    grid = clearErrors(grid, checkResult);
+    playerData.grid = clearErrors(playerData.grid, checkResult);
   }
 
   function handleReset(): void {
@@ -207,19 +208,19 @@
       return;
     }
     // Reset playerLetter to null on all cells
-    grid = grid.map((row) =>
+    playerData.grid = playerData.grid.map((row) =>
       row.map((cell) => ({ ...cell, playerLetter: null }))
     );
-    selectedCell = null;
-    selectedDirection = "across";
-    clearPlayerProgress(puzzleKey);
+    cursor.cell = null;
+    cursor.direction = "across";
+    clearPlayerProgress(playerData.puzzleKey);
   }
 
   function handleImportNew(): void {
     const next = transitionPlayerInteraction(interaction, { kind: "goToImport" });
     if (next) interaction = next;
     importError = null;
-    selectedCell = null;
+    cursor.cell = null;
   }
 </script>
 
@@ -231,9 +232,9 @@
     <div class="bg-white border-b border-gray-200 px-4 py-3">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div>
-          <h1 class="text-xl font-bold text-gray-900">{title || 'Untitled Puzzle'}</h1>
-          {#if author}
-            <p class="text-sm text-gray-500">by {author}</p>
+          <h1 class="text-xl font-bold text-gray-900">{playerData.title || 'Untitled Puzzle'}</h1>
+          {#if playerData.author}
+            <p class="text-sm text-gray-500">by {playerData.author}</p>
           {/if}
         </div>
       </div>
@@ -251,10 +252,10 @@
             {wordLengthPattern}
           />
           <CrosswordGrid
-            {grid}
-            {words}
+            grid={playerData.grid}
+            words={playerData.words}
             letterSource="player"
-            {selectedCell}
+            selectedCell={cursor.cell}
             {highlightedCells}
             onCellClick={handleCellClick}
             onKeyDown={handleKeyDown}
@@ -271,8 +272,8 @@
         <div class="flex-1 min-w-0">
           <div class="mb-4">
             <CluePanel
-              {words}
-              {grid}
+              words={playerData.words}
+              grid={playerData.grid}
               selectedWordId={selectedWordId}
               onClueClick={handleClueClick}
             />
