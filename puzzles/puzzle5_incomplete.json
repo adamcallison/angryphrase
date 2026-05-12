@@ -217,7 +217,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -233,7 +233,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -355,7 +355,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "M",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -461,7 +461,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "U",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -469,7 +469,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -477,7 +477,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -485,7 +485,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -583,7 +583,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "R",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -607,7 +607,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "U",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -697,7 +697,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -705,7 +705,15 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "E",
+        "spaceRight": true,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -713,7 +721,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -721,15 +729,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -827,7 +827,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "D",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -851,7 +851,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -869,7 +869,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "N",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -877,7 +877,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "T",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -885,7 +885,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -949,7 +949,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -957,7 +957,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "E",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -965,7 +965,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "V",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -973,7 +973,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1007,7 +1007,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "N",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1095,7 +1095,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "C",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1113,7 +1113,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "M",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1121,7 +1121,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "P",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1129,7 +1129,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1137,7 +1137,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1201,7 +1201,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1217,7 +1217,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1251,7 +1251,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "N",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1275,6 +1275,218 @@
       },
       {
         "black": false,
+        "puzzleLetter": "P",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "Y",
+        "spaceRight": true,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "M",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "O",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "U",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "E",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": false,
+        "puzzleLetter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "R",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "C",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "N",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      }
+    ],
+    [
+      {
+        "black": true,
+        "puzzleLetter": null,
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "L",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": true,
         "puzzleLetter": null,
         "spaceRight": false,
         "spaceBottom": false,
@@ -1291,7 +1503,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "M",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1299,7 +1511,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": "Y",
+        "puzzleLetter": "M",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1307,97 +1519,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      }
-    ],
-    [
-      {
-        "black": false,
-        "puzzleLetter": "N",
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
+        "puzzleLetter": "U",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1412,16 +1534,8 @@
         "hyphenBottom": false
       },
       {
-        "black": true,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
+        "black": false,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1429,15 +1543,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1445,15 +1551,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1461,7 +1559,31 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "G",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "I",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "T",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1479,7 +1601,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1495,129 +1617,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": "N",
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      }
-    ],
-    [
-      {
-        "black": true,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": true,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1673,7 +1673,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "R",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1689,7 +1689,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1705,7 +1705,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1715,7 +1715,7 @@
     [
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "C",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1723,7 +1723,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1731,7 +1731,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1739,7 +1739,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1747,7 +1747,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1755,7 +1755,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "B",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1763,7 +1763,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1779,7 +1779,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1787,7 +1787,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "T",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1795,7 +1795,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "I",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1803,7 +1803,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "V",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1811,7 +1811,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "E",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1819,7 +1819,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "L",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1827,7 +1827,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "Y",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1860,7 +1860,7 @@
       "direction": "across",
       "length": 4,
       "number": 9,
-      "clue": "",
+      "clue": "Saucers for bean curd? Time for a bit of supper all around",
       "nextWord": null
     },
     {
@@ -1878,7 +1878,7 @@
       "direction": "across",
       "length": 6,
       "number": 14,
-      "clue": "",
+      "clue": "IED? Fall back!",
       "nextWord": null
     },
     {
@@ -1896,7 +1896,7 @@
       "direction": "across",
       "length": 4,
       "number": 16,
-      "clue": "",
+      "clue": "Against old treasure? No question for the Spanish",
       "nextWord": null
     },
     {
@@ -1905,7 +1905,7 @@
       "direction": "across",
       "length": 4,
       "number": 17,
-      "clue": "",
+      "clue": "The French against a Bible figure",
       "nextWord": null
     },
     {
@@ -1914,7 +1914,7 @@
       "direction": "across",
       "length": 7,
       "number": 18,
-      "clue": "",
+      "clue": "Second chance to abandon indecency",
       "nextWord": null
     },
     {
@@ -1923,7 +1923,7 @@
       "direction": "across",
       "length": 6,
       "number": 19,
-      "clue": "",
+      "clue": "Mischievous child behaving like antelope",
       "nextWord": null
     },
     {
@@ -1932,7 +1932,7 @@
       "direction": "across",
       "length": 10,
       "number": 21,
-      "clue": "",
+      "clue": "Topless little male entering partner is a prickly rodent",
       "nextWord": null
     },
     {
@@ -1941,7 +1941,7 @@
       "direction": "across",
       "length": 4,
       "number": 23,
-      "clue": "",
+      "clue": "Drug cop can't advise northern rogues to start getting high",
       "nextWord": null
     },
     {
@@ -1995,7 +1995,7 @@
       "direction": "down",
       "length": 9,
       "number": 15,
-      "clue": "",
+      "clue": "Monetary trouble if in a clan",
       "nextWord": null
     },
     {
@@ -2004,7 +2004,7 @@
       "direction": "down",
       "length": 5,
       "number": 3,
-      "clue": "",
+      "clue": "Family member at the front? Not in every case, evidently",
       "nextWord": null
     },
     {
@@ -2067,7 +2067,7 @@
       "direction": "down",
       "length": 9,
       "number": 6,
-      "clue": "",
+      "clue": "Idiot on river in the dark? I'm gone without a doubt",
       "nextWord": null
     },
     {
