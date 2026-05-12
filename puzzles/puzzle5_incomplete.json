@@ -657,7 +657,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -689,7 +689,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "D",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -763,31 +763,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
-        "spaceRight": false,
-        "spaceBottom": false,
-        "hyphenRight": false,
-        "hyphenBottom": false
-      },
-      {
-        "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "F",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -803,7 +779,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "N",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -811,7 +787,31 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "T",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "A",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "S",
+        "spaceRight": false,
+        "spaceBottom": false,
+        "hyphenRight": false,
+        "hyphenBottom": false
+      },
+      {
+        "black": false,
+        "puzzleLetter": "Y",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -901,7 +901,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -933,7 +933,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1023,7 +1023,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "M",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1031,7 +1031,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "O",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1047,7 +1047,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "E",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1055,7 +1055,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1063,7 +1063,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "T",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1071,7 +1071,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "Y",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1145,7 +1145,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "A",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1177,7 +1177,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "E",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1267,7 +1267,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "S",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1299,7 +1299,7 @@
       },
       {
         "black": false,
-        "puzzleLetter": null,
+        "puzzleLetter": "Y",
         "spaceRight": false,
         "spaceBottom": false,
         "hyphenRight": false,
@@ -1887,7 +1887,7 @@
       "direction": "across",
       "length": 7,
       "number": 15,
-      "clue": "",
+      "clue": "Vision seen in Soft drink Sippy cup",
       "nextWord": null
     },
     {
@@ -2004,7 +2004,7 @@
       "direction": "down",
       "length": 5,
       "number": 3,
-      "clue": "Family member at the front? Not in every case, evidently",
+      "clue": "",
       "nextWord": null
     },
     {
@@ -2013,7 +2013,7 @@
       "direction": "down",
       "length": 7,
       "number": 12,
-      "clue": "",
+      "clue": "They will protect bean-counter internally: is a man applicable?",
       "nextWord": null
     },
     {
@@ -2049,7 +2049,7 @@
       "direction": "down",
       "length": 7,
       "number": 13,
-      "clue": "",
+      "clue": "First Simpsons special episode in years following overdose by Homer",
       "nextWord": null
     },
     {
