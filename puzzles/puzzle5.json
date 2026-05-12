@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "type": "incomplete",
+  "type": "complete",
   "key": "d2819671-52a8-43aa-8a30-21d016369eca",
   "gridSize": 15,
   "grid": [
@@ -2099,6 +2099,5 @@
     }
   ],
   "title": "Puzzle5",
-  "author": "Adam Callison",
-  "displacedClues": []
+  "author": "Adam Callison"
 }
