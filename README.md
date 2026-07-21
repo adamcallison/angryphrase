@@ -1,1 +1,0 @@
-App available at https://adamcallison.github.io/angryphrase/
