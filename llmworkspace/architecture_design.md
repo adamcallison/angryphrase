@@ -345,9 +345,8 @@ export type Word = {
   clue: string;                                             // empty allowed; non-head chain words carry empty (FR-31, C5)
   nextWord: WordKey | null;                                 // FR-33
 };
-export const Word: {
-  startsAt(key: WordKey): boolean;
-};
+// `Word` has no attached behaviour beyond its data; pure helper functions in this module
+// operate on `Word[]` / `WordMap` rather than `Word` methods.
 
 export type WordMap = ReadonlyMap<string, Word>;            // keyed by WordKey.toCanonical
 export const WordMap: {
@@ -584,8 +583,9 @@ export type ParseFailure = {
 };
 
 // Returns either a valid Puzzle + (if incomplete) its displaced clues, or a list of failures.
+// `fileType` lets the Player reducer reject incomplete files (FR-67) without inspecting displacedClues.
 export const parsePuzzleV1(json: string):
-  | { ok: true; puzzle: Puzzle; displacedClues: DisplacedClue[] }   // displacedClues [] for complete
+  | { ok: true; puzzle: Puzzle; fileType: PuzzleFileType; displacedClues: DisplacedClue[] }   // displacedClues: [] for complete
   | { ok: false; failures: ParseFailure[] };
 
 // Serialize — to be used by Builder export only, in the bindings layer.
@@ -640,15 +640,14 @@ export type AppIntent =
   | { kind: 'cancel-modal' }                                  // user clicked Cancel / pressed Escape on the modal
   | { kind: 'dismiss-toast'; id: ToastId };                   // user clicked toast or toast timeout fired
 
-// The unified dispatcher: takes any of the three intent unions.
-export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | PlayerIntent):
-  ReducerResult<AppState>;
+// The unified dispatcher: takes any of the three intent unions, plus deps (rng + clock).
+export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | PlayerIntent, deps: { rng: Rng; now: () => number }): ReducerResult<AppState>;
 ```
 
 **`reduceApp` responsibilities:**
 
 1. If `intent` is a `BuilderIntent`: invoke `reduceBuilder(state.builder, intent)`, yielding `{ state: nextBuilder, events }`. Fold `nextBuilder` into `state.builder`. Then for each event:
-   - `toast` → append `event.toast` to `state.toasts`.
+   - `toast { toastKind, message }` → construct a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and append to `state.toasts`.
    - `modal-request { modal, confirmIntent }` → set `state.modal = event.modal` and `state.pendingConfirmIntent = event.confirmIntent`.
    - `download` / `clear-builder-storage` / `clear-player-storage` → not consumed here; carry forward in the returned `events` array for the bindings layer to perform.
    Return `{ state, events: passthroughEvents }`.
@@ -755,11 +754,11 @@ export type BuilderIntent =
                                                               //   emits `clear-builder-storage` event
 ```
 
-The `Rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is provided by `reduceApp`'s `deps` argument (§4.2). `reduceBuilder` itself receives no rng; if a Builder intent needs randomness (only `confirm-reset-builder`'s new key), `reduceApp` performs that small step before/after calling `reduceBuilder`. Cleaner alternative: `confirm-reset-builder` returns state with a *placeholder* key and an event `{ kind: 'regenerate-puzzle-key' }` that `reduceApp` fulfills by calling `PuzzleKey.generate(rng)` and stamping the result. Pick whichever the builder finds simpler; the latter keeps `reduceBuilder` rng-free. **Recommended: the latter.** Add `{ kind: 'regenerate-puzzle-key' }` to `DomainEvent`. (Adjustment applied to §3.5a's `DomainEvent` definition.)
+The `Rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is provided by `reduceApp`'s `deps` argument (§4.2). `reduceBuilder` itself receives no rng; it never needs one. When `confirm-reset-builder` needs a fresh puzzle key, it emits a `{ kind: 'regenerate-puzzle-key' }` event carrying no data; `reduceApp` consumes that event by calling `PuzzleKey.generate(deps.rng)` and stamping the result onto `state.builder.puzzle.key`. The `{ kind: 'regenerate-puzzle-key' }` event variant is part of `DomainEvent` per §3.5a.
 
 **Polysemous `click-clue-panel-word` / `click-grid-word` intent:** effect depends on `state.subMode`. The reducer branches:
 
-- `subMode = none` → navigate cursor to `wordKey.startCell`, set direction. (Focusing the typing surface is a bindings-layer side effect that follows from the resulting `cursor` field, not an event.)
+- `subMode = none` → navigate cursor to `wordKey`'s start cell (`wordKey.startRow`, `wordKey.startCol`), set direction. (Focusing the typing surface is a bindings-layer side effect that follows from the resulting `cursor` field, not an event.)
 - `subMode = join { source }` → attempt join; validity FR-35; on success sets `source.nextWord`, displaces target's non-empty clue (FR-36); on failure emits a `toast` event and leaves sub-mode active.
 - `subMode = reattach { displacedClueId }` → attempt reattach; validity FR-42 (target exists, empty clue, chain head); on success moves text, removes displaced clue; on failure emits a `toast` event.
 
@@ -841,22 +840,25 @@ export type PlayerIntent =
 
 **`open-anagram-helper`:** requires `cursor != null` and the cursor's cell to belong to a word. Computes the word from the cursor/direction and stores `openedForWord`. If the cursor changes such that the new selected word's `WordKey` differs from `openedForWord`, every cell/click/arrow reducer closes the anagram modal (`anagram = null`) — implementing FR-88.
 
-**`anagram-scramble`:** like `confirm-reset-builder`, this needs randomness. Two options again; **recommended**: the reducer emits a `{ kind: 'anagram-scramble'; wordKey: WordKey }` event carrying the word's key, and `reduceApp` — which has `deps.rng` — performs the scramble via `Anagram.scramble(...)` and writes the result back into `PlayerState.anagram.scrambledArrangement`. The `DomainEvent` union gains `{ kind: 'anagram-scramble'; wordKey: WordKey }` (adjustment in §3.5a).
+**`anagram-scramble`:** `reducePlayer` does not have an rng. It emits a `{ kind: 'anagram-scramble'; wordKey: WordKey }` event (per §3.5a's `DomainEvent`); `reduceApp` consumes that event by calling `Anagram.scramble(...)` with `deps.rng` and writing the result back into `PlayerState.anagram.scrambledArrangement`.
 
-**`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`. On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same. On ok but `fileType !== 'complete'`: set `lastImportError` to "Only complete puzzle files can be loaded into the Player." and emit a toast. On success: the reducer sets `phase: 'solving'` with the loaded `Puzzle`, `cursor: null`, `checkResult: null`, `anagram: null`, and emits a `{ kind: 'load-player-progress'; key: puzzle.key }` event. The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)`, parses the saved progress blob (if present), and dispatches a new `PlayerIntent: { kind: 'apply-loaded-progress'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }`. The Player reducer for `apply-loaded-progress` handles the application rules (FR-80): only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters targeting now-black cells. (`apply-loaded-progress` must be added to `PlayerIntent`; `load-player-progress` is already in `DomainEvent` per §3.5a.)
+**`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`.
+- On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same.
+- On ok but `fileType !== 'complete'`: set `lastImportError` to "Only complete puzzle files can be loaded into the Player." and emit a toast.
+- On success (`fileType === 'complete'`): the reducer sets `phase: 'solving'` with the loaded `Puzzle`, `cursor: null`, `checkResult: null`, `anagram: null`, and emits a `{ kind: 'load-player-progress'; key: puzzle.key }` event. The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)`, parses the saved progress blob (if present), and dispatches a new `PlayerIntent: { kind: 'apply-loaded-progress'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }`. The Player reducer for `apply-loaded-progress` handles the application rules (FR-80): only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters targeting now-black cells.
 
 ### 4.5 Persistence & autosave scheduling
 
 Persistence is the bindings layer's responsibility — driven by two mechanisms:
 
-1. **State observation (autosave).** The bindings layer runs a `$effect` over `state.builder` (the full BuilderState) and `state.player` (when `phase === 'solving'`). On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The serialized blob is constructed via `serializeIncomplete(state.builder.puzzle, state.builder.displacedClues)` for Builder (the resulting file content is the blob — Builder autosave doubles as the "export incomplete" content) — actually, the persisted Builder blob is *richer* than the incomplete puzzle JSON because it also includes `mode` and `subMode`. So the persisted blob is a wrapper:
+1. **State observation (autosave).** The bindings layer runs a `$effect` over `state.builder` (the full BuilderState) and `state.player` (when `phase === 'solving'`). On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
    ```ts
    // Player progress blob: { version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }
    // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
    //     puzzle: <incomplete puzzle JSON>, displacedClues: [...], mode: 'design'|'fill', subMode: 'none' }
    //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
    ```
-   The "Builder snapshot blob" wraps an incomplete-puzzle JSON (with displacedClues serialized inside via `serializeIncomplete`) plus mode. The bindings layer constructs this wrapper; the `serializeIncomplete` adapter only handles the puzzle-JSON portion.
+   The bindings layer constructs the Builder snapshot wrapper; the `serializeIncomplete(state.builder.puzzle, state.builder.displacedClues)` adapter produces just the embedded puzzle-JSON portion.
 
 2. **Event-driven storage clears.** When the bindings layer receives a `{ kind: 'clear-builder-storage' }` event (from `confirm-reset-builder`), it calls `storagePort.clearBuilder()` *synchronously* (no debounce) before any debounced autosave fires. Same for `{ kind: 'clear-player-storage'; key }`.
 
@@ -880,8 +882,9 @@ export type ModalVM = { kind: ModalRequest['kind']; title: string; body: string;
 ### 5.2 Grid VM (shared shape; both Builder and Player produce one)
 
 ```ts
-export type CellHilite = 'none' | 'selected' | 'in-word' | 'correct' | 'incorrect' | 'empty-flagged';
-// selected: yellow bg (CON-4); in-word: pale yellow; correct/incorrect: only after Check (Player)
+export type CellHilite = 'none' | 'selected' | 'in-word' | 'correct' | 'incorrect';
+// selected: yellow bg (CON-4); in-word: pale yellow; correct/incorrect: only after Check on the Player grid (FR-74/FR-75).
+// Empty cells (post-Check) render without a special hilite — the absence of a letter is the visual.
 export type CellSeparator = 'none' | 'space' | 'hyphen';     // rendered right/below the cell per marker flags
 
 export type GridCellVM = {
@@ -1122,7 +1125,7 @@ The architect defers fine spacing/typography choices to the implementer; the col
 | Component | Props (VM) | Emits intents | Notes |
 |---|---|---|---|
 | `BuilderShell.svelte` | `BuilderShellVM` | (composes children) | Lays out toolbar + grid + clue panel + displaced panel; renders `JoinReattachBanner` when sub-mode active. Layout per CON-4: grid+controls left, clues right. |
-| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). Confirm dispatches `confirm-*` are emitted by the modal, not this toolbar. |
+| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). The matching `confirm-*` intents are dispatched by `Modal.svelte`, not by this toolbar. |
 | `GridSizeControl.svelte` | min/max/value/disabled | `change-grid-size` | `<input type="number" min=2 max=25 step=1>`; clamps on blur. Disabled+explanatory text when grid not blank. |
 | `BuilderGrid.svelte` | `GridVM` + cell-selected flag | `select-cell`, `toggle-design-cell` (in design mode), `click-grid-word` | Renders the grid; in Design mode clicks toggle; in Fill mode clicks select. Markers render as bars/hyphens per separators. Number rendered corner. Uses `TypingSurface` for input. |
 | `BuilderCluePanel.svelte` | `CluePanelVM` | `click-clue-panel-word`, `begin-join`, `unjoin`, `edit-clue` | Two sections Across/Down sorted by number (FR-32). Chain heads have an editable text input (FR-31); non-heads show "See N Direction" reference, no input. Per-clue "Link next" / "Unlink" controls (FR-38) when relevant. Scrolls the highlighted clue into view (FR-32). |
@@ -1180,7 +1183,7 @@ These are pure functions living in `domain/`. Each is fully unit-tested (NFR-4).
 
 Input: `Grid`. Output: `Word[]` (no numbers assigned here — that's `Numbering.assign`).
 
-1. For each row `r` in `0..gridSize-1`: scan left-to-right. A run begins at column `c` when `grid[r][c]` is white and (`c === 0` or `grid[r-1][c]` is black — *horizontal* start means either grid edge or previous cell black) — actually wait: horizontal start is `grid[r][c-1]` is black or `c === 0`. Accumulate white cells until a black cell or grid edge. If run length ≥ 2, emit a `Word` with `direction: 'across'`, start cell `{r, c}`, `length = run length`, `clue: ''`, `nextWord: null`. (`number` left unset here.)
+1. For each row `r` in `0..gridSize-1`: scan left-to-right. A run begins at column `c` when `grid[r][c]` is white and (`c === 0` or `grid[r][c-1]` is black — i.e. the run starts either at the grid edge or just after a black cell). Accumulate white cells until a black cell or grid edge. If run length ≥ 2, emit a `Word` with `direction: 'across'`, `startRow: r`, `startCol: c`, `length = run length`, `clue: ''`, `nextWord: null`. (`number` left unset here.)
 2. For each column `c` in `0..gridSize-1`: similarly, scan top-to-bottom. Emit `direction: 'down'`.
 3. Return all words in arbitrary order (binding code sorts as needed).
 
@@ -1188,9 +1191,9 @@ Input: `Grid`. Output: `Word[]` (no numbers assigned here — that's `Numbering.
 
 Input: `Grid`, `Word[]` (un-numbered). Output: `Word[]` numbered per FR-6.
 
-1. Build a set `starts` of all `Word.startCell`.
+1. Build a set `starts` of all `WordKey`s in the input list (keyed by `(startRow, startCol, direction)`).
 2. Walk cells in row-major order. Maintain a counter starting at 1. For each cell `(r, c)`:
-   - If `(r, c)` is the start cell of any word (across or down), assign that number to every word starting there, then increment the counter.
+   - If `(r, c)` is the start cell of any word (across and/or down), assign that number to every word starting there, then increment the counter.
 3. Sort the returned words by start cell then by direction (across before down at the same start cell — for stable display).
 
 ### 8.3 Chain validation (`ChainValidation.validate`)
@@ -1228,7 +1231,7 @@ Input: previous `Word[]` (with clues, nextWord links), new derived `Word[]` (no 
 5. **Newly-appearing words** (in new, not in old): empty clue, `nextWord: null` (FR-48).
 6. Run `ChainValidation.validate` on the resulting words; if it now reports branches/dangling (a destroyed word was a non-head and its head survived), the cleanup in step 4 should have prevented these — but the validator is run as a safety net, and any violation is logged as an internal error toast (should be unreachable, but defensive).
 7. Run `Numbering.assign` on the new words.
-8. Return the new words, the updated displaced clues, and any emitted toasts.
+8. Return `{ words, displacedClues, events }` — `events` is the accumulated `DomainEvent[]` (toast requests for shortening/lengthening notifications, plus any internal-error toasts from step 6).
 
 **Edge cases the test suite MUST cover (RISK-1):**
 - Destroyed head of a chain surviving only in part (head destroyed, mid survives with downstream).
@@ -1276,9 +1279,9 @@ export const Anagram: {
 - Take only the non-fixed positions. Gather their candidate letters from `input` after "claiming" any fixed letters from the input pool first (FR-84).
 - Fisher–Yates shuffle the non-fixed candidate letters using the injected `rng`.
 - Place shuffled letters into the non-fixed entries; fixed entries keep their `letter`. Return the new entries.
-- Pure given the RNG; tests inject seeded RNG.
+- Pure given the RNG; tests inject seeded RNG. **Called by `reduceApp`** from the `anagram-scramble` event handler (see §4.4); `reducePlayer` itself does not call this function because it has no rng.
 
-### 8.9 Player import (`player/state/reducer.ts` — `import-puzzle`)
+### 8.9 Player import (`player/state/lifecycle.ts` — `import-puzzle`)
 
 1. Call `parsePuzzleV1(fileContent)`.
 2. If `!ok`: set `phase = 'import'`, `lastImportError = failures.map(f => f.message).join('\n')` (FR-99, NFR-10). Emit a `toast` event. Return.
@@ -1444,7 +1447,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `CompletenessCheck.check` for each violation kind, plus the displaced-clue-ignored case (FR-63).
 - `parsePuzzleV1` happy paths for incomplete and complete; rejection paths for every §6.3 rule including the strict `letter`-field rejection, the strict C5 non-head-with-non-empty-clue rejection, and unbalanced grid.
 - `reconcileWords` — the full RISK-1 edge-case suite enumerated in §8.5. At minimum 12 cases.
-- Every `BuilderIntent` and every `PlayerIntent`: at least one happy-path test and one guard-rejection test (e.g., `select-mode` when not blank produces a modal, not a transition).
+- Every `BuilderIntent` and every `PlayerIntent`: at least one happy-path test and one guard-rejection test (e.g., `request-switch-to-design` when not blank produces a `modal-request` event, not a transition).
 - `Anagram.scramble` with a seeded RNG and a deterministic assertion.
 - `reduceApp` for modal confirm/cancel flow.
 
@@ -1489,6 +1492,7 @@ A single `AppConfig` object is constructed in `main.ts` and passed (or imported)
 ```ts
 export type AppConfig = {
   ports: { storage: StoragePort; download: DownloadPort; filePick: FilePickPort; rng: Rng };
+  now: () => number;                              // clock for Toast.createdAt; production uses Date.now
   autosave: { builderDebounceMs: number; playerDebounceMs: number };
   toast: { ttlMs: number };
 };
@@ -1496,9 +1500,9 @@ export type AppConfig = {
 Production defaults:
 - `builderDebounceMs: 400`, `playerDebounceMs: 400` (F2).
 - `toast.ttlMs: 3500` (C2).
-- `rng`: `Math.random`-backed.
+- `rng`: `Math.random`-backed; `now`: `Date.now`.
 
-Tests inject a `Config` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, and tight debounce intervals (e.g., 0 ms).
+Tests inject a `Config` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The bindings layer passes `config.ports.rng` and `config.now` to `reduceApp` as its `deps` argument (§4.2).
 
 ### 11.2 Build & deploy
 
@@ -1600,7 +1604,7 @@ Every FR is covered. Highlighted mappings of subtle ones:
 - Replaced guarded-intent variants (`select-mode`, `import-puzzle`, `reset`) with strict `request-*`/`confirm-*` pairs: `request-*` checks the guard and emits a `modal-request` event; `confirm-*` executes unconditionally and is dispatched by the modal's Confirm button. Each intent variant has exactly one behaviour; no recursion; no refusal.
 - `PuzzleKey.generate`, `Toast.create`, `Anagram.scramble` all take their rng as an explicit argument via `reduceApp`'s `deps: { rng, now }`, preserving the F2 "inject as a config value" principle and keeping `reduceBuilder`/`reducePlayer` free of dependency injection.
 - Moved `DisplacedClue` ownership from `Puzzle` to `BuilderState` (S1) to match the spec's "Builder-only concept" declaration; serialization adapter now takes displaced clues as a separate argument to `serializeIncomplete`.
-- Kept both `lastImportError` (for inline ImportScreen rendering) and a `toast` event (for transient notification). Earlier draft had redundantly removed one of them — restored.
+- Kept both `lastImportError` (for inline `ImportScreen` rendering) and a `toast` event (for transient notification); an earlier draft had dropped one of them redundantly.
 - Added the `madge --circular` step to CI (§9.3, §10.4) after recognizing that the bindings layer's blanket import rights could invite a cycle.
 - Reconfirmed the parser's strictness on unknown fields (the `letter` field in existing `puzzles/*.json`) — failure, not normalization — and tied it to the `converted-puzzles/` migration path so the builder knows the strict path is intentional, not a bug (§3.7, §6.3, §9 tree).
 - Added `viewmodels/` subdirectory under `ui/bindings/` to keep VM derivation files organized; the original E1 tree showed only stores at that level.
