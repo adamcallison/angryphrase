@@ -129,8 +129,8 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 |---|---|
 | `builder/state/intents.ts` | `BuilderIntent` discriminated union |
 | `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, `Cursor`, blank-state factory |
-| `builder/state/reducer.ts` | `reduceBuilder(state, intent): { state, events }` — single reducer dispatching to per-mode helpers |
-| `builder/state/designMode.ts` | Design-mode intents (`request-switch-to-design`, `confirm-switch-to-design`, `toggle-design-cell`, `change-grid-size`) + reconciliation orchestration (FR-23, FR-45..FR-48) |
+| `builder/state/reducer.ts` | `reduceBuilder(state, intent, deps): { state, events }` — single reducer dispatching to per-mode helpers; `deps = { rng, now }` is used in the design-mode case (passes `rng` to `reconcileWords` for fresh `DisplacedClueId`s) and the `confirm-reset-builder` case (calls `PuzzleKey.generate(rng)` for the fresh key) |
+| `builder/state/designMode.ts` | Design-mode intents (`request-switch-to-design`, `confirm-switch-to-design`, `toggle-design-cell`, `change-grid-size`) + reconciliation orchestration (FR-23, FR-45..FR-48); passes `deps.rng` to `reconcileWords` |
 | `builder/state/fillMode.ts` | Fill-mode intents (letter typing, markers, clue edits, metadata, cursor rules) |
 | `builder/state/joinSubMode.ts` | Join sub-mode intents (FR-34..FR-38) |
 | `builder/state/reattachSubMode.ts` | Reattach sub-mode intents (FR-41..FR-44) |
@@ -139,11 +139,11 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `builder/state/reconcileWords.ts` | Pure reconciliation algorithm (FR-45..FR-48); returns `{ words, displacedClues, events }` where `events` are shortening/lengthening toast requests |
 | `app/state/intents.ts` | `AppIntent` union: `navigate`, `cancel-modal`, `dismiss-toast` (no `confirm-modal` — confirm dispatches the specific `confirm-*` Builder/Player intent directly) |
 | `app/state/state.ts` | `AppState`, `ModalRequest` reference, blank-state factory |
-| `app/state/reducer.ts` | `reduceApp(state, intent | BuilderIntent | PlayerIntent, deps): { state, events }` — the only reducer that sees all of `AppState`; invokes `reduceBuilder`/`reducePlayer` and folds their events via `applyEventsToApp`; returns leftover (external) events for the bindings layer |
-| `app/state/effects.ts` | `applyEventsToApp(state, events, deps): { state, leftoverEvents }` — pure helper called from `reduceApp`; consumes state-affecting events (`toast`, `modal-request`, `regenerate-puzzle-key`, `anagram-scramble`) using the injected `deps.rng` / `deps.now`; returns the leftover events (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) for the bindings layer to perform |
+| `app/state/reducer.ts` | `reduceApp(state, intent, deps): { state, events }` — the only reducer that sees all of `AppState`; invokes `reduceBuilder`/`reducePlayer` (forwarding `deps`), folds their returned `toast` and `modal-request` events via `applyEventsToApp` (using `deps.rng` and `deps.now` to construct the `Toast`/`createdAt`), and passes `download` / `clear-builder-storage` / `clear-player-storage` / `load-player-progress` events through to the bindings layer |
+| `app/state/effects.ts` | `applyEventsToApp(state, events, deps): { state, leftoverEvents }` — pure helper called from `reduceApp`; consumes `toast` and `modal-request` events (the only state-affecting events in `DomainEvent`), updating `AppState.toasts` / `AppState.modal` / `AppState.pendingConfirmIntent`; returns the leftover external events for the bindings layer |
 | `player/state/intents.ts` | `PlayerIntent` discriminated union |
 | `player/state/state.ts` | `PlayerState`, `CheckResult`, `CheckClassification`, `AnagramModalState`, blank/error-state factories |
-| `player/state/reducer.ts` | `reducePlayer(state, intent): { state, events }` |
+| `player/state/reducer.ts` | `reducePlayer(state, intent, deps): { state, events }` — `deps.rng` is used in the `anagram-scramble` case |
 | `player/state/solving.ts` | Solving intents (type, backspace, arrows, click, check, clear-errors) |
 | `player/state/lifecycle.ts` | `request-reset-player`, `confirm-reset-player`, `import-new-puzzle`, `import-puzzle`, `apply-loaded-progress` intents |
 | `player/state/anagram.ts` | Anagram modal intents (FR-81..FR-89) including auto-close on selection change |
@@ -188,11 +188,11 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 
 - **UI → logic:** typed `Intent` discriminated-union objects, delivered via `dispatch(intent)`. Intents are data, not callbacks. Components never call reducers directly.
 - **logic → UI:** derived view-models — leaf-shaped, serializable, plain typed objects (no methods, no Svelte). Produced in `ui/bindings` from `AppState`. Reactive via Svelte 5 runes.
-- **reducers → effects:** every reducer returns `{ state, events }`, where `events: DomainEvent[]` is a discriminated union describing side effects the reducer wants performed: `toast`, `modal-request`, `download`, `clear-builder-storage`, `clear-player-storage`. Events are pure data. Reducers themselves cause zero side effects (`(state, intent) -> { state, events }` is a pure function of its inputs).
-- **`reduceApp` interprets state-affecting events:** the `app/state/reducer.ts` reducer is the only function that sees all of `AppState`. When a Builder/Player reducer emits a `toast` event, `reduceApp` consumes it (appends the toast to `AppState.toasts`). When a Builder/Player reducer emits a `modal-request { modal, confirmIntent }` event, `reduceApp` consumes it (sets `AppState.modal = event.modal` and `AppState.pendingConfirmIntent = event.confirmIntent`). Events that need to cause *external* side effects (`download`, `clear-builder-storage`, `clear-player-storage`) are *not* consumed by `reduceApp` — they pass through and the bindings layer performs them (see the next bullet). This split keeps reducers free of port knowledge while still confining all `AppState` mutation to reducer code (never to the bindings layer).
-- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer sets the rune to the new state (which causes reactive VM updates) and iterates the events. For each remaining event (those not consumed by `reduceApp`): `download` → calls `downloadPort.download(filename, content)`; `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`. Toast dismissals on timeout likewise dispatch `dismiss-toast` intents, not direct mutations.
+- **reducers → effects:** every reducer returns `{ state, events }`, where `events: DomainEvent[]` (§3.5a) is a discriminated union describing side effects the reducer wants performed. The full variants are: `toast`, `modal-request`, `load-player-progress`, `download`, `clear-builder-storage`, `clear-player-storage`. Events are pure data. Reducers themselves cause zero side effects (`(state, intent, deps) -> { state, events }` is a pure function of its inputs, given the injected `deps`).
+- **`reduceApp` interprets state-affecting events:** the `app/state/reducer.ts` reducer is the only function that sees all of `AppState`. It receives `deps = { rng, now }` and forwards `deps` to the underlying `reduceBuilder`/`reducePlayer` invocations. When a Builder/Player reducer emits a `toast` event, `reduceApp` consumes it (constructs a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and appends to `AppState.toasts`). When a Builder/Player reducer emits a `modal-request { modal, confirmIntent }` event, `reduceApp` consumes it (sets `AppState.modal = event.modal` and `AppState.pendingConfirmIntent = event.confirmIntent`). Events that need to cause *external* side effects (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) are *not* consumed by `reduceApp` — they pass through and the bindings layer performs them (see the next bullet). This split keeps reducers free of port knowledge while still confining all `AppState` mutation to reducer code.
+- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer sets the rune to the new state (which causes reactive VM updates) and iterates the events. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
 - **toasts stored in `AppState.toasts: Toast[]`:** added by `reduceApp` based on reducer-emitted `toast` events; removed by `dismiss-toast` intents (raised from the bindings-layer timeout in `ToastHost.svelte` or by user click). No imperative `showToast()` call from anywhere.
-- **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: BuilderIntent | PlayerIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. The bindings layer's `Modal.svelte` Confirm button dispatches `pendingConfirmIntent` directly (a `confirm-*` intent variant — see §4); the Cancel button dispatches the AppIntent `cancel-modal`, which clears both fields. While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
+- **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: ConfirmableIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. The bindings layer's `Modal.svelte` Confirm button dispatches `pendingConfirmIntent` directly (a `confirm-*` intent variant — see §4); the Cancel button dispatches the AppIntent `cancel-modal`, which clears both fields. While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
 
 ### 2.3 Boundary definitions
 
@@ -258,11 +258,11 @@ export type WordNumber = number & { __brand: 'WordNumber' }; // ≥ 1
 
 // domain/builder/DisplacedClueId.ts
 export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };
-export const DisplacedClueId: { generate(): DisplacedClueId };
+export const DisplacedClueId: { generate(rng: Rng): DisplacedClueId };   // takes injected Rng; called from reconcileWords with deps.rng
 
 // domain/notifications/ToastId.ts
 export type ToastId = string & { __brand: 'ToastId' };
-export const ToastId: { generate(rng: Rng): ToastId };       // takes injected Rng; called by reduceApp, never by Builder/Player reducers
+export const ToastId: { generate(rng: Rng): ToastId };       // takes injected Rng; called by reduceApp when constructing a Toast
 ```
 
 ### 3.2 Grid (`domain/grid/`)
@@ -454,9 +454,10 @@ export type Toast = {
 export const Toast: {
   create(rng: Rng, kind: ToastKind, message: string, now: () => number, ttlMs?: number): Toast;
 };
-// `rng` generates `id`; `now` provides `createdAt`. Called by reduceApp (not by reducers)
-// when folding a `toast` event into AppState.toasts. Reducers themselves only emit
-// `{ kind: 'toast'; toastKind; message }` events — no rng/now in their signatures.
+// `rng` generates `id`; `now` provides `createdAt`. Called by reduceApp (not by Builder/Player reducers)
+// when folding a `toast` event into AppState.toasts. Builder/Player reducers themselves only emit
+// `{ kind: 'toast'; toastKind; message }` events — they have `deps` available but don't use it for
+// toasts, because toasts live at AppState level and the reducer can't store the constructed Toast.
 
 // domain/notifications/ModalRequest.ts
 export type ModalKind =
@@ -468,18 +469,21 @@ export type ModalRequest = { kind: ModalKind };
 
 // domain/notifications/Event.ts
 // The discriminated union returned by every reducer. Pure data describing effects.
-// NOTE: `toast`, `regenerate-puzzle-key`, `anagram-scramble`, and `load-player-progress`
-// are *not* "side effect" events — they are handled by `reduceApp` itself (using the
-// injected `deps.rng` / `deps.now`). `download`, `clear-builder-storage`, and
-// `clear-player-storage` are passed through to the bindings layer for external side effects.
+// NOTE: `toast` and `modal-request` are *state-affecting* events handled by `reduceApp`
+// itself (using `deps.rng` / `deps.now` for Toast id+createdAt). `load-player-progress`
+// is handled by the bindings layer (it needs the StoragePort). `download`,
+// `clear-builder-storage`, and `clear-player-storage` are external side-effect events
+// performed by the bindings layer.
+//
+// Reducers no longer emit regenerate-key or scramble events now that every reducer
+// takes `deps` and can call `PuzzleKey.generate(rng)` / `Anagram.scramble(rng)` /
+// `DisplacedClueId.generate(rng)` directly.
 export type DomainEvent =
   // State-affecting events (consumed by reduceApp):
   | { kind: 'toast'; toastKind: ToastKind; message: string }
   | { kind: 'modal-request'; modal: ModalRequest; confirmIntent: ConfirmableIntent }
-  | { kind: 'regenerate-puzzle-key' }                          // reduceApp calls PuzzleKey.generate(rng) and stamps it
-  | { kind: 'anagram-scramble'; wordKey: WordKey }             // reduceApp calls Anagram.scramble(...) using rng
-  | { kind: 'load-player-progress'; key: PuzzleKey }           // bindings layer loads and dispatches apply-loaded-progress
-  // External side-effect events (bindings layer performs):
+  // Bindings-layer-performed events:
+  | { kind: 'load-player-progress'; key: PuzzleKey }           // bindings layer loads via storagePort and dispatches apply-loaded-progress
   | { kind: 'download'; filename: string; content: string }
   | { kind: 'clear-builder-storage' }
   | { kind: 'clear-player-storage'; key: PuzzleKey };
@@ -505,7 +509,7 @@ export const Result: {
 - All variants are pure data — no functions, no DOM references, no Svelte.
 - A `modal-request` event must always carry a `confirmIntent` so the bindings layer knows what to dispatch when the user clicks Confirm.
 - `download.content` is already a serialized string (JSON); the bindings layer does not re-serialize.
-- The bindings layer re-serializes the builder state for autosave independently of the `download` event.
+- Autosave is independent of `download` events: the bindings layer observes `state.builder` and serializes a snapshot blob to the StoragePort; `download` events are one-off user-triggered file exports.
 
 ### 3.6 Puzzle aggregate (`domain/puzzle/`)
 
@@ -617,7 +621,7 @@ export const Filename: {
 
 ## 4. State Model & Reducers
 
-All reducer modules — `domain/`, `builder/state/`, `player/state/`, and `app/state/` — are pure. Each reducer has the signature `(state, intent) -> { state, events }` where `events: DomainEvent[]` (§3.5a). State objects are immutable; transitions return new state values (A2 immutability discipline). Reducers never call ports, never call Svelte, never touch the DOM.
+All reducer modules — `domain/`, `builder/state/`, `player/state/`, and `app/state/` — are pure. Each reducer has the signature `(state, intent, deps) -> { state, events }` where `events: DomainEvent[]` (§3.5a) and `deps = { rng: Rng; now: () => number }` is injected by the bindings layer at dispatch time. Reducers never call ports, never call Svelte, never touch the DOM; if a reducer case needs randomness or clock values, it uses `deps`. (Most reducer cases ignore `deps`.) State objects are immutable; transitions return new state values (A2 immutability discipline).
 
 ### 4.1 App-level state (`app/state/`)
 
@@ -629,7 +633,7 @@ export type AppState = {
   player: PlayerState;
   toasts: Toast[];                                            // G4: toasts as state (appended by reduceApp from toast events)
   modal: ModalRequest | null;                                 // G4: confirmations as state (set by reduceApp from modal-request events)
-  pendingConfirmIntent: ConfirmableIntent | null;            // revised S2: the `confirm-*` intent the modal will dispatch on Confirm
+  pendingConfirmIntent: ConfirmableIntent | null;            // the `confirm-*` intent the modal will dispatch on Confirm (narrow type; not the full Builder/Player unions)
 };
 
 // Note: there is no `confirm-modal` AppIntent. The bindings layer's Modal.svelte Confirm
@@ -646,12 +650,12 @@ export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | P
 
 **`reduceApp` responsibilities:**
 
-1. If `intent` is a `BuilderIntent`: invoke `reduceBuilder(state.builder, intent)`, yielding `{ state: nextBuilder, events }`. Fold `nextBuilder` into `state.builder`. Then for each event:
+1. If `intent` is a `BuilderIntent`: invoke `reduceBuilder(state.builder, intent, deps)` — the Builder reducer does its own rng-dependent work directly (e.g., `confirm-reset-builder` generates the new `PuzzleKey` via `PuzzleKey.generate(deps.rng)`; the design-mode case passes `deps.rng` to `reconcileWords` for fresh `DisplacedClueId`s). It returns `{ state: nextBuilder, events }`. Fold `nextBuilder` into `state.builder`. Then for each event:
    - `toast { toastKind, message }` → construct a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and append to `state.toasts`.
    - `modal-request { modal, confirmIntent }` → set `state.modal = event.modal` and `state.pendingConfirmIntent = event.confirmIntent`.
-   - `download` / `clear-builder-storage` / `clear-player-storage` → not consumed here; carry forward in the returned `events` array for the bindings layer to perform.
+   - `download` / `clear-builder-storage` / `clear-player-storage` / `load-player-progress` → not consumed here; carry forward in the returned `events` array for the bindings layer to perform.
    Return `{ state, events: passthroughEvents }`.
-2. Same for `PlayerIntent` (Player has no `download` events; it does have `clear-player-storage` from `confirm-reset-player`).
+2. Same for `PlayerIntent` (invokes `reducePlayer(state.player, intent, deps)` — the anagram-scramble case calls `Anagram.scramble(deps.rng)` directly). Player's events are `toast`, `modal-request`, `clear-player-storage`, `load-player-progress` only (no `download`).
 3. If `intent` is `cancel-modal`: return `{ state: { ...state, modal: null, pendingConfirmIntent: null }, events: [] }`.
 4. If `intent` is `dismiss-toast { id }`: return `{ state: { ...state, toasts: state.toasts.filter(t => t.id !== id) }, events: [] }`.
 5. If `intent` is `navigate { route }`: return `{ state: { ...state, route }, events: [] }`.
@@ -660,9 +664,9 @@ When a `confirm-*` Builder/Player intent is dispatched (originating from the Mod
 
 ### 4.2 Toasts
 
-The `Toast` and `ToastId` value objects live in `domain/notifications/` (§3.5a). Crucially, **reducers do not construct `Toast` values directly and do not need an `Rng`** — they emit `{ kind: 'toast'; toastKind; message }` events in their return value, and `reduceApp` constructs the `Toast` (with `id` from the injected rng and `createdAt` from the injected clock) when folding the event into `AppState.toasts`. This keeps `reduceBuilder` and `reducePlayer` pure of all dependency injection.
+The `Toast` and `ToastId` value objects live in `domain/notifications/` (§3.5a). Builder/Player reducers do not construct `Toast` values directly, even though they have `deps` — they emit `{ kind: 'toast'; toastKind; message }` events in their return value. The reason is structural: toasts live at `AppState.toasts`, not on `BuilderState`/`PlayerState`, so a Builder/Player reducer has nowhere to put a fully-constructed `Toast` even if it could build one. `reduceApp` consumes the event and constructs the `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)`, then appends to `AppState.toasts`.
 
-`reduceApp` itself is pure given its dependencies are pure:
+The three reducers' signatures:
 
 ```ts
 export function reduceApp(
@@ -670,9 +674,24 @@ export function reduceApp(
   intent: AppIntent | BuilderIntent | PlayerIntent,
   deps: { rng: Rng; now: () => number }
 ): ReducerResult<AppState>;
+
+export function reduceBuilder(
+  state: BuilderState,
+  intent: BuilderIntent,
+  deps: { rng: Rng; now: () => number }
+): ReducerResult<BuilderState>;
+// `rng` used by: `confirm-reset-builder` (PuzzleKey.generate), design-mode toggle
+// (passes rng to reconcileWords for DisplacedClueId.generate). `now` unused today.
+
+export function reducePlayer(
+  state: PlayerState,
+  intent: PlayerIntent,
+  deps: { rng: Rng; now: () => number }
+): ReducerResult<PlayerState>;
+// `rng` used by: `anagram-scramble` (Anagram.scramble). `now` unused today.
 ```
 
-Production wires `deps = { rng: MathRandomRng, now: Date.now }` at boot. Tests inject `SeededRng` and a fake clock. This is consistent with the Anagram scramble's already-injected RNG (D1) and the F2 "inject as a config value" principle. `reduceBuilder` and `reducePlayer` keep the simple `(state, intent) -> ReducerResult<State>` signature with no `deps` — they never need rng/now. Only `reduceApp` does, because it is the reducer that performs the state-affecting event fold.
+Most reducer cases ignore `deps`. Production wires `deps = { rng: MathRandomRng, now: Date.now }` at boot. Tests inject `SeededRng` and `FakeClock`. This is consistent with the Anagram scramble's already-injected RNG (D1) and the F2 "inject as a config value" principle. The three signatures are uniform, so the bindings-layer `dispatch` is also uniform.
 
 ### 4.3 Builder state and intents
 
@@ -750,11 +769,11 @@ export type BuilderIntent =
   // lifecycle
   | { kind: 'request-reset-builder' }                         // guarded (FR-55); emits modal-request on block
   | { kind: 'confirm-reset-builder' };                         // dispatched by Modal Confirm;
-                                                              //   clears puzzle, generates new PuzzleKey (via injected rng in reduceApp),
+                                                              //   clears puzzle, generates new PuzzleKey via PuzzleKey.generate(deps.rng),
                                                               //   emits `clear-builder-storage` event
 ```
 
-The `Rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is provided by `reduceApp`'s `deps` argument (§4.2). `reduceBuilder` itself receives no rng; it never needs one. When `confirm-reset-builder` needs a fresh puzzle key, it emits a `{ kind: 'regenerate-puzzle-key' }` event carrying no data; `reduceApp` consumes that event by calling `PuzzleKey.generate(deps.rng)` and stamping the result onto `state.builder.puzzle.key`. The `{ kind: 'regenerate-puzzle-key' }` event variant is part of `DomainEvent` per §3.5a.
+The `rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is `deps.rng`, passed to `reduceBuilder` (and forwarded to `reconcileWords` for design-mode cases that need fresh `DisplacedClueId`s). All randomness used inside `reduceBuilder` comes from `deps`; there are no global-random calls.
 
 **Polysemous `click-clue-panel-word` / `click-grid-word` intent:** effect depends on `state.subMode`. The reducer branches:
 
@@ -764,11 +783,11 @@ The `Rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is pro
 
 **`request-switch-to-design` guard:** if `BuilderState.isBlank(state)` is true, the reducer simply executes the switch (sets `mode = 'design'`, clears sub-mode and cursor). If `state.isBlank` is false, the reducer returns state unchanged and emits `{ kind: 'modal-request'; modal: { kind: 'confirm-design-switch' }; confirmIntent: { kind: 'confirm-switch-to-design' } }`. `reduceApp` folds that event into `AppState.modal` and `AppState.pendingConfirmIntent`. The bindings layer's `Modal.svelte` Confirm button dispatches `state.pendingConfirmIntent` (i.e. `{ kind: 'confirm-switch-to-design' }`), which re-enters `reduceBuilder` and executes unconditionally. **No `force` flag; no recursive guard re-fire.**
 
-**`request-import-puzzle { fileContent }` guard:** if `state.isBlank` is true, the reducer executes the import directly (parse → validate → on success replace state with mode=fill, cursor=null, sub-mode=none; on failure emit a `toast` event with the error). If not blank, reducer emits `modal-request` with `confirmIntent: { kind: 'confirm-import-puzzle'; fileContent }`. The bindings layer keeps `fileContent` on the modal; if the user confirms, the `confirm-import-puzzle` intent with the same `fileContent` is dispatched and executes unconditionally. (Note: Storing `fileContent` on the deferred intent is fine — file contents are pure data.)
+**`request-import-puzzle { fileContent }` guard & `confirm-import-puzzle { fileContent }` action:** see §8.9a for the full algorithm. Summary: the Builder accepts both incomplete and complete files (FR-57). On success, replace `BuilderState` with a fresh one carrying the imported `Puzzle`, its `DisplacedClue[]` (taken from `parsePuzzleV1`'s `displacedClues` field — populated for incomplete, `[]` for complete), set `mode = 'fill'` and `cursor = null`. On failure, emit a `toast` event with the parse error and leave state unchanged. The `request-*` form checks `BuilderState.isBlank`: if blank, executes the import directly; if not blank, emits `modal-request { confirmIntent: { kind: 'confirm-import-puzzle'; fileContent } }`. The `confirm-*` form executes the import unconditionally.
 
-**`request-reset-builder` guard:** if `state.isBlank` is true, reducer executes reset directly (clears puzzle, emits `{ kind: 'regenerate-puzzle-key' }` and `{ kind: 'clear-builder-storage' }`). If not blank, emits `modal-request` with `confirmIntent: { kind: 'confirm-reset-builder' }`.
+**`request-reset-builder` guard:** if `state.isBlank` is true, reducer executes reset directly (clears puzzle, generates a fresh `PuzzleKey` via `PuzzleKey.generate(deps.rng)`, emits `{ kind: 'clear-builder-storage' }`). If not blank, emits `modal-request` with `confirmIntent: { kind: 'confirm-reset-builder' }`.
 
-**`confirm-reset-builder`:** sets state to a fresh blank `BuilderState` (with a temporary placeholder key), emits `{ kind: 'regenerate-puzzle-key' }` (so `reduceApp` stamps a real fresh key using the injected rng) and `{ kind: 'clear-builder-storage' }` (so the bindings layer calls `storagePort.clearBuilder()`). `reduceApp` sequences this: receive `confirm-reset-builder` → invoke `reduceBuilder` → fold next state; the `regenerate-puzzle-key` event causes `reduceApp` to set `state.builder.puzzle.key = PuzzleKey.generate(deps.rng)` and consume the event; the `clear-builder-storage` event passes through to the bindings layer.
+**`confirm-reset-builder`:** sets state to a fresh blank `BuilderState` with a new `PuzzleKey.generate(deps.rng)` and emits `{ kind: 'clear-builder-storage' }` (so the bindings layer calls `storagePort.clearBuilder()`). The new key is written into `state.builder.puzzle.key` directly; no event needed because the reducer has `deps.rng` and the key is Builder state (not AppState).
 
 **`export-incomplete` and `export-complete`:** reducer constructs the serialized file content (via `serializeIncomplete(state.puzzle, state.displacedClues)` / `serializeComplete(state.puzzle)`) and emits a `{ kind: 'download'; filename; content }` event. For `export-complete`, the reducer first runs `CompletenessCheck.check`; on failure it emits one or more `toast` events describing the violations and does not emit a download event. Filename via `Filename.incomplete(key)` / `Filename.complete(key)`.
 
@@ -833,14 +852,14 @@ export type PlayerIntent =
   | { kind: 'open-anagram-helper' }
   | { kind: 'close-anagram-helper' }                          // FR-89
   | { kind: 'anagram-input'; input: string }                  // FR-83
-  | { kind: 'anagram-scramble' };                              // FR-86 — reducer emits `anagram-scramble` event; reduceApp performs the scramble via deps.rng
+  | { kind: 'anagram-scramble' };                              // FR-86 — reducer calls Anagram.scramble(deps.rng) directly and writes scrambledArrangement into PlayerState
 ```
 
 **`check` clear-on-change:** every intent that mutates `puzzle.grid`, `cursor`, or replaces the puzzle sets `checkResult = null` first thing in its reducer case. A small helper `withGridClear(state, grid)` standardizes this.
 
 **`open-anagram-helper`:** requires `cursor != null` and the cursor's cell to belong to a word. Computes the word from the cursor/direction and stores `openedForWord`. If the cursor changes such that the new selected word's `WordKey` differs from `openedForWord`, every cell/click/arrow reducer closes the anagram modal (`anagram = null`) — implementing FR-88.
 
-**`anagram-scramble`:** `reducePlayer` does not have an rng. It emits a `{ kind: 'anagram-scramble'; wordKey: WordKey }` event (per §3.5a's `DomainEvent`); `reduceApp` consumes that event by calling `Anagram.scramble(...)` with `deps.rng` and writing the result back into `PlayerState.anagram.scrambledArrangement`.
+**`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState.
 
 **`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`.
 - On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same.
@@ -1118,7 +1137,7 @@ On any failure, return a single human-readable error list (FR-99) and change no 
 | num-corner | `text-[0.6rem] top-0 left-0` | small number in top-left (FR-6) |
 | banner | `min-h-2em` always-reserved | banner area when no selection (FR-71) |
 
-The architect defers fine spacing/typography choices to the implementer; the colour conventions above are fixed.
+Fine spacing and typography choices are left to the implementer; the colour conventions above are fixed.
 
 ### 7.2 Component inventory (Builder)
 
@@ -1220,11 +1239,11 @@ Full FR-91 algorithm (unit-tested even though the banner UI uses a restricted va
 
 ### 8.5 Reconciliation (`builder/state/reconcileWords.ts` — `reconcileWords`)
 
-Input: previous `Word[]` (with clues, nextWord links), new derived `Word[]` (no numbers yet), plus the previous `DisplacedClue[]`. Output: `{ words: Word[], displacedClues: DisplacedClue[], events: DomainEvent[] }`. `events` contains `toast` events for shortened/lengthened notifications (FR-45). The `Design toggle-design-cell` reducer case calls `reconcileWords`, sets `BuilderState.words`/`displacedClues` from the result, returns the events alongside. Implements FR-45..FR-48.
+Input: previous `Word[]` (with clues, nextWord links), new derived `Word[]` (no numbers yet), the previous `DisplacedClue[]`, and a `rng: Rng` (used to mint fresh `DisplacedClueId`s for any clue text displaced by destroyed words). Output: `{ words: Word[], displacedClues: DisplacedClue[], events: DomainEvent[] }`. `events` contains `toast` events for shortened/lengthened notifications (FR-45). The `toggle-design-cell` reducer case calls `reconcileWords` (passing `deps.rng`), sets `puzzle.words` and `displacedClues` on the resulting `BuilderState`, and returns the events alongside. Implements FR-45..FR-48.
 
 1. Compute the set of **surviving words** (same `WordKey` in both old and new lists).
 2. For each surviving word: retain its clue and `nextWord` from the old word. If `length` changed, emit an info toast "Word N Direction was shortened/lengthened." (FR-45).
-3. **Destroyed words** (in old, not in new): remove them. If they had a non-empty clue, append a `DisplacedClue` (text + direction) to the displaced list (FR-46).
+3. **Destroyed words** (in old, not in new): remove them. If they had a non-empty clue, append a `DisplacedClue` (constructed via `DisplacedClue.create(clue, direction)`, which calls `DisplacedClueId.generate(rng)` for the id) to the displaced list (FR-46).
 4. **Chain cleanup** (FR-47):
    - For each surviving word whose `nextWord` points to a destroyed word, clear that `nextWord`.
    - For each destroyed word `d`, traverse its chain forward (via `nextWord`) over surviving downstream words (i.e., words that *were* displaying a "See …" reference attributable to `d`'s chain) and clear each such downstream word's clue (set to empty). Note: chain traversal must stop at any cleared/destroyed word to avoid spurious walks.
@@ -1279,7 +1298,7 @@ export const Anagram: {
 - Take only the non-fixed positions. Gather their candidate letters from `input` after "claiming" any fixed letters from the input pool first (FR-84).
 - Fisher–Yates shuffle the non-fixed candidate letters using the injected `rng`.
 - Place shuffled letters into the non-fixed entries; fixed entries keep their `letter`. Return the new entries.
-- Pure given the RNG; tests inject seeded RNG. **Called by `reduceApp`** from the `anagram-scramble` event handler (see §4.4); `reducePlayer` itself does not call this function because it has no rng.
+- Pure given the RNG; tests inject seeded RNG. **Called by `reducePlayer`** directly from the `anagram-scramble` reducer case (see §4.4), with `deps.rng`.
 
 ### 8.9 Player import (`player/state/lifecycle.ts` — `import-puzzle`)
 
@@ -1287,6 +1306,20 @@ export const Anagram: {
 2. If `!ok`: set `phase = 'import'`, `lastImportError = failures.map(f => f.message).join('\n')` (FR-99, NFR-10). Emit a `toast` event. Return.
 3. If `fileType !== 'complete'`: set `lastImportError = "Only complete puzzle files can be loaded into the Player."` (FR-67). Emit a `toast` event. Return.
 4. Otherwise: set `phase = 'solving'`, `puzzle = p`, `cursor = null`, `checkResult = null`, `anagram = null`, `lastImportError = null`. Emit a `{ kind: 'load-player-progress'; key: p.key }` event. (The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)` — if present, parses the progress blob — and dispatches `{ kind: 'apply-loaded-progress'; playerLetters; savedGridSize }`. The Player reducer for `apply-loaded-progress` runs the application rules: only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters for now-black cells — FR-80.)
+
+### 8.9a Builder import (`builder/state/importExport.ts` — `request-import-puzzle` / `confirm-import-puzzle`)
+
+The Builder accepts both incomplete and complete files (FR-57). On the unguarded path (blank Builder state) the `request-*` body executes directly; on the guarded path the bindings layer dispatches `confirm-*` after the user confirms the modal. Both paths share the body below.
+
+1. Call `parsePuzzleV1(fileContent)`.
+2. If `!ok`: emit a `toast` event with `failures.map(f => f.message).join('\n')`. Leave `BuilderState` unchanged (FR-99, NFR-10). Return.
+3. (Both `fileType` values are acceptable; the Builder does not reject complete files like Player does.) Build a fresh `BuilderState`:
+   - `puzzle = result.puzzle`
+   - `displacedClues = result.displacedClues` — `[]` for complete files, the imported array for incomplete files
+   - `mode = 'fill'` (FR-56 requires auto-switch to Fill mode on successful import)
+   - `subMode = { kind: 'none' }`
+   - `cursor = null`
+4. Return the new `BuilderState`. No `download`/`clear-storage`/`load-progress` events are emitted (import is purely an in-memory state replacement; autosave will fire via the bindings layer's state observation).
 
 ---
 
@@ -1446,10 +1479,12 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `LengthPattern.forActiveClueBanner` returns `null` for non-heads (C4).
 - `CompletenessCheck.check` for each violation kind, plus the displaced-clue-ignored case (FR-63).
 - `parsePuzzleV1` happy paths for incomplete and complete; rejection paths for every §6.3 rule including the strict `letter`-field rejection, the strict C5 non-head-with-non-empty-clue rejection, and unbalanced grid.
-- `reconcileWords` — the full RISK-1 edge-case suite enumerated in §8.5. At minimum 12 cases.
-- Every `BuilderIntent` and every `PlayerIntent`: at least one happy-path test and one guard-rejection test (e.g., `request-switch-to-design` when not blank produces a `modal-request` event, not a transition).
+- `reconcileWords` — the full RISK-1 edge-case suite enumerated in §8.5. At minimum 12 cases. Each test injects a `SeededRng` so the minted `DisplacedClueId`s are deterministic.
+- Every `BuilderIntent` and every `PlayerIntent`: at least one happy-path test and one guard-rejection test (e.g., `request-switch-to-design` when not blank produces a `modal-request` event, not a transition). Tests pass `deps = { rng: SeededRng, now: FakeClock }`.
 - `Anagram.scramble` with a seeded RNG and a deterministic assertion.
-- `reduceApp` for modal confirm/cancel flow.
+- `reduceBuilder` for the `confirm-reset-builder` flow (key generation via `deps.rng`).
+- `reducePlayer` for the `anagram-scramble` flow (scramble via `deps.rng`).
+- `reduceApp` for modal confirm/cancel flow + toast fold (constructs `Toast` via `deps.rng` + `deps.now`).
 
 **Property-based tests (optional but strongly recommended per RISK-1):** `test/builder/state/reconcileWords.property.test.ts` uses `fast-check` or a hand-rolled random-grid toggler; asserts that after any design-mode toggle, the resulting `Word[]` is consistent with the new grid (every word's start/length matches a derived white run) and `ChainValidation` finds no violations.
 
@@ -1457,6 +1492,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 
 - `InMemoryStoragePort` — full `StoragePort` impl over a `Map<string, string>`; throws on demand for corruption tests.
 - `SeededRng` — Mulberry32 with a configurable seed.
+- `FakeClock` — a manually-advanced `() => number` for deterministic `Toast.createdAt` values.
 - `StubDownloadPort` — records filename + content; never touches the DOM.
 
 Tests for reducers wire these directly; bindings-layer tests (if any) are not required, since the bindings layer is largely mechanical.
@@ -1502,7 +1538,7 @@ Production defaults:
 - `toast.ttlMs: 3500` (C2).
 - `rng`: `Math.random`-backed; `now`: `Date.now`.
 
-Tests inject a `Config` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The bindings layer passes `config.ports.rng` and `config.now` to `reduceApp` as its `deps` argument (§4.2).
+Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The bindings layer constructs `deps = { rng: config.ports.rng, now: config.now }` once and passes it to all three reducers (`reduceApp`, `reduceBuilder`, `reducePlayer`) on every dispatch (§4.2).
 
 ### 11.2 Build & deploy
 
@@ -1571,7 +1607,7 @@ Every FR is covered. Highlighted mappings of subtle ones:
 | FR-49 metadata | §3.6 `Title`/`Author`, §4.3 intents |
 | FR-50/FR-51 letter semantics | §3.2 `Cell` (`answerLetter`/`playerLetter`); B4 note |
 | FR-52..FR-55 confirmations | §4.1 `ModalRequest`, §4.3 `request-*`/`confirm-*` intent pairs producing `modal-request` events; §3.5a `DomainEvent` |
-| FR-56..FR-60 import/export | §4.3 `request-import-puzzle`/`confirm-import-puzzle`/`export-incomplete`/`export-complete` intents; §6 JSON format; G1 label rename |
+| FR-56..FR-60 import/export | §4.3 intent definitions; §8.9a Builder import algorithm; §8.9 Player import algorithm; §6 JSON format; G1 label rename |
 | FR-61..FR-63 completeness | §3.6 `CompletenessCheck` |
 | FR-64..FR-66 builder persistence | §4.5 autosave scheduling; corrupt-state recovery (NFR-9); C6 no-cursor-restore |
 | FR-67..FR-69 player import | §8.9 import algorithm; §4.4 `import-puzzle` |
@@ -1602,7 +1638,7 @@ Every FR is covered. Highlighted mappings of subtle ones:
 - Added a separate `app/state/` reducer module so `reduceApp` (the only reducer that sees all of `AppState`) can live outside `ui/bindings/`. This keeps `ui/bindings/` purely about Svelte/rune wiring and side-effect performance, not state-altering logic.
 - Renamed the originally-proposed `domain/ui/` folder to `domain/notifications/` to avoid the conceptual oxymoron ("UI" has no business in a domain path) while keeping its pure value objects in the right layer.
 - Replaced guarded-intent variants (`select-mode`, `import-puzzle`, `reset`) with strict `request-*`/`confirm-*` pairs: `request-*` checks the guard and emits a `modal-request` event; `confirm-*` executes unconditionally and is dispatched by the modal's Confirm button. Each intent variant has exactly one behaviour; no recursion; no refusal.
-- `PuzzleKey.generate`, `Toast.create`, `Anagram.scramble` all take their rng as an explicit argument via `reduceApp`'s `deps: { rng, now }`, preserving the F2 "inject as a config value" principle and keeping `reduceBuilder`/`reducePlayer` free of dependency injection.
+- `PuzzleKey.generate`, `Anagram.scramble`, `DisplacedClueId.generate`, and `Toast.create` all take their rng/now as an explicit `deps` argument passed uniformly to all three reducers (`reduceApp` / `reduceBuilder` / `reducePlayer`), preserving the F2 "inject as a config value" principle. No reducer calls global `Math.random` or `Date.now`. Most reducer cases ignore `deps`; the few that need it (design-mode toggle for `DisplacedClueId`, `confirm-reset-builder` for `PuzzleKey`, `anagram-scramble`, and `reduceApp`'s toast fold) read `deps` explicitly.
 - Moved `DisplacedClue` ownership from `Puzzle` to `BuilderState` (S1) to match the spec's "Builder-only concept" declaration; serialization adapter now takes displaced clues as a separate argument to `serializeIncomplete`.
 - Kept both `lastImportError` (for inline `ImportScreen` rendering) and a `toast` event (for transient notification); an earlier draft had dropped one of them redundantly.
 - Added the `madge --circular` step to CI (§9.3, §10.4) after recognizing that the bindings layer's blanket import rights could invite a cycle.
