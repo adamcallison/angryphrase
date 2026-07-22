@@ -28,7 +28,7 @@
   });
 </script>
 
-<aside class="flex w-full max-w-md flex-col gap-4">
+<aside class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
   <section>
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">

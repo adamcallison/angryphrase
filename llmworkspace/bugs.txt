@@ -6,4 +6,5 @@ Builder:
 ...
 
 Both:
-2. When clue list jumps to selected clue, whole page jumps with it
+1. Space separators should be a bit thinner, and extend to the full width/height (depending on direction) of cell
+2. Hyphens in vertical direction should be rotated (but still cross the cell boundary at middle)
