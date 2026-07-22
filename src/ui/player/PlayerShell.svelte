@@ -58,8 +58,9 @@
       <!-- left column: banners + grid + toolbar -->
       <section class="flex flex-col gap-3 flex-1 min-w-0">
         <ActiveClueBanner vm={vm.topBanner} />
-        <div class="overflow-x-auto">
+        <div class="relative overflow-x-auto">
           <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
+          <TypingSurface enabled={vm.phase === 'solving'} onDispatch={onTypingIntent} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />
@@ -74,4 +75,3 @@
 {/if}
 
 <AnagramModal vm={vm.anagram} />
-<TypingSurface enabled={vm.phase === 'solving'} onDispatch={onTypingIntent} />

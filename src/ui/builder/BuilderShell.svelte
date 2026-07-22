@@ -66,8 +66,9 @@
   <div class="flex flex-col md:flex-row gap-6">
     <!-- left column: grid + displaced clues panel -->
     <section class="flex flex-col gap-4">
-      <div class="overflow-x-auto">
+      <div class="relative overflow-x-auto">
         <BuilderGrid vm={vm.grid} mode={getBuilderState().mode} onCellClick={onCellClick} />
+        <TypingSurface enabled={getBuilderState().mode === 'fill'} onDispatch={onTypingIntent} />
       </div>
       <DisplacedCluesPanel vm={vm.displacedClues} />
     </section>
@@ -78,5 +79,3 @@
     </section>
   </div>
 </div>
-
-<TypingSurface enabled={getBuilderState().mode === 'fill'} onDispatch={onTypingIntent} />
