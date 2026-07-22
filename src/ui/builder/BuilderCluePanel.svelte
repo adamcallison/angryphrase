@@ -19,24 +19,24 @@
     return `${entry.direction}-${Number(entry.number)}`;
   }
 
-  function draftFor(wordKey: ClueEntryVM['wordKey'], displayClue: string): string {
+  function valueFor(wordKey: ClueEntryVM['wordKey'], displayClue: string): string {
     const id = canonicalId(wordKey);
-    if (!drafts.has(id)) {
-      drafts.set(id, displayClue);
-    }
-    return drafts.get(id) ?? displayClue;
+    return drafts.has(id) ? drafts.get(id)! : displayClue;
   }
 
   function setDraft(wordKey: ClueEntryVM['wordKey'], value: string): void {
     drafts.set(canonicalId(wordKey), value);
   }
 
+  function clearDraft(wordKey: ClueEntryVM['wordKey']): void {
+    drafts.delete(canonicalId(wordKey));
+  }
+
   function dispatchEditClue(entry: ClueEntryVM): void {
-    dispatchBuilder({
-      kind: 'edit-clue',
-      wordKey: entry.wordKey,
-      clue: draftFor(entry.wordKey, entry.displayClue),
-    });
+    const id = canonicalId(entry.wordKey);
+    const clue = drafts.has(id) ? drafts.get(id)! : entry.displayClue;
+    dispatchBuilder({ kind: 'edit-clue', wordKey: entry.wordKey, clue });
+    clearDraft(entry.wordKey);
   }
 
   function dispatchBeginJoin(entry: ClueEntryVM): void {
@@ -97,7 +97,7 @@
               <input
                 type="text"
                 class="rounded border border-gray-300 px-2 py-1 text-sm"
-                value={draftFor(entry.wordKey, entry.displayClue)}
+                value={valueFor(entry.wordKey, entry.displayClue)}
                 oninput={(e) => setDraft(entry.wordKey, e.currentTarget.value)}
                 onblur={() => dispatchEditClue(entry)}
                 onclick={(e) => stopPropagation(e)}
@@ -158,7 +158,7 @@
               <input
                 type="text"
                 class="rounded border border-gray-300 px-2 py-1 text-sm"
-                value={draftFor(entry.wordKey, entry.displayClue)}
+                value={valueFor(entry.wordKey, entry.displayClue)}
                 oninput={(e) => setDraft(entry.wordKey, e.currentTarget.value)}
                 onblur={() => dispatchEditClue(entry)}
                 onclick={(e) => stopPropagation(e)}
