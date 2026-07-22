@@ -1,0 +1,6 @@
+Player:
+1. Cannot type letters
+2. Anagram helper displays the answer
+
+Builder:
+1. Cannot type letters
