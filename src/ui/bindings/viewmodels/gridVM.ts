@@ -9,11 +9,10 @@ import type { Word } from '../../../domain/word/Word';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Cursor } from '../../../builder/state/state';
-import type { CheckResult } from '../../../player/state/state';
 
 export type { CellSeparator };
 
-export type CellHilite = 'none' | 'selected' | 'in-word' | 'incorrect';
+export type CellHilite = 'none' | 'selected' | 'in-word';
 
 export type GridCellVM = {
   row: Row;
@@ -55,20 +54,14 @@ export function deriveGridVM(input: {
   words: Word[];
   whichLetter: 'answer' | 'player';
   selectedWordCells: ReadonlySet<string>;
-  checkResult?: CheckResult | null;
 }): GridVM {
   const { grid, cursor, words, whichLetter, selectedWordCells } = input;
-  const checkResult = input.checkResult ?? null;
   const size = GridSize.of(grid.length);
   const wordStartNumber = new Map<string, WordNumber>();
   for (const word of words) {
     const key = cellKey(Number(word.key.startRow), Number(word.key.startCol));
     wordStartNumber.set(key, word.number);
   }
-
-  const incorrectKeys = new Set(
-    checkResult?.incorrectCells.map((c) => cellKey(Number(c.row), Number(c.col))) ?? []
-  );
 
   const cells: GridCellVM[][] = [];
   for (let r = 0; r < grid.length; r++) {
@@ -105,8 +98,6 @@ export function deriveGridVM(input: {
           hilite = 'selected';
         } else if (selectedWordCells.has(cellKey(r, c))) {
           hilite = 'in-word';
-        } else if (checkResult && incorrectKeys.has(cellKey(r, c))) {
-          hilite = 'incorrect';
         }
 
         rowVms.push({

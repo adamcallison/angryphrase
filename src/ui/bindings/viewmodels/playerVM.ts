@@ -186,7 +186,6 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
       words: [],
       whichLetter: 'player',
       selectedWordCells: new Set<string>(),
-      checkResult: null,
     });
     const topBanner = deriveActiveClueBannerVM({ puzzle: null, cursor: null });
     const bottomBanner = topBanner;
@@ -229,7 +228,6 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     words: state.puzzle.words,
     whichLetter: 'player',
     selectedWordCells,
-    checkResult: state.checkResult,
   });
   const topBanner = deriveActiveClueBannerVM({
     puzzle: state.puzzle,

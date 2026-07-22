@@ -114,7 +114,6 @@ export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
     words: state.puzzle.words,
     whichLetter: 'answer',
     selectedWordCells,
-    checkResult: null,
   });
   const cluePanel = deriveCluePanelVM({
     grid: state.puzzle.grid,

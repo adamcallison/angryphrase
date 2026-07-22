@@ -10,7 +10,6 @@ import { Letter } from '../../../domain/letter/Letter';
 import { WordNumber } from '../../../domain/word/WordNumber';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../builder/state/state';
-import type { CheckResult } from '../../../player/state/state';
 import type { Grid } from '../../../domain/grid/Grid';
 
 function black2x2Grid(): Grid {
@@ -144,35 +143,10 @@ describe('deriveGridVM', () => {
     }
   });
 
-  it('deriveGridVM: Player checkResult incorrectCells → those cells hilite=incorrect; a filled non-incorrect cell → hilite=none; an empty cell in emptyCells → hilite=none', () => {
+  it('deriveGridVM: cells beyond selectedWordCells are hilite=none', () => {
     const grid = GridOps.blank(GridSize.of(3));
-    const cell00 = GridOps.cellAt(grid, Row.of(0), Col.of(0));
-    const cell01 = GridOps.cellAt(grid, Row.of(0), Col.of(1));
-    const cell02 = GridOps.cellAt(grid, Row.of(0), Col.of(2));
-    let g = GridOps.setCell(grid, Row.of(0), Col.of(0), Cell.setPlayerLetter(cell00, Letter.try('A')!));
-    g = GridOps.setCell(g, Row.of(0), Col.of(1), Cell.setPlayerLetter(cell01, Letter.try('B')!));
-    g = GridOps.setCell(g, Row.of(0), Col.of(2), cell02);
-
-    const checkResult: CheckResult = {
-      classification: 'incomplete-incorrect',
-      incorrectCells: [{ row: Row.of(0), col: Col.of(0) }],
-      emptyCells: [{ row: Row.of(0), col: Col.of(2) }],
-    };
-    const vm = deriveGridVM({ grid: g, cursor: null, words: [], whichLetter: 'player', selectedWordCells: new Set(), checkResult });
-    expect(vm.cells[0]![0]!.hilite).toBe('incorrect');
-    expect(vm.cells[0]![1]!.hilite).toBe('none');
-    expect(vm.cells[0]![2]!.hilite).toBe('none');
-  });
-
-  it('deriveGridVM: cells beyond selectedWordCells are hilite=none even with checkResult present', () => {
-    const grid = GridOps.blank(GridSize.of(3));
-    const checkResult: CheckResult = {
-      classification: 'incomplete-incorrect',
-      incorrectCells: [],
-      emptyCells: [],
-    };
     const selectedWordCells = new Set(['0,0']);
-    const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'player', selectedWordCells, checkResult });
+    const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'player', selectedWordCells });
     expect(vm.cells[0]![0]!.hilite).toBe('in-word');
     expect(vm.cells[1]![1]!.hilite).toBe('none');
   });

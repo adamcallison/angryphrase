@@ -13,7 +13,6 @@
     switch (hilite) {
       case 'selected': return 'bg-yellow-400';
       case 'in-word': return 'bg-yellow-100';
-      case 'incorrect': return 'bg-red-200';
       case 'none':
       default: return 'bg-white';
     }
@@ -38,12 +37,12 @@
               {#if cell.separatorRight === 'space'}
                 <div class="absolute right-0 top-0 h-full w-0.5 bg-gray-800"></div>
               {:else if cell.separatorRight === 'hyphen'}
-                <div class="absolute right-0 top-0 z-10 h-full w-5 translate-x-1/2 translate-y-[-2px] flex items-center justify-center text-6xl leading-none text-gray-800">-</div>
+                <div class="absolute right-0 top-0 z-10 h-full w-5 translate-x-1/2 translate-y-[-3px] flex items-center justify-center text-5xl leading-none text-gray-800">-</div>
               {/if}
               {#if cell.separatorBottom === 'space'}
                 <div class="absolute bottom-0 left-0 h-0.5 w-full bg-gray-800"></div>
               {:else if cell.separatorBottom === 'hyphen'}
-                <div class="absolute bottom-0 left-0 z-10 h-5 w-full translate-y-[calc(50%+2px)] flex items-center justify-center rotate-90 text-6xl leading-none text-gray-800">-</div>
+                <div class="absolute bottom-0 left-0 z-10 h-5 w-full translate-y-1/2 translate-x-[3px] flex items-center justify-center rotate-90 text-5xl leading-none text-gray-800">-</div>
               {/if}
             </td>
           {/each}
