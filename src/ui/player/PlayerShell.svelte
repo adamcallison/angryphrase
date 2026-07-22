@@ -54,11 +54,13 @@
       </div>
     </div>
 
-    <div class="flex gap-6">
+    <div class="flex flex-col md:flex-row gap-6">
       <!-- left column: banners + grid + toolbar -->
-      <section class="flex flex-col gap-3 flex-1">
+      <section class="flex flex-col gap-3 flex-1 min-w-0">
         <ActiveClueBanner vm={vm.topBanner} />
-        <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
+        <div class="overflow-x-auto">
+          <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
+        </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />
       </section>
