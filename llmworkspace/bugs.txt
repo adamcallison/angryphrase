@@ -1,6 +1,8 @@
 Player:
-1. Cannot type letters
-2. Anagram helper displays the answer
+1. Anagram helper displays the answer
+2. When clue list jumps to selected clue, whole page jumps with it
+3. Up key moves cursor down, left key moves cursor right
+4. Check shouldn't show correct letters/words in blue
 
 Builder:
-1. Cannot type letters
+1. Up key moves cursor down, left key moves cursor right

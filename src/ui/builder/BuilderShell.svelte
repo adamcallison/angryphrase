@@ -34,6 +34,7 @@
       dispatchToggleDesignCell(row, col);
     } else {
       dispatchSelectCell(row, col);
+      (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
     }
   }
 

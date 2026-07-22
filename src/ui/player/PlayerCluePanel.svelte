@@ -38,7 +38,10 @@
         <li
           id={rowId}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
-          onclick={() => dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey })}
+          onclick={() => {
+            dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
+            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+          }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>
           <div class="flex flex-col gap-0.5 flex-1">
@@ -60,7 +63,10 @@
         <li
           id={rowId}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
-          onclick={() => dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey })}
+          onclick={() => {
+            dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
+            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+          }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>
           <div class="flex flex-col gap-0.5 flex-1">

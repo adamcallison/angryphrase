@@ -106,6 +106,7 @@
 </script>
 
 <input
+  id="typing-surface-input"
   bind:this={inputEl}
   type="text"
   autocapitalize="off"
