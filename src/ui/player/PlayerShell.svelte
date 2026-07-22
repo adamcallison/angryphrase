@@ -26,7 +26,7 @@
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
     dispatchSelectCell(row, col);
-    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
   }
 
   function onTypingIntent(intent: TypingIntent): void {

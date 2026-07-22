@@ -20,7 +20,7 @@
   // Focus the hidden input when enabled; blur when disabled.
   $effect(() => {
     if (enabled) {
-      inputEl?.focus();
+      inputEl?.focus({ preventScroll: true });
     } else {
       inputEl?.blur();
     }

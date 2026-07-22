@@ -41,7 +41,7 @@
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
-            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
           }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>
@@ -67,7 +67,7 @@
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
-            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+            (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
           }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>

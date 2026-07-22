@@ -49,7 +49,7 @@
 
   function dispatchRowClick(entry: ClueEntryVM): void {
     dispatchBuilder({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
-    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus();
+    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
   }
 
   function stopPropagation(event: Event): void {
