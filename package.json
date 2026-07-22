@@ -22,6 +22,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
     "eslint-plugin-svelte": "^2.46.0",
+    "jsdom": "^29.1.1",
     "madge": "^8.0.0",
     "postcss": "^8.4.49",
     "svelte": "^5.0.0",

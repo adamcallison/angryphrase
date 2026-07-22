@@ -202,8 +202,8 @@ export default [
               message: 'src/ports/** may only import src/domain/persistence/ports.ts and src/domain/rng/Rng.ts.'
             },
             {
-              regex: '^(?!src/domain/persistence/ports\\.ts$|src/domain/rng/Rng\\.ts$|\\.\\./domain/persistence/ports\\.ts$|\\.\\./domain/rng/Rng\\.ts$).*(?:src/|\\.\\./).*',
-              message: 'src/ports/** may only import src/domain/persistence/ports.ts and src/domain/rng/Rng.ts.'
+              regex: '^(?!src/domain/persistence/ports\.ts$|src/domain/rng/Rng\.ts$|src/domain/puzzle/PuzzleKey\.ts$|\.\./domain/persistence/ports\.ts$|\.\./domain/rng/Rng\.ts$|\.\./domain/puzzle/PuzzleKey\.ts$).*(?:src/|\.\./).*$',
+              message: 'src/ports/** may only import src/domain/persistence/ports.ts, src/domain/rng/Rng.ts, and src/domain/puzzle/PuzzleKey.ts (StoragePort key type).'
             }
           ]
         }

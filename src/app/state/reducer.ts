@@ -28,6 +28,22 @@ const PLAYER_INTENT_KINDS: ReadonlySet<string> = new Set([
   'open-anagram-helper', 'close-anagram-helper', 'anagram-input', 'anagram-scramble',
 ]);
 
+const CONFIRMABLE_INTENT_KINDS: ReadonlySet<string> = new Set([
+  'confirm-switch-to-design',
+  'confirm-import-puzzle',
+  'confirm-reset-builder',
+  'confirm-reset-player',
+]);
+
+const AMBIGUOUS_INTENT_KINDS: ReadonlySet<string> = new Set([
+  'select-cell',
+  'move-cursor',
+  'type-letter',
+  'backspace',
+  'escape',
+  'click-clue-panel-word',
+]);
+
 export function reduceApp(
   state: AppState,
   intent: AppIntent | BuilderIntent | PlayerIntent,
@@ -42,18 +58,51 @@ export function reduceApp(
     case 'dismiss-toast':
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
   }
+
   // Builder or Player intent: dispatch to the appropriate sub-reducer.
-  if (BUILDER_INTENT_KINDS.has(intent.kind)) {
+  const isBuilderIntent = BUILDER_INTENT_KINDS.has(intent.kind);
+  const isPlayerIntent = PLAYER_INTENT_KINDS.has(intent.kind);
+  const isAmbiguous = AMBIGUOUS_INTENT_KINDS.has(intent.kind);
+
+  function routeToBuilder(): ReducerResult<AppState> {
     const r = reduceBuilder(state.builder, intent as unknown as BuilderIntent, deps);
     const folded = applyEventsToApp({ ...state, builder: r.state }, r.events, deps);
+    if (CONFIRMABLE_INTENT_KINDS.has(intent.kind)) {
+      return {
+        state: { ...folded.state, modal: null, pendingConfirmIntent: null },
+        events: folded.leftoverEvents,
+      };
+    }
     return { state: folded.state, events: folded.leftoverEvents };
   }
-  if (PLAYER_INTENT_KINDS.has(intent.kind)) {
+
+  function routeToPlayer(): ReducerResult<AppState> {
     const r = reducePlayer(state.player, intent as unknown as PlayerIntent, deps);
     const folded = applyEventsToApp({ ...state, player: r.state }, r.events, deps);
+    if (CONFIRMABLE_INTENT_KINDS.has(intent.kind)) {
+      return {
+        state: { ...folded.state, modal: null, pendingConfirmIntent: null },
+        events: folded.leftoverEvents,
+      };
+    }
     return { state: folded.state, events: folded.leftoverEvents };
   }
-  // Should be unreachable — the two sets above cover all Builder/Player intents and the
-  // switch above covers all AppIntent variants. If a new intent kind is added, this throws.
-  throw new Error(`reduceApp: unknown intent kind: ${(intent as { kind: string }).kind}`);
+
+  if (!isAmbiguous) {
+    if (isBuilderIntent) return routeToBuilder();
+    if (isPlayerIntent) return routeToPlayer();
+    // Should be unreachable — the two sets above cover all Builder/Player intents and the
+    // switch above covers all AppIntent variants. If a new intent kind is added, this throws.
+    throw new Error(`reduceApp: unknown intent kind: ${(intent as { kind: string }).kind}`);
+  }
+
+  // Ambiguous kind: disambiguate by state.route.
+  switch (state.route) {
+    case 'play':
+      return routeToPlayer();
+    case 'build':
+      return routeToBuilder();
+    case 'landing':
+      return routeToBuilder(); // back-compat: existing tests dispatch ambiguous kinds during 'landing' expecting Builder behaviour.
+  }
 }

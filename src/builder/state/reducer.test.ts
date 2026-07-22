@@ -18,6 +18,8 @@ import { WordKey } from '../../domain/word/WordKey';
 import { DisplacedClue } from '../../domain/builder/DisplacedClue';
 import { WordDerivation } from '../../domain/word/WordDerivation';
 import { Numbering } from '../../domain/word/Numbering';
+import { WordMap } from '../../domain/word/WordMap';
+import { Chain } from '../../domain/chain/Chain';
 
 describe('reduceBuilder', () => {
   const rng = new SeededRng(42);
@@ -53,6 +55,27 @@ describe('reduceBuilder', () => {
     const derived = WordDerivation.derive(base.puzzle.grid);
     const words = Numbering.assign(base.puzzle.grid, derived);
     return { ...base, puzzle: Puzzle.withWords(base.puzzle, words) };
+  }
+
+  function completePuzzleState(): BuilderState {
+    const base = fillStateWithWords([]);
+    let grid = base.puzzle.grid;
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid.length; c++) {
+        grid = GridOps.setCell(
+          grid,
+          Row.of(r),
+          Col.of(c),
+          Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(r), Col.of(c)), Letter.try('A')!),
+        );
+      }
+    }
+    const puzzleWithGrid = Puzzle.withGrid(base.puzzle, grid);
+    const wordMap = WordMap.fromWords(puzzleWithGrid.words);
+    const words = puzzleWithGrid.words.map((w) =>
+      Chain.isHead(wordMap, w.key) ? { ...w, clue: 'Clue text' } : w,
+    );
+    return { ...base, puzzle: Puzzle.withWords(puzzleWithGrid, words) };
   }
 
   it('switch-to-fill sets mode=fill, subMode=none, cursor=null', () => {
@@ -485,5 +508,74 @@ describe('reduceBuilder', () => {
     expect(result.state.mode).toBe('fill');
     expect(result.state.cursor).toBeNull();
     expect(result.events).toEqual([]);
+  });
+
+  it('export-incomplete is delegated: emits download event with serialized content', () => {
+    const state = blank();
+    const result = reduceBuilder(state, { kind: 'export-incomplete' }, deps);
+
+    expect(result.events.length).toBe(1);
+    expect(result.events[0]!.kind).toBe('download');
+  });
+
+  it('export-complete is delegated: when puzzle is complete, emits download', () => {
+    const state = completePuzzleState();
+    const result = reduceBuilder(state, { kind: 'export-complete' }, deps);
+
+    expect(result.events.length).toBe(1);
+    expect(result.events[0]!.kind).toBe('download');
+  });
+
+  it('export-complete is delegated: when puzzle is incomplete, emits toast events with each violation', () => {
+    const state = fillStateWithWords([]);
+    const result = reduceBuilder(state, { kind: 'export-complete' }, deps);
+
+    expect(result.events.length).toBeGreaterThan(1);
+    expect(result.events.every((e) => e.kind === 'toast' && e.toastKind === 'error')).toBe(true);
+    expect(result.events.some((e) => e.kind === 'download')).toBe(false);
+  });
+
+  it('request-reset-builder is delegated: blank state executes reset', () => {
+    const state = blank();
+    const originalKey = state.puzzle.key;
+
+    const result = reduceBuilder(state, { kind: 'request-reset-builder' }, deps);
+
+    expect(result.state.puzzle.gridSize).toBe(GridSize.DEFAULT);
+    expect(result.state.puzzle.grid.length).toBe(Number(GridSize.DEFAULT));
+    expect(result.state.puzzle.key).not.toBe(originalKey);
+    expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
+  });
+
+  it('request-reset-builder is delegated: non-blank state emits modal-request', () => {
+    const base = blank();
+    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
+    const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
+
+    const result = reduceBuilder(state, { kind: 'request-reset-builder' }, deps);
+
+    expect(result.state).toEqual(state);
+    expect(result.events).toEqual([
+      {
+        kind: 'modal-request',
+        modal: { kind: 'confirm-reset-builder' },
+        confirmIntent: { kind: 'confirm-reset-builder' },
+      },
+    ]);
+  });
+
+  it('confirm-reset-builder is delegated: executes unconditionally', () => {
+    const base = blank();
+    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
+    const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
+
+    const result = reduceBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+
+    expect(result.state.puzzle.gridSize).toBe(GridSize.DEFAULT);
+    expect(result.state.mode).toBe('design');
+    expect(result.state.subMode).toEqual({ kind: 'none' });
+    expect(result.state.cursor).toBeNull();
+    expect(result.state.puzzle.grid.every((row) => row.every((cell) => cell.answerLetter === null))).toBe(true);
+    expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
   });
 });

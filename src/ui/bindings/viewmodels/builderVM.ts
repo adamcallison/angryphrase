@@ -1,0 +1,165 @@
+import { BuilderState } from '../../../builder/state/state';
+import type { BuilderMode, Cursor } from '../../../builder/state/state';
+import { GridOps } from '../../../domain/grid/GridOps';
+import { CellMarker } from '../../../domain/grid/CellMarker';
+import { CompletenessCheck, type CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
+import { WordKey } from '../../../domain/word/WordKey';
+import type { Word } from '../../../domain/word/Word';
+import type { Direction } from '../../../domain/word/Direction';
+import type { WordNumber } from '../../../domain/word/WordNumber';
+import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
+import { deriveGridVM, type GridVM } from './gridVM';
+import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
+
+export type BuilderToolbarVM = {
+  mode: BuilderMode;
+  canSwitchToDesignWithoutConfirm: boolean;
+  canChangeGridSize: boolean;
+  gridSizeInput: number;
+  minGridSize: 2;
+  maxGridSize: 25;
+  cellSelected: boolean;
+  markerFlags: CellMarker;
+  canExportComplete: boolean;
+  exportCompleteViolations: CompletenessViolation[];
+};
+
+export type DisplacedClueEntryVM = {
+  id: DisplacedClueId;
+  clue: string;
+  direction: Direction;
+  isBeingReattached: boolean;
+};
+export type DisplacedCluesPanelVM = {
+  visible: true;
+  entries: DisplacedClueEntryVM[];
+  emptyMessage: 'No displaced clues';
+};
+
+export type BuilderSubModeBannerVM =
+  | { kind: 'none' }
+  | { kind: 'join'; sourceNumber: WordNumber; sourceDirection: Direction }
+  | { kind: 'reattach'; cluePreview: string; clueDirection: Direction };
+
+export type BuilderShellVM = {
+  toolbar: BuilderToolbarVM;
+  grid: GridVM;
+  cluePanel: CluePanelVM;
+  displacedClues: DisplacedCluesPanelVM;
+  subModeBanner: BuilderSubModeBannerVM;
+  title: string;
+  author: string;
+};
+
+export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
+  const isBlank = BuilderState.isBlank(state);
+  const markerFlags = state.cursor
+    ? GridOps.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
+    : CellMarker.EMPTY;
+  return {
+    mode: state.mode,
+    canSwitchToDesignWithoutConfirm: isBlank,
+    canChangeGridSize: isBlank,
+    gridSizeInput: Number(state.puzzle.gridSize),
+    minGridSize: 2,
+    maxGridSize: 25,
+    cellSelected: state.cursor !== null,
+    markerFlags,
+    canExportComplete: CompletenessCheck.isComplete(state.puzzle),
+    exportCompleteViolations: CompletenessCheck.check(state.puzzle),
+  };
+}
+
+export function deriveDisplacedCluesPanelVM(state: BuilderState): DisplacedCluesPanelVM {
+  const entries = state.displacedClues.map((d) => ({
+    id: d.id,
+    clue: d.clue,
+    direction: d.direction,
+    isBeingReattached: state.subMode.kind === 'reattach' ? state.subMode.displacedClueId === d.id : false,
+  }));
+  return { visible: true, entries, emptyMessage: 'No displaced clues' };
+}
+
+export function deriveBuilderSubModeBannerVM(state: BuilderState): BuilderSubModeBannerVM {
+  const { subMode } = state;
+  if (subMode.kind === 'none') {
+    return { kind: 'none' };
+  }
+  if (subMode.kind === 'join') {
+    const sourceWord = state.puzzle.words.find((w) => WordKey.equals(w.key, subMode.source));
+    if (sourceWord === undefined) {
+      return { kind: 'none' };
+    }
+    return { kind: 'join', sourceNumber: sourceWord.number, sourceDirection: sourceWord.key.direction };
+  }
+  const displacedClue = state.displacedClues.find((dc) => dc.id === subMode.displacedClueId);
+  if (displacedClue === undefined) {
+    return { kind: 'none' };
+  }
+  return { kind: 'reattach', cluePreview: displacedClue.clue, clueDirection: displacedClue.direction };
+}
+
+export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
+  const toolbar = deriveBuilderToolbarVM(state);
+  const displacedClues = deriveDisplacedCluesPanelVM(state);
+  const subModeBanner = deriveBuilderSubModeBannerVM(state);
+
+  const cursorWord = state.cursor ? findContainingWord(state.puzzle.words, state.cursor) : null;
+  const highlightedWordKey = cursorWord ? cursorWord.key : null;
+  const selectedWordCells = cursorWord ? cellsOfWord(cursorWord) : new Set<string>();
+
+  const grid = deriveGridVM({
+    grid: state.puzzle.grid,
+    cursor: state.cursor,
+    words: state.puzzle.words,
+    whichLetter: 'answer',
+    selectedWordCells,
+    checkResult: null,
+  });
+  const cluePanel = deriveCluePanelVM({
+    grid: state.puzzle.grid,
+    words: state.puzzle.words,
+    highlightedWordKey,
+    isBuilder: true,
+    builderSubMode: state.subMode,
+  });
+
+  return {
+    toolbar,
+    grid,
+    cluePanel,
+    displacedClues,
+    subModeBanner,
+    title: String(state.puzzle.title),
+    author: String(state.puzzle.author),
+  };
+}
+
+function findContainingWord(words: Word[], cursor: Cursor): Word | null {
+  if (cursor === null) {
+    return null;
+  }
+  const r = Number(cursor.row);
+  const c = Number(cursor.col);
+  for (const w of words) {
+    if (w.key.direction !== cursor.direction) continue;
+    const sr = Number(w.key.startRow);
+    const sc = Number(w.key.startCol);
+    if (cursor.direction === 'across') {
+      if (sr === r && c >= sc && c < sc + w.length) return w;
+    } else {
+      if (sc === c && r >= sr && r < sr + w.length) return w;
+    }
+  }
+  return null;
+}
+
+function cellsOfWord(w: Word): Set<string> {
+  const set = new Set<string>();
+  for (let i = 0; i < w.length; i++) {
+    const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
+    const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
+    set.add(`${r},${c}`);
+  }
+  return set;
+}

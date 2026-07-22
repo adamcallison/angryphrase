@@ -66,7 +66,7 @@ export function handleChangeGridSize(
   }
 
   const newGrid = GridOps.blank(intent.size);
-  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
+  const newPuzzle = { ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size };
 
   return Result.ok({
     ...state,

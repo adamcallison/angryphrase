@@ -21,15 +21,19 @@ import {
 } from './internal/fillMode';
 import { handleBeginJoin, handleUnjoin } from './internal/joinSubMode';
 import { handleBeginReattach, handleDeleteDisplacedClue } from './internal/reattachSubMode';
-import { handleConfirmImportPuzzle, handleRequestImportPuzzle } from './internal/importExport';
+import {
+  handleConfirmImportPuzzle,
+  handleExportComplete,
+  handleExportIncomplete,
+  handleRequestImportPuzzle,
+} from './internal/importExport';
+import { handleConfirmResetBuilder, handleRequestResetBuilder } from './internal/lifecycle';
 
 export function reduceBuilder(
   state: BuilderState,
   intent: BuilderIntent,
   deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void deps;
-
   switch (intent.kind) {
     case 'switch-to-fill':
       return Result.ok({ ...state, mode: 'fill', subMode: { kind: 'none' }, cursor: null });
@@ -67,6 +71,12 @@ export function reduceBuilder(
     case 'confirm-import-puzzle':
       return handleConfirmImportPuzzle(state, intent, deps);
 
+    case 'export-incomplete':
+      return handleExportIncomplete(state, intent, deps);
+
+    case 'export-complete':
+      return handleExportComplete(state, intent, deps);
+
     case 'select-cell':
       return handleSelectCell(state, intent, deps);
 
@@ -101,7 +111,17 @@ export function reduceBuilder(
     case 'delete-displaced-clue':
       return handleDeleteDisplacedClue(state, intent, deps);
 
+    case 'request-reset-builder':
+      return handleRequestResetBuilder(state, intent, deps);
+
+    case 'confirm-reset-builder':
+      return handleConfirmResetBuilder(state, intent, deps);
+
     default:
-      throw new Error(`reduceBuilder: not implemented: ${(intent as { kind: string }).kind}`);
+      assertUnreachable(intent);
   }
+}
+
+function assertUnreachable(value: never): never {
+  throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
 }

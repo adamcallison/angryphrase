@@ -69,3 +69,56 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 **Open question for later.** The JSON file format (per §3.6 and `format/v1.ts`) still requires `number` as a field in each word object, even though `Numbering.assign` overwrites it on every load. Consider whether the file format should drop `number` (let `Numbering.assign` always recompute) or keep it as a redundancy check. Not addressed in this amendment.
 
 ---
+## 6. `src/ports/**` ESLint allow-list needed `domain/puzzle/PuzzleKey.ts`
+
+**Symptom.** Task 49 (`ports/localStoragePort.ts`) needed to import `PuzzleKey` type-only to satisfy the `StoragePort.loadPlayerProgress(key: PuzzleKey): string | null` interface signature. The original `src/ports/**` ESLint regex (line 205 of `eslint.config.js`) only allowed `../domain/persistence/ports.ts` and `../domain/rng/Rng.ts` cross-imports from ports — a tighter allow-list than the design's own `StoragePort` interface signature permits, since `StoragePort` itself takes a `PuzzleKey` parameter.
+
+**Underlying tension.** The design's binding principle is "`src/ports/**` implements domain/persistence interfaces and `src/domain/rng/Rng`". Implementing an interface that takes a `PuzzleKey` parameter requires the type to be importable. Without it, either the port impl signature must drop down to `key: string` (breaking the interface's branded-type constraint) or the ESLint rule must be widened.
+
+**Resolution applied on 2026-07-22.** Amended `eslint.config.js` line 205-206 to add `src/domain/puzzle/PuzzleKey.ts` and `../domain/puzzle/PuzzleKey.ts` to the negative-lookahead allow-list. The message update also names `PuzzleKey.ts` explicitly. This is a rule correction so the design's own interfaces are implementable in `src/ports/**`; it does not broaden the architectural boundary (PuzzleKey is a pure brand type with no behaviour, used only as a typing parameter).
+
+**Related amendment.** `tsconfig.json` gained `"allowImportingTsExtensions": true` (compatible with the existing `moduleResolution: "Bundler"` + `noEmit: true`). This was needed because the (Task 48-vintage) `src/ports/**` ESLint regex explicitly enumerates allowed paths WITH the `.ts` suffix, so importing `../domain/rng/Rng.ts` etc. requires TypeScript to accept the suffix. (Type-only imports with `.ts` extensions also require this flag per TS docs.)
+
+**Tooling addition.** Added `jsdom` as a dev-dependency (via `package.json`) for the `localStorage` port test, which uses `// @vitest-environment jsdom` per-file. Per Vitest 3.x docs, `jsdom` is the standard DOM environment. Test relies on a `beforeEach` mock because jsdom 29's `localStorage` doesn't expose enumerable accessors under Vitest — workaround tracked but not blocking.
+
+**Open question for later.** Whether to extend the `.ts`-extension-required convention to OTHER layer boundaries (currently the `src/ports/**` regex is the only one that requires `.ts` extensions for allow-listed cross-layer imports, because it uses an explicit enumerate allow-list rather than a glob). If we adopt the convention everywhere, we'd update ALL `no-restricted-imports` regexes accordingly. Deferred.
+
+## 7. `reduceApp` did not implement the "deferred confirm pass" — modal/pendingConfirmIntent never cleared on `confirm-*` dispatch
+
+**Symptom.** Task 62 surfaced the bug: the bindings-layer `modalStore.confirmModal()` dispatches `state.pendingConfirmIntent` (a `confirm-*` intent variant). `reduceApp` routes that intent through `reduceBuilder`/`reducePlayer` cleanly, but never clears `AppState.modal` or `AppState.pendingConfirmIntent` — even though §1.1 G4 + §4.1 both say the modal is "cleared by `cancel-modal` or by the deferred confirm pass." As a result the modal stayed open after Confirm was clicked.
+
+**Underlying tension.** The four `confirm-*` intent kinds live in `BuilderIntent`/`PlayerIntent` and individually do NOT emit a "modal cleared" event (sub-reducers don't know they'reModal-residents — they just execute the guarded action unconditionally per §4.1). `applyEventsToApp` only mutates `modal`/`pendingConfirmIntent` on `modal-request` events (it never sees a "modal-closed" event because there isn't one). The intent of this `confirm-*` path is "modal lifecycle concludes" — but that conclusion needs to be enacted somewhere, and the existing reducer had no branch for it.
+
+**Resolution applied on 2026-07-22.** Added a `CONFIRMABLE_INTENT_KINDS` string set to `src/app/state/reducer.ts` enumerating `'confirm-switch-to-design'`, `'confirm-import-puzzle'`, `'confirm-reset-builder'`, `'confirm-reset-player'` — aliased to the `ConfirmableIntent` union from `domain/notifications/Event`. In both the Builder and Player branches of `reduceApp`, after `applyEventsToApp` runs and the result is computed, if the dispatched intent kind is in this set, the returned `state` is reshaped with `modal: null` and `pendingConfirmIntent: null`. Safe because `confirm-*` reducers never re-emit `modal-request` (no `force`, no recursive guard re-fire per §4.1). 4 tests added to `src/app/state/reducer.test.ts`.
+
+**Open question for later.** The `CONFIRMABLE_INTENT_KINDS` string set must stay in sync with the `ConfirmableIntent` union at `domain/notifications/Event`. If a fifth confirmable action is ever added, both arrays must be updated. A static type-derived set would be safer; deferred to a future clean-up.
+
+
+## 8. `Puzzle.withGrid` does not sync `gridSize` — surfaced by builderStore.change-grid-size test
+
+**Symptom.** Task 63 surfaced by writing builderStore tests: dispatching `{ kind: 'change-grid-size', size: GridSize.of(20) }` produced `state.builder.puzzle.grid.length === 20` (the new Grid has the right shape) but `state.builder.puzzle.gridSize === GridSize(15)` (the branded `gridSize` field retained its original value). This invariant mismatch would later cause `serializePlayerProgress` (Task 59) to size `playerLetters` from the stale `gridSize` and emit a corrupt blob.
+
+**Underlying tension.** `Puzzle.withGrid(p, g) = { ...p, grid: g }` does not update `puzzle.gridSize`. The Puzzle aggregate has two representations of "size": implicit via `grid.length` and explicit via the `gridSize` branded field. Only `Puzzle.blank(size, key)` sets them in sync. Every other `Puzzle.withGrid` call-site assumes you're swapping same-sized grids, but `change-grid-size` is the one call-site that does change the outer dimension.
+
+**Resolution applied on 2026-07-22.** In `src/builder/state/internal/designMode.ts`, the `handleChangeGridSize` reducer case now constructs: `{ ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size }`. Explicit re-sync avoids collateral: other `Puzzle.withGrid` call-sites continue to swap same-sized grids unchanged.
+
+**Open question for later.** Whether to broaden this to `Puzzle.withGrid` itself (always re-sync from `g.length`). The "you shouldn't be able to swap a grid whose length disagrees with the field" property argues for hardening in one place, but that means changing the contract of `Puzzle.withGrid` and auditing every other call-site (most are same-size swaps but `lifecycle.ts` line 88 / 152 are guaranteed safe because the puzzle is freshly-imported). Deferred.
+
+
+## 9. `reduceApp` ambiguous-intent-kind disambiguation via `state.route`
+
+**Symptom.** Task 64 (playerStore) surfaced an architectural illusion: Builder and Player share six intent kinds (`select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-clue-panel-word`) that are indistinguishable at runtime. The old `reduceApp` checked `BUILDER_INTENT_KINDS.has(kind)` before `PLAYER_INTENT_KINDS.has(kind)` — every ambiguous kind was silently routed to Builder. So `dispatchPlayer({ kind: 'select-cell' })` did nothing to `state.player`. The bindings store also couldn't reliably communicate scope to the reducer.
+
+**Underlying tension.** §4.1 design prose ("If intent is a BuilderIntent: invoke reduceBuilder — same for PlayerIntent") treated the union types as runtime-disjoint, but the runtime dispatcher must select a sub-reducer by kind alone. To stay statically typed per §0 Principle 3 the design uses simple kind-string dispatch — but the dual-purpose kinds break the dispatch assumption.
+
+**Resolution applied on 2026-07-22.** Added an `AMBIGUOUS_INTENT_KINDS` set (the intersection of the two existing sets, hardcoded six string literals) in `src/app/state/reducer.ts`. The dispatcher now:
+1. Routes AppIntent kinds (`navigate`, `cancel-modal`, `dismiss-toast`) as before.
+2. Routes unique Builder kinds to `reduceBuilder`; unique Player kinds to `reducePlayer`.
+3. For ambiguous kinds, routes based on `state.route`: `'play' → reducePlayer`, `'build' → reduceBuilder`, `'landing' → reduceBuilder` (back-compat default — existing reducer/store tests dispatch ambiguous kinds on `route='landing'` expecting Builder behaviour).
+
+Also extracted `routeToBuilder`/`routeToPlayer` in-reducer helpers that re-apply the deferred-confirm-pass pattern (Task 62a) to keep the new code DRY.
+
+4 test cases added to `src/app/state/reducer.test.ts` covering ambiguous dispatch on each route. 2 previously-failing `playerStore` tests now `navigate` to `'play'` before dispatching ambiguous kinds.
+
+**Open question for later.** Whether `'landing'` should route ambiguous kinds to Builder silently or throw. The 'play'-intent-dispatched-without-route-'play' case (e.g., a stray dispatch while in landing) currently silently routes to Builder. Strict semantics could throw and require a navigate intent first. Deferred — would need every test that dispatches ambiguous kinds during landing to first `navigate`. Cost-benefit currently tips toward back-compat.
+
