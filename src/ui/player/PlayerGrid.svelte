@@ -35,11 +35,15 @@
               {#if !cell.black && cell.letter !== null}
                 <span class="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-800">{cell.letter}</span>
               {/if}
-              {#if cell.separatorRight !== 'none'}
-                <div class="absolute right-0 top-1/2 -translate-y-1/2 text-center text-xs text-gray-800 {cell.separatorRight === 'space' ? 'h-6 w-1 bg-gray-800' : 'h-6 w-3 bg-transparent'}">{cell.separatorRight === 'hyphen' ? '-' : ''}</div>
+              {#if cell.separatorRight === 'space'}
+                <div class="absolute right-0 top-0 h-full w-0.5 bg-gray-800"></div>
+              {:else if cell.separatorRight === 'hyphen'}
+                <div class="absolute right-0 top-0 z-10 h-full w-5 translate-x-1/2 translate-y-[-2px] flex items-center justify-center text-6xl leading-none text-gray-800">-</div>
               {/if}
-              {#if cell.separatorBottom !== 'none'}
-                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-center text-xs text-gray-800 {cell.separatorBottom === 'space' ? 'h-1 w-6 bg-gray-800' : 'h-3 w-6 bg-transparent'}">{cell.separatorBottom === 'hyphen' ? '-' : ''}</div>
+              {#if cell.separatorBottom === 'space'}
+                <div class="absolute bottom-0 left-0 h-0.5 w-full bg-gray-800"></div>
+              {:else if cell.separatorBottom === 'hyphen'}
+                <div class="absolute bottom-0 left-0 z-10 h-5 w-full translate-y-[calc(50%+2px)] flex items-center justify-center rotate-90 text-6xl leading-none text-gray-800">-</div>
               {/if}
             </td>
           {/each}

@@ -2,8 +2,7 @@ Player:
 ...
 
 Builder:
-...
+1. Loading new puzzle in builder when one is already open keeps the old clues in the UI - I *think* content of localStorage is correct
 
 Both:
-1. Space separators should be a bit thinner, and extend to the full width/height (depending on direction) of cell
-2. Hyphens in vertical direction should be rotated (but still cross the cell boundary at middle)
+...
