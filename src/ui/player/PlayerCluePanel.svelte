@@ -27,12 +27,14 @@
     const id = highlightedId();
     const el = id === null ? null : document.getElementById(id);
     if (panelEl !== null && el !== null) {
-      panelEl.scrollTop = el.offsetTop - panelEl.offsetTop;
+      const panelRect = panelEl.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      panelEl.scrollTop += elRect.top - panelRect.top;
     }
   });
 </script>
 
-<aside bind:this={panelEl} class="relative flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
+<aside bind:this={panelEl} class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
   <section>
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">

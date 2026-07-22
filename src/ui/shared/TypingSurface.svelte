@@ -114,7 +114,7 @@
   autocorrect="off"
   spellcheck="false"
   inert={!enabled}
-  class="absolute h-1 w-1 opacity-0 -z-50"
+  class="fixed top-0 left-0 h-1 w-1 opacity-0 -z-50"
   onkeydown={onKeyDown}
   oninput={onInput}
   oncompositionend={onCompositionEnd}
