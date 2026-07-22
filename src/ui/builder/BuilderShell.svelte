@@ -24,7 +24,7 @@
   type TypingIntent =
     | { kind: 'type-letter'; letter: string }
     | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: Direction }
+    | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
     | { kind: 'escape' };
 
   function onCellClick(row: number, col: number): void {
@@ -47,7 +47,7 @@
         dispatchBackspace();
         return;
       case 'move-cursor':
-        dispatchMoveCursor(intent.direction);
+        dispatchMoveCursor(intent.direction, intent.sign);
         return;
       case 'escape':
         dispatchEscape();

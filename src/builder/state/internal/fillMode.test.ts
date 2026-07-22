@@ -225,7 +225,7 @@ function makeState(
 describe('handleMoveCursor', () => {
   it('move-cursor: no-op in design mode', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' }, 'design');
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down' };
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -235,7 +235,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: no-op when cursor is null', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -245,7 +245,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target selectable → moves cursor to target and updates direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -259,7 +259,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target not selectable (next cell is black) → cursor stays, direction updates (FR-14)', () => {
     const state = makeState(5, [[2, 3]], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -273,13 +273,69 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target at grid boundary → cursor stays, direction updates', () => {
     const state = makeState(5, [], { row: 2, col: 4, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
       col: Col.of(4),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 moves cursor backward along the across axis (column decrements)', () => {
+    const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(result.state.cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(1),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 along down axis (row decrements)', () => {
+    const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(result.state.cursor).toEqual({
+      row: Row.of(1),
+      col: Col.of(2),
+      direction: 'down',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 target not selectable (black cell behind) → cursor stays, direction updates', () => {
+    const state = makeState(5, [[2, 1]], { row: 2, col: 2, direction: 'down' });
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(result.state.cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(2),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 at grid boundary (column 0) → cursor stays, direction updates', () => {
+    const state = makeState(5, [], { row: 2, col: 0, direction: 'down' });
+    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(result.state.cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(0),
       direction: 'across',
     });
     expect(result.events).toEqual([]);

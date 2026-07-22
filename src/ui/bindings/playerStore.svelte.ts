@@ -39,8 +39,8 @@ export function dispatchEscape(): void {
   dispatchPlayer({ kind: 'escape' });
 }
 
-export function dispatchMoveCursor(direction: 'across' | 'down'): void {
-  dispatchPlayer({ kind: 'move-cursor', direction });
+export function dispatchMoveCursor(direction: 'across' | 'down', sign: -1 | 1): void {
+  dispatchPlayer({ kind: 'move-cursor', direction, sign });
 }
 
 export function dispatchImportPuzzle(fileContent: string): void {

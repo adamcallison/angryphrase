@@ -12,7 +12,7 @@ export type PlayerIntent =
   | { kind: 'import-new-puzzle' }                              // FR-78; returns to 'import' phase, retains autosaved progress in localStorage
   // solving — cell & cursor
   | { kind: 'select-cell'; row: Row; col: Col }
-  | { kind: 'move-cursor'; direction: Direction }
+  | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
   | { kind: 'type-letter'; letter: Letter }
   | { kind: 'backspace' }
   | { kind: 'escape' }                                          // closes anagram modal (FR-89); no sub-modes in Player

@@ -20,7 +20,7 @@
   type TypingIntent =
     | { kind: 'type-letter'; letter: string }
     | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: 'across' | 'down' }
+    | { kind: 'move-cursor'; direction: 'across' | 'down'; sign: -1 | 1 }
     | { kind: 'escape' };
 
   function onCellClick(row: number, col: number): void {
@@ -33,7 +33,7 @@
     switch (intent.kind) {
       case 'type-letter': dispatchTypeLetter(intent.letter); return;
       case 'backspace': dispatchBackspace(); return;
-      case 'move-cursor': dispatchMoveCursor(intent.direction); return;
+      case 'move-cursor': dispatchMoveCursor(intent.direction, intent.sign); return;
       case 'escape': dispatchEscape(); return;
     }
   }

@@ -720,7 +720,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'move-cursor', direction: 'across' }, deps);
+      const result = reducePlayer(state, { kind: 'move-cursor', direction: 'across', sign: 1 }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.cursor).toEqual({

@@ -789,7 +789,7 @@ export type BuilderIntent =
   | { kind: 'change-grid-size'; size: GridSize }              // FR-22; only when blank
   // fill — cell selection & cursor
   | { kind: 'select-cell'; row: Row; col: Col }               // FR-10, FR-11
-  | { kind: 'move-cursor'; direction: Direction }            // FR-14 arrow keys
+  | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 } // FR-14 arrow keys; sign picks ±1 along axis
   // fill — typing
   | { kind: 'type-letter'; letter: Letter }                   // FR-12; writes answerLetter; advances (or stays)
   | { kind: 'backspace' }                                      // FR-13
@@ -886,7 +886,7 @@ export type PlayerIntent =
   | { kind: 'import-new-puzzle' }                              // FR-78; returns to 'import' phase, retains autosaved progress in localStorage
   // solving — cell & cursor
   | { kind: 'select-cell'; row: Row; col: Col }
-  | { kind: 'move-cursor'; direction: Direction }
+  | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }  // FR-14 arrow keys; sign picks ±1 along axis
   | { kind: 'type-letter'; letter: Letter }
   | { kind: 'backspace' }
   | { kind: 'escape' }                                          // closes anagram modal (FR-89); no sub-modes in Player

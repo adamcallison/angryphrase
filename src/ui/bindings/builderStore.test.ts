@@ -242,7 +242,7 @@ describe('builderStore.svelte.ts', () => {
     });
 
     it('dispatchMoveCursor("across") moves cursor (or no-ops if no cursor)', () => {
-      expect(() => dispatchMoveCursor('across')).not.toThrow();
+      expect(() => dispatchMoveCursor('across', 1)).not.toThrow();
     });
 
     it('dispatchRequestImportPuzzle passes fileContent through (blank state imports)', () => {

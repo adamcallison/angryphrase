@@ -4,7 +4,7 @@
   type TypingIntent =
     | { kind: 'type-letter'; letter: string }
     | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: Direction }
+    | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
     | { kind: 'escape' };
 
   let {
@@ -48,19 +48,19 @@
         return;
       case 'ArrowLeft':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'across' });
+        onDispatch({ kind: 'move-cursor', direction: 'across', sign: -1 });
         return;
       case 'ArrowRight':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'across' });
+        onDispatch({ kind: 'move-cursor', direction: 'across', sign: 1 });
         return;
       case 'ArrowUp':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'down' });
+        onDispatch({ kind: 'move-cursor', direction: 'down', sign: -1 });
         return;
       case 'ArrowDown':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'down' });
+        onDispatch({ kind: 'move-cursor', direction: 'down', sign: 1 });
         return;
       case 'Enter':
       case 'Tab':

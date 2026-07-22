@@ -19,7 +19,7 @@ export type BuilderIntent =
   | { kind: 'change-grid-size'; size: GridSize }
   // fill — cell selection & cursor
   | { kind: 'select-cell'; row: Row; col: Col }
-  | { kind: 'move-cursor'; direction: Direction }
+  | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
   // fill — typing
   | { kind: 'type-letter'; letter: Letter }
   | { kind: 'backspace' }

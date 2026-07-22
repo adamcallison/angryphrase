@@ -226,7 +226,7 @@ describe('reduceBuilder', () => {
   it('move-cursor is delegated to fillMode', () => {
     const state = fillState([], { row: 2, col: 2, direction: 'down' });
 
-    const result = reduceBuilder(state, { kind: 'move-cursor', direction: 'across' }, deps);
+    const result = reduceBuilder(state, { kind: 'move-cursor', direction: 'across', sign: 1 }, deps);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),

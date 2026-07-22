@@ -336,7 +336,7 @@ describe('handleSelectCell', () => {
 describe('handleMoveCursor', () => {
   it('move-cursor: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -346,7 +346,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: no-op when cursor is null', () => {
     const state = solvingState(5);
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -356,7 +356,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target selectable → cursor moves and direction updates (FR-14)', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'down' });
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -370,7 +370,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target not selectable (next cell black) → cursor stays but direction updates (FR-14)', () => {
     const state = withCursor(solvingState(5, [[2, 3]]), { row: 2, col: 2, direction: 'down' });
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -384,7 +384,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target at grid boundary → cursor stays but direction updates', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 4, direction: 'down' });
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -396,11 +396,67 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
+  it('move-cursor with sign: -1 moves cursor backward along the across axis (column decrements)', () => {
+    const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'down' });
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(1),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 along down axis (row decrements)', () => {
+    const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(1),
+      col: Col.of(2),
+      direction: 'down',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 target not selectable (black cell behind) → cursor stays, direction updates', () => {
+    const state = withCursor(solvingState(5, [[2, 1]]), { row: 2, col: 2, direction: 'down' });
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(2),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
+  it('move-cursor with sign: -1 at grid boundary (column 0) → cursor stays, direction updates', () => {
+    const state = withCursor(solvingState(5), { row: 2, col: 0, direction: 'down' });
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+
+    const result = handleMoveCursor(state, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(2),
+      col: Col.of(0),
+      direction: 'across',
+    });
+    expect(result.events).toEqual([]);
+  });
+
   it('move-cursor: clears checkResult (§908)', () => {
     let state = solvingState(5);
     state = withCursor(state, { row: 2, col: 2, direction: 'across' });
     state = withCheckResult(state);
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -410,7 +466,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: with direction "down", cursor moves +1 row when target selectable', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
 
     const result = handleMoveCursor(state, intent, deps);
 
@@ -435,7 +491,7 @@ describe('handleMoveCursor', () => {
     let stateWithAnagram = withAnagram(state, acrossWord.key);
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
     const result = handleMoveCursor(stateWithAnagram, intent, deps);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -459,7 +515,7 @@ describe('handleMoveCursor', () => {
     let stateWithAnagram = withAnagram(state, acrossWord.key);
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
     const result = handleMoveCursor(stateWithAnagram, intent, deps);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -479,7 +535,7 @@ describe('handleMoveCursor', () => {
     let stateWithAnagram = withAnagram(state, downWord.key);
     stateWithAnagram = withCursor(stateWithAnagram, { row: 2, col: 0, direction: 'across' });
 
-    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down' };
+    const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
     const result = handleMoveCursor(stateWithAnagram, intent, deps);
 
     expect(assertSolving(result.state).cursor).toEqual({

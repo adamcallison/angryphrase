@@ -311,7 +311,7 @@ describe('playerStore.svelte.ts', () => {
 
     it('playerStore: dispatchMoveCursor("down") does not throw', () => {
       enterSolvingPhase();
-      expect(() => dispatchMoveCursor('down')).not.toThrow();
+      expect(() => dispatchMoveCursor('down', 1)).not.toThrow();
     });
   });
 });

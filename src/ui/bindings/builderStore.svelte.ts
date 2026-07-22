@@ -70,8 +70,8 @@ export function dispatchRequestResetBuilder(): void {
   dispatchBuilder({ kind: 'request-reset-builder' });
 }
 
-export function dispatchMoveCursor(direction: 'across' | 'down'): void {
-  dispatchBuilder({ kind: 'move-cursor', direction });
+export function dispatchMoveCursor(direction: 'across' | 'down', sign: -1 | 1): void {
+  dispatchBuilder({ kind: 'move-cursor', direction, sign });
 }
 
 export function dispatchToggleMarker(

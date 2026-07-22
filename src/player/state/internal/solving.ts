@@ -150,12 +150,16 @@ export function handleMoveCursor(
   }
 
   const { dr, dc } = DELTA[intent.direction];
-  const newRow = Row.of(Number(state.cursor.row) + dr);
-  const newCol = Col.of(Number(state.cursor.col) + dc);
+  const signedDr = dr * intent.sign;
+  const signedDc = dc * intent.sign;
+  const newRow = Row.try(Number(state.cursor.row) + signedDr);
+  const newCol = Col.try(Number(state.cursor.col) + signedDc);
 
   const g = state.puzzle.grid;
   let newCursor: Cursor;
   if (
+    newRow !== null &&
+    newCol !== null &&
     GridOps.withinBounds(g, newRow, newCol) &&
     GridOps.isSelectable(g, newRow, newCol)
   ) {
