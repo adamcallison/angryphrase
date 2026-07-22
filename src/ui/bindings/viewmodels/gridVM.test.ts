@@ -144,7 +144,7 @@ describe('deriveGridVM', () => {
     }
   });
 
-  it('deriveGridVM: Player checkResult incorrectCells → those cells hilite=incorrect; a filled non-incorrect cell → hilite=correct; an empty cell in emptyCells → hilite=none', () => {
+  it('deriveGridVM: Player checkResult incorrectCells → those cells hilite=incorrect; a filled non-incorrect cell → hilite=none; an empty cell in emptyCells → hilite=none', () => {
     const grid = GridOps.blank(GridSize.of(3));
     const cell00 = GridOps.cellAt(grid, Row.of(0), Col.of(0));
     const cell01 = GridOps.cellAt(grid, Row.of(0), Col.of(1));
@@ -160,7 +160,7 @@ describe('deriveGridVM', () => {
     };
     const vm = deriveGridVM({ grid: g, cursor: null, words: [], whichLetter: 'player', selectedWordCells: new Set(), checkResult });
     expect(vm.cells[0]![0]!.hilite).toBe('incorrect');
-    expect(vm.cells[0]![1]!.hilite).toBe('correct');
+    expect(vm.cells[0]![1]!.hilite).toBe('none');
     expect(vm.cells[0]![2]!.hilite).toBe('none');
   });
 

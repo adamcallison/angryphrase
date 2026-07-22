@@ -951,9 +951,9 @@ export type ModalVM = { kind: ModalRequest['kind']; title: string; body: string;
 ### 5.2 Grid VM (shared shape; both Builder and Player produce one)
 
 ```ts
-export type CellHilite = 'none' | 'selected' | 'in-word' | 'correct' | 'incorrect';
-// selected: yellow bg (CON-4); in-word: pale yellow; correct/incorrect: only after Check on the Player grid (FR-74/FR-75).
-// Empty cells (post-Check) render without a special hilite — the absence of a letter is the visual.
+export type CellHilite = 'none' | 'selected' | 'in-word' | 'incorrect';
+// selected: yellow bg (CON-4); in-word: pale yellow; incorrect: only after Check on the Player grid (FR-74/FR-75).
+// Correct and empty cells (post-Check) render without a special hilite — colorblind positives must not leak the answer; player feedback is via the toolbar classification message/colour (deriveCheckResultVM, FR-75).
 export type CellSeparator = 'none' | 'space' | 'hyphen';     // re-exported from `domain/grid/CellSeparator.ts` (see §3.2)
 
 export type GridCellVM = {

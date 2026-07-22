@@ -17,8 +17,6 @@
         return 'bg-yellow-400';
       case 'in-word':
         return 'bg-yellow-100';
-      case 'correct':
-        return 'bg-green-200';
       case 'incorrect':
         return 'bg-red-200';
       case 'none':

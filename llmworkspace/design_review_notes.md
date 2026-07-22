@@ -132,3 +132,13 @@ Also extracted `routeToBuilder`/`routeToPlayer` in-reducer helpers that re-apply
 
 **Open question for later.** None — `sign` is the minimal additive change and preserves the existing `Direction` vocabulary.
 
+## 11. `CellHilite` 'correct' variant leaked positive confirmation to the player after Check
+
+**Symptom.** Smoke-testing surfaced that running Check colour-correctly-filled cells with a pale background (Tailwind `bg-green-200`), giving the solver extra information: a green cell confirms the guessed letter is right, even before the puzzle is fully solved. The user reported this as a bug ("Check shouldn't show correct letters/words in blue" — `llmworkspace/bugs.txt`).
+
+**Underlying tension.** §5.2 line 954 defined `CellHilite = 'none' | 'selected' | 'in-word' | 'correct' | 'incorrect'`, and line 955 explicitly mandated that "correct/incorrect: only after Check on the Player grid (FR-74/FR-75)." `deriveGridVM` (`src/ui/bindings/viewmodels/gridVM.ts`) accordingly set `hilite = 'correct'` for any filled non-incorrect cell once a `checkResult` was present, and `PlayerGrid.svelte` mapped that to `bg-green-200`. FR-75 only requires "a distinct message and colour per classification" — and that classification display already lives in the toolbar via `deriveCheckResultVM` (`src/ui/bindings/viewmodels/playerVM.ts` lines 152-172, `colorClass` per-classification). Per-cell positive colouring was additional, undesired help.
+
+**Resolution applied on 2026-07-22.** Removed the `'correct'` variant from `CellHilite` in §5.2 of `architecture_design.md` (line 954) and reworded the line 955 comment to "incorrect: only after Check on the Player grid (FR-74/FR-75). Correct and empty cells (post-Check) render without a special hilite — colorblind positives must not leak the answer; player feedback is via the toolbar classification message/colour (deriveCheckResultVM, FR-75)." Implementation: `deriveGridVM` drops the `else if (checkResult && cell.playerLetter !== null && !incorrectKeys.has(...))` branch — such cells now fall through to `hilite = 'none'`. `PlayerGrid.svelte` drops the `case 'correct': return 'bg-green-200';` line. `gridVM.test.ts` updated: the "filled non-incorrect cell → hilite=correct" assertion now expects `hilite='none'` and the test name was updated accordingly. FR-75's toolbar classification message/colour (FR-74 classifications) is unchanged.
+
+**Open question for later.** None — positive-feedback removal aligns with the user's spec; FR-75's toolbar messaging still satisfies the "distinct message and colour per classification" requirement.
+

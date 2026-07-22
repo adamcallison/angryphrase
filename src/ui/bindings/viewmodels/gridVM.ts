@@ -13,7 +13,7 @@ import type { CheckResult } from '../../../player/state/state';
 
 export type { CellSeparator };
 
-export type CellHilite = 'none' | 'selected' | 'in-word' | 'correct' | 'incorrect';
+export type CellHilite = 'none' | 'selected' | 'in-word' | 'incorrect';
 
 export type GridCellVM = {
   row: Row;
@@ -107,8 +107,6 @@ export function deriveGridVM(input: {
           hilite = 'in-word';
         } else if (checkResult && incorrectKeys.has(cellKey(r, c))) {
           hilite = 'incorrect';
-        } else if (checkResult && cell.playerLetter !== null && !incorrectKeys.has(cellKey(r, c))) {
-          hilite = 'correct';
         }
 
         rowVms.push({
