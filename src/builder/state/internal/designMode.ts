@@ -7,6 +7,7 @@ import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordDerivation } from '../../../domain/word/WordDerivation';
+import { Numbering } from '../../../domain/word/Numbering';
 import { reconcileWords } from './reconcileWords';
 
 export function handleToggleDesignCell(
@@ -66,7 +67,8 @@ export function handleChangeGridSize(
   }
 
   const newGrid = GridOps.blank(intent.size);
-  const newPuzzle = { ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size };
+  const newWords = Numbering.assign(newGrid, WordDerivation.derive(newGrid));
+  const newPuzzle = { ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size, words: newWords };
 
   return Result.ok({
     ...state,

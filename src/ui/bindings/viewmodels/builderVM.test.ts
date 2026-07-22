@@ -241,7 +241,7 @@ describe('deriveBuilderSubModeBannerVM', () => {
     let state = makeBlankState(3);
     state = stateWithSubMode(state, {
       kind: 'join',
-      source: makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2 }).key,
+      source: makeWord({ startRow: 1, startCol: 1, direction: 'across', number: 1, length: 2 }).key,
     });
     const vm = deriveBuilderSubModeBannerVM(state);
     expect(vm).toEqual({ kind: 'none' });

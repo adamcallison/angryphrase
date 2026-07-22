@@ -143,6 +143,9 @@ describe('reduceBuilder', () => {
     expect(Number(result.state.puzzle.grid.length)).toBe(20);
     expect(result.state.cursor).toBeNull();
     expect(result.state.subMode).toEqual({ kind: 'none' });
+    expect(result.state.puzzle.words).toStrictEqual(
+      Numbering.assign(result.state.puzzle.grid, WordDerivation.derive(result.state.puzzle.grid)),
+    );
   });
 
   it('returns ReducerResult shape (state + events: [])', () => {

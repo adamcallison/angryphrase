@@ -12,6 +12,8 @@ import { Letter } from '../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { Word } from '../../../src/domain/word/Word';
+import { WordDerivation } from '../../../src/domain/word/WordDerivation';
+import { Numbering } from '../../../src/domain/word/Numbering';
 import { SeededRng } from '../../fakes/SeededRng';
 
 function makeKey() {
@@ -35,7 +37,7 @@ function makeWord(
 }
 
 describe('Puzzle', () => {
-  it('blank produces empty grid with empty title/author and no words', () => {
+  it('blank produces empty grid with empty title/author and derived words', () => {
     const key = makeKey();
     const size = GridSize.of(5);
     const p = Puzzle.blank(size, key);
@@ -43,7 +45,8 @@ describe('Puzzle', () => {
     expect(p.key).toBe(key);
     expect(p.gridSize).toBe(size);
     expect(GridOps.equals(p.grid, GridOps.blank(size))).toBe(true);
-    expect(p.words).toStrictEqual([]);
+    const expected = Numbering.assign(p.grid, WordDerivation.derive(p.grid));
+    expect(p.words).toStrictEqual(expected);
     expect(p.title).toBe(Title.try(''));
     expect(p.author).toBe(Author.try(''));
   });

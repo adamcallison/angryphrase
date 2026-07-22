@@ -18,6 +18,8 @@ import { Title } from '../../../domain/puzzle/Title';
 import { Author } from '../../../domain/puzzle/Author';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordNumber } from '../../../domain/word/WordNumber';
+import { WordDerivation } from '../../../domain/word/WordDerivation';
+import { Numbering } from '../../../domain/word/Numbering';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../builder/state/state';
@@ -271,8 +273,13 @@ describe('derivePlayerToolbarVM', () => {
   });
 
   it('derivePlayerToolbarVM: solving phase with cursor on a stray cell (no word) → canOpenAnagram=false', () => {
+    let puzzle = makeBlankPuzzle(3);
+    let grid = puzzle.grid;
+    grid = GridOps.setCell(grid, Row.of(2), Col.of(1), Cell.black());
+    const words = Numbering.assign(grid, WordDerivation.derive(grid));
+    puzzle = puzzleWithWords(puzzleWithGrid(puzzle, grid), words);
     const state = makeSolvingState({
-      puzzle: makeBlankPuzzle(3),
+      puzzle,
       cursor: makeCursor(2, 2, 'across'),
     });
     const vm = derivePlayerToolbarVM(state);

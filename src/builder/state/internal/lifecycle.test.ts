@@ -12,6 +12,8 @@ import { Letter } from '../../../domain/letter/Letter';
 import { DisplacedClue } from '../../../domain/builder/DisplacedClue';
 import { SeededRng } from '../../../../test/fakes/SeededRng';
 import { FakeClock } from '../../../../test/fakes/FakeClock';
+import { WordDerivation } from '../../../domain/word/WordDerivation';
+import { Numbering } from '../../../domain/word/Numbering';
 
 const rng = new SeededRng(42);
 const clock = new FakeClock(1000);
@@ -183,7 +185,11 @@ describe('confirm-reset-builder', () => {
 
     const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
 
-    expect(result.state.puzzle.words).toEqual([]);
+    const expectedWords = Numbering.assign(
+      result.state.puzzle.grid,
+      WordDerivation.derive(result.state.puzzle.grid),
+    );
+    expect(result.state.puzzle.words).toEqual(expectedWords);
     expect(result.state.puzzle.grid.every((row) =>
       row.every((cell) => cell.answerLetter === null),
     )).toBe(true);

@@ -9,6 +9,8 @@ import { Col } from '../../../domain/grid/Col';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
+import { WordDerivation } from '../../../domain/word/WordDerivation';
+import { Numbering } from '../../../domain/word/Numbering';
 import { Letter } from '../../../domain/letter/Letter';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordNumber } from '../../../domain/word/WordNumber';
@@ -289,6 +291,17 @@ describe('change-grid-size', () => {
     const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
 
     expect(result.state.puzzle.key).toBe(key);
+  });
+
+  it('re-derives words for the new grid size so words correspond to maximal white runs in the new grid', () => {
+    const state = BuilderState.blank(GridSize.of(15), PuzzleKey.generate(new SeededRng(1)));
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(10) }, deps);
+    const expected = Numbering.assign(result.state.puzzle.grid, WordDerivation.derive(result.state.puzzle.grid));
+    expect(result.state.puzzle.words).toStrictEqual(expected);
+    for (const w of result.state.puzzle.words) {
+      expect(Number(w.key.startRow)).toBeLessThan(10);
+      expect(Number(w.key.startCol)).toBeLessThan(10);
+    }
   });
 });
 

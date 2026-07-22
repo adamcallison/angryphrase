@@ -59,7 +59,7 @@ describe('CompletenessCheck', () => {
     expect(CompletenessCheck.check(complete)).toStrictEqual([]);
   });
 
-  it('check reports missing-answer-letter for each empty white cell', () => {
+  it('check reports missing-answer-letter for each empty white cell, plus missing-clue for derived heads with empty clue', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
     const grid = GridOps.setCell(
       p.grid,
@@ -73,6 +73,10 @@ describe('CompletenessCheck', () => {
       { kind: 'missing-answer-letter', row: Row.of(0), col: Col.of(1) },
       { kind: 'missing-answer-letter', row: Row.of(1), col: Col.of(0) },
       { kind: 'missing-answer-letter', row: Row.of(1), col: Col.of(1) },
+      { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
+      { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'down' },
+      { kind: 'missing-clue', wordNumber: WordNumber.of(2), direction: 'down' },
+      { kind: 'missing-clue', wordNumber: WordNumber.of(3), direction: 'across' },
     ]);
   });
 

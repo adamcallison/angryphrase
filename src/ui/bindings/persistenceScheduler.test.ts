@@ -23,6 +23,8 @@ import { Col } from '../../domain/grid/Col';
 import { DisplacedClue } from '../../domain/builder/DisplacedClue';
 import { InMemoryStoragePort } from '../../../test/fakes/InMemoryStoragePort';
 import { SeededRng } from '../../../test/fakes/SeededRng';
+import { WordDerivation } from '../../domain/word/WordDerivation';
+import { Numbering } from '../../domain/word/Numbering';
 import type { StoragePort } from '../../domain/persistence/ports';
 import type { BuilderState as BuilderStateType } from '../../builder/state/state';
 import type { PlayerState as PlayerStateType } from '../../player/state/state';
@@ -65,7 +67,8 @@ function makeAllBlackPuzzle(seed: number, size: number): PuzzleType {
       grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.black());
     }
   }
-  return Puzzle.withGrid(puzzle, grid);
+  const words = Numbering.assign(grid, WordDerivation.derive(grid));
+  return Puzzle.withWords(Puzzle.withGrid(puzzle, grid), words);
 }
 
 describe('persistenceScheduler.ts', () => {
