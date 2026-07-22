@@ -4,6 +4,8 @@
 
   let { vm }: { vm: CluePanelVM } = $props();
 
+  let panelEl: HTMLElement | null = $state(null);
+
   const drafts = $state(new Map<string, string>());
 
   const isInJoinMode = $derived(
@@ -63,20 +65,26 @@
     const targetCanonical = canonicalId(key);
     for (const entry of vm.across) {
       if (canonicalId(entry.wordKey) === targetCanonical) {
-        document.getElementById(rowId(entry))?.scrollIntoView({ block: 'nearest' });
+        const el = document.getElementById(rowId(entry));
+        if (panelEl !== null && el !== null) {
+          panelEl.scrollTop = el.offsetTop - panelEl.offsetTop;
+        }
         return;
       }
     }
     for (const entry of vm.down) {
       if (canonicalId(entry.wordKey) === targetCanonical) {
-        document.getElementById(rowId(entry))?.scrollIntoView({ block: 'nearest' });
+        const el = document.getElementById(rowId(entry));
+        if (panelEl !== null && el !== null) {
+          panelEl.scrollTop = el.offsetTop - panelEl.offsetTop;
+        }
         return;
       }
     }
   });
 </script>
 
-<aside class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
+<aside bind:this={panelEl} class="relative flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
   <section>
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">
