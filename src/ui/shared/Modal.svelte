@@ -28,7 +28,8 @@
 
 {#if modalVM() !== null}
   {@const vm = modalVM()!}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onclick={onBackdropClick}>
     <div class="max-w-md rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <h2 id="modal-title" class="mb-3 text-xl font-bold text-gray-800">{vm.title}</h2>

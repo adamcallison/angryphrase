@@ -34,7 +34,8 @@
     <ul class="flex flex-col gap-1">
       {#each vm.across as entry}
         {@const rowId = `across-${Number(entry.number)}`}
-        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
           id={rowId}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
@@ -59,7 +60,8 @@
     <ul class="flex flex-col gap-1">
       {#each vm.down as entry}
         {@const rowId = `down-${Number(entry.number)}`}
-        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
           id={rowId}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"

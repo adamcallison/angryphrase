@@ -81,7 +81,8 @@
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">
       {#each vm.across as entry (canonicalId(entry.wordKey))}
-        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
           id={rowId(entry)}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected
@@ -142,7 +143,8 @@
     <h2 class="text-sm font-semibold text-gray-700">Down</h2>
     <ul class="flex flex-col gap-1">
       {#each vm.down as entry (canonicalId(entry.wordKey))}
-        <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
           id={rowId(entry)}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected
