@@ -1,4 +1,11 @@
 import './app.css';
+import faviconUrl from './assets/favicon.png';
+
+const link = document.createElement('link');
+link.rel = 'icon';
+link.type = 'image/png';
+link.href = faviconUrl;
+document.head.appendChild(link);
 import { mount } from 'svelte';
 import App from './ui/app/App.svelte';
 import { bootApp } from './ui/bindings/appStore.svelte';
