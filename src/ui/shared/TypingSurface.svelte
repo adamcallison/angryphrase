@@ -113,7 +113,7 @@
   autocomplete="off"
   autocorrect="off"
   spellcheck="false"
-  aria-hidden="true"
+  inert={!enabled}
   class="absolute h-1 w-1 opacity-0 -z-50"
   onkeydown={onKeyDown}
   oninput={onInput}
