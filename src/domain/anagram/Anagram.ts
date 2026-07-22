@@ -35,8 +35,8 @@ export const Anagram: {
 
       entries.push({
         position: i,
-        fixed: cell.answerLetter !== null,
-        letter: cell.answerLetter,
+        fixed: cell.playerLetter !== null,
+        letter: cell.playerLetter,
       });
 
       if (i < word.length - 1) {

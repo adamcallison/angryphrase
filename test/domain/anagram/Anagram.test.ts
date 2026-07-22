@@ -19,11 +19,11 @@ describe('Anagram', () => {
     return GridOps.blank(GridSize.of(size));
   }
 
-  function setAnswer(grid: CellType[][], row: number, col: number, ch: string): CellType[][] {
+  function setPlayerLetter(grid: CellType[][], row: number, col: number, ch: string): CellType[][] {
     const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
     const letter = Letter.try(ch);
     if (letter === null) throw new Error(`Invalid letter: ${ch}`);
-    return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setAnswerLetter(cell, letter));
+    return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setPlayerLetter(cell, letter));
   }
 
   function setMarkerFlag(
@@ -53,10 +53,10 @@ describe('Anagram', () => {
     };
   }
 
-  it('buildWordModel returns one entry per word cell with fixed=true where answerLetter present', () => {
+  it('buildWordModel returns one entry per word cell with fixed=true where playerLetter present', () => {
     let grid = blankGrid(5);
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 4, 'E');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 4, 'E');
 
     const word = buildWord({ length: 5 });
     const model = Anagram.buildWordModel(grid, word);

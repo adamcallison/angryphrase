@@ -54,13 +54,13 @@ function word4Across(): Word {
   };
 }
 
-function setAnswer(grid: Grid, row: number, col: number, letter: string): Grid {
+function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
   const cell = GridOps.cellAt(grid, r, c);
   const l = Letter.try(letter);
   expect(l).not.toBeNull();
-  return GridOps.setCell(grid, r, c, Cell.setAnswerLetter(cell, l!));
+  return GridOps.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
 }
 
 function setMarker(grid: Grid, row: number, col: number, flag: CellMarkerFlag): Grid {
@@ -104,8 +104,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: open modal — tiles count matches word length; fixed positions show their grid letter', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -119,8 +119,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: non-fixed positions get null when scrambledArrangement is null', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -133,8 +133,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: non-fixed positions show scrambledArrangement letters positionally (when present)', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('ABC', 'ABC');
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -145,9 +145,9 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: separators echo from Anagram.buildWordModel', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 1, 'B');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 1, 'B');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     grid = setMarker(grid, 0, 0, 'space-right');
     grid = setMarker(grid, 0, 1, 'hyphen-right');
     const word = word3Across();
@@ -158,8 +158,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: input echoed unchanged; inputLength = input.length', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('XYZ', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -169,8 +169,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: inputValid = Anagram.validateInput result; errorMessage = reason on invalid', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
 
     const shortResult = deriveAnagramModalVM({
@@ -200,9 +200,9 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: expectedUniqueLetterCounts counts only fixed letters, sorted by count desc then letter asc', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 1, 'A');
-    grid = setAnswer(grid, 0, 2, 'B');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 1, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'B');
     const word = word3Across();
     const result = deriveAnagramModalVM({
       anagramModal: makeAnagramModal('AAB', null),
@@ -215,10 +215,10 @@ describe('deriveAnagramModalVM', () => {
     ]);
 
     let grid4 = grid4x4();
-    grid4 = setAnswer(grid4, 0, 0, 'B');
-    grid4 = setAnswer(grid4, 0, 1, 'A');
-    grid4 = setAnswer(grid4, 0, 2, 'B');
-    grid4 = setAnswer(grid4, 0, 3, 'A');
+    grid4 = setPlayerLetter(grid4, 0, 0, 'B');
+    grid4 = setPlayerLetter(grid4, 0, 1, 'A');
+    grid4 = setPlayerLetter(grid4, 0, 2, 'B');
+    grid4 = setPlayerLetter(grid4, 0, 3, 'A');
     const result4 = deriveAnagramModalVM({
       anagramModal: makeAnagramModal('ABBA', null, word4Across().key),
       grid: grid4,
@@ -232,8 +232,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: scrambleEnabled true iff inputValid AND ≥1 non-fixed tile', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -243,8 +243,8 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: scrambleEnabled false when input is invalid', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('AB', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
@@ -254,9 +254,9 @@ describe('deriveAnagramModalVM', () => {
 
   it('deriveAnagramModalVM: all-fixed word → scrambleEnabled false even if input valid', () => {
     let grid = grid3x3();
-    grid = setAnswer(grid, 0, 0, 'A');
-    grid = setAnswer(grid, 0, 1, 'B');
-    grid = setAnswer(grid, 0, 2, 'C');
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 0, 1, 'B');
+    grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });

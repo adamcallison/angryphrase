@@ -550,7 +550,7 @@ describe('reducePlayer', () => {
       return PlayerState.loaded(Puzzle.withWords(Puzzle.withGrid(puzzle, grid), words));
     }
 
-    function withAnswerLetter(
+    function withPlayerLetter(
       state: ReturnType<typeof solvingStateWith5x5Words>,
       r: number,
       c: number,
@@ -562,7 +562,7 @@ describe('reducePlayer', () => {
         state.puzzle.grid,
         Row.of(r),
         Col.of(c),
-        Cell.setAnswerLetter(cell, Letter.try(letter)!),
+        Cell.setPlayerLetter(cell, Letter.try(letter)!),
       );
       return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) };
     }
@@ -611,7 +611,7 @@ describe('reducePlayer', () => {
     it('anagram-scramble is delegated: produces scrambledArrangement via Anagram.scramble', () => {
       let state = solvingStateWith5x5Words();
       if (state.phase !== 'solving') throw new Error('expected solving');
-      state = withAnswerLetter(state, 0, 0, 'A');
+      state = withPlayerLetter(state, 0, 0, 'A');
       if (state.phase !== 'solving') throw new Error('expected solving');
       state = {
         ...state,

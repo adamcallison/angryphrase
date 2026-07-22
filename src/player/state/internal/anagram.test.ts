@@ -77,7 +77,7 @@ function withAnagram(
   };
 }
 
-function withAnswerLetter(
+function withPlayerLetter(
   state: SolvingPlayerState,
   row: number,
   col: number,
@@ -89,7 +89,7 @@ function withAnswerLetter(
     g,
     Row.of(row),
     Col.of(col),
-    Cell.setAnswerLetter(cell, Letter.try(letter)!),
+    Cell.setPlayerLetter(cell, Letter.try(letter)!),
   );
   return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newG) };
 }
@@ -288,7 +288,7 @@ describe('handleAnagramInput', () => {
 describe('handleAnagramScramble', () => {
   function scrambleState(input: string): SolvingPlayerState {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    state = withAnswerLetter(state, 0, 0, 'A');
+    state = withPlayerLetter(state, 0, 0, 'A');
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key, input);
     return state;
