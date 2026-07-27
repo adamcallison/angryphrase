@@ -25,7 +25,7 @@
 </script>
 
 <div
-  class="select-none inline-grid aspect-square w-[min(100%,calc(var(--grid-size)*2.5rem))] grid-cols-[repeat(var(--grid-size),minmax(0,2.5rem))] grid-rows-[repeat(var(--grid-size),minmax(0,2.5rem))] border-t border-l border-gray-300"
+  class="select-none inline-grid @container aspect-square w-[min(100%,calc(var(--grid-size)*2.5rem))] grid-cols-[repeat(var(--grid-size),minmax(0,2.5rem))] grid-rows-[repeat(var(--grid-size),minmax(0,2.5rem))] border-t border-l border-gray-300"
   style="--grid-size: {vm.cells.length}">
   {#each vm.cells as row}
     {#each row as cell}
@@ -40,13 +40,13 @@
           onCellClick(Number(cell.row), Number(cell.col))}
       >
         {#if cell.number !== null}
-          <span class="absolute left-0 top-0 px-0.5 text-[0.6rem] leading-none text-gray-700">
+          <span class="absolute left-0 top-0 px-0.5 text-[clamp(0.5rem,2.5cqi,0.6rem)] leading-none text-gray-700">
             {Number(cell.number)}
           </span>
         {/if}
         {#if !cell.black && cell.letter !== null}
           <span
-            class="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-800"
+            class="absolute inset-0 flex items-center justify-center text-[clamp(0.75rem,4.5cqi,1.125rem)] font-bold text-gray-800"
           >
             {cell.letter}
           </span>
