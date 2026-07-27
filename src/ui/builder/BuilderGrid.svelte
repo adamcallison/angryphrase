@@ -40,13 +40,13 @@
           onCellClick(Number(cell.row), Number(cell.col))}
       >
         {#if cell.number !== null}
-          <span class="absolute left-0 top-0 px-0.5 text-[clamp(0.5rem,2.5cqi,0.6rem)] leading-none text-gray-700">
+          <span class="absolute left-0 top-0 px-0.5 text-[calc(30cqi/var(--grid-size))] leading-none text-gray-700">
             {Number(cell.number)}
           </span>
         {/if}
         {#if !cell.black && cell.letter !== null}
           <span
-            class="absolute inset-0 flex items-center justify-center text-[clamp(0.75rem,4.5cqi,1.125rem)] font-bold text-gray-800"
+            class="absolute inset-0 flex items-center justify-center text-[calc(52cqi/var(--grid-size))] font-bold text-gray-800"
           >
             {cell.letter}
           </span>
