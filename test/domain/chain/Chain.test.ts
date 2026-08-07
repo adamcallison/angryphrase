@@ -107,4 +107,48 @@ describe('Chain', () => {
 
     expect(Chain.membersOf(words, b.key)).toStrictEqual([b]);
   });
+
+  it('Chain.headOf returns the head key for a head word', () => {
+    const c = makeWord(0, 4, 'across');
+    const b = makeWord(0, 2, 'across', c.key);
+    const a = makeWord(0, 0, 'across', b.key);
+    const words = wordMap([a, b, c]);
+
+    expect(Chain.headOf(words, a.key)).toBe(a.key);
+  });
+
+  it('Chain.headOf walks predecessors to the head for a mid-chain word', () => {
+    const c = makeWord(0, 4, 'across');
+    const b = makeWord(0, 2, 'across', c.key);
+    const a = makeWord(0, 0, 'across', b.key);
+    const words = wordMap([a, b, c]);
+
+    expect(Chain.headOf(words, b.key)).toBe(a.key);
+  });
+
+  it('Chain.headOf returns the word key for a tail word with a chain', () => {
+    const c = makeWord(0, 4, 'across');
+    const b = makeWord(0, 2, 'across', c.key);
+    const a = makeWord(0, 0, 'across', b.key);
+    const words = wordMap([a, b, c]);
+
+    expect(Chain.headOf(words, c.key)).toBe(a.key);
+  });
+
+  it('Chain.headOf throws on cycle', () => {
+    const a = makeWord(0, 0, 'across');
+    const b = makeWord(0, 2, 'across', a.key);
+    const aa = { ...a, nextWord: b.key };
+    const words = wordMap([aa, b]);
+
+    expect(() => Chain.headOf(words, b.key)).toThrow('cycle detected in chain');
+  });
+
+  it('Chain.headOf throws on dangling nextWord', () => {
+    const missing: WordKeyType = { startRow: Row.of(9), startCol: Col.of(9), direction: 'down' as const };
+    const a = makeWord(0, 0, 'across', missing);
+    const words = wordMap([a]);
+
+    expect(() => Chain.headOf(words, missing)).toThrow('dangling nextWord in chain');
+  });
 });

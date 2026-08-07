@@ -276,4 +276,151 @@ describe('Anagram', () => {
       'Anagram.scramble: input longer than word'
     );
   });
+
+  it('buildChainModel concatenates entries head→tail and re-numbers position 0..N-1', () => {
+    let grid = blankGrid(5);
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 1, 2, 'E');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.entries).toHaveLength(7);
+    expect(model.entries.map((e) => e.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(model.entries[0]).toEqual({ position: 0, fixed: true, letter: Letter.try('A') });
+    expect(model.entries[3]).toEqual({ position: 3, fixed: false, letter: null });
+    expect(model.entries[5]).toEqual({ position: 5, fixed: true, letter: Letter.try('E') });
+  });
+
+  it('buildChainModel separators length === totalLength - 1', () => {
+    const grid = blankGrid(5);
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toHaveLength(6);
+  });
+
+  it('buildChainModel inserts none separator at each word boundary', () => {
+    const grid = blankGrid(5);
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toEqual(['none', 'none', 'none', 'none', 'none', 'none']);
+  });
+
+  it('buildChainModel keeps within-word separator markers from each member', () => {
+    let grid = blankGrid(6);
+    grid = setMarkerFlag(grid, 0, 0, 'space-right');
+    grid = setMarkerFlag(grid, 1, 1, 'hyphen-right');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toEqual(['space', 'none', 'none', 'none', 'hyphen', 'none']);
+  });
+
+  it('buildChainModel with single member behaves like buildWordModel', () => {
+    let grid = blankGrid(5);
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setMarkerFlag(grid, 0, 1, 'space-right');
+
+    const member = buildWord({ length: 4 });
+    const chainModel = Anagram.buildChainModel(grid, [member]);
+    const wordModel = Anagram.buildWordModel(grid, member);
+
+    expect(chainModel.entries).toEqual(wordModel.entries);
+    expect(chainModel.separators).toEqual(wordModel.separators);
+  });
+
+  it('validateChainInput ok when input length === total length and superset of fixed', () => {
+    let grid = blankGrid(5);
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 1, 2, 'E');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const { entries } = Anagram.buildChainModel(grid, [member1, member2]);
+    const result = Anagram.validateChainInput(7, entries, 'ABCDEFG');
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('validateChainInput fails when input length < total length', () => {
+    const grid = blankGrid(5);
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const { entries } = Anagram.buildChainModel(grid, [member1, member2]);
+    const result = Anagram.validateChainInput(7, entries, 'ABCDE');
+
+    expect(result).toEqual({ ok: false, reason: 'Input must be 7 letters (got 5).' });
+  });
+
+  it('validateChainInput fails when input lacks a fixed letter', () => {
+    let grid = blankGrid(5);
+    grid = setPlayerLetter(grid, 0, 0, 'A');
+    grid = setPlayerLetter(grid, 1, 2, 'E');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const { entries } = Anagram.buildChainModel(grid, [member1, member2]);
+    const result = Anagram.validateChainInput(7, entries, 'EBCDFGH');
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'Input letters do not cover the fixed-position letters.',
+    });
+  });
 });

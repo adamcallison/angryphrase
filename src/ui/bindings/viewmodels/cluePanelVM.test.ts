@@ -128,6 +128,38 @@ describe('deriveCluePanelVM', () => {
     }
   });
 
+  it('deriveCluePanelVM: isSelected true on all chain members when highlightedWordKey is a non-head tail', () => {
+    const head: Word = { ...across1(), nextWord: down1().key };
+    const tail = down1();
+    const unrelated = across2();
+    const words = [head, tail, unrelated];
+    const vm = deriveCluePanelVM({
+      grid: blankGrid(),
+      words,
+      highlightedWordKey: tail.key,
+      isBuilder: false,
+    });
+    expect(findEntry(vm, head.key)!.isSelected).toBe(true);
+    expect(findEntry(vm, tail.key)!.isSelected).toBe(true);
+    expect(findEntry(vm, unrelated.key)!.isSelected).toBe(false);
+  });
+
+  it('deriveCluePanelVM: isSelected true on all chain members when highlightedWordKey is the head', () => {
+    const head: Word = { ...across1(), nextWord: down1().key };
+    const tail = down1();
+    const unrelated = across2();
+    const words = [head, tail, unrelated];
+    const vm = deriveCluePanelVM({
+      grid: blankGrid(),
+      words,
+      highlightedWordKey: head.key,
+      isBuilder: false,
+    });
+    expect(findEntry(vm, head.key)!.isSelected).toBe(true);
+    expect(findEntry(vm, tail.key)!.isSelected).toBe(true);
+    expect(findEntry(vm, unrelated.key)!.isSelected).toBe(false);
+  });
+
   it('deriveCluePanelVM (isBuilder=false): all builder-only affordances are false (isStartableJoinSource, isLinkableFromJoinSource, isUnjoinable)', () => {
     const head: Word = { ...across1(), nextWord: down1().key };
     const words = [head, down1(), across2()];

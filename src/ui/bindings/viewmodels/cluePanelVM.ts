@@ -7,6 +7,7 @@ import { WordMap } from '../../../domain/word/WordMap';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { WordKey } from '../../../domain/word/WordKey';
+import { Chain } from '../../../domain/chain/Chain';
 
 export type { LengthPattern };
 
@@ -42,6 +43,13 @@ export function deriveCluePanelVM(input: {
 
   const wordMap = WordMap.fromWords(words);
 
+  const selectedChainMemberKeys: Set<string> = (() => {
+    if (highlightedWordKey === null) return new Set<string>();
+    const head = Chain.headOf(wordMap, highlightedWordKey);
+    const members = Chain.fromHead(wordMap, head).members;
+    return new Set(members.map((m) => WordKey.toCanonical(m.key)));
+  })();
+
   const pointedAtKeys = new Set<string>();
   const nonHeadKeys = new Set<string>();
   for (const w of words) {
@@ -58,7 +66,7 @@ export function deriveCluePanelVM(input: {
   for (const w of words) {
     const isChainHead = !nonHeadKeys.has(WordKey.toCanonical(w.key));
     const hasOutgoingNextWord = w.nextWord !== null;
-    const isSelected = highlightedWordKey !== null && WordKey.equals(highlightedWordKey, w.key);
+    const isSelected = selectedChainMemberKeys.has(WordKey.toCanonical(w.key));
 
     let isStartableJoinSource = false;
     let isLinkableFromJoinSource = false;

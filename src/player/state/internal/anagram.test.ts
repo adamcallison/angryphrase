@@ -113,6 +113,29 @@ function findWordKey(
   return key;
 }
 
+function makeTwoWordChainState(): {
+  state: SolvingPlayerState;
+  headKey: WordKey;
+  tailKey: WordKey;
+} {
+  const state = solvingState(5, [
+    [0, 3],
+    [0, 4],
+    [1, 3],
+    [1, 4],
+  ]);
+  const headKey = findWordKey(state, 0, 0, 'across');
+  const tailKey = findWordKey(state, 1, 0, 'across');
+  const words = state.puzzle.words.map((w) =>
+    WordKey.equals(w.key, headKey) ? { ...w, nextWord: tailKey } : w,
+  );
+  return {
+    state: { ...state, puzzle: Puzzle.withWords(state.puzzle, words) },
+    headKey,
+    tailKey,
+  };
+}
+
 describe('handleOpenAnagramHelper', () => {
   it('open-anagram-helper: no-op when phase is import', () => {
     const state = importState();
@@ -189,6 +212,16 @@ describe('handleOpenAnagramHelper', () => {
     expect(result.state.anagram?.openedForWord).toEqual(downKey);
     expect(result.state.anagram?.input).toBe('');
     expect(result.state.anagram?.scrambledArrangement).toBe(null);
+  });
+
+  it('open-anagram-helper: stores chain head WordKey in openedForWord', () => {
+    const { state: base, headKey, tailKey } = makeTwoWordChainState();
+    let state = base;
+    state = withCursor(state, { row: 1, col: 0, direction: 'across' });
+    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    expect(WordKey.equals(result.state.anagram!.openedForWord, headKey)).toBe(true);
+    expect(WordKey.equals(result.state.anagram!.openedForWord, tailKey)).toBe(false);
   });
 });
 
@@ -282,6 +315,15 @@ describe('handleAnagramInput', () => {
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('');
     expect(result.state.anagram?.scrambledArrangement).toBe(null);
+  });
+
+  it('anagram-input: clamps input to total chain length', () => {
+    const { state: base, headKey } = makeTwoWordChainState();
+    const state = withAnagram(base, headKey, 'ABCDEFG');
+    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABCDEFG' };
+    const result = handleAnagramInput(state, intent, deps);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    expect(result.state.anagram?.input).toBe('ABCDEF');
   });
 });
 
@@ -394,6 +436,19 @@ describe('handleAnagramScramble', () => {
     expect(result.state.cursor).toEqual(state.cursor);
     expect(result.state.checkResult).toEqual(state.checkResult);
     expect(result.state.puzzle).toBe(state.puzzle);
+  });
+
+  it('anagram-scramble: scrambles across whole chain, fixed positions preserved', () => {
+    const { state: base, headKey } = makeTwoWordChainState();
+    let state = withPlayerLetter(base, 0, 0, 'A');
+    state = withPlayerLetter(state, 1, 0, 'B');
+    state = withAnagram(state, headKey, 'ABCDEF');
+    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    const arrangement = result.state.anagram?.scrambledArrangement;
+    expect(arrangement).toHaveLength(6);
+    expect(arrangement?.[0]).toEqual(Letter.try('A')!);
+    expect(arrangement?.[3]).toEqual(Letter.try('B')!);
   });
 });
 

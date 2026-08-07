@@ -54,6 +54,26 @@ function word4Across(): Word {
   };
 }
 
+function word3AcrossHead(): Word {
+  return {
+    key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    number: WordNumber.of(1),
+    length: 3,
+    clue: 'Head clue',
+    nextWord: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
+  };
+}
+
+function word4DownTail(): Word {
+  return {
+    key: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
+    number: WordNumber.of(2),
+    length: 4,
+    clue: 'Tail clue',
+    nextWord: null,
+  };
+}
+
 function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
@@ -270,5 +290,36 @@ describe('deriveAnagramModalVM', () => {
     const modal = makeAnagramModal('', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
     expect(result.wordLength).toBe(word.length);
+  });
+
+  it('deriveAnagramModalVM: tiles span whole chain, total length = sum of member lengths', () => {
+    const head = word3AcrossHead();
+    const tail = word4DownTail();
+    const modal = makeAnagramModal('', null, head.key);
+    const result = deriveAnagramModalVM({
+      anagramModal: modal,
+      grid: grid4x4(),
+      words: [head, tail],
+    });
+    expect(result.open).toBe(true);
+    expect(result.wordLength).toBe(7);
+    expect(result.tiles).toHaveLength(7);
+    expect(result.separators).toHaveLength(6);
+    expect(result.tiles.map((t) => t.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('deriveAnagramModalVM: separators between members are none', () => {
+    let grid = grid4x4();
+    grid = setMarker(grid, 0, 1, 'space-right');
+    grid = setMarker(grid, 0, 2, 'hyphen-bottom');
+    const head = word3AcrossHead();
+    const tail = word4DownTail();
+    const modal = makeAnagramModal('', null, head.key);
+    const result = deriveAnagramModalVM({
+      anagramModal: modal,
+      grid,
+      words: [head, tail],
+    });
+    expect(result.separators).toEqual(['none', 'space', 'none', 'hyphen', 'none', 'none']);
   });
 });

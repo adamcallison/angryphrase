@@ -459,4 +459,38 @@ describe('derivePlayerShellVM', () => {
     expect(vm.anagram.open).toBe(true);
     expect(vm.anagram.wordLength).toBe(3);
   });
+
+  it('derivePlayerShellVM: grid highlights all chain members when cursor on a chain member', () => {
+    let puzzle = makeBlankPuzzle(3);
+    const head = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 3,
+      clue: 'Head clue',
+    });
+    const tail = makeWord({
+      startRow: 2,
+      startCol: 0,
+      direction: 'across',
+      number: 2,
+      length: 3,
+      clue: '',
+    });
+    puzzle = puzzleWithWords(puzzle, [{ ...head, nextWord: tail.key }, tail]);
+    const state = makeSolvingState({ puzzle, cursor: makeCursor(2, 0, 'across') });
+    const vm = derivePlayerShellVM(state);
+
+    const cell = (r: number, c: number) => vm.grid.cells[r]![c]!;
+    expect(cell(0, 0).hilite).toBe('in-word');
+    expect(cell(0, 1).hilite).toBe('in-word');
+    expect(cell(0, 2).hilite).toBe('in-word');
+    expect(cell(2, 0).hilite).toBe('selected');
+    expect(cell(2, 1).hilite).toBe('in-word');
+    expect(cell(2, 2).hilite).toBe('in-word');
+    expect(cell(1, 0).hilite).toBe('none');
+    expect(cell(1, 1).hilite).toBe('none');
+    expect(cell(1, 2).hilite).toBe('none');
+  });
 });

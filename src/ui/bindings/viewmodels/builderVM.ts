@@ -4,8 +4,10 @@ import { GridOps } from '../../../domain/grid/GridOps';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import { CompletenessCheck, type CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 import { WordKey } from '../../../domain/word/WordKey';
+import { WordMap } from '../../../domain/word/WordMap';
 import type { Word } from '../../../domain/word/Word';
 import type { Direction } from '../../../domain/word/Direction';
+import { Chain } from '../../../domain/chain/Chain';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { deriveGridVM, type GridVM } from './gridVM';
@@ -106,7 +108,7 @@ export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
 
   const cursorWord = state.cursor ? findContainingWord(state.puzzle.words, state.cursor) : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
-  const selectedWordCells = cursorWord ? cellsOfWord(cursorWord) : new Set<string>();
+  const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
 
   const grid = deriveGridVM({
     grid: state.puzzle.grid,
@@ -151,6 +153,22 @@ function findContainingWord(words: Word[], cursor: Cursor): Word | null {
     }
   }
   return null;
+}
+
+function cellsOfChain(words: Word[], cursorWord: Word | null): Set<string> {
+  if (cursorWord === null) {
+    return new Set<string>();
+  }
+  const wordMap = WordMap.fromWords(words);
+  const headKey = Chain.headOf(wordMap, cursorWord.key);
+  const chain = Chain.fromHead(wordMap, headKey);
+  const set = new Set<string>();
+  for (const member of chain.members) {
+    for (const cell of cellsOfWord(member)) {
+      set.add(cell);
+    }
+  }
+  return set;
 }
 
 function cellsOfWord(w: Word): Set<string> {

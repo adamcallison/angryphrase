@@ -300,6 +300,28 @@ describe('deriveBuilderShellVM', () => {
     expect(vm.grid.cells[1]![0]!.hilite).toBe('none');
   });
 
+  it('deriveBuilderShellVM: grid highlights all chain members when cursor on a chain member', () => {
+    let state = makeBlankState(3);
+    const tail = makeWord({ startRow: 1, startCol: 0, direction: 'across', number: 2, length: 2, clue: 'Tail' });
+    const head = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 2,
+      clue: 'Head',
+      nextWord: tail.key,
+    });
+    state = stateWithWords(state, [head, tail]);
+    state = stateWithCursor(state, { row: Row.of(1), col: Col.of(0), direction: 'across' });
+    const vm = deriveBuilderShellVM(state);
+    expect(vm.grid.cells[0]![0]!.hilite).toBe('in-word');
+    expect(vm.grid.cells[0]![1]!.hilite).toBe('in-word');
+    expect(vm.grid.cells[1]![0]!.hilite).toBe('selected');
+    expect(vm.grid.cells[1]![1]!.hilite).toBe('in-word');
+    expect(vm.grid.cells[2]![0]!.hilite).toBe('none');
+  });
+
   it('deriveBuilderShellVM: cursor null → selectedWordCells empty, highlightedWordKey null, cluePanel has no isSelected entries', () => {
     const state = makeBlankState(3);
     const vm = deriveBuilderShellVM(state);

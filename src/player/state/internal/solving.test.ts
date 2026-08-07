@@ -22,7 +22,7 @@ import { WordDerivation } from '../../../domain/word/WordDerivation';
 import { Numbering } from '../../../domain/word/Numbering';
 import { SeededRng } from '../../../../test/fakes/SeededRng';
 import type { Direction } from '../../../domain/word/Direction';
-import type { WordKey } from '../../../domain/word/WordKey';
+import { WordKey } from '../../../domain/word/WordKey';
 
 const deps = { rng: new SeededRng(1), now: () => 0 };
 
@@ -127,6 +127,25 @@ function withAnswerLetter(
     Cell.setAnswerLetter(cell, Letter.try(letter)!),
   );
   return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newG) };
+}
+
+function findWordKey(
+  state: SolvingPlayerState,
+  startRow: number,
+  startCol: number,
+  direction: Direction,
+): WordKey {
+  const key = state.puzzle.words.find((w) =>
+    WordKey.equals(w.key, {
+      startRow: Row.of(startRow),
+      startCol: Col.of(startCol),
+      direction,
+    }),
+  )?.key;
+  if (key === undefined) {
+    throw new Error(`word not found at ${startRow},${startCol} ${direction}`);
+  }
+  return key;
 }
 
 describe('handleSelectCell', () => {
@@ -310,6 +329,54 @@ describe('handleSelectCell', () => {
       direction: 'across',
     });
     expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
+  });
+
+  it('select-cell: anagram stays open when cursor moves to a cell in the same chain', () => {
+    const state = solvingState(5);
+    const aKey = findWordKey(state, 0, 0, 'across');
+    const bKey = findWordKey(state, 1, 0, 'across');
+    const chainedWords = state.puzzle.words.map((w) =>
+      WordKey.equals(w.key, aKey) ? { ...w, nextWord: bKey } : w,
+    );
+    const chainedState = { ...state, puzzle: Puzzle.withWords(state.puzzle, chainedWords) };
+    const stateWithAnagram = withAnagram(
+      withCursor(chainedState, { row: 0, col: 0, direction: 'across' }),
+      aKey,
+    );
+
+    const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(1), col: Col.of(2) };
+    const result = handleSelectCell(stateWithAnagram, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(1),
+      col: Col.of(2),
+      direction: 'across',
+    });
+    expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
+  });
+
+  it('select-cell: anagram closes when cursor moves to a cell in a different chain', () => {
+    const state = solvingState(5);
+    const aKey = findWordKey(state, 0, 0, 'across');
+    const bKey = findWordKey(state, 1, 0, 'across');
+    const chainedWords = state.puzzle.words.map((w) =>
+      WordKey.equals(w.key, aKey) ? { ...w, nextWord: bKey } : w,
+    );
+    const chainedState = { ...state, puzzle: Puzzle.withWords(state.puzzle, chainedWords) };
+    const stateWithAnagram = withAnagram(
+      withCursor(chainedState, { row: 0, col: 0, direction: 'across' }),
+      aKey,
+    );
+
+    const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
+    const result = handleSelectCell(stateWithAnagram, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: Row.of(0),
+      col: Col.of(0),
+      direction: 'down',
+    });
+    expect(assertSolving(result.state).anagram).toBe(null);
   });
 
   it('select-cell: opens / no effect on anagram when cursor moves to a different word with no anagram currently open', () => {
@@ -545,6 +612,38 @@ describe('handleMoveCursor', () => {
     });
     expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
   });
+
+  it('move-cursor: anagram stays open within same chain, closes on chain change', () => {
+    const state = solvingState(5);
+    const aKey = findWordKey(state, 0, 0, 'across');
+    const bKey = findWordKey(state, 0, 0, 'down');
+    const chainedWords = state.puzzle.words.map((w) =>
+      WordKey.equals(w.key, aKey) ? { ...w, nextWord: bKey } : w,
+    );
+    const chainedState = { ...state, puzzle: Puzzle.withWords(state.puzzle, chainedWords) };
+    let stateWithAnagram = withAnagram(chainedState, aKey);
+    stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
+
+    const withinChain: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
+    const first = handleMoveCursor(stateWithAnagram, withinChain, deps);
+
+    expect(assertSolving(first.state).cursor).toEqual({
+      row: Row.of(1),
+      col: Col.of(0),
+      direction: 'down',
+    });
+    expect(assertSolving(first.state).anagram).toEqual(stateWithAnagram.anagram);
+
+    const crossChain: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
+    const second = handleMoveCursor(first.state, crossChain, deps);
+
+    expect(assertSolving(second.state).cursor).toEqual({
+      row: Row.of(1),
+      col: Col.of(1),
+      direction: 'across',
+    });
+    expect(assertSolving(second.state).anagram).toBe(null);
+  });
 });
 
 describe('handleClickCluePanelWord', () => {
@@ -647,6 +746,30 @@ describe('handleClickCluePanelWord', () => {
       row: acrossWord.key.startRow,
       col: acrossWord.key.startCol,
       direction: acrossWord.key.direction,
+    });
+    expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
+  });
+
+  it('click-clue-panel-word: anagram stays open if clicked word is in same chain', () => {
+    const state = solvingState(5);
+    const aKey = findWordKey(state, 0, 0, 'across');
+    const bKey = findWordKey(state, 0, 0, 'down');
+    const chainedWords = state.puzzle.words.map((w) =>
+      WordKey.equals(w.key, aKey) ? { ...w, nextWord: bKey } : w,
+    );
+    const chainedState = { ...state, puzzle: Puzzle.withWords(state.puzzle, chainedWords) };
+    const stateWithAnagram = withAnagram(
+      withCursor(chainedState, { row: 0, col: 0, direction: 'across' }),
+      aKey,
+    );
+
+    const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: bKey };
+    const result = handleClickCluePanelWord(stateWithAnagram, intent, deps);
+
+    expect(assertSolving(result.state).cursor).toEqual({
+      row: bKey.startRow,
+      col: bKey.startCol,
+      direction: bKey.direction,
     });
     expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
   });

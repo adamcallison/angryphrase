@@ -220,7 +220,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     ? findContainingWord(state.puzzle.words, state.cursor)
     : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
-  const selectedWordCells = cursorWord ? cellsOfWord(cursorWord) : new Set<string>();
+  const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
 
   const grid = deriveGridVM({
     grid: state.puzzle.grid,
@@ -286,6 +286,22 @@ function cellsOfWord(w: Word): Set<string> {
     const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
     const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
     set.add(`${r},${c}`);
+  }
+  return set;
+}
+
+function cellsOfChain(words: Word[], cursorWord: Word | null): Set<string> {
+  if (cursorWord === null) {
+    return new Set<string>();
+  }
+  const wordMap = WordMap.fromWords(words);
+  const head = Chain.headOf(wordMap, cursorWord.key);
+  const members = Chain.fromHead(wordMap, head).members;
+  const set = new Set<string>();
+  for (const m of members) {
+    for (const cell of cellsOfWord(m)) {
+      set.add(cell);
+    }
   }
   return set;
 }

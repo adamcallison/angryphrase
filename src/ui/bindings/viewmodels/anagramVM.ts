@@ -5,6 +5,8 @@ import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import type { AnagramModalState } from '../../../player/state/state';
 import { Anagram } from '../../../domain/anagram/Anagram';
 import { WordKey as WordKeyCtor } from '../../../domain/word/WordKey';
+import { WordMap } from '../../../domain/word/WordMap';
+import { Chain } from '../../../domain/chain/Chain';
 
 export type { CellSeparator, Letter };
 
@@ -50,13 +52,17 @@ export function deriveAnagramModalVM(input: {
     return CLOSED_BASELINE;
   }
 
-  const word = words.find((w) => WordKeyCtor.equals(w.key, anagramModal.openedForWord));
-  if (word === undefined) {
+  const head = words.find((w) => WordKeyCtor.equals(w.key, anagramModal.openedForWord));
+  if (head === undefined) {
     return CLOSED_BASELINE;
   }
 
-  const { entries, separators } = Anagram.buildWordModel(grid, word);
-  const validation = Anagram.validateInput(word, entries, anagramModal.input);
+  const wordMap = WordMap.fromWords(words);
+  const members = Chain.fromHead(wordMap, head.key).members;
+  const totalLength = members.reduce((sum, member) => sum + member.length, 0);
+
+  const { entries, separators } = Anagram.buildChainModel(grid, members);
+  const validation = Anagram.validateChainInput(totalLength, entries, anagramModal.input);
   const inputValid = validation.ok;
   const errorMessage = validation.ok ? null : validation.reason;
   const inputLength = anagramModal.input.length;
@@ -94,7 +100,7 @@ export function deriveAnagramModalVM(input: {
 
   return {
     open: true,
-    wordLength: word.length,
+    wordLength: totalLength,
     tiles,
     separators,
     input: anagramModal.input,
