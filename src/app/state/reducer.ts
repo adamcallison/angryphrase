@@ -73,6 +73,8 @@ export function reduceApp(
     case 'build':
       return routeToBuilder();
     case 'landing':
-      return routeToBuilder(); // back-compat: existing tests dispatch ambiguous kinds during 'landing' expecting Builder behaviour.
+      throw new Error(
+        `reduceApp: ambiguous intent kind on landing route: ${(intent as { kind: string }).kind}; navigate first`,
+      );
   }
 }

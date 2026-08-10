@@ -105,8 +105,15 @@ Was 🟠: `src/app/state/reducer.ts:11-45` had four parallel `ReadonlySet<string
 - AD §1.3 module table, §4.1 prose, §9.3 file tree amended: added `intentKinds.ts` row / file / paragraph.
 - DRN item 7 resolution appended (2026-08-10): closed. D2 (ambiguous `'landing'` routing) remains open — D1 fix does not touch the `state.route`-based ambiguous dispatch, only the kind-set derivation. D2 is a separate smell with its own deferred decision.
 
-### D2. Ambiguous intent on `route === 'landing'` silently routes to Builder 🟠 (DRN item 9 open)
-`reducer.ts:105-106`. A Player intent dispatched before `navigate play` runs through `reduceBuilder`, mutating Builder state. DRN flags this as "back-compat silent fallback"; considered deferred. Real silent-state-change risk if a stray dispatch lands during landing. **Fix path requires DRN item 9 resolution (reject ambiguous intents on landing, or force explicit `navigate` first).**
+### D2. Ambiguous intent on `route === 'landing'` silently routes to Builder ✅ Resolved (DRN item 9 closed)
+Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before `navigate play` ran through `reduceBuilder`, mutating Builder state. DRN flagged this as "back-compat silent fallback"; considered deferred. Real silent-state-change risk if a stray dispatch landed during landing. **Fix path required DRN item 9 resolution (reject ambiguous intents on landing, or force explicit `navigate` first).**
+
+#### D2 — Fix
+- DRN item 9 resolved (2026-08-10): option A — **throw** on ambiguous kind during `route === 'landing'`. Rationale: FR-1/FR-2 require the landing screen to present only `navigate` Build/Play actions; no Builder or Player UI is mounted on landing, so an ambiguous kind dispatched during landing is necessarily a bug. The previous silent routing hid the bug and mutated `state.builder` with no user-visible signal.
+- `src/app/state/reducer.ts:69-77` `case 'landing'` now throws an `Error` reproducing the unknown-kind throw pattern already in use at line 66 (same message shape: `reduceApp: ambiguous intent kind on landing route: <kind>; navigate first`). `routeToBuilder`/`routeToPlayer` helpers unchanged (still used by `'build'`/`'play'` branches); `AMBIGUOUS_INTENT_KINDS` set unchanged; no new intent kinds; no UI/bindings layer change.
+- `test/app/state/reducer.test.ts:245-257` rewritten: the single test that asserted landing→Builder cursor mutation now asserts `reduceApp(landingState, { kind: 'select-cell', ... }, deps)` throws. Test text renamed from "(back-compat)" to "(rejects without navigate)". No other test dispatches ambiguous kinds during landing — verified via repo grep of `route: 'landing'` / `route='landing'`.
+- AD §4.1 prose amended: ambiguous dispatch routes `'build' → reduceBuilder`, `'play' → reducePlayer`, `'landing' → throws` (closing D2 / DRN item 9).
+- DRN item 9 resolution appended to `llmworkspace/design_review_notes.md` §9 (2026-08-10): closed. D3 (`Puzzle.withGrid` gridSize drift, DRN item 8) remains open — separate smell, separate deferred decision; D2 fix does not touch the aggregate or the wither.
 
 ### D3. `Puzzle.withGrid` does not sync `gridSize`; `change-grid-size` patches locally 🟠 (DRN item 8)
 `src/domain/puzzle/Puzzle.ts:50-52` is `{ ...p, grid: g }` — never updates `gridSize`. `src/builder/state/internal/designMode.ts:71` manually re-writes `gridSize: intent.size` after the spread. Every other `withGrid` call-site assumes same-size swap. The aggregate's own invariant (`grid.length === gridSize`) is enforced at construction only, not by the wither. DRN defers hardening; latent invariant-break risk for any future caller that swaps a different-sized grid. **Fix path requires DRN item 8 resolution (widen `withGrid` to take a `GridSize`, or add an invariant-reasserting `withGridSize` constructor).**
@@ -252,9 +259,9 @@ Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + 
 ### K3. DRN follow-up items + AD-internal contradictions un-addressed 🟡
 - DRN item 4 follow-up: "Retrofit `AppState.blank` ... to call `BuilderState.blank` and `PlayerState.importScreen` as values, eliminating the inlined construction." Done — `app/state/state.ts:21-29` does call both. ✔ Resolved.
 - DRN item 5 open question: file-format should it drop `number`? Not addressed. Open.
-- DRN item 7 open: `CONFIRMABLE_INTENT_KINDS` derived from type — not addressed (see D1).
+- DRN item 7: `CONFIRMABLE_INTENT_KINDS` derived from type — **closed** (see D1, resolved 2026-08-10).
 - DRN item 8 open: harden `Puzzle.withGrid` — not addressed (see D3).
-- DRN item 9 open: `'landing'` ambiguous routing — not addressed (see D2).
+- DRN item 9: `'landing'` ambiguous routing — **closed** (see D2, resolved 2026-08-10: throw on ambiguous kind during landing).
 - AD §0 principle 4 internal contradiction: AD's own §3.3 type catalogue uses plain `number` (`Word.length`, `AnagramEntry.position`, `Toast.createdAt/ttlMs`, `Rng.nextInt`) violating the binding principle — see H4. Fix requires AD §3.3 amendment.
 - `DownloadPort.download` silent-failure path: no `Result` channel, double-swallowed errors, zero UI feedback on failed irreversible user action — see G7. Fix may require new `DownloadError` type + `DomainEvent` variant (design amendment).
 
@@ -265,7 +272,7 @@ Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + 
 Top 5 by impact:
 1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
 2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
-3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three acknowledged-but-unfixed DRN items that compound dispatch-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2/D3 remain open** (DRN items 8/9).
+3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three acknowledged-but-unfixed DRN items that compound dispatch-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 remains open** (DRN item 8).
 4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load.
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 

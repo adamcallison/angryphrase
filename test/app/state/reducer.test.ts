@@ -242,7 +242,7 @@ describe('reduceApp', () => {
     expect(result.state.builder.cursor!.col).toBe(Col.of(0));
   });
 
-  it('reduceApp: ambiguous kind (select-cell) routes to Builder when state.route="landing" (back-compat) — verify state.builder.cursor changes', () => {
+  it('reduceApp: ambiguous kind (select-cell) on landing route throws (must navigate first)', () => {
     const state = makeState();
     const deps = makeDeps();
     const landingState = {
@@ -250,10 +250,9 @@ describe('reduceApp', () => {
       route: 'landing' as const,
       builder: { ...state.builder, mode: 'fill' as const },
     };
-    const result = reduceApp(landingState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
-    expect(result.state.builder.cursor).not.toBeNull();
-    expect(result.state.builder.cursor!.row).toBe(Row.of(0));
-    expect(result.state.builder.cursor!.col).toBe(Col.of(0));
+    expect(() =>
+      reduceApp(landingState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps),
+    ).toThrow(/ambiguous intent kind on landing route: select-cell; navigate first/);
   });
 
   it('reduceApp: ambiguous kind (type-letter) on play route goes to Player; backspace on build route goes to Builder', () => {

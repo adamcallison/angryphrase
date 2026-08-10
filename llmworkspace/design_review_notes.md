@@ -116,13 +116,15 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 **Resolution applied on 2026-07-22.** Added an `AMBIGUOUS_INTENT_KINDS` set (the intersection of the two existing sets, hardcoded six string literals) in `src/app/state/reducer.ts`. The dispatcher now:
 1. Routes AppIntent kinds (`navigate`, `cancel-modal`, `dismiss-toast`) as before.
 2. Routes unique Builder kinds to `reduceBuilder`; unique Player kinds to `reducePlayer`.
-3. For ambiguous kinds, routes based on `state.route`: `'play' → reducePlayer`, `'build' → reduceBuilder`, `'landing' → reduceBuilder` (back-compat default — existing reducer/store tests dispatch ambiguous kinds on `route='landing'` expecting Builder behaviour).
+3. For ambiguous kinds, routes based on `state.route`: `'play' → reducePlayer`, `'build' → reduceBuilder`, `'landing' → reduceBuilder` (back-compat default at time of writing — existing reducer/store tests dispatch ambiguous kinds on `route='landing'` expecting Builder behaviour). **Superseded 2026-08-10: the `'landing'` branch now throws (see resolution below; DRN item 9 closed, code-smell D2 resolved).**
 
 Also extracted `routeToBuilder`/`routeToPlayer` in-reducer helpers that re-apply the deferred-confirm-pass pattern (Task 62a) to keep the new code DRY.
 
 4 test cases added to `src/app/state/reducer.test.ts` covering ambiguous dispatch on each route. 2 previously-failing `playerStore` tests now `navigate` to `'play'` before dispatching ambiguous kinds.
 
 **Open question for later.** Whether `'landing'` should route ambiguous kinds to Builder silently or throw. The 'play'-intent-dispatched-without-route-'play' case (e.g., a stray dispatch while in landing) currently silently routes to Builder. Strict semantics could throw and require a navigate intent first. Deferred — would need every test that dispatches ambiguous kinds during landing to first `navigate`. Cost-benefit currently tips toward back-compat.
+
+**Resolution applied on 2026-08-10 (DRN item 9 closed, code-smell D2 resolved).** The `'landing'` route now **throws** on ambiguous intent kinds instead of silently routing to `reduceBuilder`. Rationale: FR-1/FR-2 require the landing screen to present only Build/Play `navigate` actions; no Builder or Player UI is mounted on landing, so an ambiguous kind (`select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-clue-panel-word`) dispatched while `route === 'landing'` can only be a bug — there is no legitimate grid interaction to forward. The previous silent routing hid such bugs and mutated `state.builder` without any user-visible signal. The decision reverses the original back-compat stance: the single test asserting landing→Builder behaviour (`test/app/state/reducer.test.ts:245`) is rewritten to assert the throw, and no other test, store, or UI path dispatches ambiguous kinds during landing. `src/app/state/reducer.ts:69-77` now reproduces the unknown-kind throw pattern already used at line 66. AD §4.1 amended to state `'landing'` throws. **DRN item 9: closed.**
 
 ## 10. `move-cursor` intent lacked a sign field; arrow keys could only go forward along each axis
 
