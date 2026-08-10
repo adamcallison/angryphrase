@@ -68,7 +68,7 @@ export function handleChangeGridSize(
 
   const newGrid = GridOps.blank(intent.size);
   const newWords = Numbering.assign(newGrid, WordDerivation.derive(newGrid));
-  const newPuzzle = { ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size, words: newWords };
+  const newPuzzle = Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords);
 
   return Result.ok({
     ...state,

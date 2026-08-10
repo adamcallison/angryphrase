@@ -115,8 +115,8 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 - AD §4.1 prose amended: ambiguous dispatch routes `'build' → reduceBuilder`, `'play' → reducePlayer`, `'landing' → throws` (closing D2 / DRN item 9).
 - DRN item 9 resolution appended to `llmworkspace/design_review_notes.md` §9 (2026-08-10): closed. D3 (`Puzzle.withGrid` gridSize drift, DRN item 8) remains open — separate smell, separate deferred decision; D2 fix does not touch the aggregate or the wither.
 
-### D3. `Puzzle.withGrid` does not sync `gridSize`; `change-grid-size` patches locally 🟠 (DRN item 8)
-`src/domain/puzzle/Puzzle.ts:50-52` is `{ ...p, grid: g }` — never updates `gridSize`. `src/builder/state/internal/designMode.ts:71` manually re-writes `gridSize: intent.size` after the spread. Every other `withGrid` call-site assumes same-size swap. The aggregate's own invariant (`grid.length === gridSize`) is enforced at construction only, not by the wither. DRN defers hardening; latent invariant-break risk for any future caller that swaps a different-sized grid. **Fix path requires DRN item 8 resolution (widen `withGrid` to take a `GridSize`, or add an invariant-reasserting `withGridSize` constructor).**
+### D3. `Puzzle.withGrid` does not sync `gridSize`; `change-grid-size` patches locally ✅ Resolved (DRN item 8 closed)
+**Resolved 2026-08-10 (DRN item 8 closed).** `Puzzle.withGrid` now re-syncs `gridSize` from `g.length` via `GridSize.of(g.length)`; the redundant `gridSize: intent.size` re-write in `designMode.ts:71` is removed; the test at `Puzzle.test.ts:100` encoding the stale-gridSize behavior was flipped to assert the invariant. `src/domain/puzzle/Puzzle.ts:50-52` is `{ ...p, grid: g, gridSize: GridSize.of(g.length) }`. Every other `withGrid` call-site is a same-size swap and is unaffected. **DRN item 8 deferred decision (harden in one place) is now adopted.**
 
 ### D4. `handleClickWord` double-scans `words` then non-null asserts 🟡
 `src/builder/state/internal/fillMode.ts:294-300`: `words.some(w => WordKey.equals(w.key, intent.wordKey))` then `words.find(...)!`. Two O(n) scans + a non-null assertion. Combine into one `find`.
@@ -272,7 +272,7 @@ Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + 
 Top 5 by impact:
 1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
 2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
-3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three acknowledged-but-unfixed DRN items that compound dispatch-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 remains open** (DRN item 8).
+3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three DRN items that compounded dispatch/invariant-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 ✅ Resolved** (DRN item 8 closed, 2026-08-10 — `withGrid` now re-syncs `gridSize` from `g.length`; redundant `change-grid-size` local patch removed).
 4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load.
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 

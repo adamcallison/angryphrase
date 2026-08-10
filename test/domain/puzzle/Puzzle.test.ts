@@ -103,11 +103,21 @@ describe('Puzzle', () => {
     const p2 = Puzzle.withGrid(p, newGrid);
 
     expect(p2.grid).toBe(newGrid);
-    expect(p2.gridSize).toBe(p.gridSize);
+    expect(p2.gridSize).toBe(GridSize.of(4));
+    expect(Number(p2.gridSize)).toBe(p2.grid.length);
     expect(p2.words).toBe(p.words);
     expect(p2.title).toBe(p.title);
     expect(p2.author).toBe(p.author);
     expect(p2.key).toBe(p.key);
+  });
+
+  it('withGrid re-syncs gridSize from g.length when grid differs in size from p.gridSize', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const newGrid = GridOps.blank(GridSize.of(5));
+    const p2 = Puzzle.withGrid(p, newGrid);
+
+    expect(p2.gridSize).toBe(GridSize.of(5));
+    expect(Number(p2.gridSize)).toBe(p2.grid.length);
   });
 
   it('withWords returns a new Puzzle with the replaced words', () => {

@@ -582,7 +582,7 @@ export const Puzzle: {
   blank(size: GridSize, key: PuzzleKey): Puzzle;             // FR-19
   isBlank(p: Puzzle): boolean;                               // FR-22 / FR-53 work-detector at the puzzle layer:
                                                               //   no answer letters, no non-empty clues, no chains (no word has nextWord)
-  withGrid(p: Puzzle, g: Grid): Puzzle;                      // returns new Puzzle
+  withGrid(p: Puzzle, g: Grid): Puzzle;                      // returns new Puzzle; re-syncs gridSize from g.length (invariant §3.6)
   withWords(p: Puzzle, ws: Word[]): Puzzle;
   withMetadata(p: Puzzle, title: Title, author: Author): Puzzle;
 };

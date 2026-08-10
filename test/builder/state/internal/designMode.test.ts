@@ -219,6 +219,8 @@ describe('change-grid-size', () => {
 
     expect(Number(result.state.puzzle.grid.length)).toBe(20);
     expect(Number(result.state.puzzle.grid[0]!.length)).toBe(20);
+    expect(result.state.puzzle.gridSize).toBe(GridSize.of(20));
+    expect(Number(result.state.puzzle.gridSize)).toBe(result.state.puzzle.grid.length);
     expect(result.events).toEqual([]);
   });
 
