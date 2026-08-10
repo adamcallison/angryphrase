@@ -53,8 +53,18 @@ Belongs in `domain/word/` (pure function over `Word[]` + `Cursor`).
 - Verification (green): `npm run test` (76 files, 1012 passed), `npm run typecheck` (0 errors), `npm run lint` (eslint + `madge --circular` no cycles). `grep -rn "findWordContaining\|function findContainingWord" src/` → empty.
 - Out of scope (separate tasks): B2 (`cellsOfChain`/`cellsOfWord` dup), E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick), A3 (`Cursor` misplaced in `builder/state`).
 
-### B2. `cellsOfWord` / `cellsOfChain` duplicated 2× verbatim 🟠
-Between `builderVM.ts:158-181` and `playerVM.ts:283-307`. Same chain-aware logic, copy-pasted. Both should derive from a single `domain/word/` or `ui/bindings/viewmodels/` helper.
+### B2. `cellsOfWord` / `cellsOfChain` duplicated 2× verbatim ✅ Resolved
+Was 🟠: Between `builderVM.ts:158-181` and `playerVM.ts:283-307`. Same chain-aware logic, copy-pasted. Both should derive from a single `domain/word/` or `ui/bindings/viewmodels/` helper.
+
+#### B2 — Fix
+- Extracted shared pure helpers to `src/domain/chain/ChainCells.ts` — `ChainCells.cellsOfWord(w: Word): Set<string>` (emits `"${row},${col}"` per cell along `w`'s run; across → `startRow` constant, `startCol+i`; down mirrors) and `ChainCells.cellsOfChain(words: Word[], cursorWord: Word | null): Set<string>` (builds `WordMap.fromWords(words)`, `Chain.headOf(wordMap, cursorWord.key)`, `Chain.fromHead(wordMap, head).members`, unions `cellsOfWord` of each member; returns `new Set<string>()` when `cursorWord === null`). Behavior identical to the deleted locals.
+- **Placement rationale**: `domain/word/` cannot host `cellsOfChain` (it composes `domain/chain/Chain`; `Chain.ts` already imports `domain/word/*` → cycle). `domain/chain/` is the existing acyclic owner. AD §3.4 + §9.3 §10.1 amended to bless `ChainCells.ts`.
+- Replaced both sites: `builderVM.ts:112` and `playerVM.ts:224` now call `ChainCells.cellsOfChain(state.puzzle.words, cursorWord)`. Deleted the local `cellsOfWord` + `cellsOfChain` from both files.
+- Import cleanup: `builderVM.ts` `WordMap` (line 7) and `Chain` (line 11) were consumed *only* by the deleted local → removed. `playerVM.ts` keeps both (banner derivation at line 89/91 still uses `WordMap.fromWords` + `Chain.isHead`).
+- `test/domain/chain/ChainCells.test.ts` (8 tests): across run, down run, direction drives r/c offset, null cursor → empty, single no-chain word, two-member chain union, cursor on non-head returns whole chain, empty words list.
+- Existing `builderVM.test.ts` / `playerVM.test.ts` chain-highlight tests unchanged (output shape `Set<string>` preserved → `gridVM` `selectedWordCells: ReadonlySet<string>` contract intact).
+- Verification: `npm run test`, `npm run typecheck`, `npm run lint` (eslint + `madge --circular`), `npm run ci` green. `grep -rn "function cellsOfWord\|function cellsOfChain" src/` → empty.
+- Out of scope (separate tasks): E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick), A3 (`Cursor` misplaced in `builder/state`), J1 (`Chain.headOf` O(n²) caching), J2 (`DisplayClue.forWord` duplicating `headOf`'s reverse-map walk).
 
 ### B3. `BuilderCluePanel.svelte` Across/Down sections near-duplicate 🟠
 `src/ui/builder/BuilderCluePanel.svelte` lines 92-152 and 154-214 are structurally identical, differing only in `{#each vm.across...}` vs `{#each vm.down...}`. ~60 lines duplicated. Extract one `<ClueSection>` component.
@@ -282,7 +292,7 @@ Top 5 by impact:
 1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
 2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
 3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three DRN items that compounded dispatch/invariant-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 ✅ Resolved** (DRN item 8 closed, 2026-08-10 — `withGrid` now re-syncs `gridSize` from `g.length`; redundant `change-grid-size` local patch removed).
-4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); B2/B3 remain open.
+4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); **B2 ✅ Resolved** (2026-08-10: extracted to `domain/chain/ChainCells.ts`, 2 sites replaced, AD amended); B3 remains open.
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 
 Acknowledged-but-accepted (no action needed unless revisiting): A4, K2/K3 open items, F3.

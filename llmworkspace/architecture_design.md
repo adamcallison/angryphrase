@@ -466,6 +466,15 @@ export const LengthPattern: {
   // C4 helper used only by the active-clue banner VM:
   forActiveClueBanner(grid: Grid, words: WordMap, w: Word): LengthPattern | null;
 };
+
+// Pure cell-coord helpers shared by builderVM + playerVM (B2 dedup). Lives in domain/chain/
+// because cellsOfChain composes Chain.headOf + Chain.fromHead over a WordMap; domain/word/
+// cannot import domain/chain/ (acyclic — Chain.ts already imports domain/word/*).
+export const ChainCells: {
+  cellsOfWord(w: Word): Set<string>;                        // "${row},${col}" per cell along w's run
+  cellsOfChain(words: Word[], cursorWord: Word | null): Set<string>; // union of all chain members'
+                                                             // cells; empty set when cursorWord === null
+};
 ```
 
 **Behaviour — `LengthPattern.forWord` (FR-91, full):**
@@ -1422,6 +1431,7 @@ angryphrase/
 │  │  ├─ chain/
 │  │  │  ├─ Chain.ts  ChainValidation.ts  ChainViolation.ts
 │  │  │  ├─ DisplayClue.ts  LengthPattern.ts
+│  │  │  └─ ChainCells.ts                    # B2: shared cellsOfWord/cellsOfChain (builderVM + playerVM)
 │  │  ├─ anagram/
 │  │  │  ├─ Anagram.ts  AnagramEntry.ts
 │  │  ├─ puzzle/
@@ -1551,6 +1561,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - All `domain/grid/` accessors + `GridOps.isSelectable` (FR-8).
 - `WordDerivation.derive` + `Numbering.assign` against several grid shapes.
 - `WordSelection.findContainingWord` for: across hit, down hit, direction mismatch, cursor outside run, empty word list, cursor at last cell of run, cursor one past run end (B1).
+- `ChainCells.cellsOfWord` for: across run, down run, direction drives r/c offset. `ChainCells.cellsOfChain` for: null cursor → empty; single word with no chain; two-member chain union; cursor on non-head returns whole chain; empty words list (B2).
 - `ChainValidation.validate` for each violation kind.
 - `LengthPattern.forWord` for: standalone no markers; space separators; hyphen separators; mixed; chain suffixes (full FR-91).
 - `LengthPattern.forActiveClueBanner` returns `null` for non-heads (C4).

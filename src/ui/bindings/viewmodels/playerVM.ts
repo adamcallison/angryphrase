@@ -1,5 +1,4 @@
 import type { Puzzle } from '../../../domain/puzzle/Puzzle';
-import type { Word } from '../../../domain/word/Word';
 import type { WordKey } from '../../../domain/word/WordKey';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
@@ -10,6 +9,7 @@ import { GridSize } from '../../../domain/grid/GridSize';
 import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
+import { ChainCells } from '../../../domain/chain/ChainCells';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { deriveGridVM, type GridVM } from './gridVM';
@@ -221,7 +221,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     ? WordSelection.findContainingWord(state.puzzle.words, state.cursor)
     : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
-  const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
+  const selectedWordCells = ChainCells.cellsOfChain(state.puzzle.words, cursorWord);
 
   const grid = deriveGridVM({
     grid: state.puzzle.grid,
@@ -262,28 +262,3 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   };
 }
 
-function cellsOfWord(w: Word): Set<string> {
-  const set = new Set<string>();
-  for (let i = 0; i < w.length; i++) {
-    const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
-    const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
-    set.add(`${r},${c}`);
-  }
-  return set;
-}
-
-function cellsOfChain(words: Word[], cursorWord: Word | null): Set<string> {
-  if (cursorWord === null) {
-    return new Set<string>();
-  }
-  const wordMap = WordMap.fromWords(words);
-  const head = Chain.headOf(wordMap, cursorWord.key);
-  const members = Chain.fromHead(wordMap, head).members;
-  const set = new Set<string>();
-  for (const m of members) {
-    for (const cell of cellsOfWord(m)) {
-      set.add(cell);
-    }
-  }
-  return set;
-}
