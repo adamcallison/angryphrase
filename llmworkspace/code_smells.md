@@ -94,8 +94,16 @@ Was 🟡: `parsePuzzleV1` (`v1.ts`) enforced `key` via `PuzzleKey.try` regex; fo
 
 ## D. State / reducer smells
 
-### D1. Hand-maintained intent-kind string sets must stay in sync with the unions 🟠 (DRN items 7, 9)
-`src/app/state/reducer.ts:11-45` has four parallel `ReadonlySet<string>` constants (`BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS`). Adding a new intent kind requires touching the union AND the matching set(s); no compiler link. DRN item 7 notes deferred "static type-derived set" fix. Concrete drift risk: `AMBIGUOUS_INTENT_KINDS` is the intersection hardcoded — if a seventh shared kind is added to both unions but not to this set, intent silently routes (or throws). **Fix path requires DRN item 7 / 9 resolution (derive sets from union types at compile time, or eliminate the string-set routing layer).**
+### D1. Hand-maintained intent-kind string sets must stay in sync with the unions ✅ Resolved (DRN item 7 closed)
+Was 🟠: `src/app/state/reducer.ts:11-45` had four parallel `ReadonlySet<string>` constants (`BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS`). Adding a new intent kind required touching the union AND the matching set(s); no compiler link. DRN item 7 noted deferred "static type-derived set" fix. Concrete drift risk: `AMBIGUOUS_INTENT_KINDS` was the intersection hardcoded — if a seventh shared kind was added to both unions but not to this set, intent silently routed (or threw).
+
+#### D1 — Fix
+- Extracted all four sets to new `src/app/state/intentKinds.ts`. The first three (`BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`) are built from `Record<Kind, null>` record literals annotated with `satisfies` so `tsc` fails the build when a key is missing or an extra key is present — the union is the single source of truth, the Set is a derived view. `BuilderIntentKind`/`PlayerIntentKind`/`ConfirmableIntentKind` are extracted via `extends { kind: infer K }` conditional types.
+- `AMBIGUOUS_INTENT_KINDS` is now computed at module load as the runtime intersection of the Builder and Player sets (`new Set([...BUILDER].filter(k => PLAYER.has(k)))`); adding a shared kind to both unions automatically enrols it in the ambiguous set — no manual string maintenance.
+- `src/app/state/reducer.ts` imports the four sets from `intentKinds.ts`; dispatch body unchanged (set names preserved).
+- `test/app/state/intentKinds.test.ts` (6 tests) — hand-listed fixture arrays assert each set equals exactly the expected kinds (double-lock against removal: `satisfies` catches additions/omissions at compile time, tests catch accidental removal at runtime), `AMBIGUOUS` equals the intersection, confirmable kinds are members of Builder or Player, AppIntent kinds are not in any set.
+- AD §1.3 module table, §4.1 prose, §9.3 file tree amended: added `intentKinds.ts` row / file / paragraph.
+- DRN item 7 resolution appended (2026-08-10): closed. D2 (ambiguous `'landing'` routing) remains open — D1 fix does not touch the `state.route`-based ambiguous dispatch, only the kind-set derivation. D2 is a separate smell with its own deferred decision.
 
 ### D2. Ambiguous intent on `route === 'landing'` silently routes to Builder 🟠 (DRN item 9 open)
 `reducer.ts:105-106`. A Player intent dispatched before `navigate play` runs through `reduceBuilder`, mutating Builder state. DRN flags this as "back-compat silent fallback"; considered deferred. Real silent-state-change risk if a stray dispatch lands during landing. **Fix path requires DRN item 9 resolution (reject ambiguous intents on landing, or force explicit `navigate` first).**
@@ -255,9 +263,9 @@ Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + 
 ## Summary
 
 Top 5 by impact:
-1. **A1** missing boundary self-test — design claims self-verification that doesn't exist.
-2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1.
-3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three acknowledged-but-unfixed DRN items that compound dispatch-correctness risk.
+1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
+2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
+3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three acknowledged-but-unfixed DRN items that compound dispatch-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2/D3 remain open** (DRN items 8/9).
 4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load.
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 

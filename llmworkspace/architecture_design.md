@@ -162,7 +162,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `player/state/internal/lifecycle.ts` | `request-reset-player`, `confirm-reset-player`, `import-new-puzzle`, `import-puzzle`, `apply-loaded-progress` intents |
 | `player/state/internal/anagram.ts` | Anagram modal intents (FR-81..FR-89) including auto-close on selection change |
 
-**`app/state/` — public root files (`app/state/` has no `internal/` subfolder; all four files are the published API):**
+**`app/state/` — public root files (`app/state/` has no `internal/` subfolder; all five files are the published API):**
 
 | Module | Owns |
 |---|---|
@@ -170,6 +170,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `app/state/state.ts` | `AppState`, `ModalRequest` reference, blank-state factory |
 | `app/state/reducer.ts` | `reduceApp(state, intent, deps): { state, events }` — the only reducer that sees all of `AppState`; invokes `reduceBuilder`/`reducePlayer` (forwarding `deps`), folds their returned `toast` and `modal-request` events via `applyEventsToApp` (using `deps.rng` and `deps.now` to construct the `Toast`/`createdAt`), and passes `download` / `clear-builder-storage` / `clear-player-storage` / `load-player-progress` events through to the bindings layer |
 | `app/state/effects.ts` | `applyEventsToApp(state, events, deps): { state, leftoverEvents }` — pure helper called from `reduceApp`; consumes `toast` and `modal-request` events (the only state-affecting events in `DomainEvent`), updating `AppState.toasts` / `AppState.modal` / `AppState.pendingConfirmIntent`; returns the leftover external events for the bindings layer |
+| `app/state/intentKinds.ts` | `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS` — `ReadonlySet<string>` constants used by `reduceApp` to route intents to `reduceBuilder`/`reducePlayer`. The first three are derived from their respective unions (`BuilderIntent`, `PlayerIntent`, `ConfirmableIntent`) via a `satisfies Record<Kind, null>` record literal so the compiler enforces that every union member is present exactly once (closing D1 / DRN item 7: no hand-maintained string literal that can drift from the union). `AMBIGUOUS_INTENT_KINDS` is the runtime intersection of the Builder and Player sets. |
 
 **Layer 2 — `ui/bindings/` (the seam; the only Svelte-aware logic module).**
 Owns the runes store, `dispatch(intent)`, view-model derivation, debounced persistence scheduling, and port/RNG injection. This is the *only* module that imports from all three other layers (`domain/`, reducers, ports) plus Svelte. Components:
@@ -705,6 +706,8 @@ export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | P
 ```
 
 **`reduceApp` responsibilities:**
+
+The dispatcher narrows `intent` first by `kind` string against three `ReadonlySet<string>` constants in `app/state/intentKinds.ts`: `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS` (the variant after a `confirm-*` has executed — clears `modal`/`pendingConfirmIntent`), and `AMBIGUOUS_INTENT_KINDS` (the runtime intersection of Builder and Player kinds). The first three sets are derived from their unions via a `satisfies Record<Kind, null>` record so the compiler enforces coverage (closing D1 / DRN item 7); `AMBIGUOUS_INTENT_KINDS` is computed as the set intersection.
 
 1. If `intent` is a `BuilderIntent`: invoke `reduceBuilder(state.builder, intent, deps)` — the Builder reducer does its own rng-dependent work directly (e.g., `confirm-reset-builder` generates the new `PuzzleKey` via `PuzzleKey.generate(deps.rng)`; the design-mode case passes `deps.rng` to `reconcileWords` for fresh `DisplacedClueId`s). It returns `{ state: nextBuilder, events }`. Fold `nextBuilder` into `state.builder`. Then for each event:
    - `toast { toastKind, message }` → construct a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and append to `state.toasts`.
@@ -1437,7 +1440,8 @@ angryphrase/
 │  │     └─ reconcileWords.ts
 │  ├─ app/state/                            # Layer 1 (app): the only reducer that sees all of AppState (§4.1, revised S2)
 │  │  ├─ state.ts  intents.ts
-│  │  └─ reducer.ts  effects.ts            # effects.ts = applyEventsToApp helper; no internal/ subfolder
+│  │  ├─ reducer.ts  effects.ts            # effects.ts = applyEventsToApp helper; no internal/ subfolder
+│  │  └─ intentKinds.ts                    # D1/DRN-7: type-derived kind Sets for reducer dispatch (BUILDER/PLAYER/CONFIRMABLE/AMBIGUOUS)
 │  ├─ player/state/
 │  │  ├─ state.ts  intents.ts  reducer.ts   # public API (app/state imports these)
 │  │  └─ internal/

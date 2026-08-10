@@ -93,6 +93,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Open question for later.** The `CONFIRMABLE_INTENT_KINDS` string set must stay in sync with the `ConfirmableIntent` union at `domain/notifications/Event`. If a fifth confirmable action is ever added, both arrays must be updated. A static type-derived set would be safer; deferred to a future clean-up.
 
+**Resolution applied on 2026-08-10.** Closed by the D1 fix (code smells `D1`). All four kind sets (`BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS`) were extracted to a new `src/app/state/intentKinds.ts` module. The first three are now built from a `Record<Kind, null>` record literal annotated with `satisfies` so `tsc` fails the build when the record literal omits a union member or carries an extra key — the union is the source of truth and the set is a derived view, no manual string maintenance. `AMBIGUOUS_INTENT_KINDS` is computed at module load as the runtime intersection of the Builder and Player sets (`new Set([...BUILDER].filter(k => PLAYER.has(k)))`), so adding a new shared kind to both unions automatically enrols it in the ambiguous set. `reduceApp` imports the sets rather than redeclaring them. §9.3 file tree and the §1.3 `app/state/` module table were amended to list `intentKinds.ts`. Drift path closed.
+
 
 ## 8. `Puzzle.withGrid` does not sync `gridSize` — surfaced by builderStore.change-grid-size test
 

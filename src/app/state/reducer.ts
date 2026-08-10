@@ -7,42 +7,12 @@ import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
 import { applyEventsToApp } from './effects';
-
-const BUILDER_INTENT_KINDS: ReadonlySet<string> = new Set([
-  'switch-to-fill', 'request-switch-to-design', 'confirm-switch-to-design',
-  'toggle-design-cell', 'change-grid-size',
-  'select-cell', 'move-cursor', 'type-letter', 'backspace',
-  'toggle-marker', 'edit-clue',
-  'begin-join', 'click-clue-panel-word', 'click-grid-word', 'unjoin', 'escape',
-  'begin-reattach', 'delete-displaced-clue',
-  'edit-title', 'edit-author',
-  'request-import-puzzle', 'confirm-import-puzzle', 'export-incomplete', 'export-complete',
-  'request-reset-builder', 'confirm-reset-builder',
-]);
-
-const PLAYER_INTENT_KINDS: ReadonlySet<string> = new Set([
-  'import-puzzle', 'apply-loaded-progress', 'import-new-puzzle',
-  'select-cell', 'move-cursor', 'type-letter', 'backspace', 'escape', 'click-clue-panel-word',
-  'check', 'clear-errors',
-  'request-reset-player', 'confirm-reset-player',
-  'open-anagram-helper', 'close-anagram-helper', 'anagram-input', 'anagram-scramble',
-]);
-
-const CONFIRMABLE_INTENT_KINDS: ReadonlySet<string> = new Set([
-  'confirm-switch-to-design',
-  'confirm-import-puzzle',
-  'confirm-reset-builder',
-  'confirm-reset-player',
-]);
-
-const AMBIGUOUS_INTENT_KINDS: ReadonlySet<string> = new Set([
-  'select-cell',
-  'move-cursor',
-  'type-letter',
-  'backspace',
-  'escape',
-  'click-clue-panel-word',
-]);
+import {
+  BUILDER_INTENT_KINDS,
+  PLAYER_INTENT_KINDS,
+  CONFIRMABLE_INTENT_KINDS,
+  AMBIGUOUS_INTENT_KINDS,
+} from './intentKinds';
 
 export function reduceApp(
   state: AppState,
