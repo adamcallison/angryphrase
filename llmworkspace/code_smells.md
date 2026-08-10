@@ -63,14 +63,26 @@ Every handler in `builder/state/internal/*` and `player/state/internal/*` begins
 
 ## C. Validation / format drift
 
-### C1. `DisplacedClueId.generate` emits raw 32-hex, not UUID v4 🔴
-`src/domain/builder/DisplacedClueId.ts:9-12` produces 32 hex chars (`"abcd…"`). `PuzzleKey.generate` (`src/domain/puzzle/PuzzleKey.ts:10-18`) emits UUID-v4 dashed form. AD §6.1 example: `"id": "<UUID v4>"`. Parser (`domain/format/v1.ts:487-535`) accepts any string for `displacedClue.id`, so round-trip works but the serialized output diverges from the documented format and from PuzzleKey's id style. Inconsistent id minting.
+### C1. `DisplacedClueId.generate` emits raw 32-hex, not UUID v4 ✅ Resolved
+Was 🔴: `src/domain/builder/DisplacedClueId.ts:9-12` produced 32 hex chars (`"abcd…"`). `PuzzleKey.generate` (`src/domain/puzzle/PuzzleKey.ts:10-18`) emitted UUID-v4 dashed form. AD §6.1 example: `"id": "<UUID v4>"`. Parser (`domain/format/v1.ts:487-535`) accepted any string for `displacedClue.id`, so round-trip worked but the serialized output diverged from the documented format and from PuzzleKey's id style. Inconsistent id minting.
+
+#### C1 — Fix
+- Extracted shared minting to `src/domain/uuid/uuidv4.ts` — pure `uuidv4(rng: Rng): string`; 16 bytes via `rng.nextInt(256)`, RFC 4122 version (0x40) + variant (0x80) masking, `8-4-4-4-12` dashed lowercase. `test/domain/uuid/uuidv4.test.ts` (4 tests).
+- `DisplacedClueId.generate` (`src/domain/builder/DisplacedClueId.ts`) now delegates to `uuidv4(rng)`; added `DisplacedClueId.try(s)` (UUID v4 lowercase regex) — AD §3.3 amended.
+- `PuzzleKey.generate` (`src/domain/puzzle/PuzzleKey.ts`) now delegates to `uuidv4(rng)`; behavior identical. Tests stay as integration guards.
+- AD §3.3 + §9.3 tree amended: added `DisplacedClueId.try` to type catalogue, new `domain/uuid/uuidv4.ts` module.
 
 ### C2. `converted-puzzles/` directory specified by AD §9.3 tree absent 🟡
 AD §9.3 / B6 commit `converted-puzzles/*.json` as migrated record. Repo lacks the dir; `scripts/convert-puzzles.ts:95` writes to `join(cwd, 'converted-puzzles')` at run time, never committed. Also AD §9.3 describes `puzzles/` as "non-conforming (legacy `letter` field, no version)" — but `puzzles/puzzle1.json` is now in v1 format (verified `"version":1,"type":"complete"`). The design premise is stale; the directory's documented role no longer applies.
 
-### C3. `DisplacedClue` id uniqueness validated at parse but `PuzzleKey` format validated strictly 🟡
-`parsePuzzleV1` (v1.ts) enforces `key` via `PuzzleKey.try` regex; for `displacedClue.id` it only checks `typeof id === 'string'` + uniqueness (`v1.ts:518-529`). Asymmetric strictness.
+### C3. `DisplacedClue` id uniqueness validated at parse but `PuzzleKey` format validated strictly ✅ Resolved
+Was 🟡: `parsePuzzleV1` (`v1.ts`) enforced `key` via `PuzzleKey.try` regex; for `displacedClue.id` it only checked `typeof id === 'string'` + uniqueness (`v1.ts:518-529`). Asymmetric strictness.
+
+#### C3 — Fix
+- AD §6.3 step 11 amended: "each `id` is a valid lowercase UUID v4 string (`DisplacedClueId.try`) and unique within the array".
+- `validateDisplacedClues` (`src/domain/format/v1.ts`) now calls `DisplacedClueId.try(id)` after the shape check and before the duplicate check; non-UUID id fails with `'displacedClue id is not a valid UUID v4: <id>.'`.
+- `v1.test.ts` fixtures migrated from `'dc-1'`/`'id-1'`/`'same-id'` to valid inline UUID v4 literals (`UUID_A`/`UUID_B` consts). Added 2 new rejection tests (non-UUID `'not-a-uuid'`, legacy 32-hex `'ab'.repeat(16)`). Adjacent `DisplacedClue.test.ts` length-32 assertions migrated to length-36 + UUID v4 regex match.
+- Acceptance decision: localStorage Builder snapshots carrying legacy 32-hex ids fail strict parse on reload → snapshot discarded → blank Builder. No migration code; per human decision.
 
 ### C4. `CompletenessCheck` never emits `invalid-answer-letter` 🟡
 `CompletenessViolation` AD §3.6 / `src/domain/puzzle/CompletenessCheck.ts:9-12` has an `'invalid-answer-letter'` variant, but `check()` only emits `missing-answer-letter` and `missing-clue`. `Cell.answerLetter` invariant prevents invalid letters, so variant is dead by construction. Either remove variant or make it truly redundant with the impossible-state principle (AD §0 principle 3).

@@ -279,9 +279,15 @@ export const PuzzleKey: {
 // domain/word/WordNumber.ts
 export type WordNumber = number & { __brand: 'WordNumber' }; // ≥ 1
 
+// domain/uuid/uuidv4.ts
+export function uuidv4(rng: Rng): string;   // pure: 16 bytes via rng.nextInt(256), sets RFC 4122 version (0x40) + variant (0x80), formats 8-4-4-4-12 dashed lowercase; shared by PuzzleKey.generate + DisplacedClueId.generate
+
 // domain/builder/DisplacedClueId.ts
-export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };
-export const DisplacedClueId: { generate(rng: Rng): DisplacedClueId };   // takes injected Rng; called from reconcileWords with deps.rng
+export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };   // UUID v4 string (§6.1, §6.3 step 11)
+export const DisplacedClueId: {
+  generate(rng: Rng): DisplacedClueId;   // delegates to uuidv4(rng); called from reconcileWords/designMode with deps.rng
+  try(s: string): DisplacedClueId | null;   // validates UUID v4 lowercase regex; used by parsePuzzleV1 validateDisplacedClues (§6.3 step 11)
+};
 
 // domain/notifications/ToastId.ts
 export type ToastId = string & { __brand: 'ToastId' };
@@ -1166,7 +1172,7 @@ Same as §6.1 with these differences:
 8. `words` array: each word has `startRow`, `startCol` (in bounds), `direction`, `length ≥ 2`, `number ≥ 1`, `clue: string`, `nextWord: { startRow, startCol, direction } | null`. For complete: chain heads have non-empty non-whitespace `clue`; non-heads have empty `clue` (C5 — non-empty → fail).
 9. Re-derive words from `grid` and verify each listed word matches a derived word exactly (`startRow`/`startCol`/`direction`/`length`). Derive `number` per FR-6 and overwrite the file's cached `number` (FR-98a); a mismatch in `length` between the file and the re-derived grid is a failure.
 10. `nextWord` references resolve to existing words; `ChainValidation.validate` reports no cycles/branches/dangling/self-references.
-11. `displacedClues` (incomplete only): array of `{ id, clue, direction }`; each `id` is a unique string; `direction ∈ {'across', 'down'}`.
+11. `displacedClues` (incomplete only): array of `{ id, clue, direction }`; each `id` is a valid lowercase UUID v4 string (`DisplacedClueId.try`) and unique within the array; `direction ∈ {'across', 'down'}`.
 
 On any failure, return a single human-readable error list (FR-99) and change no app state (NFR-10).
 
@@ -1410,6 +1416,8 @@ angryphrase/
 │  │  │  ├─ CompletenessCheck.ts  CompletenessViolation.ts
 │  │  ├─ builder/
 │  │  │  └─ DisplacedClue.ts  DisplacedClueId.ts
+│  │  ├─ uuid/
+│  │  │  └─ uuidv4.ts                       # pure UUID v4 minting from Rng; shared by PuzzleKey.generate + DisplacedClueId.generate
 │  │  ├─ notifications/                    # Pure value objects whose consumers happen to be UI (§3.5a, revised S2)
 │  │  │  ├─ Toast.ts  ToastId.ts  ToastKind.ts
 │  │  │  ├─ ModalRequest.ts  ModalKind.ts

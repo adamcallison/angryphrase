@@ -21,6 +21,7 @@ import { Chain } from '../chain/Chain';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
 import { brand } from '../brand';
+import { DisplacedClueId } from '../builder/DisplacedClueId';
 import type { Grid } from '../grid/Grid';
 
 export type PuzzleFileType = 'incomplete' | 'complete';
@@ -517,6 +518,12 @@ function validateDisplacedClues(
 
     if (typeof id !== 'string' || typeof clue !== 'string' || !isDirection(direction)) {
       failures.push({ message: 'displacedClues is malformed.' });
+      ok = false;
+      continue;
+    }
+
+    if (DisplacedClueId.try(id) === null) {
+      failures.push({ message: `displacedClue id is not a valid UUID v4: ${id}.` });
       ok = false;
       continue;
     }

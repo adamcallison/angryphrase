@@ -8,7 +8,8 @@ describe('DisplacedClue', () => {
     const first = DisplacedClue.create(rng, 'A clue', 'across');
     expect(first.clue).toBe('A clue');
     expect(first.direction).toBe('across');
-    expect(first.id).toHaveLength(32);
+    expect(first.id).toHaveLength(36);
+    expect(first.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
     const second = DisplacedClue.create(rng, 'Another clue', 'down');
     expect(second.id).not.toBe(first.id);
@@ -45,6 +46,7 @@ describe('DisplacedClue', () => {
     const clue = DisplacedClue.create(rng, '', 'across');
     expect(clue.clue).toBe('');
     expect(clue.direction).toBe('across');
-    expect(clue.id).toHaveLength(32);
+    expect(clue.id).toHaveLength(36);
+    expect(clue.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 });
