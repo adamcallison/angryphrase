@@ -393,6 +393,16 @@ export const WordMap: {
   remove(m: WordMap, k: WordKey): WordMap;
 };
 
+// Pure linear-scan helper over `Word[]` + a cursor cell+direction. Lives in `domain/word/`
+// (code-smell B1: was duplicated 4× across player reducers + builder/player viewmodels).
+// Takes the non-null structural cursor shape, NOT the `Cursor` type from `builder/state/`:
+// `domain/` is Layer 0 and cannot import Layer 1 (§9.2); all call-sites null-check the
+// `Cursor` (which is `| null`) before invoking this — the function is never called with a
+// null cursor. Returns `Word | null` to match the project's nullable idiom (not `undefined`).
+export const WordSelection: {
+  findContainingWord(words: Word[], cursor: { row: Row; col: Col; direction: Direction }): Word | null;
+};
+
 // `DerivedWord` is the shape of a `Word` before `Numbering.assign` mints its `number`:
 // the output of `WordDerivation.derive` and the input of `Numbering.assign`. It carries
 // `clue` and `nextWord` so that §8.5 `reconcileWords` (which runs BEFORE `Numbering.assign`)
@@ -1407,7 +1417,7 @@ angryphrase/
 │  │  │  ├─ Grid.ts  GridOps.ts
 │  │  ├─ word/
 │  │  │  ├─ Direction.ts  WordKey.ts  Word.ts  WordNumber.ts  DerivedWord.ts
-│  │  │  ├─ WordDerivation.ts  Numbering.ts  WordMap.ts
+│  │  │  ├─ WordDerivation.ts  Numbering.ts  WordMap.ts  WordSelection.ts
 │  │  ├─ letter/Letter.ts
 │  │  ├─ chain/
 │  │  │  ├─ Chain.ts  ChainValidation.ts  ChainViolation.ts
@@ -1540,6 +1550,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 **Coverage targets (binding):**
 - All `domain/grid/` accessors + `GridOps.isSelectable` (FR-8).
 - `WordDerivation.derive` + `Numbering.assign` against several grid shapes.
+- `WordSelection.findContainingWord` for: across hit, down hit, direction mismatch, cursor outside run, empty word list, cursor at last cell of run, cursor one past run end (B1).
 - `ChainValidation.validate` for each violation kind.
 - `LengthPattern.forWord` for: standalone no markers; space separators; hyphen separators; mixed; chain suffixes (full FR-91).
 - `LengthPattern.forActiveClueBanner` returns `null` for non-heads (C4).

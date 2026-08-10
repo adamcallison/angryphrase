@@ -35,14 +35,23 @@ Still unresolved per DRN. Folder holds `DownloadPort`/`FilePickPort` which are n
 
 ## B. Duplication
 
-### B1. `findContainingWord` / `findWordContaining` duplicated 4× 🟠
-Identical linear-scan algorithm reimplemented:
+### B1. `findContainingWord` / `findWordContaining` duplicated 4× ✅ Resolved
+Was 🟠: identical linear-scan algorithm reimplemented:
 - `src/player/state/internal/solving.ts:59-74`
 - `src/player/state/internal/anagram.ts:17-32` (exact copy of solving's)
 - `src/ui/bindings/viewmodels/builderVM.ts:139-156`
 - `src/ui/bindings/viewmodels/playerVM.ts:264-281`
 
 Belongs in `domain/word/` (pure function over `Word[]` + `Cursor`).
+
+#### B1 — Fix
+- Extracted shared pure function to `src/domain/word/WordSelection.ts` — `WordSelection.findContainingWord(words: Word[], cursor: { row: Row; col: Col; direction: Direction }): Word | null`. Linear scan, matches `direction`, across checks `startRow===r && c∈[startCol, startCol+length)`, down mirrors. Returns `null` (project nullable idiom, not `undefined`).
+- **AD §9.2 respected**: `domain/word/` is Layer 0 — cannot import the `Cursor` type from `builder/state/` (Layer 1). Used the inline structural shape `{ row: Row; col: Col; direction: Direction }` instead. All 4 call-sites already null-check the nullable `Cursor` (`| null`) before invoking — function never receives a null cursor.
+- `test/domain/word/WordSelection.test.ts` (8 tests): across hit, down hit, direction mismatch, cursor outside run, empty word list, other-direction ignore, last-cell vs one-past-end, first-match on overlap.
+- Replaced all 4 sites: deleted local fns; `solving.ts:66` and `anagram.ts:23` flipped `=== undefined` → `=== null`; `builderVM.ts:110` and `playerVM.ts:84/130/221` already compared to `null`. Removed unused imports: `Cursor` from `builderVM.ts` (only the deleted local fn consumed it), `Word`/`Puzzle`/`Row`/`Col`/`Direction` type imports from `anagram.ts`.
+- AD §3.3 type catalogue + §9.3 file tree + §10.1 coverage target amended to bless `WordSelection.ts` / `WordSelection.findContainingWord`.
+- Verification (green): `npm run test` (76 files, 1012 passed), `npm run typecheck` (0 errors), `npm run lint` (eslint + `madge --circular` no cycles). `grep -rn "findWordContaining\|function findContainingWord" src/` → empty.
+- Out of scope (separate tasks): B2 (`cellsOfChain`/`cellsOfWord` dup), E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick), A3 (`Cursor` misplaced in `builder/state`).
 
 ### B2. `cellsOfWord` / `cellsOfChain` duplicated 2× verbatim 🟠
 Between `builderVM.ts:158-181` and `playerVM.ts:283-307`. Same chain-aware logic, copy-pasted. Both should derive from a single `domain/word/` or `ui/bindings/viewmodels/` helper.
@@ -273,7 +282,7 @@ Top 5 by impact:
 1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
 2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
 3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three DRN items that compounded dispatch/invariant-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 ✅ Resolved** (DRN item 8 closed, 2026-08-10 — `withGrid` now re-syncs `gridSize` from `g.length`; redundant `change-grid-size` local patch removed).
-4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load.
+4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); B2/B3 remain open.
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 
 Acknowledged-but-accepted (no action needed unless revisiting): A4, K2/K3 open items, F3.

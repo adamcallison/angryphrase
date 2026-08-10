@@ -8,6 +8,7 @@ import type { PlayerState, CheckResult, CheckClassification } from '../../../pla
 import { GridOps } from '../../../domain/grid/GridOps';
 import { GridSize } from '../../../domain/grid/GridSize';
 import { WordMap } from '../../../domain/word/WordMap';
+import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
@@ -80,7 +81,7 @@ export function deriveActiveClueBannerVM(input: {
     return emptyBanner();
   }
 
-  const word = findContainingWord(puzzle.words, cursor);
+  const word = WordSelection.findContainingWord(puzzle.words, cursor);
   if (word === null) {
     return emptyBanner();
   }
@@ -126,7 +127,7 @@ export function derivePlayerToolbarVM(state: PlayerState): PlayerToolbarVM {
   const hasIncorrect =
     state.checkResult !== null && state.checkResult.incorrectCells.length > 0;
   const cursorOnWord =
-    state.cursor !== null && findContainingWord(state.puzzle.words, state.cursor) !== null;
+    state.cursor !== null && WordSelection.findContainingWord(state.puzzle.words, state.cursor) !== null;
 
   return {
     canCheck: true,
@@ -217,7 +218,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   }
 
   const cursorWord = state.cursor
-    ? findContainingWord(state.puzzle.words, state.cursor)
+    ? WordSelection.findContainingWord(state.puzzle.words, state.cursor)
     : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
   const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
@@ -259,25 +260,6 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     anagram,
     checkResult,
   };
-}
-
-function findContainingWord(words: Word[], cursor: Cursor): Word | null {
-  if (cursor === null) {
-    return null;
-  }
-  const r = Number(cursor.row);
-  const c = Number(cursor.col);
-  for (const w of words) {
-    if (w.key.direction !== cursor.direction) continue;
-    const sr = Number(w.key.startRow);
-    const sc = Number(w.key.startCol);
-    if (cursor.direction === 'across') {
-      if (sr === r && c >= sc && c < sc + w.length) return w;
-    } else {
-      if (sc === c && r >= sr && r < sr + w.length) return w;
-    }
-  }
-  return null;
 }
 
 function cellsOfWord(w: Word): Set<string> {

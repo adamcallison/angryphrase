@@ -4,13 +4,13 @@ import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import type { Direction } from '../../../domain/word/Direction';
-import type { Word } from '../../../domain/word/Word';
 import { Result } from '../../../domain/notifications/Event';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
+import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import type { Grid } from '../../../domain/grid/Grid';
@@ -56,23 +56,6 @@ function hasWhiteNeighbour(
   return Cell.isWhite(GridOps.cellAt(g, neighbourRow, neighbourCol));
 }
 
-function findWordContaining(
-  puzzle: Puzzle,
-  cursor: { row: Row; col: Col; direction: Direction },
-): Word | undefined {
-  const r = Number(cursor.row);
-  const c = Number(cursor.col);
-  return puzzle.words.find((w) => {
-    if (w.key.direction !== cursor.direction) return false;
-    const sr = Number(w.key.startRow);
-    const sc = Number(w.key.startCol);
-    if (cursor.direction === 'across') {
-      return sr === r && c >= sc && c < sc + w.length;
-    }
-    return sc === c && r >= sr && r < sr + w.length;
-  });
-}
-
 function anagramAfterCursorChange(
   anagram: AnagramModalState | null,
   puzzle: Puzzle,
@@ -80,8 +63,8 @@ function anagramAfterCursorChange(
 ): AnagramModalState | null {
   if (anagram === null) return null;
   if (newCursor === null) return null;
-  const word = findWordContaining(puzzle, newCursor);
-  if (word === undefined) return null;
+  const word = WordSelection.findContainingWord(puzzle.words, newCursor);
+  if (word === null) return null;
   const wordMap = WordMap.fromWords(puzzle.words);
   const head = Chain.headOf(wordMap, word.key);
   if (!WordKey.equals(head, anagram.openedForWord)) return null;
