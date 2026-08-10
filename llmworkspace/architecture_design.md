@@ -228,7 +228,7 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 | Domain ↔ format/parse | `Puzzle` domain objects (out), JSON-shaped plain objects (in) | Adapter functions in `domain/format/` |
 | App ↔ outside world | Puzzle JSON files (file system); state blobs (`localStorage`) | `FilePickPort`, `DownloadPort`, `StoragePort` only |
 
-The ESLint `no-restricted-imports` rule mentioned in §1.2 enforces that `domain/`, `builder/state/`, `player/state/`, and `app/state/` cannot import `svelte`, `svelte/*`, anything under `ui/`, anything under `ports/`, or any DOM-global-using module. A unit test verifies the boundary by attempting adversarial imports in a fixture file and asserting they fail to compile.
+The ESLint `no-restricted-imports` rule mentioned in §1.2 enforces that `domain/`, `builder/state/`, `player/state/`, and `app/state/` cannot import `svelte`, `svelte/*`, anything under `ui/`, anything under `ports/`, or any DOM-global-using module. A unit test (`test/boundary/imports.test.ts`) verifies the boundary by running the ESLint `Linter` API over adversarial fixture strings with `filename` set so the per-glob `no-restricted-imports` rules apply, and asserts each forbidden import triggers a `no-restricted-imports` error (with negative controls: allowed imports produce no error). This self-verifies that the rule is wired and catches static and dynamic `import()` violations.
 
 ---
 
@@ -1509,7 +1509,7 @@ angryphrase/
 | `src/ui/bindings/**` | all of `src/**` | (none) |
 | `src/ports/**` | `src/domain/persistence/ports.ts` (interfaces only) and `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**` |
 
-A `test/boundary/imports.test.ts` runs `tsc` on a small fixture file that attempts each forbidden import and asserts compilation fails. This makes the boundary self-verifying (NFR-4).
+A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism.
 
 ### 9.3 Import-cycle policy
 

@@ -11,6 +11,12 @@ Scope: files sampled are those under `src/` plus key config. Not exhaustively re
 ### A1. Missing design-mandated boundary self-test 🔴
 AD §9.2 / §10 require `test/boundary/imports.test.ts` running `tsc` on adversarial fixtures asserting forbidden imports fail to compile. No `test/boundary/` exists; only ESLint `no-restricted-imports` enforces boundaries. Lint is bypassable (e.g., dynamic imports, `import()` expressions), and no runtime assertion that the lint rule is wired. Boundary claim not self-verifying as designed.
 
+#### A1 — Fix
+- Created `test/boundary/imports.test.ts`: 36 fixtures drive the ESLint `Linter` API (flat config) over adversarial import strings with `filename` routing each into the per-glob rule block; asserts `@typescript-eslint/no-restricted-imports` fires on forbidden cases and stays silent on negative controls.
+- Amended AD §2.3 + §9.2: `tsc` does not enforce path boundaries → enforcement mechanism is ESLint; self-test asserts rule is wired.
+- `eslint.config.js` fix: `group: ['src/X/**']` globs only matched absolute-prefixed import strings; real source uses relative imports (`../ui/`, `../../ports/`) → rules were inert. Converted all path `group` entries to `regex: '(?:^src/|(?:\.\./)+)X/'` so relative imports now match. Ports allow-list regex depth fixed (`(?:\.\./)+`).
+- Removed dead `group: ['src/state/**']` entry in ports block (no such dir; catch-all regex already blocks siblings).
+
 ### A2. `domain/` modules reach into `Grid` via raw indexing 🟠
 AD §3.2: "Grid is a 2D array but indexed only through `GridOps`." Violations:
 - `src/domain/puzzle/CompletenessCheck.ts:21-24` — `p.grid[r]!` / `row[c]!`.

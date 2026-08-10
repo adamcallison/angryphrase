@@ -22,23 +22,23 @@ export default [
         {
           patterns: [
             {
-              group: ['src/ui/**'],
+              regex: '(?:^src/|(?:\.\./)+)ui/',
               message: 'src/domain/** may only import sibling files under src/domain/**.'
             },
             {
-              group: ['src/ports/**'],
+              regex: '(?:^src/|(?:\.\./)+)ports/',
               message: 'src/domain/** may only import sibling files under src/domain/**.'
             },
             {
-              group: ['src/builder/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)builder/state/',
               message: 'src/domain/** may only import sibling files under src/domain/**.'
             },
             {
-              group: ['src/player/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)player/state/',
               message: 'src/domain/** may only import sibling files under src/domain/**.'
             },
             {
-              group: ['src/app/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)app/state/',
               message: 'src/domain/** may only import sibling files under src/domain/**.'
             },
             {
@@ -59,15 +59,15 @@ export default [
         {
           patterns: [
             {
-              group: ['src/ui/**'],
+              regex: '(?:^src/|(?:\.\./)+)ui/',
               message: 'src/builder/state/** may only import src/domain/** and sibling builder state files.'
             },
             {
-              group: ['src/ports/**'],
+              regex: '(?:^src/|(?:\.\./)+)ports/',
               message: 'src/builder/state/** may only import src/domain/** and sibling builder state files.'
             },
             {
-              group: ['src/app/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)app/state/',
               message: 'src/builder/state/** may only import src/domain/** and sibling builder state files.'
             },
             {
@@ -92,15 +92,15 @@ export default [
         {
           patterns: [
             {
-              group: ['src/ui/**'],
+              regex: '(?:^src/|(?:\.\./)+)ui/',
               message: 'src/player/state/** may only import src/domain/** and sibling player state files.'
             },
             {
-              group: ['src/ports/**'],
+              regex: '(?:^src/|(?:\.\./)+)ports/',
               message: 'src/player/state/** may only import src/domain/** and sibling player state files.'
             },
             {
-              group: ['src/app/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)app/state/',
               message: 'src/player/state/** may only import src/domain/** and sibling player state files.'
             },
             {
@@ -126,11 +126,11 @@ export default [
         {
           patterns: [
             {
-              group: ['src/ui/**'],
+              regex: '(?:^src/|(?:\.\./)+)ui/',
               message: 'src/app/state/** may only import src/domain/**, sibling app state files, and the public root files (state.ts, intents.ts, reducer.ts) of src/builder/state/** and src/player/state/**.'
             },
             {
-              group: ['src/ports/**'],
+              regex: '(?:^src/|(?:\.\./)+)ports/',
               message: 'src/app/state/** may only import src/domain/**, sibling app state files, and the public root files (state.ts, intents.ts, reducer.ts) of src/builder/state/** and src/player/state/**.'
             },
             {
@@ -156,23 +156,23 @@ export default [
         {
           patterns: [
             {
-              group: ['src/ports/**'],
+              regex: '(?:^src/|(?:\.\./)+)ports/',
               message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
             },
             {
-              group: ['src/builder/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)builder/state/',
               message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
             },
             {
-              group: ['src/player/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)player/state/',
               message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
             },
             {
-              group: ['src/app/state/**'],
+              regex: '(?:^src/|(?:\.\./)+)app/state/',
               message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
             },
             {
-              group: ['src/domain/**'],
+              regex: '(?:^src/|(?:\.\./)+)domain/',
               allowTypeImports: true,
               message: 'src/ui/** may only import type-only imports from src/domain/**.'
             }
@@ -194,15 +194,11 @@ export default [
               message: 'src/ports/** may not import svelte or svelte/*.'
             },
             {
-              group: ['src/ui/**'],
+              regex: '(?:^src/|(?:\.\./)+)ui/',
               message: 'src/ports/** may only import src/domain/persistence/ports.ts and src/domain/rng/Rng.ts.'
             },
             {
-              group: ['src/state/**'],
-              message: 'src/ports/** may only import src/domain/persistence/ports.ts and src/domain/rng/Rng.ts.'
-            },
-            {
-              regex: '^(?!src/domain/persistence/ports\.ts$|src/domain/rng/Rng\.ts$|src/domain/puzzle/PuzzleKey\.ts$|\.\./domain/persistence/ports\.ts$|\.\./domain/rng/Rng\.ts$|\.\./domain/puzzle/PuzzleKey\.ts$).*(?:src/|\.\./).*$',
+              regex: '^(?!src/domain/persistence/ports\.ts$|src/domain/rng/Rng\.ts$|src/domain/puzzle/PuzzleKey\.ts$|(?:\.\./)+domain/persistence/ports\.ts$|(?:\.\./)+domain/rng/Rng\.ts$|(?:\.\./)+domain/puzzle/PuzzleKey\.ts$).*(?:src/|\.\./).*$',
               message: 'src/ports/** may only import src/domain/persistence/ports.ts, src/domain/rng/Rng.ts, and src/domain/puzzle/PuzzleKey.ts (StoragePort key type).'
             }
           ]
