@@ -80,10 +80,10 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: false
 	},
 	{
-		description: 'src/builder/state/** allows player/state public root',
+		description: 'src/builder/state/** forbids importing src/player/state (no cross-state-module imports)',
 		filename: 'src/builder/state/internal/foo.ts',
 		code: 'import x from "../../player/state/state"',
-		expectError: false
+		expectError: true
 	},
 
 	// Block 3 — src/player/state/**/*.ts
@@ -124,10 +124,10 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: false
 	},
 	{
-		description: 'src/player/state/** allows builder/state public root',
+		description: 'src/player/state/** forbids importing src/builder/state (no cross-state-module imports)',
 		filename: 'src/player/state/internal/foo.ts',
 		code: 'import x from "../../builder/state/state"',
-		expectError: false
+		expectError: true
 	},
 
 	// Block 4 — src/app/state/**/*.ts

@@ -71,8 +71,8 @@ export default [
               message: 'src/builder/state/** may only import src/domain/** and sibling builder state files.'
             },
             {
-              regex: 'player/state/internal/',
-              message: 'src/builder/state/** may import the public root files of player/state/** but not its internal/ implementation files.'
+              regex: '(?:^src/|(?:\\.\\./)+)player/state/',
+              message: 'src/builder/state/** may not import src/player/state/** (no cross-state-module imports; shared concepts belong in src/domain/**).'
             },
             {
               group: ['svelte', 'svelte/*'],
@@ -104,8 +104,8 @@ export default [
               message: 'src/player/state/** may only import src/domain/** and sibling player state files.'
             },
             {
-              regex: 'builder/state/internal/',
-              message: 'src/player/state/** may import the public root files of builder/state/** but not its internal/ implementation files.'
+              regex: '(?:^src/|(?:\\.\\./)+)builder/state/',
+              message: 'src/player/state/** may not import src/builder/state/** (no cross-state-module imports; shared concepts belong in src/domain/**).'
             },
             {
               group: ['svelte', 'svelte/*'],
