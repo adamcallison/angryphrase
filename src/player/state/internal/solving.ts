@@ -311,10 +311,10 @@ export function handleCheck(
   const incorrectCells: { row: Row; col: Col }[] = [];
   const emptyCells: { row: Row; col: Col }[] = [];
 
-  for (let r = 0; r < g.length; r++) {
-    const row = g[r]!;
-    for (let c = 0; c < row.length; c++) {
-      const cell = row[c]!;
+  const size = g.length;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
       if (cell.black) continue;
       if (cell.playerLetter === null) {
         emptyCells.push({ row: Row.of(r), col: Col.of(c) });

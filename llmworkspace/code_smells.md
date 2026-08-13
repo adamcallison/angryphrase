@@ -17,13 +17,22 @@ AD §9.2 / §10 require `test/boundary/imports.test.ts` running `tsc` on adversa
 - `eslint.config.js` fix: `group: ['src/X/**']` globs only matched absolute-prefixed import strings; real source uses relative imports (`../ui/`, `../../ports/`) → rules were inert. Converted all path `group` entries to `regex: '(?:^src/|(?:\.\./)+)X/'` so relative imports now match. Ports allow-list regex depth fixed (`(?:\.\./)+`).
 - Removed dead `group: ['src/state/**']` entry in ports block (no such dir; catch-all regex already blocks siblings).
 
-### A2. `domain/` modules reach into `Grid` via raw indexing 🟠
+### A2. `domain/` modules reach into `Grid` via raw indexing 🟠 ✅ Resolved
 AD §3.2: "Grid is a 2D array but indexed only through `GridOps`." Violations:
 - `src/domain/puzzle/CompletenessCheck.ts:21-24` — `p.grid[r]!` / `row[c]!`.
 - `src/domain/word/WordDerivation.ts:9-13` — `g[r]` / `row[c]` raw indexing.
 - `src/domain/word/Numbering.ts:25-27` — `grid[r]!` / `row.length`.
 - `src/domain/grid/GridOps.ts:37,46,128-159` — acceptable inside `GridOps` itself, but exposes the pattern as the norm.
 Reducer-adjacent raw indexing: `src/player/state/internal/solving.ts:331-334` (`g[r]!` / `row[c]!` in `handleCheck`), `src/player/state/internal/lifecycle.ts:138-149` (`handleConfirmResetPlayer`). Treats grid as a generic array, weakening the §3.2 invariant.
+
+#### A2 — Fix
+- `src/domain/puzzle/CompletenessCheck.ts`: replaced raw `p.grid[r]!` / `row[c]!` scan with `const size = p.grid.length` double loop using `GridOps.cellAt(p.grid, Row.of(r), Col.of(c))`; added `GridOps` import.
+- `src/domain/word/WordDerivation.ts`: `isWhite` now reads only via `GridOps.cellAt` (in-bounds); dropped OOB-tolerant `undefined` short-circuits. Guarded run-length `while` with `(direction === 'across' ? cc : cr) < size` so callers never pass OOB coords. Added `GridOps` import.
+- `src/domain/word/Numbering.ts`: scan now uses `const size = grid.length` and inner `< size`; removed `const row = grid[r]!`.
+- `src/player/state/internal/solving.ts`: `handleCheck` scan replaced raw `g[r]!` / `row[c]!` with `const size = g.length` and `GridOps.cellAt(g, Row.of(r), Col.of(c))` (`GridOps` already imported).
+- `src/player/state/internal/lifecycle.ts`: `handleApplyLoadedProgress` and `handleConfirmResetPlayer` now derive row/column bounds from `const size = g.length` instead of `g[r]!.length`.
+- Verification (green): `npm run test` (77 files, 1021 passed), `npm run typecheck` (0 errors), `npm run lint` (eslint + `madge --circular` no cycles), `grep -rn 'g\[[^ ]*\]!\|\.grid\[[^]]*\]!\|g\[r\]!\|row\[c\]!' src/domain/puzzle src/domain/word src/player/state/internal` → empty.
+- Out of scope (separate tasks): E1/E2 memoization, A1-style enforcement test, `GridOps.ts` internal raw indexing.
 
 ### A3. `Cursor` type lives in `builder/state/state.ts`, imported type-only by Player + grids/VMs ✅ Resolved
 Was 🟠: `src/player/state/state.ts:8`, `src/player/state/internal/solving.ts:2`, `src/ui/bindings/viewmodels/gridVM.ts:11`, `src/ui/bindings/viewmodels/playerVM.ts:5` (the original audit's `builderVM.ts:2` reference was already stale — B1 removed that import; A3 only listed it because the smell predates B1) all `import type { Cursor } from '../../.../builder/state/state'`. Cursor is a shared domain concept, not a Builder concept. Placing it in `builder/state` makes Player/viewmodel logic depend (type-only) on a sibling state module — exactly the kind of cross-module coupling that `internal/` rules exist to prevent, here dodged because the symbol sits on a public root file. AD had no shared cursor module.

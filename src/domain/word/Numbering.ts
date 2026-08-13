@@ -22,9 +22,9 @@ export const Numbering: {
     const numberByCanonical = new Map<string, WordNumber>();
     let counter = 0;
 
-    for (let r = 0; r < grid.length; r++) {
-      const row = grid[r]!;
-      for (let c = 0; c < row.length; c++) {
+    const size = grid.length;
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
         const key = `${r},${c}`;
         const cellWords = startCellMap.get(key);
         if (cellWords !== undefined && cellWords.length > 0) {

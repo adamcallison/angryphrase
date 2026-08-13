@@ -65,11 +65,12 @@ export function handleApplyLoadedProgress(
   }
 
   const g = state.puzzle.grid;
+  const size = g.length;
   let newGrid = g;
-  const rowsLen = Math.min(intent.playerLetters.length, g.length);
+  const rowsLen = Math.min(intent.playerLetters.length, size);
   for (let r = 0; r < rowsLen; r++) {
     const savedRow = intent.playerLetters[r]!;
-    const rowLen = Math.min(savedRow.length, g[r]!.length);
+    const rowLen = Math.min(savedRow.length, size);
     for (let c = 0; c < rowLen; c++) {
       const saved = savedRow[c];
       if (saved == null) continue;
@@ -134,9 +135,10 @@ export function handleConfirmResetPlayer(
   }
 
   const g = state.puzzle.grid;
+  const size = g.length;
   let newGrid = g;
-  for (let r = 0; r < g.length; r++) {
-    for (let c = 0; c < g[r]!.length; c++) {
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
       const cell = GridOps.cellAt(newGrid, Row.of(r), Col.of(c));
       if (!cell.black && cell.playerLetter !== null) {
         newGrid = GridOps.setCell(
