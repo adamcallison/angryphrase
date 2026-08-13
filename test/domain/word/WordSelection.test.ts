@@ -58,6 +58,10 @@ describe('WordSelection', () => {
     expect(WordSelection.findContainingWord([], cursor)).toBeNull();
   });
 
+  it('returns null when cursor is null', () => {
+    expect(WordSelection.findContainingWord([makeWord(0, 0, 'across', 3)], null)).toBeNull();
+  });
+
   it('ignores words of the other direction at the same cursor cell', () => {
     const across = makeWord(0, 0, 'across', 3);
     const down = makeWord(0, 0, 'down', 3);

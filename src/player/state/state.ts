@@ -3,9 +3,7 @@ import type { Row } from '../../domain/grid/Row';
 import type { Col } from '../../domain/grid/Col';
 import type { Letter } from '../../domain/letter/Letter';
 import type { WordKey } from '../../domain/word/WordKey';
-
-// Cursor is defined in builder/state/state.ts (§4.3) and shared (type-only).
-import type { Cursor } from '../../builder/state/state';
+import type { Cursor } from '../../domain/grid/Cursor';
 
 export type CheckClassification =
   | 'complete-correct' | 'incomplete-correct'

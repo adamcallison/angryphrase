@@ -1,12 +1,11 @@
 import type { Word } from './Word';
-import type { Row } from '../grid/Row';
-import type { Col } from '../grid/Col';
-import type { Direction } from './Direction';
+import type { Cursor } from '../grid/Cursor';
 
 export const WordSelection: {
-  findContainingWord(words: Word[], cursor: { row: Row; col: Col; direction: Direction }): Word | null;
+  findContainingWord(words: Word[], cursor: Cursor): Word | null;
 } = {
-  findContainingWord(words: Word[], cursor: { row: Row; col: Col; direction: Direction }): Word | null {
+  findContainingWord(words: Word[], cursor: Cursor): Word | null {
+    if (cursor === null) return null;
     const r = Number(cursor.row);
     const c = Number(cursor.col);
     for (const w of words) {

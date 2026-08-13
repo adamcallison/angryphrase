@@ -9,7 +9,7 @@ import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import type { Word } from '../../../../src/domain/word/Word';
-import type { Cursor } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 
 function black2x2Grid(): Grid {

@@ -1,18 +1,10 @@
 import type { GridSize } from '../../domain/grid/GridSize';
+import type { Cursor } from '../../domain/grid/Cursor';
 import { Puzzle } from '../../domain/puzzle/Puzzle';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { DisplacedClue } from '../../domain/builder/DisplacedClue';
 import type { WordKey } from '../../domain/word/WordKey';
-import type { Direction } from '../../domain/word/Direction';
-import type { Row } from '../../domain/grid/Row';
-import type { Col } from '../../domain/grid/Col';
 import type { DisplacedClueId } from '../../domain/builder/DisplacedClueId';
-
-export type Cursor = {
-  row: Row;
-  col: Col;
-  direction: Direction;
-} | null;
 
 export type BuilderMode = 'design' | 'fill';
 

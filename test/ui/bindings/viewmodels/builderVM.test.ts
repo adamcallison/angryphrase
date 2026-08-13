@@ -6,7 +6,8 @@ import {
   deriveBuilderShellVM,
 } from '../../../../src/ui/bindings/viewmodels/builderVM';
 import { BuilderState } from '../../../../src/builder/state/state';
-import type { Cursor, BuilderMode, BuilderSubMode } from '../../../../src/builder/state/state';
+import type { BuilderMode, BuilderSubMode } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { GridOps } from '../../../../src/domain/grid/GridOps';
 import { Row } from '../../../../src/domain/grid/Row';

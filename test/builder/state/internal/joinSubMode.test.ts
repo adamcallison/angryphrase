@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleBeginJoin, handleUnjoin, resolveJoin } from '../../../../src/builder/state/internal/joinSubMode';
-import { BuilderState, type Cursor } from '../../../../src/builder/state/state';
+import { BuilderState } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';

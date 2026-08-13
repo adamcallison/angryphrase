@@ -8,7 +8,8 @@ import {
   handleEditClue,
   handleClickWord,
 } from '../../../../src/builder/state/internal/fillMode';
-import { BuilderState, type Cursor } from '../../../../src/builder/state/state';
+import { BuilderState } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';

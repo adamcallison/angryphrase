@@ -1,5 +1,5 @@
 import type { PlayerState, AnagramModalState, CheckClassification, CheckResult } from '../state';
-import type { Cursor } from '../../../builder/state/state';
+import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';

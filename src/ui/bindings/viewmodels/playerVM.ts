@@ -2,7 +2,7 @@ import type { Puzzle } from '../../../domain/puzzle/Puzzle';
 import type { WordKey } from '../../../domain/word/WordKey';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
-import type { Cursor } from '../../../builder/state/state';
+import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerState, CheckResult, CheckClassification } from '../../../player/state/state';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { GridSize } from '../../../domain/grid/GridSize';

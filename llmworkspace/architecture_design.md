@@ -111,7 +111,7 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; code-smell A3 — moved out of `builder/state/state.ts` so Player state + viewmodels no longer reach type-only into a sibling Layer-1 module), `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
 | `domain/word/` | `Word`, `WordKey`, `Direction` and its helpers, `DerivedWord` (the shape of a `Word` before `Numbering.assign` mints its `number`; output of `WordDerivation.derive`, input to `Numbering.assign`, and the `newWords` argument of §8.5 `reconcileWords`), `WordDerivation` (scan grid → `DerivedWord[]`), `Numbering` (`assign(grid, DerivedWord[]) → Word[]` per FR-6), `WordMap`. |
 | `domain/letter/` | `Letter` brand + parsing/validation (`Letter.try(ch)`), case-folding rules (FR-51). |
 | `domain/chain/` | `Chain` traversal, `ChainValidation` (cycles/branches/dangling/self-ref per FR-98), `DisplayClue` (FR-90), `LengthPattern` (FR-91, full suffix rule implemented and unit-tested). |
@@ -131,7 +131,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | Module | Owns |
 |---|---|
 | `builder/state/intents.ts` | `BuilderIntent` discriminated union |
-| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, `Cursor`, blank-state factory |
+| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, blank-state factory (`Cursor` is imported type-only from `domain/grid/Cursor.ts` — code-smell A3; moved out so it is no longer owned here) |
 | `builder/state/reducer.ts` | `reduceBuilder(state, intent, deps): { state, events }` — single reducer dispatching to per-mode helpers; `deps = { rng, now }` is used in the design-mode case (passes `rng` to `reconcileWords` for fresh `DisplacedClueId`s) and the `confirm-reset-builder` case (calls `PuzzleKey.generate(rng)` for the fresh key) |
 
 **`builder/state/internal/` — implementation helpers (not importable from `app/state/`):**
@@ -337,6 +337,18 @@ export const Cell: {
 // the domain→UI dependency direction one-way. See `design_review_notes.md` item 3.
 export type CellSeparator = 'none' | 'space' | 'hyphen';     // rendered right/below the cell per marker flags
 
+// Cursor — the selected grid cell + travel direction. Shared by Builder, Player, and the
+// grid view-model (§5.2). Lives in `domain/grid/` (code-smell A3): its `Row`/`Col`/`Direction`
+// dependencies already live here/next door, and placing it here lets Layer-1 modules
+// (`builder/state`, `player/state`) and the bindings VMs import it without reaching type-only
+// into a sibling state module (which §9.2's `internal/` rules exist to prevent). `| null`
+// means "no selection" (FR-7; C6: not persisted across reload).
+export type Cursor = {
+  row: Row;
+  col: Col;
+  direction: Direction;
+} | null;
+
 // Grid is a 2D array (B3) but indexed only through GridOps
 export type Grid = Cell[][];                                // outer = Row, inner = Col
 export const GridOps: {
@@ -393,14 +405,15 @@ export const WordMap: {
   remove(m: WordMap, k: WordKey): WordMap;
 };
 
-// Pure linear-scan helper over `Word[]` + a cursor cell+direction. Lives in `domain/word/`
+// Pure linear-scan helper over `Word[]` + a `Cursor`. Lives in `domain/word/`
 // (code-smell B1: was duplicated 4× across player reducers + builder/player viewmodels).
-// Takes the non-null structural cursor shape, NOT the `Cursor` type from `builder/state/`:
-// `domain/` is Layer 0 and cannot import Layer 1 (§9.2); all call-sites null-check the
-// `Cursor` (which is `| null`) before invoking this — the function is never called with a
-// null cursor. Returns `Word | null` to match the project's nullable idiom (not `undefined`).
+// `Cursor` is now imported from `domain/grid/Cursor.ts` (code-smell A3 fix) — no Layer-1
+// reach. The parameter accepts the nullable `Cursor` (`| null`) and early-returns `null`
+// when the cursor is null; call-sites already null-check before invoking, so the early
+// return is defensive. Returns `Word | null` to match the project's nullable idiom
+// (not `undefined`).
 export const WordSelection: {
-  findContainingWord(words: Word[], cursor: { row: Row; col: Col; direction: Direction }): Word | null;
+  findContainingWord(words: Word[], cursor: Cursor): Word | null;
 };
 
 // `DerivedWord` is the shape of a `Word` before `Numbering.assign` mints its `number`:
@@ -775,11 +788,11 @@ Most reducer cases ignore `deps`. Production wires `deps = { rng: MathRandomRng,
 
 ```ts
 // builder/state/state.ts
-export type Cursor = {
-  row: Row;
-  col: Col;
-  direction: Direction;
-} | null;                                                     // FR-7: null = no selection; C6: not persisted across reload
+import type { Cursor } from '../../domain/grid/Cursor';     // code-smell A3: Cursor owned by `domain/grid/` (§3.2)
+                                                              //   — was defined inline here, imported type-only by
+                                                              //   Player state + grid/VMs (sibling Layer-1 reach).
+// (Cursor type definition lives in §3.2; shape: { row: Row; col: Col; direction: Direction } | null,
+//  FR-7: null = no selection; C6: not persisted across reload.)
 
 export type BuilderMode = 'design' | 'fill';                  // FR-16
 export type BuilderSubMode =
@@ -998,7 +1011,7 @@ export type GridCellVM = {
 export type GridVM = {
   size: GridSize;
   cells: GridCellVM[][];                                     // row-major
-  cursor: { row: Row; col: Col; direction: Direction } | null;
+  cursor: Cursor;                                            // `Cursor` imported type-only from `domain/grid/Cursor.ts` (§3.2); code-smell A3 fold
 };
 ```
 
@@ -1422,7 +1435,7 @@ angryphrase/
 │  ├─ app.css                              # tailwind imports + minimal global styles (CON-4 tokens)
 │  ├─ domain/                              # Layer 0: pure, framework-free (§2.1)
 │  │  ├─ grid/
-│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  CellIndex.ts
+│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts        # Cursor hoisted from builder/state (code-smell A3)
 │  │  │  ├─ Cell.ts  CellMarker.ts  CellMarkerFlag.ts
 │  │  │  ├─ Grid.ts  GridOps.ts
 │  │  ├─ word/

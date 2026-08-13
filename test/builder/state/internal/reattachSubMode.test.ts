@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleBeginReattach, handleDeleteDisplacedClue, resolveReattach } from '../../../../src/builder/state/internal/reattachSubMode';
-import { BuilderState, type Cursor } from '../../../../src/builder/state/state';
+import { BuilderState } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';

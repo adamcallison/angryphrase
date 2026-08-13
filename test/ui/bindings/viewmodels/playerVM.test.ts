@@ -22,7 +22,7 @@ import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
-import type { Cursor } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { PlayerState, CheckResult, AnagramModalState } from '../../../../src/player/state/state';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 

@@ -7,8 +7,7 @@ import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import { GridOps } from '../../../domain/grid/GridOps';
 import type { Word } from '../../../domain/word/Word';
 import type { WordNumber } from '../../../domain/word/WordNumber';
-import type { Direction } from '../../../domain/word/Direction';
-import type { Cursor } from '../../../builder/state/state';
+import type { Cursor } from '../../../domain/grid/Cursor';
 
 export type { CellSeparator };
 
@@ -29,7 +28,7 @@ export type GridCellVM = {
 export type GridVM = {
   size: GridSize;
   cells: GridCellVM[][];
-  cursor: { row: Row; col: Col; direction: Direction } | null;
+  cursor: Cursor;
 };
 
 function cellKey(r: number, c: number): string {
