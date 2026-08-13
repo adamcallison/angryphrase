@@ -66,8 +66,15 @@ Was 🟠: Between `builderVM.ts:158-181` and `playerVM.ts:283-307`. Same chain-a
 - Verification: `npm run test`, `npm run typecheck`, `npm run lint` (eslint + `madge --circular`), `npm run ci` green. `grep -rn "function cellsOfWord\|function cellsOfChain" src/` → empty.
 - Out of scope (separate tasks): E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick), A3 (`Cursor` misplaced in `builder/state`), J1 (`Chain.headOf` O(n²) caching), J2 (`DisplayClue.forWord` duplicating `headOf`'s reverse-map walk).
 
-### B3. `BuilderCluePanel.svelte` Across/Down sections near-duplicate 🟠
-`src/ui/builder/BuilderCluePanel.svelte` lines 92-152 and 154-214 are structurally identical, differing only in `{#each vm.across...}` vs `{#each vm.down...}`. ~60 lines duplicated. Extract one `<ClueSection>` component.
+### B3. `BuilderCluePanel.svelte` Across/Down sections near-duplicate ✅ Resolved
+`src/ui/builder/BuilderCluePanel.svelte` lines 92-152 and 154-214 were structurally identical, differing only in `{#each vm.across...}` vs `{#each vm.down...}`. ~60 lines duplicated. Extracted one `<ClueSection>` component.
+
+#### B3 — Fix
+- Extracted `src/ui/builder/ClueSection.svelte` — presentational Svelte 5 component; props `{ title: string; entries: ClueEntryVM[]; isInJoinMode: boolean }`. Owns the per-row `drafts = $state(new Map<string,string>())` plus the helpers previously in the parent (`canonicalId`, `rowId`, `valueFor`, `setDraft`, `clearDraft`, `dispatchEditClue`, `dispatchBeginJoin`, `dispatchUnjoin`, `dispatchRowClick`, `stopPropagation`). Markup is the old Across-`<section>` body generalised from `vm.across` to `entries` and the literal `Across` heading to `{title}`.
+- `BuilderCluePanel.svelte` now composes two children (`title="Across"`/`entries={vm.across}` and `title="Down"`/`entries={vm.down}`); both invocations share one identical row body via `ClueSection`. Parent keeps only `vm` prop, `panelEl` state, `isInJoinMode` derived, and the scroll-into-view `$effect`. The scroll effect was consolidated from two parallel for-loops (old lines 66-86) into one walk over `[...vm.across, ...vm.down]`, matching by `startRow`/`startCol`/`direction`; `rowId(entry)` format `${entry.direction}-${Number(entry.number)}` preserved so `document.getElementById` still resolves children's `<li id>`.
+- Behaviour preserved exactly: same DOM id scheme, same `dispatchBuilder` intents (`click-clue-panel-word`, `begin-join`, `unjoin`, `edit-clue`), same `drafts` Map persistence, same scroll behaviour, same Tailwind classes. Unused `dispatchBuilder` import removed from parent (dispatch now in child); unused `canonicalId` removed from parent (new scroll loop compares fields directly); `ClueEntryVM` import retained for `rowId`.
+- **Placement rationale**: `ui/builder/` (not `ui/shared/`) because the row body is Builder-specific (edit input + join/unlink buttons). `PlayerCluePanel.svelte` has a different, simpler row body (display only, no edit/join) and is not flagged by this smell; a shared `ClueSection` would force snippet/param soup. AD §7.2 + §9.3 tree amended to add `ClueSection.svelte` under `ui/builder/`.
+- Verification: `npm run typecheck` (svelte-check 0 errors/0 warnings), `npm run lint` (eslint + `madge --circular`), `npm run test` (77 files / 1020 tests green), `npm run build`, `npm run ci` green.
 
 ### B4. `EMPTY` banner / blank-grid stub repeated in `playerVM.ts` import branch 🟡
 `derivePlayerShellVM` constructs a 2×2 blank grid + empty everything for the `phase==='import'` branch (`playerVM.ts:180-217`). Same shape partially repeated in `derivePlayerToolbarVM` import branch.
@@ -292,7 +299,7 @@ Top 5 by impact:
 1. **A1** missing boundary self-test — design claims self-verification that doesn't exist. ✅ Resolved.
 2. **C1** `DisplacedClueId` non-UUID format diverges from AD §6.1. ✅ Resolved.
 3. **D1/D2/D3** reducer-dispatch string sets, ambiguous routing, `Puzzle.withGrid` gridSize drift — three DRN items that compounded dispatch/invariant-correctness risk. **D1 ✅ Resolved** (DRN item 7 closed); **D2 ✅ Resolved** (DRN item 9 closed, 2026-08-10); **D3 ✅ Resolved** (DRN item 8 closed, 2026-08-10 — `withGrid` now re-syncs `gridSize` from `g.length`; redundant `change-grid-size` local patch removed).
-4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); **B2 ✅ Resolved** (2026-08-10: extracted to `domain/chain/ChainCells.ts`, 2 sites replaced, AD amended); B3 remains open.
+4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); **B2 ✅ Resolved** (2026-08-10: extracted to `domain/chain/ChainCells.ts`, 2 sites replaced, AD amended); **B3 ✅ Resolved** (2026-08-13: extracted `ui/builder/ClueSection.svelte`, BuilderCluePanel composes two children, AD §7.2 + §9.3 amended).
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere.
 
 Acknowledged-but-accepted (no action needed unless revisiting): A4, K2/K3 open items, F3.
