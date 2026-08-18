@@ -622,8 +622,9 @@ export const Puzzle: {
 // Completeness — FR-61, FR-62
 export type CompletenessViolation =
   | { kind: 'missing-answer-letter'; row: Row; col: Col }
-  | { kind: 'invalid-answer-letter'; row: Row; col: Col; value: string }
   | { kind: 'missing-clue'; wordNumber: WordNumber; direction: Direction };
+// Note: `invalid-answer-letter` removed per §0 Principle 3 — `Cell.answerLetter: Letter | null`
+// where `Letter` is a range-checked branded type, so an invalid letter is unrepresentable.
 
 export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[];

@@ -55,8 +55,6 @@ function violationMessage(v: CompletenessViolation): string {
   switch (v.kind) {
     case 'missing-answer-letter':
       return `Missing answer letter at row ${Number(v.row)}, col ${Number(v.col)}.`;
-    case 'invalid-answer-letter':
-      return `Invalid answer letter ${v.value} at row ${Number(v.row)}, col ${Number(v.col)}.`;
     case 'missing-clue':
       return `Missing clue for word ${Number(v.wordNumber)} ${v.direction}.`;
   }

@@ -9,7 +9,6 @@ import { Chain } from '../chain/Chain';
 
 export type CompletenessViolation =
   | { kind: 'missing-answer-letter'; row: Row; col: Col }
-  | { kind: 'invalid-answer-letter'; row: Row; col: Col; value: string }
   | { kind: 'missing-clue'; wordNumber: WordNumber; direction: Direction };
 
 export const CompletenessCheck: {

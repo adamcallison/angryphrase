@@ -170,8 +170,17 @@ Was 🟡: `parsePuzzleV1` (`v1.ts`) enforced `key` via `PuzzleKey.try` regex; fo
 - `v1.test.ts` fixtures migrated from `'dc-1'`/`'id-1'`/`'same-id'` to valid inline UUID v4 literals (`UUID_A`/`UUID_B` consts). Added 2 new rejection tests (non-UUID `'not-a-uuid'`, legacy 32-hex `'ab'.repeat(16)`). Adjacent `DisplacedClue.test.ts` length-32 assertions migrated to length-36 + UUID v4 regex match.
 - Acceptance decision: localStorage Builder snapshots carrying legacy 32-hex ids fail strict parse on reload → snapshot discarded → blank Builder. No migration code; per human decision.
 
-### C4. `CompletenessCheck` never emits `invalid-answer-letter` 🟡
+### C4. `CompletenessCheck` never emits `invalid-answer-letter` 🟡 ✅ Resolved
 `CompletenessViolation` AD §3.6 / `src/domain/puzzle/CompletenessCheck.ts:9-12` has an `'invalid-answer-letter'` variant, but `check()` only emits `missing-answer-letter` and `missing-clue`. `Cell.answerLetter` invariant prevents invalid letters, so variant is dead by construction. Either remove variant or make it truly redundant with the impossible-state principle (AD §0 principle 3).
+
+#### C4 — Fix
+- Option adopted 2026-08-18: **remove the variant** (principled per §0 Principle 3 — `Cell.answerLetter: Letter | null` where `Letter` is a range-checked branded type, so an invalid letter is unrepresentable; keeping a union member for an impossible state is itself a Principle-3 violation, so "make redundant" would preserve the dead representation).
+- `src/domain/puzzle/CompletenessCheck.ts:12` — deleted `| { kind: 'invalid-answer-letter'; row: Row; col: Col; value: string }` from `CompletenessViolation` union; union now 2 members (`missing-answer-letter`, `missing-clue`).
+- `src/builder/state/internal/importExport.ts:58-59` — deleted the dead `case 'invalid-answer-letter':` branch from `violationMessage` switch. Remaining 2 cases are exhaustive over the 2-member union; no `default` / `never` assertion needed; return type `string` still satisfied.
+- No new tests: C4 is a type-only refactor + dead-branch deletion with no behaviour change. No existing test exercises the variant (grep `invalid-answer-letter` in `test/` empty). Matches B6/B3 precedent for type-only refactors.
+- AD §3.6 (line 625 variant line deleted; note added citing §0 Principle 3) amended.
+- Verification: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run ci` green; `grep -rn 'invalid-answer-letter' src/` → empty.
+- Out of scope (separate tasks): E2 (`deriveBuilderToolbarVM` runs `CompletenessCheck.check` twice per call), C5 (parser constructs throwaway `PuzzleOps.blank` before overwriting).
 
 ### C5. Parser constructs a throwaway blank puzzle before overwriting with parsed contents 🟡
 `parsePuzzleV1` (`v1.ts:607-630`). Step 1: `buildDomainGrid` builds cells via repeated `GridOps.setCell` over a `GridOps.blank`. Step 2: `WordDerivation.derive(grid)` (v1.ts:608) — used only for `crossCheckWords` against parsed words, then discarded. Step 3: `Numbering.assign(grid, buildDomainWords(parsedWords))` (v1.ts:615) — the words that actually go into the puzzle. Step 4 (v1.ts:628): `puzzle = PuzzleOps.blank(gridSize, puzzleKey)`. `PuzzleOps.blank` (Puzzle.ts:27-37) builds ANOTHER blank grid + runs `Numbering.assign(grid, WordDerivation.derive(grid))` on it — empty grid, so derive/assign return `[]` but still allocate. Lines 629-630 then immediately overwrite with `withGrid` (the parsed grid) and `withWords` (the numbered words), discarding the `blank`-produced grid + words. The `blank` call exists as a constructor scaffold only; its work is fully thrown away. Belt-and-suspenders; could construct the puzzle object literal directly from the already-built grid + numberedWords.
