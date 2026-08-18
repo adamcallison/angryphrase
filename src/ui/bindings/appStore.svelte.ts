@@ -12,18 +12,17 @@ import { PuzzleKey as PuzzleKeyCtor } from '../../domain/puzzle/PuzzleKey';
 import { getPorts } from './ports';
 import type { PersistenceScheduler } from './persistenceScheduler';
 import { parsePlayerProgress } from './persistenceCodec';
-import { createPersistenceScheduler } from './persistenceScheduler';
 
 type AppDeps = { rng: Rng; now: () => number };
 
 let state: AppState = $state(AppStateCtor.blank(GridSizeCtor.of(15), PuzzleKeyCtor.generate(getPorts().rng)));
 let deps: AppDeps = $state({ rng: getPorts().rng, now: () => Date.now() });
-let scheduler: PersistenceScheduler = createPersistenceScheduler(getPorts().storage);
+let scheduler!: PersistenceScheduler;
 
-export function bootApp(initial: AppState, depsArg: AppDeps, schedulerArg?: PersistenceScheduler): void {
+export function bootApp(initial: AppState, depsArg: AppDeps, schedulerArg: PersistenceScheduler): void {
   state = initial;
   deps = depsArg;
-  scheduler = schedulerArg ?? createPersistenceScheduler(getPorts().storage);
+  scheduler = schedulerArg;
 }
 
 export function getAppState(): AppState {
