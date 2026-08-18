@@ -111,7 +111,7 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; code-smell A3 — moved out of `builder/state/state.ts` so Player state + viewmodels no longer reach type-only into a sibling Layer-1 module), `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; owned here so Player state + viewmodels do not reach type-only into a sibling Layer-1 module), `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
 | `domain/word/` | `Word`, `WordKey`, `Direction` and its helpers, `DerivedWord` (the shape of a `Word` before `Numbering.assign` mints its `number`; output of `WordDerivation.derive`, input to `Numbering.assign`, and the `newWords` argument of §8.5 `reconcileWords`), `WordDerivation` (scan grid → `DerivedWord[]`), `Numbering` (`assign(grid, DerivedWord[]) → Word[]` per FR-6), `WordMap`. |
 | `domain/letter/` | `Letter` brand + parsing/validation (`Letter.try(ch)`), case-folding rules (FR-51). |
 | `domain/chain/` | `Chain` traversal, `ChainValidation` (cycles/branches/dangling/self-ref per FR-98), `DisplayClue` (FR-90), `LengthPattern` (FR-91, full suffix rule implemented and unit-tested). |
@@ -124,14 +124,14 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 | `domain/rng/` | `Rng` interface only — a deps-injection abstraction, not a port. Hoisted out of `domain/ports/` to keep the "port" definition honest and break a type-only cycle (see §3.7 and `design_review_notes.md` item 1). |
 
 **Layer 1 — `builder/state/`, `player/state/`, and `app/state/` (pure reducers).**
-Owns the reducer functions and the `Intent` discriminated unions for each experience, plus the per-experience `State` value objects. Pure; no Svelte, no DOM, no ports. All three freely import `domain/`. **Module boundaries within Layer 1 (binding):** each of `builder/state/`, `player/state/`, and `app/state/` is a module that publishes its API at the folder root (`state.ts`, `intents.ts`, `reducer.ts`, and — for `app/state/` — `effects.ts`); implementation helpers live under that module's `internal/` subfolder. `app/state` is a client of the `builder/state` and `player/state` modules: it may import their root files (value or type, as needed) but never their `internal/` files. **`builder/state` and `player/state` may not import each other at all (cross-module imports are fully forbidden; the ESLint `no-restricted-imports` rule for each forbids any import path resolving into the sibling `state/` tree, root files included). Shared concepts that both experiences need — e.g. `Cursor` — live in `domain/` (see code-smell A3 fix; the prior "public root files only" relaxation is fully closed).** `builder/state` and `player/state` may not import `app/state` (no cycles). Tests may import from `internal/` freely — the `internal/` rule constrains only cross-module imports within `src/`. The boundary self-test `test/boundary/imports.test.ts` (code-smell A1 fix) drives the ESLint `Linter` API over adversarial fixtures asserting forbidden imports fail to compile; the builder↔player and builder/player↔`internal/` edges each have positive and negative controls. Components:
+Owns the reducer functions and the `Intent` discriminated unions for each experience, plus the per-experience `State` value objects. Pure; no Svelte, no DOM, no ports. All three freely import `domain/`. **Module boundaries within Layer 1 (binding):** each of `builder/state/`, `player/state/`, and `app/state/` is a module that publishes its API at the folder root (`state.ts`, `intents.ts`, `reducer.ts`, and — for `app/state/` — `effects.ts`); implementation helpers live under that module's `internal/` subfolder. `app/state` is a client of the `builder/state` and `player/state` modules: it may import their root files (value or type, as needed) but never their `internal/` files. **`builder/state` and `player/state` may not import each other at all (cross-module imports are fully forbidden; the ESLint `no-restricted-imports` rule for each forbids any import path resolving into the sibling `state/` tree, root files included). Shared concepts that both experiences need — e.g. `Cursor` — live in `domain/`; the prior "public root files only" relaxation is closed.** `builder/state` and `player/state` may not import `app/state` (no cycles). Tests may import from `internal/` freely — the `internal/` rule constrains only cross-module imports within `src/`. The boundary self-test `test/boundary/imports.test.ts` drives the ESLint `Linter` API over adversarial fixtures asserting forbidden imports fail to compile; the builder↔player and builder/player↔`internal/` edges each have positive and negative controls. Components:
 
 **`builder/state/` — public root files:**
 
 | Module | Owns |
 |---|---|
 | `builder/state/intents.ts` | `BuilderIntent` discriminated union |
-| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, blank-state factory (`Cursor` is imported type-only from `domain/grid/Cursor.ts` — code-smell A3; moved out so it is no longer owned here) |
+| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, blank-state factory (`Cursor` is imported type-only from `domain/grid/Cursor.ts`; it is not owned here) |
 | `builder/state/reducer.ts` | `reduceBuilder(state, intent, deps): { state, events }` — single reducer dispatching to per-mode helpers; `deps = { rng, now }` is used in the design-mode case (passes `rng` to `reconcileWords` for fresh `DisplacedClueId`s) and the `confirm-reset-builder` case (calls `PuzzleKey.generate(rng)` for the fresh key) |
 
 **`builder/state/internal/` — implementation helpers (not importable from `app/state/`):**
@@ -339,7 +339,7 @@ export const Cell: {
 export type CellSeparator = 'none' | 'space' | 'hyphen';     // rendered right/below the cell per marker flags
 
 // Cursor — the selected grid cell + travel direction. Shared by Builder, Player, and the
-// grid view-model (§5.2). Lives in `domain/grid/` (code-smell A3): its `Row`/`Col`/`Direction`
+// grid view-model (§5.2). Lives in `domain/grid/`: its `Row`/`Col`/`Direction`
 // dependencies already live here/next door, and placing it here lets Layer-1 modules
 // (`builder/state`, `player/state`) and the bindings VMs import it without reaching type-only
 // into a sibling state module (which §9.2's `internal/` rules exist to prevent). `| null`
@@ -409,8 +409,8 @@ export const WordMap: {
 };
 
 // Pure linear-scan helper over `Word[]` + a `Cursor`. Lives in `domain/word/`
-// (code-smell B1: was duplicated 4× across player reducers + builder/player viewmodels).
-// `Cursor` is now imported from `domain/grid/Cursor.ts` (code-smell A3 fix) — no Layer-1
+// (single source of truth; previously duplicated across player reducers + builder/player
+// viewmodels). `Cursor` is imported from `domain/grid/Cursor.ts` — no Layer-1
 // reach. The parameter accepts the nullable `Cursor` (`| null`) and early-returns `null`
 // when the cursor is null; call-sites already null-check before invoking, so the early
 // return is defensive. Returns `Word | null` to match the project's nullable idiom
@@ -792,7 +792,7 @@ Most reducer cases ignore `deps`. Production wires `deps = { rng: MathRandomRng,
 
 ```ts
 // builder/state/state.ts
-import type { Cursor } from '../../domain/grid/Cursor';     // code-smell A3: Cursor owned by `domain/grid/` (§3.2)
+import type { Cursor } from '../../domain/grid/Cursor';     // Cursor owned by `domain/grid/` (§3.2)
                                                               //   — was defined inline here, imported type-only by
                                                               //   Player state + grid/VMs (sibling Layer-1 reach).
 // (Cursor type definition lives in §3.2; shape: { row: Row; col: Col; direction: Direction } | null,
@@ -965,14 +965,14 @@ export type PlayerIntent =
 
 Persistence is the bindings layer's responsibility — driven by two mechanisms:
 
-1. **State observation (autosave).** The bindings layer runs a `$effect` over `state.builder` (the full BuilderState) and `state.player` (when `phase === 'solving'`). On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
+1. **State observation (autosave).** The bindings layer runs two `$effect`s — one over `state.builder` (the full BuilderState) and one over `state.player` (when `phase === 'solving'`) — split per-slice so a change to one slice does not re-arm the other's debounce timer. On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
    ```ts
    // Player progress blob: { version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }
     // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
     //     puzzle: <incomplete puzzle JSON>, mode: 'design'|'fill', subMode: 'none' }
     //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
     //   (displacedClues lives only inside the embedded puzzle JSON via serializeIncomplete;
-    //    no top-level displacedClues field — code_smells F2 removed the dead duplicate)
+    //    no top-level displacedClues field — the dead duplicate was removed)
    ```
    The bindings layer constructs the Builder snapshot wrapper; the `serializeIncomplete(state.builder.puzzle, state.builder.displacedClues)` adapter produces just the embedded puzzle-JSON portion.
 
@@ -1017,7 +1017,7 @@ export type GridCellVM = {
 export type GridVM = {
   size: GridSize;
   cells: GridCellVM[][];                                     // row-major
-  cursor: Cursor;                                            // `Cursor` imported type-only from `domain/grid/Cursor.ts` (§3.2); code-smell A3 fold
+  cursor: Cursor;                                            // `Cursor` imported type-only from `domain/grid/Cursor.ts` (§3.2)
 };
 ```
 
@@ -1441,7 +1441,7 @@ angryphrase/
 │  ├─ app.css                              # tailwind imports + minimal global styles (CON-4 tokens)
 │  ├─ domain/                              # Layer 0: pure, framework-free (§2.1)
 │  │  ├─ grid/
-│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts        # Cursor hoisted from builder/state (code-smell A3)
+│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts        # Cursor owned here (not builder/state)
 │  │  │  ├─ Cell.ts  CellMarker.ts  CellMarkerFlag.ts
 │  │  │  ├─ Grid.ts  GridOps.ts
 │  │  ├─ word/
