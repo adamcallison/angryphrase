@@ -10,7 +10,7 @@ import { mount } from 'svelte';
 import App from './ui/app/App.svelte';
 import { bootApp } from './ui/bindings/appStore.svelte';
 import { getPorts } from './ui/bindings/ports';
-import { parseBuilderSnapshot } from './ui/bindings/persistenceScheduler';
+import { parseBuilderSnapshot } from './ui/bindings/persistenceCodec';
 import { AppState } from './app/state/state';
 import { PlayerState } from './player/state/state';
 import type { BuilderState } from './builder/state/state';

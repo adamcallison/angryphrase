@@ -11,7 +11,7 @@ import { GridSize as GridSizeCtor } from '../../domain/grid/GridSize';
 import { PuzzleKey as PuzzleKeyCtor } from '../../domain/puzzle/PuzzleKey';
 import { getPorts } from './ports';
 import type { PersistenceScheduler } from './persistenceScheduler';
-import { parsePlayerProgress } from './persistenceScheduler';
+import { parsePlayerProgress } from './persistenceCodec';
 import { createPersistenceScheduler } from './persistenceScheduler';
 
 type AppDeps = { rng: Rng; now: () => number };

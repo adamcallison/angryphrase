@@ -5,10 +5,12 @@ import {
   parseBuilderSnapshot,
   serializePlayerProgress,
   parsePlayerProgress,
-  createPersistenceScheduler,
-  type PersistenceScheduler,
   type BuilderSnapshot,
   type PlayerProgressBlob,
+} from '../../../src/ui/bindings/persistenceCodec';
+import {
+  createPersistenceScheduler,
+  type PersistenceScheduler,
 } from '../../../src/ui/bindings/persistenceScheduler';
 import { BuilderState } from '../../../src/builder/state/state';
 import { PlayerState } from '../../../src/player/state/state';

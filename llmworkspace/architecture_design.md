@@ -1501,7 +1501,7 @@ angryphrase/
 │  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §5.5)
 │  │     ├─ appStore.svelte.ts  builderStore.svelte.ts  playerStore.svelte.ts
 │  │     ├─ toastStore.svelte.ts  modalStore.svelte.ts
-│  │     ├─ ports.ts  persistenceScheduler.ts
+  │  │     ├─ ports.ts  persistenceCodec.ts  persistenceScheduler.ts
 │  │     ├─ viewmodels/
 │  │        ├─ builderVM.ts  playerVM.ts  gridVM.ts  cluePanelVM.ts
 │  │        ├─ anagramVM.ts  toastVM.ts  modalVM.ts
