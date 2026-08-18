@@ -133,7 +133,9 @@ export function parsePlayerProgress(blob: string): PlayerProgressBlob | null {
       return row.map((cell: unknown) => {
         if (cell === null) return null;
         if (typeof cell !== 'string') throw new Error('parsePlayerProgress: cell not string');
-        return LetterCtor.try(cell); // null on invalid per FR-80
+        const letter = LetterCtor.try(cell);
+        if (letter === null) throw new Error('parsePlayerProgress: invalid letter cell');
+        return letter;
       });
     });
 

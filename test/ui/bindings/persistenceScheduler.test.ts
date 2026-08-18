@@ -211,11 +211,12 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid letter in playerLetters drops to null per FR-80 (Letter.try returns null on invalid)', () => {
+    it('parsePlayerProgress: invalid letter in playerLetters returns null (NFR-9 corrupt-drop, consistent with row/cell throws)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: '00000000-0000-4000-8000-000000000000', gridSize: 2, playerLetters: [['@', null], [null, null]] });
-      const result = parsePlayerProgress(json);
-      expect(result).not.toBeNull();
-      expect(result?.playerLetters[0]![0]).toBeNull();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(parsePlayerProgress(json)).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
 
     it('parsePlayerProgress: returns null on garbage JSON', () => {
