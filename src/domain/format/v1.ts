@@ -1,5 +1,4 @@
 import type { Puzzle } from '../puzzle/Puzzle';
-import { Puzzle as PuzzleOps } from '../puzzle/Puzzle';
 import { Title } from '../puzzle/Title';
 import { Author } from '../puzzle/Author';
 import { PuzzleKey } from '../puzzle/PuzzleKey';
@@ -632,10 +631,14 @@ export const parsePuzzleV1 = (
     return { ok: false, failures };
   }
 
-  let puzzle = PuzzleOps.blank(gridSize, puzzleKey);
-  puzzle = PuzzleOps.withGrid(puzzle, grid);
-  puzzle = PuzzleOps.withWords(puzzle, numberedWords);
-  puzzle = PuzzleOps.withMetadata(puzzle, Title.try(titleRaw), Author.try(authorRaw));
+  const puzzle: Puzzle = {
+    key: puzzleKey,
+    gridSize,
+    grid,
+    words: numberedWords,
+    title: Title.try(titleRaw),
+    author: Author.try(authorRaw),
+  };
 
   const displacedClues: DisplacedClue[] =
     displacedCluesResult?.map((d) => ({

@@ -182,8 +182,16 @@ Was 🟡: `parsePuzzleV1` (`v1.ts`) enforced `key` via `PuzzleKey.try` regex; fo
 - Verification: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run ci` green; `grep -rn 'invalid-answer-letter' src/` → empty.
 - Out of scope (separate tasks): E2 (`deriveBuilderToolbarVM` runs `CompletenessCheck.check` twice per call), C5 (parser constructs throwaway `PuzzleOps.blank` before overwriting).
 
-### C5. Parser constructs a throwaway blank puzzle before overwriting with parsed contents 🟡
-`parsePuzzleV1` (`v1.ts:607-630`). Step 1: `buildDomainGrid` builds cells via repeated `GridOps.setCell` over a `GridOps.blank`. Step 2: `WordDerivation.derive(grid)` (v1.ts:608) — used only for `crossCheckWords` against parsed words, then discarded. Step 3: `Numbering.assign(grid, buildDomainWords(parsedWords))` (v1.ts:615) — the words that actually go into the puzzle. Step 4 (v1.ts:628): `puzzle = PuzzleOps.blank(gridSize, puzzleKey)`. `PuzzleOps.blank` (Puzzle.ts:27-37) builds ANOTHER blank grid + runs `Numbering.assign(grid, WordDerivation.derive(grid))` on it — empty grid, so derive/assign return `[]` but still allocate. Lines 629-630 then immediately overwrite with `withGrid` (the parsed grid) and `withWords` (the numbered words), discarding the `blank`-produced grid + words. The `blank` call exists as a constructor scaffold only; its work is fully thrown away. Belt-and-suspenders; could construct the puzzle object literal directly from the already-built grid + numberedWords.
+### C5. Parser constructs a throwaway blank puzzle before overwriting with parsed contents ✅ Resolved
+Was 🟡: `parsePuzzleV1` (`v1.ts:635-638`) built puzzle via 4-step scaffold: `PuzzleOps.blank(gridSize, puzzleKey)` → `withGrid` → `withWords` → `withMetadata`. `PuzzleOps.blank` (`Puzzle.ts:27-37`) calls `GridOps.blank(size)` (full N×N grid) + `Numbering.assign(grid, WordDerivation.derive(grid))` (empty grid → returns `[]` but still allocates). All that work thrown away next 2 lines; only `withMetadata` survived. Belt-and-suspenders scaffold.
+
+#### C5 — Fix
+- `src/domain/format/v1.ts:634-641` — replaced 4-step scaffold with direct `Puzzle` object literal: `{ key: puzzleKey, gridSize, grid, words: numberedWords, title: Title.try(titleRaw), author: Author.try(authorRaw) }`. All inputs already validated/branded upstream (`gridSize` GridSize-validated line 581; `grid` built from same `gridSize` via `buildDomainGrid` line 614 so `grid.length === Number(gridSize)` — no D3 drift risk; `numberedWords` `Word[]` from `Numbering.assign` line 622; `titleRaw`/`authorRaw` string-validated lines 588-590 + 603-605; `Title.try`/`Author.try` just brand, no throw). Behaviour identical: same 6 fields, same values.
+- `src/domain/format/v1.ts:2` — removed now-unused `import { Puzzle as PuzzleOps } from '../puzzle/Puzzle';`. Kept `import type { Puzzle }` (line 1) for the literal annotation.
+- No new tests: C5 is a dead-call removal + literal-for-scaffold refactor with no behaviour change. Existing parser tests cover: `test/domain/format/v1.test.ts` (35 tests) round-trip + parse happy paths assert `result.puzzle.{key,gridSize,words,grid}` (lines 140-579). All preserved.
+- `Puzzle.blank`/`withGrid`/`withWords`/`withMetadata` retained — still used at `builder/state/state.ts:30`, `builder/state/reducer.ts:47,53`, `designMode.ts:30,41,68`, `joinSubMode.ts:59,114`, `reattachSubMode.ts:102`, `fillMode.ts:122,149,169,194,261`, `player/state/internal/solving.ts:202,237,262,331`, `player/state/internal/lifecycle.ts:80,127`.
+- AD §3.7 (line 672) shows only `parsePuzzleV1` signature; no prose describes the blank-scaffold. No AD amendment needed.
+- Verification: `npm run ci` green (lint incl. madge circular-check, typecheck 0/0, 1023 tests pass, vite build).
 
 ---
 
