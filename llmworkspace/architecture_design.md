@@ -33,7 +33,7 @@ These four principles are binding constraints on the implementation. Every other
 | **`Direction` as `'across' \| 'down'`** (from B5) | Matches FR-96; helpers in a `Direction` module. |
 | **Vitest, pure-logic tests** (from D2) | Unit tests cover all pure domain logic. No DOM/component test harness required by spec; visual + mobile keyboard behaviour verified manually (RISK-4). |
 | **View-models in / Intents out** (from E2) | Components receive plain typed view-models produced in `ui/bindings`. Components emit typed intents. The bindings layer owns the runes store, dispatch, debounced persistence, and view-model derivation. Components contain no business logic and no domain-function calls. |
-| **`converted-puzzles/` directory** (from B6) | Existing `puzzles/*.json` files are non-conforming to the format (use `letter` not `puzzleLetter`, lack `version` and `type`). A migration script produces `converted-puzzles/*.json` in the current format. Neither the app nor the test suite references either directory; the converted files exist purely as a record. |
+| **`puzzles/` directory** | Canonical v1 sample puzzle files (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). Neither the app nor the test suite references the directory; the files exist purely as a record of the format. The strict parser's rejection of an unknown `letter` field (FR-95) is documented at §3.7 and §6.3; no migration script is shipped — the samples are already canonical. |
 | **Injected RNG for anagram scramble** (from D1) | `scramble(word, input, rng)` takes an `Rng` interface; production wires `Math.random`; tests inject a seeded RNG. |
 | **No cursor persistence across reload** (from C6) | Builder state autosaves everything *except* the cursor. On reload, cursor is `null`. Less code, matches your preference. |
 | **Strict non-head clue rejection** (from C5) | A complete-file import with a non-empty `clue` field on a non-head chain word is invalid (clear error, no silent normalization). |
@@ -697,14 +697,14 @@ export const Filename: {
 - Top-level `version === 1` and `type ∈ {'incomplete', 'complete'}` (FR-94).
 - `gridSize` integer, 2 ≤ n ≤ 25.
 - `grid` is a 2D array of `gridSize` × `gridSize`; each cell is `{ black, puzzleLetter, spaceRight, spaceBottom, hyphenRight, hyphenBottom }`. Missing marker booleans default to `false` (FR-99). `puzzleLetter` is `null` or single A–Z.
-- `puzzleLetter` is the only accepted answer-letter field name (FR-95). A field named `letter` is *not* a fallback; the parser rejects files that use `letter` as an unknown extra field (strict). See migration note below for the existing `puzzles/*.json` files.
+- `puzzleLetter` is the only accepted answer-letter field name (FR-95). A field named `letter` is *not* a fallback; the parser rejects files that use `letter` as an unknown extra field (strict).
 - Word positions within bounds; `length ≥ 2`; `nextWord` (if present) points to an existing word; no cycles, branches, dangling refs, self-refs (FR-98 + `ChainValidation`).
 - **Complete format:** every white cell has a non-null A–Z `puzzleLetter` (FR-61). Every chain-head word has a non-empty non-whitespace clue (FR-62). **Strict C5 rule:** a non-head chain word with a non-empty `clue` field is a validation failure (not silently normalized).
 - **Incomplete format:** `puzzleLetter` may be `null`; clues may be empty; `displacedClues` field is a `DisplacedClue[]` (FR-97). Extra fields not in the schema cause validation failure (strict).
 - On success, `word.number` is overwritten by the re-derived value (FR-98a), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
 - `playerLetter` is never present in JSON; `null` is implied at runtime (FR-99).
 
-**Migration note — existing `puzzles/*.json` files:** they use `letter` and lack `version`/`type`, so they fail the strict parser. They are *not* fixtures; the app never reads them. A one-shot migration script (`scripts/migrate-puzzles.ts`, run manually) rewrites each into `converted-puzzles/puzzleN-incomplete.json` (renaming `letter → puzzleLetter`, adding `version: 1`, `type: 'incomplete'`, generating fresh `key`s, adding `displacedClues: []`). The `converted-puzzles/` directory is committed for the record but is referenced by neither the app nor the test suite (per B6).
+**Sample puzzle files — `puzzles/*.json`:** canonical v1 format (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). They are *not* fixtures; the app and the test suite never read them. The directory exists purely as a record of the format. No migration script is shipped — the files are already canonical.
 
 ---
 
@@ -1524,10 +1524,8 @@ angryphrase/
 │  │  ├─ InMemoryStoragePort.ts  SeededRng.ts  StubDownloadPort.ts  FakeClock.ts
 │  └─ boundary/
 │     └─ imports.test.ts                  # asserts ESLint rule denies forbidden imports (§9.2)
-├─ converted-puzzles/                       # B6 — migrated from puzzles/, for the record only
-│  └─ puzzle1-incomplete.json …
-├─ puzzles/                                  # B6 — left untouched, non-conforming
-├─ scripts/migrate-puzzles.ts                # one-shot migration: puzzles/ → converted-puzzles/
+├─ puzzles/                                  # canonical v1 sample puzzle files; not referenced by app or tests
+│  └─ puzzle1.json … puzzle6.json
 └─ llmworkspace/
    ├─ requirements.md
    ├─ architectquestions0.md
@@ -1670,7 +1668,7 @@ Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `S
 ### 12.2 Anticipated future requirements (not in scope, but designed-not-to-block)
 
 - **Undo/redo** (currently out of scope, §8). The pure-reducer + intent dispatch model is trivially amenable to an undo stack: store recent `(state, intent)` pairs and reuse the reducers in reverse isn't possible (reducers aren't reversible), but storing past `BuilderState`/`PlayerState` snapshots and popping on undo is. The strict immutability (A2) makes snapshots cheap via structural sharing.
-- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `converted-puzzles/` migration path already shows the format; `domain/format/parsePuzzleV1` is the only entry.
+- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `puzzles/*.json` files already show the canonical v1 format; `domain/format/parsePuzzleV1` is the only entry.
 - **Plugin for foreign puzzle formats** (`.puz`, `.xd`, `.jpz`). Out of scope (§8) and explicitly unsupported, but if added, it would be a sibling to `domain/format/` producing the same `Puzzle` type.
 
 ### 12.3 Things that would change under scale
@@ -1744,7 +1742,7 @@ Every FR is covered. Highlighted mappings of subtle ones:
 - Moved `DisplacedClue` ownership from `Puzzle` to `BuilderState` (S1) to match the spec's "Builder-only concept" declaration; serialization adapter now takes displaced clues as a separate argument to `serializeIncomplete`.
 - Kept both `lastImportError` (for inline `ImportScreen` rendering) and a `toast` event (for transient notification); an earlier draft had dropped one of them redundantly.
 - Added the `madge --circular` step to CI (§9.3, §10.4) after recognizing that the bindings layer's blanket import rights could invite a cycle.
-- Reconfirmed the parser's strictness on unknown fields (the `letter` field in existing `puzzles/*.json`) — failure, not normalization — and tied it to the `converted-puzzles/` migration path so the builder knows the strict path is intentional, not a bug (§3.7, §6.3, §9 tree).
+- Reconfirmed the parser's strictness on unknown fields (a `letter` field is rejected, not normalized) so the builder knows the strict path is intentional, not a bug (§3.7, §6.3). The `puzzles/*.json` samples are canonical v1 (`puzzleLetter`, `version: 1`); no migration script is shipped.
 - Added `viewmodels/` subdirectory under `ui/bindings/` to keep VM derivation files organized; the original E1 tree showed only stores at that level.
 - Fixed several inconsistencies and typos (the "DisposedClue" typo, an inconsistent `confirm-import` vs `confirm-import-builder` modal kind, a stale "select-mode" reference in toolbar emissions, an indented `①` glyph, etc.).
 

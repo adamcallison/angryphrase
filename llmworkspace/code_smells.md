@@ -148,8 +148,18 @@ Was 🔴: `src/domain/builder/DisplacedClueId.ts:9-12` produced 32 hex chars (`"
 - `PuzzleKey.generate` (`src/domain/puzzle/PuzzleKey.ts`) now delegates to `uuidv4(rng)`; behavior identical. Tests stay as integration guards.
 - AD §3.3 + §9.3 tree amended: added `DisplacedClueId.try` to type catalogue, new `domain/uuid/uuidv4.ts` module.
 
-### C2. `converted-puzzles/` directory specified by AD §9.3 tree absent 🟡
+### C2. `converted-puzzles/` directory specified by AD §9.3 tree absent 🟡 ✅ Resolved
 AD §9.3 / B6 commit `converted-puzzles/*.json` as migrated record. Repo lacks the dir; `scripts/convert-puzzles.ts:95` writes to `join(cwd, 'converted-puzzles')` at run time, never committed. Also AD §9.3 describes `puzzles/` as "non-conforming (legacy `letter` field, no version)" — but `puzzles/puzzle1.json` is now in v1 format (verified `"version":1,"type":"complete"`). The design premise is stale; the directory's documented role no longer applies.
+
+#### C2 — Fix
+- Root cause: a prior audit's item B6 recommended a one-shot migration script (`scripts/migrate-puzzles.ts`) rewrite legacy `puzzles/*.json` (then using `letter`, lacking `version`/`type`) into `converted-puzzles/puzzleN-incomplete.json`. Commit `afd9f95 "convert puzzles and initial bugs list"` instead converted `puzzles/` in place to canonical v1 (`version: 1`, `type: 'complete'`, `puzzleLetter`, UUID-v4 `key`); the `converted-puzzles/` dir and the migrator role were both superseded. A later `scripts/convert-puzzles.ts` (name drift from AD's `migrate-puzzles.ts`) survived as a parse+reserialize round-trip normalizer writing to a never-committed `converted-puzzles/` dir. Repo was correct; the AD lagged.
+- Deleted `scripts/convert-puzzles.ts` and the now-empty `scripts/` directory. Removed the `"convert-puzzles"` npm script and the `tsx` devDependency (its only consumer) from `package.json`; ran `npm install` to update `package-lock.json`.
+- AD §1 table row (was "`converted-puzzles/` directory (from B6)"): replaced with a `puzzles/` directory row stating the files are canonical v1 samples, not referenced by app or tests, no migration script shipped.
+- AD §3.7 (line 700): dropped the trailing "See migration note below for the existing `puzzles/*.json` files." clause; strict `letter`-field rejection note kept (parser behaviour unchanged).
+- AD §3.7 (was "Migration note — existing `puzzles/*.json` files …"): rewritten as "Sample puzzle files — `puzzles/*.json`" stating canonical v1, not fixtures, no migration script.
+- AD §9.3 tree: removed `converted-puzzles/` and `scripts/migrate-puzzles.ts` rows; relabelled `puzzles/` as "canonical v1 sample puzzle files; not referenced by app or tests".
+- AD §12.2 line 1673 + §13 line 1747: re-anchored from `converted-puzzles/` migration path to `puzzles/*.json` canonical v1.
+- Verification: `grep -rn 'converted-puzzles\|migrate-puzzles\|convert-puzzles' llmworkspace/ src/ test/ scripts/ package.json` → only the historical reference inside this C2 block (auditor's record of the prior state). `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files / 1023 passed), `npm run build` green.
 
 ### C3. `DisplacedClue` id uniqueness validated at parse but `PuzzleKey` format validated strictly ✅ Resolved
 Was 🟡: `parsePuzzleV1` (`v1.ts`) enforced `key` via `PuzzleKey.try` regex; for `displacedClue.id` it only checked `typeof id === 'string'` + uniqueness (`v1.ts:518-529`). Asymmetric strictness.
@@ -327,7 +337,7 @@ Word length could be a `WordLength` branded range-checked type (≥2 per FR-5); 
 - `src/test/boundary/imports.test.ts` listed in §9.3, missing (see A1).
 - `src/test/builder/state/reconcileWords.property.test.ts` listed, missing.
 - `src/test/builder/state/import.test.ts` listed, missing (player has `lifecycle.test.ts`, builder has `importExport.test.ts`).
-- `converted-puzzles/` directory listed, missing (see C2).
+- ~~`converted-puzzles/` directory listed, missing (see C2).~~ Resolved via C2 — AD §9.3 tree no longer lists `converted-puzzles/` or `scripts/migrate-puzzles.ts`.
 
 ### K2. `version_stamp_plan.md` not implemented 🟡
 Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + `vite.config.ts` inline plugin. Repo `vite.config.ts:1-18` has no `define` block; no `src/ui/shared/VersionStamp.svelte`; no `vite-env.d.ts` ambient declarations. `git log` shows "add git stamp design doc" commit but no implementation commit. Feature gap between plan and code.
