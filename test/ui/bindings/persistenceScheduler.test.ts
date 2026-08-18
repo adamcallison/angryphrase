@@ -86,14 +86,14 @@ describe('persistenceScheduler.ts', () => {
       expect(parsed.cursor).toBeUndefined();
     });
 
-    it('serializeBuilderSnapshot: the embedded puzzle has its displacedClues matched in the snapshot top-level displacedClues', () => {
+    it('serializeBuilderSnapshot: no top-level displacedClues field (lives only inside embedded puzzle)', () => {
       const rng = makeRng(2);
       const clue = DisplacedClue.create(rng, 'a clue', 'across');
       const state = makeBuilderState(3, { displacedClues: [clue] });
       const json = serializeBuilderSnapshot(state);
       const parsed = JSON.parse(json);
+      expect(parsed.displacedClues).toBeUndefined();
       expect(parsed.puzzle.displacedClues).toEqual([{ id: clue.id, clue: clue.clue, direction: clue.direction }]);
-      expect(parsed.displacedClues).toEqual(parsed.puzzle.displacedClues);
     });
 
     it('parseBuilderSnapshot: round-trips a BuilderState: returns puzzle, displacedClues, mode; subMode is discarded', () => {

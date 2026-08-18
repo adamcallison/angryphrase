@@ -23,12 +23,11 @@ export type BuilderSnapshot = {
 export function serializeBuilderSnapshot(state: BuilderState): string {
   // Puzzle JSON (incomplete) is embedded as an object, not a string.
   const puzzleJSON = serializeIncomplete(state.puzzle, state.displacedClues);
-  const puzzleObj = JSON.parse(puzzleJSON) as { displacedClues?: unknown };
+  const puzzleObj = JSON.parse(puzzleJSON);
   const wrapper = {
     version: 1,
     kind: 'builder-snapshot',
     puzzle: puzzleObj, // includes displacedClues field already
-    displacedClues: puzzleObj.displacedClues ?? [],
     mode: state.mode,
     subMode: 'none', // FR-64: forced to 'none' on save
     // cursor omitted per C6

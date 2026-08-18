@@ -968,9 +968,11 @@ Persistence is the bindings layer's responsibility — driven by two mechanisms:
 1. **State observation (autosave).** The bindings layer runs a `$effect` over `state.builder` (the full BuilderState) and `state.player` (when `phase === 'solving'`). On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
    ```ts
    // Player progress blob: { version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }
-   // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
-   //     puzzle: <incomplete puzzle JSON>, displacedClues: [...], mode: 'design'|'fill', subMode: 'none' }
-   //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
+    // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
+    //     puzzle: <incomplete puzzle JSON>, mode: 'design'|'fill', subMode: 'none' }
+    //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
+    //   (displacedClues lives only inside the embedded puzzle JSON via serializeIncomplete;
+    //    no top-level displacedClues field — code_smells F2 removed the dead duplicate)
    ```
    The bindings layer constructs the Builder snapshot wrapper; the `serializeIncomplete(state.builder.puzzle, state.builder.displacedClues)` adapter produces just the embedded puzzle-JSON portion.
 
