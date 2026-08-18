@@ -277,8 +277,18 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 - No new tests: pure refactor, no behaviour change. Existing `test/ui/bindings/viewmodels/builderVM.test.ts:113-182` (blank state `canExportComplete=false`; complete state `canExportComplete=true` + `exportCompleteViolations=[]`; `exportCompleteViolations` equals `CompletenessCheck.check(state.puzzle)`) assert values not call-site — stay green.
 - Verification (green): `npm run test -- builderVM` (22 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` clean), `npm run ci` (1030 tests + build). `grep -n "CompletenessCheck" src/ui/bindings/viewmodels/builderVM.ts` → import + one `check` call-site only.
 
-### E3. `deriveAnagramModalVM` indexes `scrambledArrangement` by absolute entry index `i` 🟡
+### E3. `deriveAnagramModalVM` indexes `scrambledArrangement` by absolute entry index `i` 🟡 ✅ Resolved
 `anagramVM.ts:86-91`: `scrambled[i]!` where `scrambled` is `Letter[]` filtered to non-nulls in the reducer (`player/state/internal/anagram.ts:104-106`). Alignment holds only because scramble is gated on `inputValid` (full-length input), so every non-fixed position is non-null; if the gate ever weakens, indexing silently desyncs. Fragile contract between reducer's filtered array shape and VM index assumption.
+
+#### E3 — Fix
+- Option A adopted (structural alignment, not reducer-side gate).
+- `src/player/state/state.ts:21` field widened `Letter[] | null` → `(Letter | null)[] | null`.
+- `src/player/state/internal/anagram.ts:75-77` dropped `.filter((l): l is Letter => l !== null)`; reducer now stores `scrambled.map((e) => e.letter)` entries-aligned (nulls preserved). `Letter` value import retained (still used by `Letter.from(intent.input)`).
+- `src/ui/bindings/viewmodels/anagramVM.ts:85-97` tile derivation simplified: dropped `i < scrambled.length` guard + `scrambled[i]!` assertion; now `scrambled[i] == null ? null : String(scrambled[i])` (null-preserving, covers `noUncheckedIndexedAccess` `undefined`).
+- AD §3.3 (field widened + comment), §4.4 (anagram-scramble prose appended), §5.4 (`AnagramTileVM.letter` comment corrected — "input pool" clause was inaccurate; VM never reads input pool) amended.
+- 2 new tests: `'anagram-scramble: scrambledArrangement is entries-aligned when input is short (E3 structural contract)'` (reducer, input `'BA'` covers 1 fixed + 1 pool → arrangement `[B, null, A]` under `SeededRng(1)`), `'deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (E3 — short input does not desync)'` (VM, injected `[B, null, A]` → tiles `[B, null, A]`). Existing tests unchanged (full-length inputs → no nulls → entries-aligned === filtered shape).
+- Verification: `npx vitest run test/player/state/internal/anagram.test.ts test/ui/bindings/viewmodels/anagramVM.test.ts test/ui/bindings/playerStore.test.ts test/player/state/reducer.test.ts test/player/state/internal/lifecycle.test.ts test/player/state/internal/solving.test.ts` (226 passed), `npm run typecheck` (clean), `npm run lint` (clean), `npm run ci` (clean).
+- Out of scope: E1 memoization, reducer-side `inputValid` gate on `anagram-scramble` (structural fix makes it redundant), H4 branded `Position`/`WordLength`.
 
 ### E4. `cluePanelVM` re-derives `selectedChainMemberKeys` even when cursor moved off-cluster 🟡
 `cluePanelVM.ts:46-51` runs `Chain.headOf`+`fromHead` whenever `highlightedWordKey !== null`. For a long chain, builds a set on every VM derivation.

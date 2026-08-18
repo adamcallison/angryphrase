@@ -72,9 +72,7 @@ export function handleAnagramScramble(
   const members = Chain.fromHead(wordMap, head.key).members;
   const { entries } = Anagram.buildChainModel(state.puzzle.grid, members);
   const scrambled = Anagram.scramble(entries, state.anagram.input, rng);
-  const scrambledArrangement: Letter[] = scrambled
-    .map((e) => e.letter)
-    .filter((l): l is Letter => l !== null);
+  const scrambledArrangement: (Letter | null)[] = scrambled.map((e) => e.letter);
   return Result.ok({
     ...state,
     anagram: {

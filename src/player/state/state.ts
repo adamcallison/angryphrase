@@ -18,7 +18,7 @@ export type CheckResult = {
 export type AnagramModalState = {
   openedForWord: WordKey;
   input: string;
-  scrambledArrangement: Letter[] | null;
+  scrambledArrangement: (Letter | null)[] | null;
 };
 
 export type PlayerState =

@@ -913,7 +913,7 @@ export type CheckResult = {
 export type AnagramModalState = {
   openedForWord: WordKey;                                     // modal closes if selection moves off this word (FR-88)
   input: string;                                              // uppercased A–Z; clamped to word length
-  scrambledArrangement: Letter[] | null;                      // null until first Scramble (FR-86)
+  scrambledArrangement: (Letter | null)[] | null;             // entries-aligned (length === chain entries); fixed slots hold grid letter, non-fixed hold pool letter or null; null until first Scramble (FR-86)
 };
 
 export const PlayerState: {
@@ -954,7 +954,7 @@ export type PlayerIntent =
 
 **`open-anagram-helper`:** requires `cursor != null` and the cursor's cell to belong to a word. Computes the word from the cursor/direction and stores `openedForWord`. If the cursor changes such that the new selected word's `WordKey` differs from `openedForWord`, every cell/click/arrow reducer closes the anagram modal (`anagram = null`) — implementing FR-88.
 
-**`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState.
+**`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState. Stores `scrambled.map(e => e.letter)` (entries-aligned, nulls preserved — not filtered).
 
 **`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`.
 - On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same.
@@ -1113,7 +1113,7 @@ export type PlayerToolbarVM = {
 export type AnagramTileVM = {
   position: number;                                          // 0-based within word
   fixed: boolean;                                            // grid letter present -> fixed (FR-82)
-  letter: string | null;                                      // fixed: grid letter; else: from scrambledArrangement or input pool
+  letter: string | null;                                      // fixed: grid letter; else: scrambledArrangement[i] (entries-aligned) or null
 };
 export type AnagramModalVM = {
   open: boolean;

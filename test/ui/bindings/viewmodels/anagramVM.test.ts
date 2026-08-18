@@ -110,6 +110,18 @@ function makeAnagramModal(
   };
 }
 
+function makeAnagramModalAligned(
+  input: string,
+  scrambled: (string | null)[],
+  openedForWord: Word['key'] = { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+): AnagramModalState {
+  return {
+    openedForWord,
+    input,
+    scrambledArrangement: scrambled.map((ch) => (ch === null ? null : Letter.try(ch)!)),
+  };
+}
+
 describe('deriveAnagramModalVM', () => {
   it('deriveAnagramModalVM: null anagramModal → closed baseline (open: false, wordLength: 0, all defaults)', () => {
     const result = deriveAnagramModalVM({ anagramModal: null, grid: grid3x3(), words: [] });
@@ -161,6 +173,17 @@ describe('deriveAnagramModalVM', () => {
     expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
     expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: 'B' });
     expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
+  });
+
+  it('deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (E3 — short input does not desync)', () => {
+    let grid = grid3x3();
+    grid = setPlayerLetter(grid, 0, 2, 'A');   // fix A at position 2
+    const word = word3Across();
+    const modal = makeAnagramModalAligned('B', ['B', null, 'A']);
+    const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    expect(result.tiles[0]).toEqual({ position: 0, fixed: false, letter: 'B' });
+    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null });
+    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'A' });
   });
 
   it('deriveAnagramModalVM: separators echo from Anagram.buildWordModel', () => {

@@ -63,7 +63,7 @@ function withAnagram(
   state: SolvingPlayerState,
   openedForWord: WordKey,
   input = '',
-  scrambledArrangement: Letter[] | null = null,
+  scrambledArrangement: (Letter | null)[] | null = null,
 ): SolvingPlayerState {
   return {
     ...state,
@@ -358,9 +358,7 @@ describe('handleAnagramScramble', () => {
       WordKey.equals(w.key, state.anagram!.openedForWord),
     )!;
     const { entries } = Anagram.buildWordModel(state.puzzle.grid, word);
-    const expected = Anagram.scramble(entries, 'ABCDE', expectedRng)
-      .map((e) => e.letter)
-      .filter((l): l is Letter => l !== null);
+    const expected = Anagram.scramble(entries, 'ABCDE', expectedRng).map((e) => e.letter);
 
     const result = handleAnagramScramble(state, resultRng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -443,6 +441,22 @@ describe('handleAnagramScramble', () => {
     expect(arrangement).toHaveLength(6);
     expect(arrangement?.[0]).toEqual(Letter.try('A')!);
     expect(arrangement?.[3]).toEqual(Letter.try('B')!);
+  });
+
+  it('anagram-scramble: scrambledArrangement is entries-aligned when input is short (E3 structural contract)', () => {
+    // 3-letter across word at row 0, cols 0..2; fix A at col 2; input 'BA' (1 fixed + 1 pool).
+    let state = withCursor(solvingState(3), { row: 0, col: 0, direction: 'across' });
+    state = withPlayerLetter(state, 0, 2, 'A');
+    const key = findWordKey(state, 0, 0, 'across');
+    state = withAnagram(state, key, 'BA');
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    const arrangement = result.state.anagram?.scrambledArrangement;
+    expect(arrangement).toHaveLength(3);
+    expect(arrangement?.[0]).not.toBeNull();              // pool letter 'B' lands in a non-fixed slot
+    expect(arrangement?.[1]).toBeNull();                 // unfilled non-fixed slot (pool exhausted)
+    expect(arrangement?.[2]).toEqual(Letter.try('A')!);  // fixed slot preserved
   });
 });
 
