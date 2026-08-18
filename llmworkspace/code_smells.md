@@ -326,8 +326,17 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - Verification (green): `npx vitest run test/ui/bindings/persistenceScheduler.test.ts` (25 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run ci` (77 files / 1032 tests + build). `grep -n 'puzzleObj\.displacedClues' src/` → empty.
 - Out of scope (separate tasks): F3 (dead `now` param in `createPersistenceScheduler`), F7 (mixed error strategy in `parsePlayerProgress`), F8 (App.svelte autosave `$effect` split), F9 (eager app state init at module import).
 
-### F3. `createPersistenceScheduler` accepts `now: () => number` then `void now` 🟡
+### F3. `createPersistenceScheduler` accepts `now: () => number` then `void now` 🟡 ✅ Resolved
 `persistenceScheduler.ts:166-169`. Dead param retained "for future timestamping" — unused; callers must still pass it (defaulted). API surface noise.
+
+#### F3 — Fix
+- `src/ui/bindings/persistenceScheduler.ts` `createPersistenceScheduler`: dropped the `now: () => number = () => Date.now(),` param and the `void now; // kept for future timestamping; currently unused` line. New signature `(storage: StoragePort, debounceMs: number = 400): PersistenceScheduler`. Scheduler never timestamps blobs — `now` was pure API noise. Body otherwise unchanged.
+- No caller changes: grep-confirmed zero callers passed `now` (prod `appStore.svelte.ts:21,30` call `createPersistenceScheduler(getPorts().storage)`; all 6 test files call `createPersistenceScheduler(storage)` or `createPersistenceScheduler(storage, 400)`). Defaulted param was never exercised.
+- `now` clock remains in use elsewhere — reducer `deps.now` (AD §4.3 lines 741/770/776/784), `Toast.create` (`domain/notifications/Toast.ts`), `main.ts:78`. Separate concern; untouched.
+- No AD amendment: `createPersistenceScheduler` signature is not AD-specified (only reducer `deps.now` is AD-blessed). Scheduler signature is impl detail.
+- No test changes: no test asserts the `now` param. Existing 25 `persistenceScheduler.test.ts` + 6 store test files unaffected.
+- Verification (green): `npx vitest run test/ui/bindings/persistenceScheduler.test.ts` (25 passed), `npx vitest run test/ui/bindings/{builderStore,appStore,playerStore,modalStore,toastStore}.test.ts` (66 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run ci` (77 files / 1032 tests + build). `grep -n 'void now\|now:.*=>.*number' src/ui/bindings/persistenceScheduler.ts` → empty.
+- Out of scope (separate tasks): F7 (mixed error strategy in `parsePlayerProgress`), F8 (App.svelte autosave `$effect` split), F9 (eager app state init at module import).
 
 ### F4. `createBlankKeyRng` in `appStore.svelte.ts` is a no-op wrapper 🟡
 `appStore.svelte.ts:23-25` returns `getPorts().rng`. Used once at module init. Dead indirection.

@@ -22,9 +22,7 @@ export interface PersistenceScheduler {
 export function createPersistenceScheduler(
   storage: StoragePort,
   debounceMs: number = 400,
-  now: () => number = () => Date.now(),
 ): PersistenceScheduler {
-  void now; // kept for future timestamping; currently unused
 
   let builderTimer: ReturnType<typeof setTimeout> | null = null;
   let playerTimer: ReturnType<typeof setTimeout> | null = null;
