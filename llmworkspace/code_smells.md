@@ -258,8 +258,15 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 
 ## E. Viewmodel smells
 
-### E1. `findContainingWord` + `WordMap.fromWords` + `Chain.headOf` + `Chain.fromHead` recomputed on every VM derivation 🟠
+### E1. `findContainingWord` + `WordMap.fromWords` + `Chain.headOf` + `Chain.fromHead` recomputed on every VM derivation 🟠 ⏸ Deferred 2026-08-18
 `builderVM.ts:109-111,158-172`, `playerVM.ts:219-223,293-306`, `cluePanelVM.ts:44-51`, `anagramVM.ts:55-62`. Each `deriveXShellVM` call (per `$derived` tick / per keystroke) allocates a `WordMap`, walks predecessors to find the chain head, builds a `Chain.fromHead`. For a 25×25 grid, every cursor move does several full word-list scans + map allocations. No memoization; correctness unaffected.
+
+#### E1 — Deferral
+- Deferred 2026-08-18. Fix sketched (introduce `ui/bindings/viewmodels/chainIndex.ts` — pure `ChainIndex.forWords(words): ChainIndex` building wordMap + position index + head-set + lazy per-instance caches; store layer wraps in `$derived`; VM fns take `idx` param; O(words²) `cluePanelVM` per-word loop collapses to O(words)); deferred because the asymptotic win is real but the absolute cost on a 25×25 grid is not user-visible and the change widens every VM signature + touches all VM unit tests.
+- Two design questions surfaced during analysis, unresolved:
+  1. **Across-tick memoization.** Svelte 5 `$derived` re-runs every dispatch (root `$state` reassign fires dependents regardless of input-ref identity), so `const idx = $derived(ChainIndex.forWords(...words))` rebuilds idx every tick — giving one shared idx per tick (the O(words²)→O(words) win) but not idx reuse across keystrokes when words ref is stable. Across-tick memo would require a module-level `WeakMap<Word[], ChainIndex>` keyed by words ref — flagged as non-idiomatic for this codebase (implicit global singleton; invisible to `madge --circular`; not in Svelte's reactivity graph; test-isolation relies on fixture-ref-uniqueness convention). Decision: drop across-tick memo, accept per-tick O(words) build. Revisit with profiling data if needed.
+  2. **Cache-key invariant reliance.** Any fix relies on reducers never mutating `Word` objects (`nextWord`, `clue`) or the `words[]` array in place — currently true, no compiler enforcement. Module-level WeakMap would make a future in-place mutation silently stale; `$derived`-per-tick makes it silently wrong only within one tick (less bad). Either way the invariant is unenforced.
+- Resuming this task: pick up from the `chainIndex.ts` sketch above; resolve Q1 (WeakMap vs per-tick rebuild) and Q2 (invariant enforcement — dev-assert? AD bullet? lint rule?) before dispatching.
 
 ### E2. `deriveBuilderToolbarVM` runs `CompletenessCheck.check` twice per call 🟡
 `builderVM.ts:70-71`: `CompletenessCheck.isComplete(state.puzzle)` (which calls `.check()` internally) then `CompletenessCheck.check(state.puzzle)` again. Double O(grid²+words) work per VM tick.
