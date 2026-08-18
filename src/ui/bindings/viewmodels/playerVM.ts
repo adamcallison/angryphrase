@@ -72,6 +72,36 @@ function emptyBanner(): ActiveClueBannerVM {
   };
 }
 
+const IMPORT_GRID_VM: GridVM = deriveGridVM({
+  grid: GridOps.blank(GridSize.of(2)),
+  cursor: null,
+  words: [],
+  whichLetter: 'player',
+  selectedWordCells: new Set<string>(),
+});
+
+const IMPORT_BANNER: ActiveClueBannerVM = emptyBanner();
+
+const IMPORT_CLUE_PANEL: PlayerCluePanelVM = {
+  across: [],
+  down: [],
+  highlightedWordKey: null,
+};
+
+const IMPORT_ANAGRAM: AnagramModalVM = deriveAnagramModalVM({
+  anagramModal: null,
+  grid: GridOps.blank(GridSize.of(2)),
+  words: [],
+});
+
+const IMPORT_TOOLBAR: PlayerToolbarVM = {
+  canCheck: false,
+  canClearErrors: false,
+  canReset: false,
+  canOpenAnagram: false,
+  canImportNew: false,
+};
+
 export function deriveActiveClueBannerVM(input: {
   puzzle: Puzzle | null;
   cursor: Cursor;
@@ -115,13 +145,7 @@ export function derivePlayerCluePanelVM(input: {
 
 export function derivePlayerToolbarVM(state: PlayerState): PlayerToolbarVM {
   if (state.phase === 'import') {
-    return {
-      canCheck: false,
-      canClearErrors: false,
-      canReset: false,
-      canOpenAnagram: false,
-      canImportNew: false,
-    };
+    return IMPORT_TOOLBAR;
   }
 
   const hasIncorrect =
@@ -178,43 +202,25 @@ export function deriveCheckResultVM(
   };
 }
 
+function deriveImportShellVM(state: Extract<PlayerState, { phase: 'import' }>): PlayerShellVM {
+  return {
+    phase: 'import',
+    importError: state.lastImportError,
+    title: '',
+    author: '',
+    grid: IMPORT_GRID_VM,
+    topBanner: IMPORT_BANNER,
+    bottomBanner: IMPORT_BANNER,
+    cluePanel: IMPORT_CLUE_PANEL,
+    toolbar: IMPORT_TOOLBAR,
+    anagram: IMPORT_ANAGRAM,
+    checkResult: null,
+  };
+}
+
 export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   if (state.phase === 'import') {
-    const blankGrid = GridOps.blank(GridSize.of(2));
-    const grid = deriveGridVM({
-      grid: blankGrid,
-      cursor: null,
-      words: [],
-      whichLetter: 'player',
-      selectedWordCells: new Set<string>(),
-    });
-    const topBanner = deriveActiveClueBannerVM({ puzzle: null, cursor: null });
-    const bottomBanner = topBanner;
-    const cluePanel: PlayerCluePanelVM = {
-      across: [],
-      down: [],
-      highlightedWordKey: null,
-    };
-    const toolbar = derivePlayerToolbarVM(state);
-    const anagram = deriveAnagramModalVM({
-      anagramModal: null,
-      grid: blankGrid,
-      words: [],
-    });
-
-    return {
-      phase: 'import',
-      importError: state.lastImportError,
-      title: '',
-      author: '',
-      grid,
-      topBanner,
-      bottomBanner,
-      cluePanel,
-      toolbar,
-      anagram,
-      checkResult: null,
-    };
+    return deriveImportShellVM(state);
   }
 
   const cursorWord = state.cursor

@@ -99,8 +99,16 @@ Was 🟠: Between `builderVM.ts:158-181` and `playerVM.ts:283-307`. Same chain-a
 - **Placement rationale**: `ui/builder/` (not `ui/shared/`) because the row body is Builder-specific (edit input + join/unlink buttons). `PlayerCluePanel.svelte` has a different, simpler row body (display only, no edit/join) and is not flagged by this smell; a shared `ClueSection` would force snippet/param soup. AD §7.2 + §9.3 tree amended to add `ClueSection.svelte` under `ui/builder/`.
 - Verification: `npm run typecheck` (svelte-check 0 errors/0 warnings), `npm run lint` (eslint + `madge --circular`), `npm run test` (77 files / 1020 tests green), `npm run build`, `npm run ci` green.
 
-### B4. `EMPTY` banner / blank-grid stub repeated in `playerVM.ts` import branch 🟡
+### B4. `EMPTY` banner / blank-grid stub repeated in `playerVM.ts` import branch 🟡 ✅ Resolved
 `derivePlayerShellVM` constructs a 2×2 blank grid + empty everything for the `phase==='import'` branch (`playerVM.ts:180-217`). Same shape partially repeated in `derivePlayerToolbarVM` import branch.
+
+#### B4 — Fix
+- Hoisted invariant import-phase VM pieces to module-level consts in `src/ui/bindings/viewmodels/playerVM.ts` (built once at module load, all pure): `IMPORT_GRID_VM` (`deriveGridVM` over `GridOps.blank(GridSize.of(2))`), `IMPORT_BANNER` (`emptyBanner()`), `IMPORT_CLUE_PANEL` (empty across/down + null key), `IMPORT_ANAGRAM` (`deriveAnagramModalVM({ anagramModal: null, ... })` → `CLOSED_BASELINE`-equivalent), `IMPORT_TOOLBAR` (all-false literal). Single source for the all-false toolbar; `derivePlayerToolbarVM` import branch now `return IMPORT_TOOLBAR;`.
+- Added private `deriveImportShellVM(state: Extract<PlayerState, { phase: 'import' }>): PlayerShellVM` returning the import-phase `PlayerShellVM` assembled from the shared consts; only `importError: state.lastImportError` varies per call. `derivePlayerShellVM` import branch is now `return deriveImportShellVM(state);` (call-site narrowing carries the import variant through — no cast).
+- Behaviour preserved: same field values; `vm.topBanner === vm.bottomBanner` (shared `IMPORT_BANNER`); `grid`/`anagram`/`toolbar`/`cluePanel` identity-stable across calls. Safe per AD §5.5 (components MUST NOT mutate VMs they receive).
+- 2 new tests in `test/ui/bindings/viewmodels/playerVM.test.ts`: `'derivePlayerShellVM: import phase bottomBanner === topBanner (same shared instance)'`, `'derivePlayerShellVM: import phase grid + anagram + toolbar identical across two calls (module-level constants); only importError tracks state.lastImportError'`. Existing import-phase tests unchanged.
+- Verification (green): `npm run test -- playerVM` (26 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (clean), `npm run ci` (77 files / 1023 tests + build green).
+- Out of scope (separate tasks): E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick), F8 (App.svelte autosave `$effect` split).
 
 ### B5. `void _deps; void _intent;` ceremony spans every reducer helper 🟡
 Every handler in `builder/state/internal/*` and `player/state/internal/*` begins with `void _deps;` (and often `void _intent;`) to silence `noUnusedParameters`. ~40 occurrences. Noise; signals an over-broad uniform `deps`/`intent` signature (`AD §4.2`) where most cases ignore both. Could narrow via overloads or a helper that strips unused params.

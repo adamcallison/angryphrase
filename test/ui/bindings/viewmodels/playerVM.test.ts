@@ -378,6 +378,23 @@ describe('derivePlayerShellVM', () => {
     });
   });
 
+  it('derivePlayerShellVM: import phase bottomBanner === topBanner (same shared instance)', () => {
+    const state = makeImportState();
+    const vm = derivePlayerShellVM(state);
+    expect(vm.bottomBanner).toBe(vm.topBanner);
+  });
+
+  it('derivePlayerShellVM: import phase grid + anagram + toolbar identical across two calls (module-level constants); only importError tracks state.lastImportError', () => {
+    const vmA = derivePlayerShellVM(makeImportState('err one'));
+    const vmB = derivePlayerShellVM(makeImportState('err two'));
+    expect(vmA.grid).toBe(vmB.grid);
+    expect(vmA.anagram).toBe(vmB.anagram);
+    expect(vmA.toolbar).toBe(vmB.toolbar);
+    expect(vmA.cluePanel).toBe(vmB.cluePanel);
+    expect(vmA.importError).toBe('err one');
+    expect(vmB.importError).toBe('err two');
+  });
+
   it('derivePlayerShellVM: solving phase empty cursor → phase="solving"; grid empty cursor reflected; topBanner nulls; bottomBanner === topBanner (same instance)', () => {
     let puzzle = puzzleWithMetadata(makeBlankPuzzle(3), 'Test Title', 'Test Author');
     const word = makeWord({
