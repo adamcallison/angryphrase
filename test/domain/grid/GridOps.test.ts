@@ -239,4 +239,78 @@ describe('GridOps', () => {
 
     expect(GridOps.equals(a, b)).toBe(false);
   });
+
+  it('GridOps.updateCells returns the same grid reference when updates is empty', () => {
+    const g = blankGrid(3);
+    expect(GridOps.updateCells(g, [])).toBe(g);
+  });
+
+  it('GridOps.updateCells applies all updates and leaves other cells unchanged', () => {
+    const g = blankGrid(3);
+    const updates = [
+      { row: Row.of(0), col: Col.of(0), cell: Cell.black() },
+      { row: Row.of(1), col: Col.of(1), cell: Cell.black() },
+      { row: Row.of(2), col: Col.of(2), cell: Cell.black() },
+    ];
+    const result = GridOps.updateCells(g, updates);
+
+    expect(GridOps.cellAt(result, Row.of(0), Col.of(0)).black).toBe(true);
+    expect(GridOps.cellAt(result, Row.of(1), Col.of(1)).black).toBe(true);
+    expect(GridOps.cellAt(result, Row.of(2), Col.of(2)).black).toBe(true);
+
+    expect(Cell.isWhite(GridOps.cellAt(result, Row.of(0), Col.of(1)))).toBe(true);
+    expect(Cell.isWhite(GridOps.cellAt(result, Row.of(1), Col.of(0)))).toBe(true);
+    expect(Cell.isWhite(GridOps.cellAt(result, Row.of(1), Col.of(2)))).toBe(true);
+  });
+
+  it('GridOps.updateCells clones each touched row once; untouched rows keep reference', () => {
+    const g = blankGrid(3);
+    const updates = [
+      { row: Row.of(0), col: Col.of(0), cell: Cell.black() },
+      { row: Row.of(2), col: Col.of(2), cell: Cell.black() },
+    ];
+    const result = GridOps.updateCells(g, updates);
+
+    expect(result[0]).not.toBe(g[0]);
+    expect(result[2]).not.toBe(g[2]);
+    expect(result[1]).toBe(g[1]);
+  });
+
+  it('GridOps.updateCells clones the outer grid array once', () => {
+    const g = blankGrid(3);
+    const updates = [{ row: Row.of(0), col: Col.of(0), cell: Cell.black() }];
+    const result = GridOps.updateCells(g, updates);
+
+    expect(result).not.toBe(g);
+  });
+
+  it('GridOps.updateCells throws RangeError when any update is out-of-bounds', () => {
+    const g = blankGrid(3);
+    const updates = [
+      { row: Row.of(0), col: Col.of(0), cell: Cell.black() },
+      { row: Row.of(3), col: Col.of(0), cell: Cell.black() },
+    ];
+
+    expect(() => GridOps.updateCells(g, updates)).toThrow(RangeError);
+    expect(g[0]![0]!.black).toBe(false);
+  });
+
+  it('GridOps.updateCells applies multiple updates to the same row in one pass', () => {
+    const g = blankGrid(3);
+    const updates = [
+      { row: Row.of(0), col: Col.of(0), cell: Cell.black() },
+      { row: Row.of(0), col: Col.of(2), cell: Cell.black() },
+    ];
+    const result = GridOps.updateCells(g, updates);
+
+    expect(GridOps.cellAt(result, Row.of(0), Col.of(0)).black).toBe(true);
+    expect(GridOps.cellAt(result, Row.of(0), Col.of(2)).black).toBe(true);
+    expect(Cell.isWhite(GridOps.cellAt(result, Row.of(0), Col.of(1)))).toBe(true);
+    expect(result[0]).not.toBe(g[0]);
+
+    const extra = GridOps.updateCells(result, [
+      { row: Row.of(0), col: Col.of(1), cell: Cell.black() },
+    ]);
+    expect(extra[0]).not.toBe(result[0]);
+  });
 });

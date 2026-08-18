@@ -356,6 +356,7 @@ export const GridOps: {
   blank(size: GridSize): Grid;                              // FR-19 all-white empty grid
   cellAt(g: Grid, row: Row, col: Col): Cell;
   setCell(g: Grid, row: Row, col: Col, c: Cell): Grid;      // returns new grid (immutability)
+  updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid; // batch immutability; empty updates returns g; all-or-nothing bounds check (D6)
   withinBounds(g: Grid, row: Row, col: Col): boolean;
   neighbours(g: Grid, row: Row, col: Col): { row: Row; col: Col }[]; // orthogonal in-bounds
   neighboursInDirection(g: Grid, row: Row, col: Col, d: Direction): { row: Row; col: Col } | null;
@@ -373,6 +374,7 @@ export const GridOps: {
 **Invariants — `Grid`:**
 - `grid.length === gridSize` and every row `row.length === gridSize`.
 - All `row`/`col` args are within `GridSize` bounds; `GridOps.cellAt` throws on out-of-bounds (defensive; UI never produces OOB coords).
+- `GridOps.updateCells` validates all updates up front and throws `RangeError` on the first out-of-bounds entry before mutating (all-or-nothing); empty `updates` returns `g` ref-equal.
 
 ### 3.3 Words (`domain/word/`)
 

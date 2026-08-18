@@ -57,7 +57,7 @@ export function handleApplyLoadedProgress(
 
   const g = state.puzzle.grid;
   const size = g.length;
-  let newGrid = g;
+  const updates: { row: Row; col: Col; cell: Cell }[] = [];
   const rowsLen = Math.min(intent.playerLetters.length, size);
   for (let r = 0; r < rowsLen; r++) {
     const savedRow = intent.playerLetters[r]!;
@@ -66,17 +66,18 @@ export function handleApplyLoadedProgress(
       const saved = savedRow[c];
       if (saved == null) continue;
 
-      const cell = GridOps.cellAt(newGrid, Row.of(r), Col.of(c));
+      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
       if (cell.black) continue;
 
-      newGrid = GridOps.setCell(newGrid, Row.of(r), Col.of(c), Cell.setPlayerLetter(cell, saved));
+      updates.push({ row: Row.of(r), col: Col.of(c), cell: Cell.setPlayerLetter(cell, saved) });
     }
   }
 
-  if (newGrid === g) {
+  if (updates.length === 0) {
     return Result.ok(state);
   }
 
+  const newGrid = GridOps.updateCells(g, updates);
   return Result.ok({ ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) });
 }
 
@@ -109,22 +110,18 @@ export function handleConfirmResetPlayer(
 
   const g = state.puzzle.grid;
   const size = g.length;
-  let newGrid = g;
+  const updates: { row: Row; col: Col; cell: Cell }[] = [];
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      const cell = GridOps.cellAt(newGrid, Row.of(r), Col.of(c));
+      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
       if (!cell.black && cell.playerLetter !== null) {
-        newGrid = GridOps.setCell(
-          newGrid,
-          Row.of(r),
-          Col.of(c),
-          Cell.setPlayerLetter(cell, null),
-        );
+        updates.push({ row: Row.of(r), col: Col.of(c), cell: Cell.setPlayerLetter(cell, null) });
       }
     }
   }
 
-  const newPuzzle = newGrid === g ? state.puzzle : Puzzle.withGrid(state.puzzle, newGrid);
+  const newPuzzle =
+    updates.length === 0 ? state.puzzle : Puzzle.withGrid(state.puzzle, GridOps.updateCells(g, updates));
 
   return Result.withEvents(
     {
