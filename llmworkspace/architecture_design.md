@@ -1262,7 +1262,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | `Modal.svelte` | `ModalVM` | the deferred `confirm-*` Builder/Player intent from `state.pendingConfirmIntent` (on Confirm); `cancel-modal` (on Cancel/Escape) | One reusable modal (G4). Backdrop, Confirm/Cancel buttons, Escape cancels. No focus trap (a11y out of scope). The bindings layer reads `pendingConfirmIntent` off `AppState` and dispatches it directly on confirm. |
 | `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via bindings-layer timeout (C2 = 3500 ms). |
 | `Toast.svelte` | `ToastVM` | `dismiss-toast` | Single toast row. |
-| `TypingSurface.svelte` | `enabled: boolean` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focused when grid is interactive (Builder Fill / Player solving). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. |
+| `TypingSurface.svelte` | `enabled: boolean` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focused when grid is interactive (Builder Fill / Player solving). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. Emits `TypingIntent` values (B6 — type owned by `ui/shared/typingIntent.ts`, imported type-only here + by both shells). |
 | `FilePicker.svelte` | accept label | `pick-file` (callback with text) | Wraps `<input type="file">` + drag-and-drop; returns file text to caller. |
 
 ### 7.5 Layout (top-level)
@@ -1493,7 +1493,7 @@ angryphrase/
 │  │  │  ├─ ActiveClueBanner.svelte  PlayerToolbar.svelte  AnagramModal.svelte
 │  │  ├─ shared/
 │  │  │  ├─ Modal.svelte  ToastHost.svelte  Toast.svelte
-│  │  │  ├─ TypingSurface.svelte  FilePicker.svelte
+│  │  │  ├─ TypingSurface.svelte  FilePicker.svelte  typingIntent.ts
 │  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §5.5)
 │  │     ├─ appStore.svelte.ts  builderStore.svelte.ts  playerStore.svelte.ts
 │  │     ├─ toastStore.svelte.ts  modalStore.svelte.ts

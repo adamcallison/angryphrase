@@ -1,11 +1,5 @@
 <script lang="ts">
-  type Direction = 'across' | 'down';
-
-  type TypingIntent =
-    | { kind: 'type-letter'; letter: string }
-    | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
-    | { kind: 'escape' };
+  import type { TypingIntent } from './typingIntent';
 
   let {
     enabled,

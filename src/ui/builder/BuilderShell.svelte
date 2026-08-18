@@ -16,16 +16,10 @@
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import type { TypingIntent } from '../shared/typingIntent';
 
   // No props — BuilderShell owns the entire Builder scene.
   const vm: BuilderShellVM = $derived(builderShellVM());
-
-  type Direction = 'across' | 'down';
-  type TypingIntent =
-    | { kind: 'type-letter'; letter: string }
-    | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
-    | { kind: 'escape' };
 
   function onCellClick(row: number, col: number): void {
     // §7.2: Design → toggle-design-cell; Fill → select-cell (auto-direction per FR-10/11 reducer).

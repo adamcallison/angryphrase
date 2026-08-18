@@ -12,16 +12,10 @@
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import type { TypingIntent } from '../shared/typingIntent';
 
   // No props — PlayerShell owns the entire Player scene.
   const vm: PlayerShellVM = $derived(playerShellVM());
-
-  // TypingSurface TypingIntent union (inlined structural type — same shape as in BuilderShell.svelte).
-  type TypingIntent =
-    | { kind: 'type-letter'; letter: string }
-    | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: 'across' | 'down'; sign: -1 | 1 }
-    | { kind: 'escape' };
 
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
