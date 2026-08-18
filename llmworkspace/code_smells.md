@@ -230,8 +230,16 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 - Verification (green): `npm run test -- fillMode` (59 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` clean). `grep -n "words\.some\|words\.find" src/builder/state/internal/fillMode.ts` → one `find` in `handleClickWord` (line 275); the other `find` at line 242 is the unrelated `handleEditClue`. Zero `words.some` in file.
 - Out of scope (separate tasks): E1/E2 memoization, D5 (`DisplacedClueId` ad-hoc equality), D6 (grid rebuild via repeated `GridOps.setCell`).
 
-### D5. `DisplacedClueId` ad-hoc equality via `String(a) === String(b)` 🟡
+### D5. `DisplacedClueId` ad-hoc equality via `String(a) === String(b)` 🟡 ✅ Resolved
 `src/builder/state/internal/reattachSubMode.ts:12` defines `idEquals` by stringifying branded ids; uses `String(d.id) === String(displacedClueId)` again at lines 71, 107. Branded-type contract has no `equals` helper (unlike `WordKey.equals`, `Letter.equals`). Manual brand-erase at every comparison.
+
+#### D5 — Fix
+- Added `DisplacedClueId.equals(a, b): boolean` to `src/domain/builder/DisplacedClueId.ts` const object — body `return a === b;` (branded string primitive; `===` is value equality, behavior identical to the prior `String(a) === String(b)` brand-erase). Matches the `Letter.equals` precedent (`src/domain/letter/Letter.ts:28-30`).
+- `src/builder/state/internal/reattachSubMode.ts`: deleted local `idEquals` fn (line 11); flipped `import type { DisplacedClueId }` → `import { DisplacedClueId }` (runtime call now). 4 `idEquals(x, y)` call-sites → `DisplacedClueId.equals(x, y)` (lines 21, 36, 41, 44). 2 raw `String(d.id) ===/!== String(displacedClueId)` → `DisplacedClueId.equals(...)` / `!DisplacedClueId.equals(...)` (lines 61, 97 inside `resolveReattach`). Logic, control flow, return shapes preserved.
+- 1 new test in `test/domain/builder/DisplacedClueId.test.ts`: `'DisplacedClueId.equals returns true for the same id, false for different ids'` (mirrors `Letter.equals` test shape; uses two `SeededRng(1)` ids + one `SeededRng(2)` id). Existing 7 tests unchanged.
+- AD §3.3 `DisplacedClueId` const block amended: added `equals(a: DisplacedClueId, b: DisplacedClueId): boolean;` member (mirrors `Letter` block line 248).
+- Verification (green): `npm run test`, `npm run typecheck`, `npm run lint`, `npm run ci`. `grep -rn "String(d\.id)\|String(.*displacedClueId)\|idEquals" src/` → empty.
+- Out of scope (separate tasks): E1/E2 memoization, D6 (`applyLoadedProgress`/`confirmResetPlayer` grid rebuild via repeated `GridOps.setCell`).
 
 ### D6. `applyLoadedProgress` and `confirmResetPlayer` mutate grid via repeated `GridOps.setCell` rebuilding whole grid each cell 🟡
 `src/player/state/internal/lifecycle.ts:67-82,136-150`. For a 25×25 grid with many letters, this rebuilds the grid array N times (one per cell). A `GridOps` "update many cells" / functional updater API would be O(1) restructures over the affected rows.

@@ -288,6 +288,7 @@ export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };   // UUID
 export const DisplacedClueId: {
   generate(rng: Rng): DisplacedClueId;   // delegates to uuidv4(rng); called from reconcileWords/designMode with deps.rng
   try(s: string): DisplacedClueId | null;   // validates UUID v4 lowercase regex; used by parsePuzzleV1 validateDisplacedClues (§6.3 step 11)
+  equals(a: DisplacedClueId, b: DisplacedClueId): boolean;   // brand-safe value equality; used by builder reattach/delete-displaced-clue reducers
 };
 
 // domain/notifications/ToastId.ts

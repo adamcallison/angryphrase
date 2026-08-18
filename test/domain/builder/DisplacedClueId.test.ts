@@ -1,5 +1,6 @@
 import { DisplacedClueId } from '../../../src/domain/builder/DisplacedClueId';
 import type { Rng } from '../../../src/domain/rng/Rng';
+import { SeededRng } from '../../fakes/SeededRng';
 
 describe('DisplacedClueId', () => {
   it('DisplacedClueId.generate produces a UUID v4 matching the RFC regex', () => {
@@ -49,5 +50,14 @@ describe('DisplacedClueId', () => {
   it('DisplacedClueId.generate result passes DisplacedClueId.try', () => {
     const rng: Rng = { nextInt: () => 0xab };
     expect(DisplacedClueId.try(DisplacedClueId.generate(rng))).not.toBeNull();
+  });
+
+  it('DisplacedClueId.equals returns true for the same id, false for different ids', () => {
+    const a = DisplacedClueId.generate(new SeededRng(1));
+    const b = DisplacedClueId.generate(new SeededRng(2));
+    const a2 = DisplacedClueId.generate(new SeededRng(1));
+
+    expect(DisplacedClueId.equals(a, a2)).toBe(true);
+    expect(DisplacedClueId.equals(a, b)).toBe(false);
   });
 });
