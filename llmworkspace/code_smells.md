@@ -290,8 +290,14 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 - Verification: `npx vitest run test/player/state/internal/anagram.test.ts test/ui/bindings/viewmodels/anagramVM.test.ts test/ui/bindings/playerStore.test.ts test/player/state/reducer.test.ts test/player/state/internal/lifecycle.test.ts test/player/state/internal/solving.test.ts` (226 passed), `npm run typecheck` (clean), `npm run lint` (clean), `npm run ci` (clean).
 - Out of scope: E1 memoization, reducer-side `inputValid` gate on `anagram-scramble` (structural fix makes it redundant), H4 branded `Position`/`WordLength`.
 
-### E4. `cluePanelVM` re-derives `selectedChainMemberKeys` even when cursor moved off-cluster 🟡
+### E4. `cluePanelVM` re-derives `selectedChainMemberKeys` even when cursor moved off-cluster 🟡 ⏸ Deferred 2026-08-18
 `cluePanelVM.ts:46-51` runs `Chain.headOf`+`fromHead` whenever `highlightedWordKey !== null`. For a long chain, builds a set on every VM derivation.
+
+#### E4 — Deferral
+- Deferred 2026-08-18. E4 is a strict subset of E1 (cross-tick memoization of `ChainIndex`) and J1 (`Chain.headOf` O(n²) — no reverse-map caching). The null-highlight case is already O(1); the head case is one O(words) `isHead` scan; the only expensive case is a non-head cursor deep in a long chain, which is exactly what J1 fixes in the right place (inside `Chain.headOf` itself — all callers benefit, no `cluePanelVM` branching).
+- The only contained in-isolation fix sketched was a head fast-path using the `nonHeadKeys` set the function already builds (`!nonHeadKeys.has(highlighted) → skip Chain.headOf, call Chain.fromHead directly`). Honest assessment: marginal — saves one O(words) `isHead` scan per tick when cursor is on a head, does NOT address the body's "long chain" cost (the non-head case → J1), adds a conditional that J1 will make redundant. Net cost-benefit unfavorable.
+- Rejected alternative: inline `Chain.headOf`'s reverse walk with a local predecessor map inside `cluePanelVM` for O(words+chain) non-head case. That duplicates `headOf`'s logic + cycle detection — introduces a J2-style duplication smell to fix an E4 smell. The right home is J1.
+- Resuming this task: pick up via E1 (introduce `ui/bindings/viewmodels/chainIndex.ts` — `ChainIndex.forWords(words): ChainIndex` with cached reverse map + head-set; store layer wraps in `$derived`; `cluePanelVM` consumes `idx`) or via J1 (cache `Chain.headOf`'s reverse predecessor map). Either automatically fixes E4. Do NOT pursue the head fast-path in isolation — wait for E1/J1.
 
 ---
 
