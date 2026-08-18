@@ -272,13 +272,13 @@ export function handleClickWord(
 
   // Defensive: target word must exist.
   const words = state.puzzle.words;
-  if (!words.some(w => WordKey.equals(w.key, intent.wordKey))) {
+  const target = words.find(w => WordKey.equals(w.key, intent.wordKey));
+  if (target === undefined) {
     return Result.ok(state);
   }
 
   if (state.subMode.kind === 'none') {
     // §830: navigate cursor to word's start cell + word's direction.
-    const target = words.find(w => WordKey.equals(w.key, intent.wordKey))!;
     return Result.ok({
       ...state,
       cursor: {

@@ -221,8 +221,14 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
 ### D3. `Puzzle.withGrid` does not sync `gridSize`; `change-grid-size` patches locally ✅ Resolved (DRN item 8 closed)
 **Resolved 2026-08-10 (DRN item 8 closed).** `Puzzle.withGrid` now re-syncs `gridSize` from `g.length` via `GridSize.of(g.length)`; the redundant `gridSize: intent.size` re-write in `designMode.ts:71` is removed; the test at `Puzzle.test.ts:100` encoding the stale-gridSize behavior was flipped to assert the invariant. `src/domain/puzzle/Puzzle.ts:50-52` is `{ ...p, grid: g, gridSize: GridSize.of(g.length) }`. Every other `withGrid` call-site is a same-size swap and is unaffected. **DRN item 8 deferred decision (harden in one place) is now adopted.**
 
-### D4. `handleClickWord` double-scans `words` then non-null asserts 🟡
+### D4. `handleClickWord` double-scans `words` then non-null asserts 🟡 ✅ Resolved
 `src/builder/state/internal/fillMode.ts:294-300`: `words.some(w => WordKey.equals(w.key, intent.wordKey))` then `words.find(...)!`. Two O(n) scans + a non-null assertion. Combine into one `find`.
+
+#### D4 — Fix
+- Replaced the `.some()` guard + separate `.find(...)!` with a single `words.find(...)` + `if (target === undefined) return Result.ok(state);` early-return in `src/builder/state/internal/fillMode.ts` `handleClickWord`. The `none` branch now reads `target` directly (no `!`); `join`/`reattach` branches pass `intent.wordKey` (unchanged, `target` computed but unused there). `handleClickWord(state, intent, rng)` signature preserved per B5.
+- No new tests: pure refactor, behaviour preserved. Existing `test/builder/state/internal/fillMode.test.ts:803-891` covers design-mode no-op, wordKey-not-found defensive no-op (exercises the new `undefined` early-return), subMode=none cursor nav, join/reattach delegation, source===target cancel — all unchanged and green.
+- Verification (green): `npm run test -- fillMode` (59 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` clean). `grep -n "words\.some\|words\.find" src/builder/state/internal/fillMode.ts` → one `find` in `handleClickWord` (line 275); the other `find` at line 242 is the unrelated `handleEditClue`. Zero `words.some` in file.
+- Out of scope (separate tasks): E1/E2 memoization, D5 (`DisplacedClueId` ad-hoc equality), D6 (grid rebuild via repeated `GridOps.setCell`).
 
 ### D5. `DisplacedClueId` ad-hoc equality via `String(a) === String(b)` 🟡
 `src/builder/state/internal/reattachSubMode.ts:12` defines `idEquals` by stringifying branded ids; uses `String(d.id) === String(displacedClueId)` again at lines 71, 107. Branded-type contract has no `equals` helper (unlike `WordKey.equals`, `Letter.equals`). Manual brand-erase at every comparison.
