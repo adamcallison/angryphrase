@@ -2,7 +2,6 @@ import { PlayerState } from '../state';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import type { Rng } from '../../../domain/rng/Rng';
 import { parsePuzzleV1 } from '../../../domain/format/v1';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
@@ -13,13 +12,8 @@ import { Col } from '../../../domain/grid/Col';
 const INCOMPLETE_REJECT_MSG = 'Only complete puzzle files can be loaded into the Player.';
 
 export function handleImportPuzzle(
-  _state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'import-puzzle' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _state;
-  void _deps;
-
   const result = parsePuzzleV1(intent.fileContent);
   if (!result.ok) {
     const message = result.failures.map((f) => f.message).join('\n');
@@ -52,10 +46,7 @@ export function handleImportPuzzle(
 export function handleApplyLoadedProgress(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'apply-loaded-progress' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -89,26 +80,13 @@ export function handleApplyLoadedProgress(
   return Result.ok({ ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) });
 }
 
-export function handleImportNewPuzzle(
-  _state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'import-new-puzzle' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _state;
-  void _intent;
-  void _deps;
-
+export function handleImportNewPuzzle(): ReducerResult<PlayerState> {
   return Result.ok(PlayerState.importScreen());
 }
 
 export function handleRequestResetPlayer(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'request-reset-player' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _intent;
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -124,12 +102,7 @@ export function handleRequestResetPlayer(
 
 export function handleConfirmResetPlayer(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'confirm-reset-player' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _intent;
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }

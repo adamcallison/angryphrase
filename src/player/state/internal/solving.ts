@@ -2,7 +2,6 @@ import type { PlayerState, AnagramModalState, CheckClassification, CheckResult }
 import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import type { Rng } from '../../../domain/rng/Rng';
 import type { Direction } from '../../../domain/word/Direction';
 import { Result } from '../../../domain/notifications/Event';
 import { GridOps } from '../../../domain/grid/GridOps';
@@ -74,10 +73,7 @@ function anagramAfterCursorChange(
 export function handleSelectCell(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'select-cell' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -127,10 +123,7 @@ export function handleSelectCell(
 export function handleMoveCursor(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'move-cursor' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -166,10 +159,7 @@ export function handleMoveCursor(
 export function handleClickCluePanelWord(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'click-clue-panel-word' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -196,10 +186,7 @@ export function handleClickCluePanelWord(
 export function handleTypeLetter(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'type-letter' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -235,14 +222,7 @@ export function handleTypeLetter(
   });
 }
 
-export function handleBackspace(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'backspace' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -295,14 +275,7 @@ export function handleBackspace(
   });
 }
 
-export function handleCheck(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'check' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleCheck(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -338,14 +311,7 @@ export function handleCheck(
   return Result.ok({ ...state, checkResult });
 }
 
-export function handleClearErrors(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'clear-errors' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleClearErrors(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.checkResult === null) {
     return Result.ok(state);
   }

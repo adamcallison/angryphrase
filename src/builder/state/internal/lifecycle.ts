@@ -1,5 +1,4 @@
 import { BuilderState } from '../state';
-import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
@@ -13,13 +12,10 @@ function resetBuilder(state: BuilderState, rng: Rng): ReducerResult<BuilderState
 
 export function handleRequestResetBuilder(
   state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'request-reset-builder' }>,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<BuilderState> {
-  void deps.now;
-
   if (BuilderState.isBlank(state)) {
-    return resetBuilder(state, deps.rng);
+    return resetBuilder(state, rng);
   }
 
   return Result.withEvents(state, [
@@ -33,11 +29,7 @@ export function handleRequestResetBuilder(
 
 export function handleConfirmResetBuilder(
   state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'confirm-reset-builder' }>,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<BuilderState> {
-  void _intent;
-  void deps.now;
-
-  return resetBuilder(state, deps.rng);
+  return resetBuilder(state, rng);
 }

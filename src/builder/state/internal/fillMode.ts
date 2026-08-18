@@ -25,10 +25,7 @@ const DELTA: Record<Direction, { dr: number; dc: number }> = {
 export function handleSelectCell(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'select-cell' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -71,10 +68,7 @@ export function handleSelectCell(
 export function handleMoveCursor(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'move-cursor' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -112,10 +106,7 @@ export function handleMoveCursor(
 export function handleTypeLetter(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'type-letter' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -143,11 +134,7 @@ export function handleTypeLetter(
 
 export function handleBackspace(
   state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'backspace' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -190,10 +177,7 @@ export function handleBackspace(
 export function handleToggleMarker(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'toggle-marker' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -249,10 +233,7 @@ function hasWhiteNeighbour(
 export function handleEditClue(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'edit-clue' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -283,7 +264,7 @@ export function handleEditClue(
 export function handleClickWord(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'click-clue-panel-word' | 'click-grid-word' }>,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -309,9 +290,9 @@ export function handleClickWord(
   }
 
   if (state.subMode.kind === 'join') {
-    return resolveJoin(state, state.subMode.source, intent.wordKey, deps);
+    return resolveJoin(state, state.subMode.source, intent.wordKey, rng);
   }
 
   // reattach
-  return resolveReattach(state, state.subMode.displacedClueId, intent.wordKey, deps);
+  return resolveReattach(state, state.subMode.displacedClueId, intent.wordKey);
 }

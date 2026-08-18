@@ -12,11 +12,7 @@ import { Chain } from '../../../domain/chain/Chain';
 
 export function handleOpenAnagramHelper(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'open-anagram-helper' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -37,10 +33,7 @@ export function handleOpenAnagramHelper(
 export function handleAnagramInput(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'anagram-input' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);
   }
@@ -66,8 +59,7 @@ export function handleAnagramInput(
 
 export function handleAnagramScramble(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'anagram-scramble' }>,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);
@@ -79,7 +71,7 @@ export function handleAnagramScramble(
   }
   const members = Chain.fromHead(wordMap, head.key).members;
   const { entries } = Anagram.buildChainModel(state.puzzle.grid, members);
-  const scrambled = Anagram.scramble(entries, state.anagram.input, deps.rng);
+  const scrambled = Anagram.scramble(entries, state.anagram.input, rng);
   const scrambledArrangement: Letter[] = scrambled
     .map((e) => e.letter)
     .filter((l): l is Letter => l !== null);
@@ -94,12 +86,7 @@ export function handleAnagramScramble(
 
 export function handleCloseAnagramHelper(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'close-anagram-helper' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);
   }
@@ -108,12 +95,7 @@ export function handleCloseAnagramHelper(
 
 export function handleEscape(
   state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'escape' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
   if (state.phase === 'solving' && state.anagram !== null) {
     return Result.ok({ ...state, anagram: null });
   }

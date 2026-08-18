@@ -5,7 +5,6 @@ import { Result } from '../../../domain/notifications/Event';
 import { parsePuzzleV1, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 import type { CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
-import type { Rng } from '../../../domain/rng/Rng';
 
 function executeImport(state: BuilderState, fileContent: string): ReducerResult<BuilderState> {
   const result = parsePuzzleV1(fileContent);
@@ -32,9 +31,7 @@ function executeImport(state: BuilderState, fileContent: string): ReducerResult<
 export function handleRequestImportPuzzle(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'request-import-puzzle' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
   if (BuilderState.isBlank(state)) {
     return executeImport(state, intent.fileContent);
   }
@@ -50,9 +47,7 @@ export function handleRequestImportPuzzle(
 export function handleConfirmImportPuzzle(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'confirm-import-puzzle' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
   return executeImport(state, intent.fileContent);
 }
 
@@ -67,12 +62,7 @@ function violationMessage(v: CompletenessViolation): string {
   }
 }
 
-export function handleExportIncomplete(
-  state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'export-incomplete' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<BuilderState> {
-  void _deps;
+export function handleExportIncomplete(state: BuilderState): ReducerResult<BuilderState> {
   const content = serializeIncomplete(state.puzzle, state.displacedClues);
   const filename = Filename.incomplete(state.puzzle.key);
   return Result.withEvents(state, [
@@ -84,12 +74,7 @@ export function handleExportIncomplete(
   ]);
 }
 
-export function handleExportComplete(
-  state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'export-complete' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<BuilderState> {
-  void _deps;
+export function handleExportComplete(state: BuilderState): ReducerResult<BuilderState> {
   const violations = CompletenessCheck.check(state.puzzle);
   if (violations.length > 0) {
     return Result.withEvents(

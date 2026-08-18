@@ -54,68 +54,68 @@ export function reduceBuilder(
       });
 
     case 'toggle-design-cell':
-      return handleToggleDesignCell(state, intent, deps);
+      return handleToggleDesignCell(state, intent, deps.rng);
 
     case 'change-grid-size':
-      return handleChangeGridSize(state, intent, deps);
+      return handleChangeGridSize(state, intent);
 
     case 'request-switch-to-design':
-      return handleRequestSwitchToDesign(state, intent, deps);
+      return handleRequestSwitchToDesign(state);
 
     case 'confirm-switch-to-design':
-      return handleConfirmSwitchToDesign(state, intent, deps);
+      return handleConfirmSwitchToDesign(state);
 
     case 'request-import-puzzle':
-      return handleRequestImportPuzzle(state, intent, deps);
+      return handleRequestImportPuzzle(state, intent);
 
     case 'confirm-import-puzzle':
-      return handleConfirmImportPuzzle(state, intent, deps);
+      return handleConfirmImportPuzzle(state, intent);
 
     case 'export-incomplete':
-      return handleExportIncomplete(state, intent, deps);
+      return handleExportIncomplete(state);
 
     case 'export-complete':
-      return handleExportComplete(state, intent, deps);
+      return handleExportComplete(state);
 
     case 'select-cell':
-      return handleSelectCell(state, intent, deps);
+      return handleSelectCell(state, intent);
 
     case 'move-cursor':
-      return handleMoveCursor(state, intent, deps);
+      return handleMoveCursor(state, intent);
 
     case 'type-letter':
-      return handleTypeLetter(state, intent, deps);
+      return handleTypeLetter(state, intent);
 
     case 'backspace':
-      return handleBackspace(state, intent, deps);
+      return handleBackspace(state);
 
     case 'toggle-marker':
-      return handleToggleMarker(state, intent, deps);
+      return handleToggleMarker(state, intent);
 
     case 'edit-clue':
-      return handleEditClue(state, intent, deps);
+      return handleEditClue(state, intent);
 
     case 'click-clue-panel-word':
     case 'click-grid-word':
-      return handleClickWord(state, intent, deps);
+      return handleClickWord(state, intent, deps.rng);
 
     case 'begin-join':
-      return handleBeginJoin(state, intent, deps);
+      return handleBeginJoin(state, intent);
 
     case 'unjoin':
-      return handleUnjoin(state, intent, deps);
+      return handleUnjoin(state, intent);
 
     case 'begin-reattach':
-      return handleBeginReattach(state, intent, deps);
+      return handleBeginReattach(state, intent);
 
     case 'delete-displaced-clue':
-      return handleDeleteDisplacedClue(state, intent, deps);
+      return handleDeleteDisplacedClue(state, intent);
 
     case 'request-reset-builder':
-      return handleRequestResetBuilder(state, intent, deps);
+      return handleRequestResetBuilder(state, deps.rng);
 
     case 'confirm-reset-builder':
-      return handleConfirmResetBuilder(state, intent, deps);
+      return handleConfirmResetBuilder(state, deps.rng);
 
     default:
       assertUnreachable(intent);

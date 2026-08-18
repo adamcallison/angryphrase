@@ -10,10 +10,7 @@ import { DisplacedClue } from '../../../domain/builder/DisplacedClue';
 export function handleBeginJoin(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'begin-join' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -36,10 +33,7 @@ export function handleBeginJoin(
 export function handleUnjoin(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'unjoin' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -70,7 +64,7 @@ export function resolveJoin(
   state: BuilderState,
   sourceKey: WordKey,
   targetKey: WordKey,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<BuilderState> {
   if (WordKey.equals(sourceKey, targetKey)) {
     // FR-34: clicking the source again cancels the join.
@@ -107,7 +101,7 @@ export function resolveJoin(
 
   // FR-36: success. Set source.nextWord = target.key; if target had a non-empty clue, displace it.
   const newDisplacedClues = target.clue !== ''
-    ? [...state.displacedClues, DisplacedClue.create(deps.rng, target.clue, target.key.direction)]
+    ? [...state.displacedClues, DisplacedClue.create(rng, target.clue, target.key.direction)]
     : state.displacedClues;
   const newWords = words.map(w => {
     if (WordKey.equals(w.key, sourceKey)) return { ...w, nextWord: targetKey };

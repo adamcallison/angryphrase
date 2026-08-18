@@ -24,8 +24,6 @@ import { SeededRng } from '../../../fakes/SeededRng';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 
-const deps = { rng: new SeededRng(1), now: () => 0 };
-
 type SolvingPlayerState = Extract<PlayerState, { phase: 'solving' }>;
 
 function assertSolving(state: PlayerState): SolvingPlayerState {
@@ -153,7 +151,7 @@ describe('handleSelectCell', () => {
     const state = importState();
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -163,7 +161,7 @@ describe('handleSelectCell', () => {
     const state = solvingState(5);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(999), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -173,7 +171,7 @@ describe('handleSelectCell', () => {
     const state = solvingState(5, [[0, 0]]);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -186,7 +184,7 @@ describe('handleSelectCell', () => {
     ]);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -199,7 +197,7 @@ describe('handleSelectCell', () => {
     ]);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -216,7 +214,7 @@ describe('handleSelectCell', () => {
     ]);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -230,7 +228,7 @@ describe('handleSelectCell', () => {
     const state = solvingState(5);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -244,7 +242,7 @@ describe('handleSelectCell', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -263,7 +261,7 @@ describe('handleSelectCell', () => {
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -279,7 +277,7 @@ describe('handleSelectCell', () => {
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
     expect(result.events).toEqual([]);
@@ -298,7 +296,7 @@ describe('handleSelectCell', () => {
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(0) };
-    const result = handleSelectCell(stateWithAnagram, intent, deps);
+    const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -321,7 +319,7 @@ describe('handleSelectCell', () => {
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(2) };
-    const result = handleSelectCell(stateWithAnagram, intent, deps);
+    const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -345,7 +343,7 @@ describe('handleSelectCell', () => {
     );
 
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(1), col: Col.of(2) };
-    const result = handleSelectCell(stateWithAnagram, intent, deps);
+    const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(1),
@@ -369,7 +367,7 @@ describe('handleSelectCell', () => {
     );
 
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
-    const result = handleSelectCell(stateWithAnagram, intent, deps);
+    const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -389,7 +387,7 @@ describe('handleSelectCell', () => {
     ]);
 
     const intent: PlayerIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(2) };
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -405,7 +403,7 @@ describe('handleMoveCursor', () => {
     const state = importState();
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -415,7 +413,7 @@ describe('handleMoveCursor', () => {
     const state = solvingState(5);
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -425,7 +423,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -439,7 +437,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5, [[2, 3]]), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -453,7 +451,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 4, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -467,7 +465,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -481,7 +479,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(1),
@@ -495,7 +493,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5, [[2, 1]]), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -509,7 +507,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 0, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -525,7 +523,7 @@ describe('handleMoveCursor', () => {
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
     expect(result.events).toEqual([]);
@@ -535,7 +533,7 @@ describe('handleMoveCursor', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(3),
@@ -559,7 +557,7 @@ describe('handleMoveCursor', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
-    const result = handleMoveCursor(stateWithAnagram, intent, deps);
+    const result = handleMoveCursor(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -583,7 +581,7 @@ describe('handleMoveCursor', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
-    const result = handleMoveCursor(stateWithAnagram, intent, deps);
+    const result = handleMoveCursor(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -603,7 +601,7 @@ describe('handleMoveCursor', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 2, col: 0, direction: 'across' });
 
     const intent: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
-    const result = handleMoveCursor(stateWithAnagram, intent, deps);
+    const result = handleMoveCursor(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(2),
@@ -625,7 +623,7 @@ describe('handleMoveCursor', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
     const withinChain: PlayerIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
-    const first = handleMoveCursor(stateWithAnagram, withinChain, deps);
+    const first = handleMoveCursor(stateWithAnagram, withinChain);
 
     expect(assertSolving(first.state).cursor).toEqual({
       row: Row.of(1),
@@ -635,7 +633,7 @@ describe('handleMoveCursor', () => {
     expect(assertSolving(first.state).anagram).toEqual(stateWithAnagram.anagram);
 
     const crossChain: PlayerIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
-    const second = handleMoveCursor(first.state, crossChain, deps);
+    const second = handleMoveCursor(first.state, crossChain);
 
     expect(assertSolving(second.state).cursor).toEqual({
       row: Row.of(1),
@@ -654,7 +652,7 @@ describe('handleClickCluePanelWord', () => {
       wordKey: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     };
 
-    const result = handleClickCluePanelWord(state, intent, deps);
+    const result = handleClickCluePanelWord(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -667,7 +665,7 @@ describe('handleClickCluePanelWord', () => {
       wordKey: { startRow: Row.of(999), startCol: Col.of(0), direction: 'across' },
     };
 
-    const result = handleClickCluePanelWord(state, intent, deps);
+    const result = handleClickCluePanelWord(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -679,7 +677,7 @@ describe('handleClickCluePanelWord', () => {
     if (word === undefined) throw new Error('expected a word');
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: word.key };
 
-    const result = handleClickCluePanelWord(state, intent, deps);
+    const result = handleClickCluePanelWord(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: word.key.startRow,
@@ -696,7 +694,7 @@ describe('handleClickCluePanelWord', () => {
     if (word === undefined) throw new Error('expected a word');
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: word.key };
 
-    const result = handleClickCluePanelWord(state, intent, deps);
+    const result = handleClickCluePanelWord(state, intent);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
     expect(result.events).toEqual([]);
@@ -717,7 +715,7 @@ describe('handleClickCluePanelWord', () => {
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: downWord.key };
-    const result = handleClickCluePanelWord(stateWithAnagram, intent, deps);
+    const result = handleClickCluePanelWord(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: downWord.key.startRow,
@@ -740,7 +738,7 @@ describe('handleClickCluePanelWord', () => {
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: acrossWord.key };
-    const result = handleClickCluePanelWord(stateWithAnagram, intent, deps);
+    const result = handleClickCluePanelWord(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: acrossWord.key.startRow,
@@ -764,7 +762,7 @@ describe('handleClickCluePanelWord', () => {
     );
 
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: bKey };
-    const result = handleClickCluePanelWord(stateWithAnagram, intent, deps);
+    const result = handleClickCluePanelWord(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: bKey.startRow,
@@ -780,7 +778,7 @@ describe('handleClickCluePanelWord', () => {
     if (word === undefined) throw new Error('expected a word');
     const intent: PlayerIntent = { kind: 'click-clue-panel-word', wordKey: word.key };
 
-    const result = handleClickCluePanelWord(state, intent, deps);
+    const result = handleClickCluePanelWord(state, intent);
 
     expect(GridOps.isSelectable(assertSolving(result.state).puzzle.grid, word.key.startRow, word.key.startCol)).toBe(true);
   });
@@ -791,7 +789,7 @@ describe('handleTypeLetter', () => {
     const state = importState();
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -801,7 +799,7 @@ describe('handleTypeLetter', () => {
     const state = solvingState(5);
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -811,7 +809,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
@@ -829,7 +827,7 @@ describe('handleTypeLetter', () => {
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
@@ -850,7 +848,7 @@ describe('handleTypeLetter', () => {
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
       Letter.try('Z'),
@@ -864,7 +862,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -877,7 +875,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -893,7 +891,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 4, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -909,7 +907,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -925,7 +923,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'down' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(1),
@@ -938,7 +936,7 @@ describe('handleTypeLetter', () => {
     const state = withCursor(solvingState(5, [[0, 0]]), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -949,7 +947,7 @@ describe('handleTypeLetter', () => {
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
   });
@@ -964,7 +962,7 @@ describe('handleTypeLetter', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 0, direction: 'across' });
 
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
-    const result = handleTypeLetter(stateWithAnagram, intent, deps);
+    const result = handleTypeLetter(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -984,7 +982,7 @@ describe('handleTypeLetter', () => {
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 2, direction: 'across' });
 
     const intent: PlayerIntent = { kind: 'type-letter', letter: Letter.try('A')! };
-    const result = handleTypeLetter(stateWithAnagram, intent, deps);
+    const result = handleTypeLetter(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -998,9 +996,7 @@ describe('handleTypeLetter', () => {
 describe('handleBackspace', () => {
   it('backspace: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1008,9 +1004,7 @@ describe('handleBackspace', () => {
 
   it('backspace: no-op when cursor is null', () => {
     const state = solvingState(5);
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1019,9 +1013,7 @@ describe('handleBackspace', () => {
   it('backspace: deletes playerLetter and keeps cursor when current cell has a letter (FR-13)', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
@@ -1035,9 +1027,7 @@ describe('handleBackspace', () => {
   it('backspace: when current cell empty, retreats and deletes previous cell playerLetter (FR-13)', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 1, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
@@ -1049,9 +1039,7 @@ describe('handleBackspace', () => {
 
   it('backspace: when current cell empty and previous is at grid start, stays and nothing deleted (FR-13)', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -1064,9 +1052,7 @@ describe('handleBackspace', () => {
 
   it('backspace: when current cell empty and previous is black, stays and nothing deleted (FR-13)', () => {
     const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 2, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
@@ -1080,9 +1066,7 @@ describe('handleBackspace', () => {
   it('backspace: direction "down" retreats -1 row', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 1, col: 0, direction: 'down' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
@@ -1105,9 +1089,7 @@ describe('handleBackspace', () => {
     };
     state = withPlayerLetter(state, 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
       Letter.try('Z'),
@@ -1119,9 +1101,7 @@ describe('handleBackspace', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     state = withCheckResult(state);
-    const intent: PlayerIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
   });
@@ -1136,8 +1116,7 @@ describe('handleBackspace', () => {
     stateWithAnagram = withPlayerLetter(stateWithAnagram, 0, 0, 'X');
     stateWithAnagram = withCursor(stateWithAnagram, { row: 0, col: 1, direction: 'across' });
 
-    const intent: PlayerIntent = { kind: 'backspace' };
-    const result = handleBackspace(stateWithAnagram, intent, deps);
+    const result = handleBackspace(stateWithAnagram);
 
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
@@ -1152,9 +1131,7 @@ describe('handleBackspace', () => {
 describe('handleCheck', () => {
   it('check: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'check' };
-
-    const result = handleCheck(state, intent, deps);
+    const result = handleCheck(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1171,7 +1148,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 1, 0, 'C');
     state = withPlayerLetter(state, 1, 1, 'D');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult).toEqual({
       classification: 'complete-correct',
@@ -1190,7 +1167,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 0, 0, 'A');
     state = withPlayerLetter(state, 1, 1, 'D');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult).toEqual({
       classification: 'incomplete-correct',
@@ -1213,7 +1190,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 1, 0, 'C');
     state = withPlayerLetter(state, 1, 1, 'Y');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult).toEqual({
       classification: 'complete-incorrect',
@@ -1234,7 +1211,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 0, 0, 'A');
     state = withPlayerLetter(state, 0, 1, 'X');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult).toEqual({
       classification: 'incomplete-incorrect',
@@ -1265,7 +1242,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 2, 1, 'G');
     state = withPlayerLetter(state, 2, 2, 'H');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     const checkResult = assertSolving(result.state).checkResult;
     expect(checkResult?.classification).toBe('complete-correct');
@@ -1283,7 +1260,7 @@ describe('handleCheck', () => {
     state = withAnswerLetter(state, 1, 0, 'C');
     state = withAnswerLetter(state, 1, 1, 'D');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult).toEqual({
       classification: 'incomplete-correct',
@@ -1308,7 +1285,7 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 1, 0, 'C');
     state = withPlayerLetter(state, 1, 1, 'D');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult?.incorrectCells).toEqual([
       { row: Row.of(0), col: Col.of(1) },
@@ -1323,7 +1300,7 @@ describe('handleCheck', () => {
     state = withAnswerLetter(state, 1, 1, 'D');
     state = withPlayerLetter(state, 0, 0, 'A');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult?.emptyCells).toEqual([
       { row: Row.of(0), col: Col.of(1) },
@@ -1341,7 +1318,7 @@ describe('handleCheck', () => {
     if (acrossWord === undefined) throw new Error('expected across word');
     const stateWithAnagram = withAnagram(stateWithCursor, acrossWord.key);
 
-    const result = handleCheck(stateWithAnagram, { kind: 'check' }, deps);
+    const result = handleCheck(stateWithAnagram);
 
     const next = assertSolving(result.state);
     expect(next.puzzle).toBe(stateWithAnagram.puzzle);
@@ -1359,8 +1336,8 @@ describe('handleCheck', () => {
     state = withPlayerLetter(state, 0, 0, 'A');
     state = withPlayerLetter(state, 0, 1, 'X');
 
-    const first = handleCheck(state, { kind: 'check' }, deps);
-    const second = handleCheck(first.state, { kind: 'check' }, deps);
+    const first = handleCheck(state);
+    const second = handleCheck(first.state);
 
     expect(assertSolving(second.state).checkResult).toEqual(
       assertSolving(first.state).checkResult,
@@ -1374,7 +1351,7 @@ describe('handleCheck', () => {
     state = withAnswerLetter(state, 1, 1, 'D');
     state = withPlayerLetter(state, 0, 0, 'A');
 
-    const result = handleCheck(state, { kind: 'check' }, deps);
+    const result = handleCheck(state);
 
     expect(assertSolving(result.state).checkResult?.incorrectCells).toContainEqual({
       row: Row.of(0),
@@ -1386,9 +1363,7 @@ describe('handleCheck', () => {
 describe('handleClearErrors', () => {
   it('clear-errors: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'clear-errors' };
-
-    const result = handleClearErrors(state, intent, deps);
+    const result = handleClearErrors(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1396,9 +1371,7 @@ describe('handleClearErrors', () => {
 
   it('clear-errors: no-op when checkResult is null', () => {
     const state = solvingState(2);
-    const intent: PlayerIntent = { kind: 'clear-errors' };
-
-    const result = handleClearErrors(state, intent, deps);
+    const result = handleClearErrors(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1408,7 +1381,7 @@ describe('handleClearErrors', () => {
     let state = solvingState(2);
     state = withCheckResult(state, 'complete-correct');
 
-    const result = handleClearErrors(state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -1424,9 +1397,9 @@ describe('handleClearErrors', () => {
     state = withPlayerLetter(state, 0, 1, 'X');
     state = withPlayerLetter(state, 1, 0, 'Y');
     state = withPlayerLetter(state, 1, 1, 'D');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(GridOps.cellAt(next.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
@@ -1442,9 +1415,9 @@ describe('handleClearErrors', () => {
     state = withPlayerLetter(state, 0, 0, 'A');
     state = withPlayerLetter(state, 0, 1, 'X');
     state = withPlayerLetter(state, 1, 1, 'D');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(GridOps.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(Letter.try('A'));
@@ -1458,9 +1431,9 @@ describe('handleClearErrors', () => {
     state = withAnswerLetter(state, 1, 0, 'C');
     state = withAnswerLetter(state, 1, 1, 'D');
     state = withPlayerLetter(state, 0, 1, 'X');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(GridOps.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
@@ -1475,9 +1448,9 @@ describe('handleClearErrors', () => {
     state = withAnswerLetter(state, 1, 0, 'C');
     state = withAnswerLetter(state, 1, 1, 'D');
     state = withPlayerLetter(state, 0, 1, 'X');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(GridOps.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(Letter.try('A'));
@@ -1491,10 +1464,10 @@ describe('handleClearErrors', () => {
     state = withAnswerLetter(state, 0, 0, 'A');
     state = withAnswerLetter(state, 0, 1, 'B');
     state = withPlayerLetter(state, 0, 1, 'X');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
     expect(assertSolving(checked.state).checkResult).not.toBe(null);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     expect(assertSolving(result.state).checkResult).toBe(null);
   });
@@ -1504,10 +1477,10 @@ describe('handleClearErrors', () => {
     state = withAnswerLetter(state, 0, 0, 'A');
     state = withAnswerLetter(state, 0, 1, 'B');
     state = withPlayerLetter(state, 0, 1, 'X');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
     const originalGrid = assertSolving(checked.state).puzzle.grid;
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(next.puzzle.grid).not.toBe(originalGrid);
@@ -1525,10 +1498,10 @@ describe('handleClearErrors', () => {
     );
     if (acrossWord === undefined) throw new Error('expected across word');
     state = withAnagram(state, acrossWord.key);
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
     const previous = assertSolving(checked.state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     expect(next.puzzle.key).toBe(previous.puzzle.key);
@@ -1548,9 +1521,9 @@ describe('handleClearErrors', () => {
     state = withPlayerLetter(state, 0, 1, 'X');
     state = withPlayerLetter(state, 1, 0, 'Y');
     state = withPlayerLetter(state, 1, 1, 'Z');
-    const checked = handleCheck(state, { kind: 'check' }, deps);
+    const checked = handleCheck(state);
 
-    const result = handleClearErrors(checked.state, { kind: 'clear-errors' }, deps);
+    const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
     for (let r = 0; r < 2; r++) {

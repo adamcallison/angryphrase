@@ -27,7 +27,7 @@ import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 
-const deps = { rng: new SeededRng(1), now: () => 0 };
+const rng = new SeededRng(1);
 
 function makeState(
   size: number,
@@ -96,7 +96,7 @@ function makeState(
     const state = makeState(5, [], null, 'design');
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -106,7 +106,7 @@ function makeState(
     const state = makeState(5, []);
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(999), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -116,7 +116,7 @@ function makeState(
     const state = makeState(5, [[0, 0]]);
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -130,7 +130,7 @@ function makeState(
     ]);
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -148,7 +148,7 @@ function makeState(
     ]);
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -162,7 +162,7 @@ function makeState(
     const state = makeState(5, []);
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -176,7 +176,7 @@ function makeState(
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -197,7 +197,7 @@ function makeState(
     );
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.state.cursor).toEqual({
@@ -212,7 +212,7 @@ function makeState(
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
     const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(3), col: Col.of(3) };
 
-    const result = handleSelectCell(state, intent, deps);
+    const result = handleSelectCell(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(3),
@@ -228,7 +228,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' }, 'design');
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -238,7 +238,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, []);
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -248,7 +248,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -262,7 +262,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [[2, 3]], { row: 2, col: 2, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -276,7 +276,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 4, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -290,7 +290,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -304,7 +304,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(1),
@@ -318,7 +318,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [[2, 1]], { row: 2, col: 2, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -332,7 +332,7 @@ describe('handleMoveCursor', () => {
     const state = makeState(5, [], { row: 2, col: 0, direction: 'down' });
     const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
 
-    const result = handleMoveCursor(state, intent, deps);
+    const result = handleMoveCursor(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -348,7 +348,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design');
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -358,7 +358,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, []);
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -368,7 +368,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
@@ -387,7 +387,7 @@ describe('handleTypeLetter', () => {
     ]);
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
@@ -398,7 +398,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
@@ -411,7 +411,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [[0, 1]], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
@@ -425,7 +425,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
@@ -439,7 +439,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(4)).answerLetter).toEqual(
       Letter.try('A'),
@@ -450,7 +450,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'down' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(1),
@@ -463,7 +463,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
 
-    const result = handleTypeLetter(state, intent, deps);
+    const result = handleTypeLetter(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -475,9 +475,7 @@ describe('handleBackspace', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design', [
       [0, 0, 'A'],
     ]);
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -485,9 +483,7 @@ describe('handleBackspace', () => {
 
   it('backspace: no-op when cursor is null', () => {
     const state = makeState(5, [], null, 'fill', [[0, 0, 'A']]);
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -497,9 +493,7 @@ describe('handleBackspace', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [
       [0, 0, 'A'],
     ]);
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
@@ -514,9 +508,7 @@ describe('handleBackspace', () => {
     const state = makeState(5, [], { row: 0, col: 1, direction: 'across' }, 'fill', [
       [0, 0, 'A'],
     ]);
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
@@ -529,9 +521,7 @@ describe('handleBackspace', () => {
 
   it('backspace: when current cell empty and previous is at grid start, stays and nothing deleted (FR-13)', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -539,9 +529,7 @@ describe('handleBackspace', () => {
 
   it('backspace: when current cell empty and previous is black, stays and nothing deleted (FR-13)', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 1, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -551,9 +539,7 @@ describe('handleBackspace', () => {
     const state = makeState(5, [], { row: 1, col: 0, direction: 'down' }, 'fill', [
       [0, 0, 'A'],
     ]);
-    const intent: BuilderIntent = { kind: 'backspace' };
-
-    const result = handleBackspace(state, intent, deps);
+    const result = handleBackspace(state);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
@@ -569,7 +555,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design');
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -579,7 +565,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, []);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -589,7 +575,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -599,7 +585,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
       true,
@@ -614,7 +600,7 @@ describe('handleToggleMarker', () => {
     ]);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
       false,
@@ -629,7 +615,7 @@ describe('handleToggleMarker', () => {
     ]);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
     expect(newMarker.spaceRight).toBe(true);
@@ -643,7 +629,7 @@ describe('handleToggleMarker', () => {
     ]);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'hyphen-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
     expect(newMarker.hyphenRight).toBe(true);
@@ -657,7 +643,7 @@ describe('handleToggleMarker', () => {
     ]);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'hyphen-bottom' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
     expect(newMarker.hyphenBottom).toBe(true);
@@ -671,7 +657,7 @@ describe('handleToggleMarker', () => {
     ]);
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
     expect(newMarker.spaceRight).toBe(true);
@@ -684,7 +670,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
 
-    const result = handleToggleMarker(state, intent, deps);
+    const result = handleToggleMarker(state, intent);
 
     expect(result.state.puzzle.grid).not.toBe(state.puzzle.grid);
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
@@ -699,7 +685,7 @@ describe('handleEditClue', () => {
     const wordKey = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'New clue' };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -714,7 +700,7 @@ describe('handleEditClue', () => {
     };
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'New clue' };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -725,7 +711,7 @@ describe('handleEditClue', () => {
     const wordKey = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'A fine clue' };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     const updated = result.state.puzzle.words.find(w => WordKey.equals(w.key, wordKey));
     expect(updated).toBeDefined();
@@ -739,7 +725,7 @@ describe('handleEditClue', () => {
     const targetKey = state.puzzle.words[1]!.key;
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey: headKey, clue: 'Head clue' };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     const head = result.state.puzzle.words.find(w => WordKey.equals(w.key, headKey));
     const target = result.state.puzzle.words.find(w => WordKey.equals(w.key, targetKey));
@@ -753,7 +739,7 @@ describe('handleEditClue', () => {
     const targetKey = state.puzzle.words[1]!.key;
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey: targetKey, clue: 'Bad clue' };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
@@ -774,7 +760,7 @@ describe('handleEditClue', () => {
     const stateWithClue = { ...state, puzzle: Puzzle.withWords(state.puzzle, words) };
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: '' };
 
-    const result = handleEditClue(stateWithClue, intent, deps);
+    const result = handleEditClue(stateWithClue, intent);
 
     const updated = result.state.puzzle.words.find(w => WordKey.equals(w.key, wordKey));
     expect(updated!.clue).toBe('');
@@ -787,7 +773,7 @@ describe('handleEditClue', () => {
     const clue = '  spaces & punct!  ';
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue };
 
-    const result = handleEditClue(state, intent, deps);
+    const result = handleEditClue(state, intent);
 
     const updated = result.state.puzzle.words.find(w => WordKey.equals(w.key, wordKey));
     expect(updated!.clue).toBe('  spaces & punct!  ');
@@ -804,7 +790,7 @@ describe('handleEditClue', () => {
     const stateWithOtherClue = { ...state, puzzle: Puzzle.withWords(state.puzzle, words) };
     const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'Updated clue' };
 
-    const result = handleEditClue(stateWithOtherClue, intent, deps);
+    const result = handleEditClue(stateWithOtherClue, intent);
 
     expect(result.state.puzzle.key).toBe(stateWithOtherClue.puzzle.key);
     const other = result.state.puzzle.words.find(w => WordKey.equals(w.key, otherKey));
@@ -820,7 +806,7 @@ describe('handleClickWord', () => {
     const wordKey = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
 
-    const result = handleClickWord(state, intent, deps);
+    const result = handleClickWord(state, intent, rng);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -835,7 +821,7 @@ describe('handleClickWord', () => {
     };
     const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
 
-    const result = handleClickWord(state, intent, deps);
+    const result = handleClickWord(state, intent, rng);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -846,7 +832,7 @@ describe('handleClickWord', () => {
     const wordKey = state.puzzle.words[1]!.key;
     const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
 
-    const result = handleClickWord(state, intent, deps);
+    const result = handleClickWord(state, intent, rng);
 
     expect(result.state.cursor).toEqual({
       row: wordKey.startRow,
@@ -863,7 +849,7 @@ describe('handleClickWord', () => {
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
     const intent: BuilderIntent = { kind: 'click-grid-word', wordKey: target };
 
-    const result = handleClickWord(stateWithJoin, intent, deps);
+    const result = handleClickWord(stateWithJoin, intent, rng);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toEqual(target);
@@ -872,7 +858,7 @@ describe('handleClickWord', () => {
   });
 
   it('click-word: subMode=reattach delegates to resolveReattach', () => {
-    const clue = DisplacedClue.create(deps.rng, 'reattached clue', 'across');
+    const clue = DisplacedClue.create(rng, 'reattached clue', 'across');
     const state = {
       ...makeStateWithWords(4, []),
       displacedClues: [clue],
@@ -881,7 +867,7 @@ describe('handleClickWord', () => {
     const target = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey: target };
 
-    const result = handleClickWord(state, intent, deps);
+    const result = handleClickWord(state, intent, rng);
 
     const targetAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, target));
     expect(targetAfter!.clue).toBe('reattached clue');
@@ -896,7 +882,7 @@ describe('handleClickWord', () => {
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
     const intent: BuilderIntent = { kind: 'click-grid-word', wordKey: source };
 
-    const result = handleClickWord(stateWithJoin, intent, deps);
+    const result = handleClickWord(stateWithJoin, intent, rng);
 
     expect(result.state.subMode).toEqual({ kind: 'none' });
     expect(result.state.puzzle).toBe(stateWithJoin.puzzle);

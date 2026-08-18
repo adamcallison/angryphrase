@@ -1,7 +1,6 @@
 import type { BuilderState } from '../state';
 import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import type { Rng } from '../../../domain/rng/Rng';
 import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { Result } from '../../../domain/notifications/Event';
 import { WordMap } from '../../../domain/word/WordMap';
@@ -14,10 +13,7 @@ const idEquals = (a: DisplacedClueId, b: DisplacedClueId): boolean => String(a) 
 export function handleBeginReattach(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'begin-reattach' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
@@ -36,10 +32,7 @@ export function handleBeginReattach(
 export function handleDeleteDisplacedClue(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'delete-displaced-clue' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   const exists = state.displacedClues.some(d => idEquals(d.id, intent.id));
   if (!exists) {
     return Result.ok(state);
@@ -63,10 +56,7 @@ export function resolveReattach(
   state: BuilderState,
   displacedClueId: DisplacedClueId,
   targetKey: WordKey,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   const displacedClue = state.displacedClues.find(d =>
     String(d.id) === String(displacedClueId),
   );
