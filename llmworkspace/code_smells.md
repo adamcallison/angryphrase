@@ -48,8 +48,11 @@ Was 🟠: `src/player/state/state.ts:8`, `src/player/state/internal/solving.ts:2
 - Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files, 1021 passed). `grep -rn "Cursor.*builder/state/state" src/ test/` → empty.
 - Out of scope (separate tasks): A2 (raw grid indexing outside `GridOps`), A4 (`domain/persistence/` folder misnomer), E1 (memoization of `findContainingWord`+`WordMap`+`Chain.headOf` per VM tick — A3 fold does not add memoization, only clarifies the `Cursor` identity).
 
-### A4. `domain/persistence/` folder misnomer (DRN item 1) 🟡
+### A4. `domain/persistence/` folder misnomer (DRN item 1) 🟡 ✅ Resolved
 Still unresolved per DRN. Folder holds `DownloadPort`/`FilePickPort` which are not persistence. `Rng` already hoisted to `domain/rng/`. Cheapest option (status quo) is the documented choice; flagged as acknowledged smell.
+
+#### A4 — Fix
+- Option A adopted 2026-08-18. Folder renamed via `git mv` from `src/domain/persistence/` to `src/domain/ports/`. 10 importers re-pointed, `eslint.config.js` `src/ports/**` allow-list regex + boundary fixture updated, AD §1.3/§2.1/§3.7/§9.2/§9.3 + DRN item 1 + this file amended. Verification commands run green.
 
 ---
 
@@ -243,7 +246,7 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 `BuilderToolbar.svelte:119-127`. Four-way flag-to-`CellMarker` field dispatch via `'space-right' ? … : 'space-bottom' ? … : … : 'hyphenBottom'`. Brittle; would slip silently if a fifth marker flag added. A record map `flag → markerKey` would be safer.
 
 ### G7. `DownloadPort.download` is `void`-returning; both port impl and `appStore` swallow errors with no user feedback 🟠
-`src/domain/persistence/ports.ts:12-13` `download(filename, content): void` — no `Result` channel. `src/ports/downloadPort.ts:6-18` wraps the DOM Blob/anchor dance in `try/catch` → `console.warn` only. `src/ui/bindings/appStore.svelte.ts:75-81` adds a second `try/catch` that also just `console.warn`s. Effect: a user-initiated download that fails (rare, but possible: blocked focus, sandbox, store API throw) leaves the user with zero UI signal — no toast, no modal, no inline state change. Failed irreversible user action disappears silently. **Fix path: widen the port signature to `Result<null, DownloadError>` (or `DownloadError` discriminated union) and emit a `toast` event on failure from `appStore.performExternalEvent`; this requires a new `DownloadError` domain type + a reducer `DomainEvent` variant for the toast — surface as design amendment if needed.**
+`src/domain/ports/ports.ts:12-13` `download(filename, content): void` — no `Result` channel. `src/ports/downloadPort.ts:6-18` wraps the DOM Blob/anchor dance in `try/catch` → `console.warn` only. `src/ui/bindings/appStore.svelte.ts:75-81` adds a second `try/catch` that also just `console.warn`s. Effect: a user-initiated download that fails (rare, but possible: blocked focus, sandbox, store API throw) leaves the user with zero UI signal — no toast, no modal, no inline state change. Failed irreversible user action disappears silently. **Fix path: widen the port signature to `Result<null, DownloadError>` (or `DownloadError` discriminated union) and emit a `toast` event on failure from `appStore.performExternalEvent`; this requires a new `DownloadError` domain type + a reducer `DomainEvent` variant for the toast — surface as design amendment if needed.**
 
 ---
 
@@ -273,7 +276,7 @@ Word length could be a `WordLength` branded range-checked type (≥2 per FR-5); 
 ## I. CI / build config
 
 ### I1. ESLint `no-restricted-imports` `src/ports/**` allow-list uses negative-lookahead regex with explicit `.ts` extensions 🟡
-`eslint.config.js:205-206` (DRN item 6). Regex enumerates exact allowed paths (`src/domain/persistence/ports.ts`, `src/domain/rng/Rng.ts`, `src/domain/puzzle/PuzzleKey.ts`) with `.ts` suffix. The `.ts`-extension convention is inconsistent across layer boundaries (other rules use globs). Operationally fine; stylistic inconsistency.
+`eslint.config.js:205-206` (DRN item 6). Regex enumerates exact allowed paths (`src/domain/ports/ports.ts`, `src/domain/rng/Rng.ts`, `src/domain/puzzle/PuzzleKey.ts`) with `.ts` suffix. The `.ts`-extension convention is inconsistent across layer boundaries (other rules use globs). Operationally fine; stylistic inconsistency.
 
 ---
 
@@ -322,4 +325,4 @@ Top 5 by impact:
 4. **B1/B2/B3** algorithm/UI duplication (findContainingWord ×4, cellsOfChain ×2, clue-panel sections) — structural maintenance load. **B1 ✅ Resolved** (2026-08-10: extracted to `domain/word/WordSelection.ts`, 4 sites replaced, AD amended); **B2 ✅ Resolved** (2026-08-10: extracted to `domain/chain/ChainCells.ts`, 2 sites replaced, AD amended); **B3 ✅ Resolved** (2026-08-13: extracted `ui/builder/ClueSection.svelte`, BuilderCluePanel composes two children, AD §7.2 + §9.3 amended).
 5. **A3** Cursor misplaced in Builder state module, type-imported everywhere. **✅ Resolved** (2026-08-13: `Cursor` hoisted to `src/domain/grid/Cursor.ts`; all 10 importers re-pointed; `WordSelection.findContainingWord` + `GridVM.cursor` folded to the named `Cursor` type (B1 workaround retired); AD §1.3, §3.2, §3.3, §4.3, §5.2, §9.3 amended).
 
-Acknowledged-but-accepted (no action needed unless revisiting): A4, K2/K3 open items, F3.
+Acknowledged-but-accepted (no action needed unless revisiting): K2/K3 open items, F3.

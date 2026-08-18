@@ -226,9 +226,9 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: true
 	},
 	{
-		description: 'src/ports/** allows domain/persistence/ports',
+		description: 'src/ports/** allows domain/ports/ports',
 		filename: 'src/ports/foo.ts',
-		code: 'import type { DownloadPort } from "../domain/persistence/ports.ts"',
+		code: 'import type { DownloadPort } from "../domain/ports/ports.ts"',
 		expectError: false
 	},
 	{

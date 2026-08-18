@@ -1,4 +1,4 @@
-import type { DownloadPort } from '../domain/persistence/ports.ts';
+import type { DownloadPort } from '../domain/ports/ports.ts';
 
 export function createDownloadPort(): DownloadPort {
   return {

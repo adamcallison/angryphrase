@@ -1,4 +1,4 @@
-import type { DownloadPort } from '../../src/domain/persistence/ports';
+import type { DownloadPort } from '../../src/domain/ports/ports';
 
 export class StubDownloadPort implements DownloadPort {
   public downloads: { filename: string; content: string }[] = [];

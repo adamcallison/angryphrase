@@ -25,7 +25,7 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import type { StoragePort } from '../../../src/domain/persistence/ports';
+import type { StoragePort } from '../../../src/domain/ports/ports';
 import type { BuilderState as BuilderStateType } from '../../../src/builder/state/state';
 import type { PlayerState as PlayerStateType } from '../../../src/player/state/state';
 import type { Puzzle as PuzzleType } from '../../../src/domain/puzzle/Puzzle';

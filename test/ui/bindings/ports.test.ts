@@ -3,7 +3,7 @@ import { getPorts, setPorts, resetPorts } from '../../../src/ui/bindings/ports';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
-import type { FilePickPort } from '../../../src/domain/persistence/ports';
+import type { FilePickPort } from '../../../src/domain/ports/ports';
 
 describe('ports.ts', () => {
   it('ports.ts: getPorts() returns the four port instances by default (each non-null, referentially stable across calls)', () => {

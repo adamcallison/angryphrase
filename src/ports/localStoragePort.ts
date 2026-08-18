@@ -1,4 +1,4 @@
-import type { StoragePort } from '../domain/persistence/ports.ts';
+import type { StoragePort } from '../domain/ports/ports.ts';
 import type { PuzzleKey } from '../domain/puzzle/PuzzleKey.ts';
 
 // Key-naming convention:

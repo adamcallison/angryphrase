@@ -1,4 +1,4 @@
-import type { StoragePort } from '../../src/domain/persistence/ports';
+import type { StoragePort } from '../../src/domain/ports/ports';
 import type { PuzzleKey } from '../../src/domain/puzzle/PuzzleKey';
 
 export class InMemoryStoragePort implements StoragePort {

@@ -1,7 +1,7 @@
 import { serializeIncomplete, parsePuzzleV1 } from '../../domain/format/v1';
 import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
-import type { StoragePort } from '../../domain/persistence/ports';
+import type { StoragePort } from '../../domain/ports/ports';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { GridSize } from '../../domain/grid/GridSize';
 import type { Letter } from '../../domain/letter/Letter';

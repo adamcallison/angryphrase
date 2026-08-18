@@ -22,6 +22,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Recommendation for later.** Option A if/when the next port arrives. Until then, C.
 
+**Resolution applied on 2026-08-18.** Option A adopted. `src/domain/persistence/` renamed to `src/domain/ports/` (`git mv` preserved history). All 10 importer paths, the `eslint.config.js` `src/ports/**` allow-list regex + messages, and the §9.3 file tree + §1.3 module table + §3.7 heading/body + §9.2 boundary table in `architecture_design.md` were amended. `Rng.ts` comment re-pointed to the new former-path. DRN item 1: closed.
+
 ---
 
 ## 2. `DisplacedClue.create` signature in §3.5 omitted `rng`

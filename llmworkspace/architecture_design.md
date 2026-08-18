@@ -83,8 +83,8 @@ These four principles are binding constraints on the implementation. Every other
                                                                    ▼
        ┌─────────────────────────────────────────────────────────────────────────┐
        │                              domain/                                    │
-       │  grid/  word/  letter/  chain/  anagram/  puzzle/                        │
-       │  builder/  notifications/  format/  persistence/                         │
+        │  grid/  word/  letter/  chain/  anagram/  puzzle/                        │
+        │  builder/  notifications/  format/  ports/                               │
        │  - pure TS, zero framework imports, no Svelte, no DOM                   │
        │  - immutable value objects, branded types, pure functions               │
        └─────────────────────────────────────────────────────────────────────────┘
@@ -92,8 +92,8 @@ These four principles are binding constraints on the implementation. Every other
                                                                    ▼
        ┌─────────────────────────────────────────────────────────────────────────┐
        │                              ports/                                     │
-       │  localStoragePort, downloadPort, filePickPort, rngPort                  │
-       │  - implementations of domain/persistence interfaces                      │
+        │  localStoragePort, downloadPort, filePickPort, rngPort                  │
+        │  - implementations of domain/ports interfaces                            │
        │  - side-effectful; swappable in tests                                   │
        └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -120,8 +120,8 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 | `domain/builder/` | `DisplacedClue`, `DisplacedClueId`. (Builder-only concept per S1 — lives in `domain/` as a pure value-object pair; `BuilderState` carries the `DisplacedClue[]`, not `Puzzle`.) |
 | `domain/notifications/` | `Toast`, `ToastId`, `ToastKind`, `ModalRequest`, `ModalKind`, and `DomainEvent` — the discriminated union of side-effect requests that reducers return. Pure value objects whose consumers are UI, not UI themselves. |
 | `domain/format/` | `v1` JSON parse + validate, both incomplete and complete (FR-94 to FR-99), strict non-head-clue rejection (C5). Produces `Puzzle` + `DisplacedClue[]` (for the incomplete format) or a `ParseFailure[]`. |
-| `domain/persistence/` | Side-effect port *interfaces* only: `StoragePort`, `DownloadPort`, `FilePickPort`. No implementations. |
-| `domain/rng/` | `Rng` interface only — a deps-injection abstraction, not a port. Hoisted out of `domain/persistence/` to keep the "port" definition honest and break a type-only cycle (see §3.7 and `design_review_notes.md` item 1). |
+| `domain/ports/` | Side-effect port *interfaces* only: `StoragePort`, `DownloadPort`, `FilePickPort`. No implementations. |
+| `domain/rng/` | `Rng` interface only — a deps-injection abstraction, not a port. Hoisted out of `domain/ports/` to keep the "port" definition honest and break a type-only cycle (see §3.7 and `design_review_notes.md` item 1). |
 
 **Layer 1 — `builder/state/`, `player/state/`, and `app/state/` (pure reducers).**
 Owns the reducer functions and the `Intent` discriminated unions for each experience, plus the per-experience `State` value objects. Pure; no Svelte, no DOM, no ports. All three freely import `domain/`. **Module boundaries within Layer 1 (binding):** each of `builder/state/`, `player/state/`, and `app/state/` is a module that publishes its API at the folder root (`state.ts`, `intents.ts`, `reducer.ts`, and — for `app/state/` — `effects.ts`); implementation helpers live under that module's `internal/` subfolder. `app/state` is a client of the `builder/state` and `player/state` modules: it may import their root files (value or type, as needed) but never their `internal/` files. **`builder/state` and `player/state` may not import each other at all (cross-module imports are fully forbidden; the ESLint `no-restricted-imports` rule for each forbids any import path resolving into the sibling `state/` tree, root files included). Shared concepts that both experiences need — e.g. `Cursor` — live in `domain/` (see code-smell A3 fix; the prior "public root files only" relaxation is fully closed).** `builder/state` and `player/state` may not import `app/state` (no cycles). Tests may import from `internal/` freely — the `internal/` rule constrains only cross-module imports within `src/`. The boundary self-test `test/boundary/imports.test.ts` (code-smell A1 fix) drives the ESLint `Linter` API over adversarial fixtures asserting forbidden imports fail to compile; the builder↔player and builder/player↔`internal/` edges each have positive and negative controls. Components:
@@ -196,7 +196,7 @@ Receives view-models as `$props()`; emits intents via `dispatch` imported from b
 | `ui/bindings/` | (covered above) |
 
 **Layer 4 — `ports/` (side-effect implementations).**
-Implements `domain/persistence` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests.
+Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests.
 
 | Module | Implements | Wraps |
 |---|---|---|
@@ -636,7 +636,7 @@ export const CompletenessCheck: {
 - Every `Word` in `words` corresponds to a maximal white run actually present in `grid` (re-derived on every change, validated on load per FR-98a).
 - Displaced clues never block completeness (FR-63); `CompletenessCheck.check` does not consult `BuilderState.displacedClues`.
 
-### 3.7 Persistence & format (`domain/persistence/`, `domain/format/`, `domain/rng/`)
+### 3.7 Persistence & format (`domain/ports/`, `domain/format/`, `domain/rng/`)
 
 ```ts
 // Port interfaces only — implementations live in ports/
@@ -658,9 +658,9 @@ export interface FilePickPort {
 // domain/rng/Rng.ts — NOT a port. Rng is a deps-injection abstraction (a determinism
 // knob), not a side-effect hole against the outside world. Unlike the three interfaces
 // above, reducers ARE allowed to call Rng directly (e.g., PuzzleKey.generate(rng),
-// Anagram.scramble(rng, …), Toast.create(rng, …)). Hoisting Rng out of `domain/persistence/`
+// Anagram.scramble(rng, …), Toast.create(rng, …)). Hoisting Rng out of `domain/ports/`
 // keeps the "port" definition honest and breaks the type-only cycle that would otherwise
-// form between `domain/persistence/ports.ts` (importing PuzzleKey) and `domain/puzzle/PuzzleKey.ts`
+// form between `domain/ports/ports.ts` (importing PuzzleKey) and `domain/puzzle/PuzzleKey.ts`
 // (importing Rng). See `llmworkspace/design_review_notes.md` item 1.
 export interface Rng {
   nextInt(n: number): number;                          // 0 ≤ result < n
@@ -1463,8 +1463,8 @@ angryphrase/
 │  │  │  └─ v1.ts  ParseFailure.ts  Filename.ts
 │  │  ├─ rng/
 │  │  │  └─ Rng.ts                        # Rng interface — deps-injection abstraction, NOT a port (§3.7, design_review_notes.md item 1)
-│  │  └─ persistence/
-│  │     └─ ports.ts                      # StoragePort, DownloadPort, FilePickPort (side-effect port interfaces only)
+        │  │  └─ ports/
+        │  │     └─ ports.ts                      # StoragePort, DownloadPort, FilePickPort (side-effect port interfaces only)
 │  ├─ builder/state/                       # Layer 1: pure reducers (§2.1)
 │  │  ├─ state.ts  intents.ts  reducer.ts   # public API (app/state imports these)
 │  │  └─ internal/
@@ -1553,7 +1553,7 @@ angryphrase/
 | `src/app/state/**` | `src/domain/**`, value and type imports from the public root files of `src/builder/state/**` (`state.ts`, `intents.ts`, `reducer.ts`) and `src/player/state/**` (same three files), and from sibling `src/app/state/**` files | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, and `src/builder/state/internal/**` / `src/player/state/internal/**` (anything under an `internal/` subfolder of another Layer-1 module) |
 | `src/ui/**` (except `src/ui/bindings/**`) | sibling files, `src/ui/bindings/**`, types-only from `src/domain/**` (for VM prop shapes only — *importing functions is blocked*) | `svelte` allowed; `src/ports/**`, `src/builder/state/**`, `src/player/state/**` blocked |
 | `src/ui/bindings/**` | all of `src/**` | (none) |
-| `src/ports/**` | `src/domain/persistence/ports.ts` (interfaces only) and `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**` |
+| `src/ports/**` | `src/domain/ports/ports.ts` (interfaces only) and `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**` |
 
 A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism.
 
