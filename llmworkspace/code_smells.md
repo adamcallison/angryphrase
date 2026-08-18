@@ -338,8 +338,15 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - Verification (green): `npx vitest run test/ui/bindings/persistenceScheduler.test.ts` (25 passed), `npx vitest run test/ui/bindings/{builderStore,appStore,playerStore,modalStore,toastStore}.test.ts` (66 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run ci` (77 files / 1032 tests + build). `grep -n 'void now\|now:.*=>.*number' src/ui/bindings/persistenceScheduler.ts` → empty.
 - Out of scope (separate tasks): F7 (mixed error strategy in `parsePlayerProgress`), F8 (App.svelte autosave `$effect` split), F9 (eager app state init at module import).
 
-### F4. `createBlankKeyRng` in `appStore.svelte.ts` is a no-op wrapper 🟡
+### F4. `createBlankKeyRng` in `appStore.svelte.ts` is a no-op wrapper 🟡 ✅ Resolved
 `appStore.svelte.ts:23-25` returns `getPorts().rng`. Used once at module init. Dead indirection.
+
+#### F4 — Fix
+- `src/ui/bindings/appStore.svelte.ts`: deleted the `createBlankKeyRng` fn (old lines 23-25) and inlined its sole call-site at line 19 → `PuzzleKeyCtor.generate(getPorts().rng)`. Same value, no indirection. `Rng` type import (line 9) retained — still used by `AppDeps` type (line 17). `getPorts` already imported (line 12).
+- No AD amendment: `createBlankKeyRng` not in AD. Impl detail.
+- No test changes: `createBlankKeyRng` was not exported, not referenced by any test (grep-confirmed). Module-level `state` init at line 19 still constructs the same blank AppState identically.
+- Verification (green): `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npx vitest run test/ui/bindings/appStore.test.ts` (17 passed), `npm run ci` (77 files / 1032 tests + build). `grep -n 'createBlankKeyRng' src/ test/` → empty.
+- Out of scope (separate tasks): F5 (module-level `scheduler` discarded if `bootApp` called without `schedulerArg`), F9 (eager app state init at module import — line 19 still runs at import time, only the indirection fn removed).
 
 ### F5. Module-level `scheduler` initialised but discarded if `bootApp` is called without `schedulerArg` 🟡
 `appStore.svelte.ts:21` creates a scheduler at import; `bootApp` (line 30) creates another if no arg passed, ignoring the module-level one. Two schedulers floating in tests depending on call order.

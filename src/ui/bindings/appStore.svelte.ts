@@ -16,13 +16,9 @@ import { createPersistenceScheduler } from './persistenceScheduler';
 
 type AppDeps = { rng: Rng; now: () => number };
 
-let state: AppState = $state(AppStateCtor.blank(GridSizeCtor.of(15), PuzzleKeyCtor.generate(createBlankKeyRng())));
+let state: AppState = $state(AppStateCtor.blank(GridSizeCtor.of(15), PuzzleKeyCtor.generate(getPorts().rng)));
 let deps: AppDeps = $state({ rng: getPorts().rng, now: () => Date.now() });
 let scheduler: PersistenceScheduler = createPersistenceScheduler(getPorts().storage);
-
-function createBlankKeyRng(): Rng {
-  return getPorts().rng;
-}
 
 export function bootApp(initial: AppState, depsArg: AppDeps, schedulerArg?: PersistenceScheduler): void {
   state = initial;
