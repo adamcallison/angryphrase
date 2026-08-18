@@ -57,6 +57,7 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
   const markerFlags = state.cursor
     ? GridOps.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
     : CellMarker.EMPTY;
+  const exportCompleteViolations = CompletenessCheck.check(state.puzzle);
   return {
     mode: state.mode,
     canSwitchToDesignWithoutConfirm: isBlank,
@@ -66,8 +67,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     maxGridSize: 25,
     cellSelected: state.cursor !== null,
     markerFlags,
-    canExportComplete: CompletenessCheck.isComplete(state.puzzle),
-    exportCompleteViolations: CompletenessCheck.check(state.puzzle),
+    canExportComplete: exportCompleteViolations.length === 0,
+    exportCompleteViolations,
   };
 }
 

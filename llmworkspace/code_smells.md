@@ -268,8 +268,14 @@ Was 🟠: `src/app/state/reducer.ts:105-106`. A Player intent dispatched before 
   2. **Cache-key invariant reliance.** Any fix relies on reducers never mutating `Word` objects (`nextWord`, `clue`) or the `words[]` array in place — currently true, no compiler enforcement. Module-level WeakMap would make a future in-place mutation silently stale; `$derived`-per-tick makes it silently wrong only within one tick (less bad). Either way the invariant is unenforced.
 - Resuming this task: pick up from the `chainIndex.ts` sketch above; resolve Q1 (WeakMap vs per-tick rebuild) and Q2 (invariant enforcement — dev-assert? AD bullet? lint rule?) before dispatching.
 
-### E2. `deriveBuilderToolbarVM` runs `CompletenessCheck.check` twice per call 🟡
+### E2. `deriveBuilderToolbarVM` runs `CompletenessCheck.check` twice per call 🟡 ✅ Resolved
 `builderVM.ts:70-71`: `CompletenessCheck.isComplete(state.puzzle)` (which calls `.check()` internally) then `CompletenessCheck.check(state.puzzle)` again. Double O(grid²+words) work per VM tick.
+
+#### E2 — Fix
+- `src/ui/bindings/viewmodels/builderVM.ts` `deriveBuilderToolbarVM`: hoisted `const exportCompleteViolations = CompletenessCheck.check(state.puzzle);` before the return; `canExportComplete: exportCompleteViolations.length === 0` (inlines the `isComplete` body — `check(p).length === 0`); `exportCompleteViolations` field now reads the local. Single `check` call per tick.
+- `CompletenessCheck` API unchanged (`check` + `isComplete` stay; AD §3.6 lines 632-634 untouched). `isComplete` still used at `importExport.ts:76` and tested at `CompletenessCheck.test.ts:161,186`.
+- No new tests: pure refactor, no behaviour change. Existing `test/ui/bindings/viewmodels/builderVM.test.ts:113-182` (blank state `canExportComplete=false`; complete state `canExportComplete=true` + `exportCompleteViolations=[]`; `exportCompleteViolations` equals `CompletenessCheck.check(state.puzzle)`) assert values not call-site — stay green.
+- Verification (green): `npm run test -- builderVM` (22 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` clean), `npm run ci` (1030 tests + build). `grep -n "CompletenessCheck" src/ui/bindings/viewmodels/builderVM.ts` → import + one `check` call-site only.
 
 ### E3. `deriveAnagramModalVM` indexes `scrambledArrangement` by absolute entry index `i` 🟡
 `anagramVM.ts:86-91`: `scrambled[i]!` where `scrambled` is `Letter[]` filtered to non-nulls in the reducer (`player/state/internal/anagram.ts:104-106`). Alignment holds only because scramble is gated on `inputValid` (full-length input), so every non-fixed position is non-null; if the gate ever weakens, indexing silently desyncs. Fragile contract between reducer's filtered array shape and VM index assumption.
