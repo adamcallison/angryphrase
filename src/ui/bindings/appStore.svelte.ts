@@ -58,14 +58,21 @@ export function getScheduler(): PersistenceScheduler {
 }
 
 export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
-  const result = reduceApp(state, intent, deps);
-  state = result.state;
-  for (const event of result.events) {
-    performExternalEvent(event);
+  const pending: (AppIntent | BuilderIntent | PlayerIntent)[] = [intent];
+  while (pending.length > 0) {
+    const next = pending.shift()!;
+    const result = reduceApp(state, next, deps);
+    state = result.state;
+    for (const event of result.events) {
+      const followup = performExternalEvent(event);
+      if (followup !== null) {
+        pending.push(followup);
+      }
+    }
   }
 }
 
-function performExternalEvent(event: DomainEvent): void {
+function performExternalEvent(event: DomainEvent): PlayerIntent | null {
   switch (event.kind) {
     case 'download': {
       try {
@@ -73,48 +80,47 @@ function performExternalEvent(event: DomainEvent): void {
       } catch (err) {
         console.warn('appStore: download failed', err);
       }
-      return;
+      return null;
     }
     case 'clear-builder-storage': {
       scheduler.clearBuilder();
-      return;
+      return null;
     }
     case 'clear-player-storage': {
       scheduler.clearPlayer(event.key);
-      return;
+      return null;
     }
     case 'load-player-progress': {
-      handleLoadPlayerProgress(event.key);
-      return;
+      return handleLoadPlayerProgress(event.key);
     }
     case 'toast':
     case 'modal-request':
-      return;
+      return null;
   }
 }
 
-function handleLoadPlayerProgress(key: PuzzleKey): void {
+function handleLoadPlayerProgress(key: PuzzleKey): PlayerIntent | null {
   let blob: string | null;
   try {
     blob = getPorts().storage.loadPlayerProgress(key);
   } catch (err) {
     console.warn('appStore: loadPlayerProgress threw (NFR-9 silent drop)', err);
-    return;
+    return null;
   }
   if (blob === null) {
-    return;
+    return null;
   }
   const parsed = parsePlayerProgress(blob);
   if (parsed === null) {
     console.warn('appStore: parsePlayerProgress returned null (NFR-9 silent drop)');
-    return;
+    return null;
   }
   const intent: PlayerIntent = {
     kind: 'apply-loaded-progress',
     playerLetters: parsed.playerLetters,
     savedGridSize: parsed.gridSize,
   };
-  dispatch(intent);
+  return intent;
 }
 
 export function _resetAppStateForTests(next: AppState): void {
