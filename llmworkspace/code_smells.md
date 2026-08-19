@@ -396,8 +396,37 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files / 1032 tests), `npm run build`, `npm run ci` green. `grep -n "scheduleBuilderSave\|schedulePlayerSave" src/ui/app/App.svelte` → two call-sites, one per `$effect` (lines 18, 21).
 - Out of scope (separate tasks): F9 (eager app state init at `appStore.svelte.ts:18` — still warms `getPorts()` at module import; F8 only touches the `$effect`), G5 (ToastHost `$effect` re-scheduling — separate component), G7 (`DownloadPort.download` silent-failure path).
 
-### F9. `appStore.svelte.ts` eagerly initialises entire app state at module import 🟠
+### F9. `appStore.svelte.ts` eagerly initialises entire app state at module import 🟠 ✅ Resolved
 `appStore.svelte.ts:19-21`. `let state: AppState = $state(AppStateCtor.blank(GridSizeCtor.of(15), PuzzleKeyCtor.generate(createBlankKeyRng())))` runs at import time: builds a 15×15 grid, mints a `PuzzleKey`, and calls `getPorts().rng` (warming the ports singleton). `bootApp` (line 27) then overwrites `state` with the caller's initial. Two full-state constructions per production boot; one wasted. Side effects at module top-level also complicate test isolation (`_resetAppStateForTests` is the band-aid at line 125). Lazy init (or null sentinel until `bootApp`) would remove the eager work.
+
+#### F9 — Fix (narrow: null sentinel + ensure helpers)
+- `src/ui/bindings/appStore.svelte.ts` lines 18-20 (module-level eager init) replaced with null sentinels + ensure helpers:
+  ```ts
+  let state: AppState | null = $state(null);
+  let deps: AppDeps | null = $state(null);
+  let scheduler: PersistenceScheduler | null = null;
+
+  function ensureState(): AppState {
+    if (state === null) throw new Error('appStore: bootApp() not called yet');
+    return state;
+  }
+
+  function ensureScheduler(): PersistenceScheduler {
+    if (scheduler === null) throw new Error('appStore: bootApp() not called yet');
+    return scheduler;
+  }
+  ```
+  No allocation at module import — `state`/`deps`/`scheduler` start `null`. `$state(null)` initializer is trivial; the 15×15 grid alloc + `PuzzleKey` mint + `getPorts()` warm no longer fire at `import` time.
+- `bootApp` unchanged (assigns `AppState`/`AppDeps`/`PersistenceScheduler` to `* | null` slots — valid).
+- All bare getters (`getAppState`, `getRoute`, `getToasts`, `getModal`, `getPendingConfirmIntent`, `getBuilder`, `getPlayer`, `getScheduler`) now delegate via `ensureState()` / `ensureScheduler()` — one-line guards, same return types. Pre-`bootApp` access throws `"appStore: bootApp() not called yet"` (correct: no prod path hits it, no test exercises it — all 5 test files call `bootApp` in `beforeEach`).
+- `dispatch` guards at entry (`if (state === null || deps === null || scheduler === null) throw`), then captures narrowed locals `const d = deps; const sched = scheduler; let s: AppState = state;`. Work-queue loop reads `s` (non-null `AppState`), writes back `state = s` per iteration to preserve per-iteration reactivity (matches old behavior). `performExternalEvent(event, sched)` now takes `sched` as a param so the entry-guard narrowing propagates — avoids reading the nullable module-level `scheduler` from a separate function (TS narrowing does not cross function boundaries). `performExternalEvent` body: `scheduler.clearBuilder()` → `sched.clearBuilder()`, `scheduler.clearPlayer(event.key)` → `sched.clearPlayer(event.key)`. Download + load-player-progress cases unchanged (use `getPorts()`).
+- `_resetAppStateForTests(next)` unchanged (`state = next` — `AppState` assignable to `AppState | null`). Still a legitimate test utility for mid-test state swaps, not just an eager-init band-aid.
+- Removed now-unused imports: `AppState as AppStateCtor` (line 2), `GridSize as GridSizeCtor` (line 10), `PuzzleKey as PuzzleKeyCtor` (line 11) — all three consumed only by the deleted eager init expression. `getPorts` retained (used by `performExternalEvent` download case + `handleLoadPlayerProgress` storage).
+- No consumer changes: `main.ts`, all 13 component files, all 5 test files, all 4 sub-store files — untouched. Bare exports remain the active interface; the singleton + bare-import coupling pattern is unchanged (see `llmworkspace/store_singleton_di_report.md` for the architectural problem and the DI fix path — separate effort, not F9).
+- No AD amendment: AD §9 line 981 says "`main.ts` performs [initial construction]" — still true (`main.ts` calls `bootApp` which assigns the sentinels). Init mechanism below AD's abstraction level.
+- Side benefit: real-timer + real-ports leak at module import eliminated. Tests' `vi.useFakeTimers()` in `beforeEach` now precedes any `now`/`rng` capture (was leaking real `Date.now` at import via eager `deps` init).
+- Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files / 1032 tests), `npm run build`, `npm run ci` green. `grep -n "AppStateCtor\|GridSizeCtor\|PuzzleKeyCtor" src/ui/bindings/appStore.svelte.ts` → empty. `grep -n '\$state' src/ui/bindings/appStore.svelte.ts` → exactly 2 matches (lines 15-16, both `$state(null)`).
+- Out of scope (separate effort, documented in `llmworkspace/store_singleton_di_report.md`): singleton store pattern + bare-import reaching — architectural problem broader than F9. DI fix (factory + props + presentational/container split) also fixes F9; this narrow fix addresses only the eager-init symptom. `deps` `$state` dead-reactivity cleanup also out of scope.
 
 ---
 

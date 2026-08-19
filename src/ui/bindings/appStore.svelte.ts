@@ -1,5 +1,4 @@
 import type { AppState } from '../../app/state/state';
-import { AppState as AppStateCtor } from '../../app/state/state';
 import type { AppIntent } from '../../app/state/intents';
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
@@ -7,17 +6,25 @@ import { reduceApp } from '../../app/state/reducer';
 import type { DomainEvent } from '../../domain/notifications/Event';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { Rng } from '../../domain/rng/Rng';
-import { GridSize as GridSizeCtor } from '../../domain/grid/GridSize';
-import { PuzzleKey as PuzzleKeyCtor } from '../../domain/puzzle/PuzzleKey';
 import { getPorts } from './ports';
 import type { PersistenceScheduler } from './persistenceScheduler';
 import { parsePlayerProgress } from './persistenceCodec';
 
 type AppDeps = { rng: Rng; now: () => number };
 
-let state: AppState = $state(AppStateCtor.blank(GridSizeCtor.of(15), PuzzleKeyCtor.generate(getPorts().rng)));
-let deps: AppDeps = $state({ rng: getPorts().rng, now: () => Date.now() });
-let scheduler!: PersistenceScheduler;
+let state: AppState | null = $state(null);
+let deps: AppDeps | null = $state(null);
+let scheduler: PersistenceScheduler | null = null;
+
+function ensureState(): AppState {
+  if (state === null) throw new Error('appStore: bootApp() not called yet');
+  return state;
+}
+
+function ensureScheduler(): PersistenceScheduler {
+  if (scheduler === null) throw new Error('appStore: bootApp() not called yet');
+  return scheduler;
+}
 
 export function bootApp(initial: AppState, depsArg: AppDeps, schedulerArg: PersistenceScheduler): void {
   state = initial;
@@ -26,45 +33,52 @@ export function bootApp(initial: AppState, depsArg: AppDeps, schedulerArg: Persi
 }
 
 export function getAppState(): AppState {
-  return state;
+  return ensureState();
 }
 
 export function getRoute(): AppState['route'] {
-  return state.route;
+  return ensureState().route;
 }
 
 export function getToasts() {
-  return state.toasts;
+  return ensureState().toasts;
 }
 
 export function getModal() {
-  return state.modal;
+  return ensureState().modal;
 }
 
 export function getPendingConfirmIntent() {
-  return state.pendingConfirmIntent;
+  return ensureState().pendingConfirmIntent;
 }
 
 export function getBuilder() {
-  return state.builder;
+  return ensureState().builder;
 }
 
 export function getPlayer() {
-  return state.player;
+  return ensureState().player;
 }
 
 export function getScheduler(): PersistenceScheduler {
-  return scheduler;
+  return ensureScheduler();
 }
 
 export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
+  if (state === null || deps === null || scheduler === null) {
+    throw new Error('appStore: bootApp() not called yet');
+  }
+  const d = deps;
+  const sched = scheduler;
+  let s: AppState = state;
   const pending: (AppIntent | BuilderIntent | PlayerIntent)[] = [intent];
   while (pending.length > 0) {
     const next = pending.shift()!;
-    const result = reduceApp(state, next, deps);
-    state = result.state;
+    const result = reduceApp(s, next, d);
+    s = result.state;
+    state = s;
     for (const event of result.events) {
-      const followup = performExternalEvent(event);
+      const followup = performExternalEvent(event, sched);
       if (followup !== null) {
         pending.push(followup);
       }
@@ -72,7 +86,7 @@ export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void
   }
 }
 
-function performExternalEvent(event: DomainEvent): PlayerIntent | null {
+function performExternalEvent(event: DomainEvent, sched: PersistenceScheduler): PlayerIntent | null {
   switch (event.kind) {
     case 'download': {
       try {
@@ -83,11 +97,11 @@ function performExternalEvent(event: DomainEvent): PlayerIntent | null {
       return null;
     }
     case 'clear-builder-storage': {
-      scheduler.clearBuilder();
+      sched.clearBuilder();
       return null;
     }
     case 'clear-player-storage': {
-      scheduler.clearPlayer(event.key);
+      sched.clearPlayer(event.key);
       return null;
     }
     case 'load-player-progress': {
