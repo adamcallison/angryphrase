@@ -465,8 +465,16 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - AD §7.2 `BuilderCluePanel.svelte` row amended: notes now describe `drafts` as `SvelteMap<string, string>` from `svelte/reactivity` (reactive Map; G3 closed).
 - Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files / 1032 tests), `npm run ci` green. `grep -rn '\$state(new Map' src/` → empty. `grep -n "SvelteMap" src/ui/builder/BuilderCluePanel.svelte` → 2 matches (import line 4, usage line 15).
 
-### G4. `Modal.svelte` calls `modalVM()` twice in the render branch 🟡
+### G4. `Modal.svelte` calls `modalVM()` twice in the render branch 🟡 ✅ Resolved
 `Modal.svelte:29-30`: `{#if modalVM() !== null}` then `{@const vm = modalVM()!}`. Double derivation; trivial cost, mild smell.
+
+#### G4 — Fix
+- `src/ui/shared/Modal.svelte` script block: added `const vm = $derived(modalVM());` (single derivation per tick; `modalVM` already imported from `../bindings/modalStore.svelte`). Template `{#if modalVM() !== null}` → `{#if vm !== null}`; deleted the `{@const vm = modalVM()!}` line. Svelte 5 narrows `vm: ModalVM | null` to the non-null variant inside the `{#if vm !== null}` block, so the `!` non-null assertion is gone. Template body (`{vm.title}`, `{vm.body}`, `{vm.cancelLabel}`, `{vm.confirmLabel}`, backdrop, buttons, a11y comments) unchanged.
+- Mechanism choice: `$derived(modalVM())` (not `$derived.by(() => modalVM())`) — `modalVM()` is a single expression returning the value; no statements needed before the return, so the `.by` arrow wrapper would be pure noise. Same reactivity engine, same dep tracking (reads `getModal()` → `appStore` `$state` proxy → refires on modal change). Idiom matches G8 (`$state({})` refs), G3 (`SvelteMap`), ToastHost (`$effect` over `getToasts()`).
+- No new tests: no `@testing-library/svelte` component-render infra in repo (precedent: B3/B6/C4/C5/G1/G8/G9). Existing `test/ui/bindings/modalStore.test.ts` (13 tests) + `test/ui/bindings/viewmodels/modalVM.test.ts` (8 tests) cover `modalVM()` and `deriveModalVM` at the bindings/viewmodel layer; untouched, stay green. Fix is a template-only refactor with no behaviour change.
+- AD §7 line 1269 `Modal.svelte` row amended: `(G4)` → `(G4 closed: single $derived derivation, no double-call)`.
+- Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` clean), `npm run test` (77 files / 1032 tests), `npm run ci` green. `grep -n 'modalVM()' src/ui/shared/Modal.svelte` → exactly one match (line 4, the `$derived` line); zero template matches.
+- Out of scope (separate tasks): G5 (ToastHost `$effect` re-schedule), G6 (BuilderToolbar nested ternary), G7 (DownloadPort silent failure).
 
 ### G5. `ToastHost.svelte` re-runs `$effect` on whole toast-list change; re-schedules timers for all toasts each run 🟡
 `ToastHost.svelte:7-16`. Cleanup clears prior timers (correct), but every list mutation re-asserts timers for the full set. Acceptable but wasteful at high toast churn.
