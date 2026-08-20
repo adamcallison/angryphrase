@@ -1,18 +1,23 @@
 <script lang="ts">
+  import type { Cursor } from '../../domain/grid/Cursor';
   import type { TypingIntent } from './typingIntent';
 
   let {
     enabled,
+    cursor,
     onDispatch,
   }: {
     enabled: boolean;
+    cursor: Cursor;
     onDispatch: (intent: TypingIntent) => void;
   } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
 
-  // Focus the hidden input when enabled; blur when disabled.
+  // Focus the hidden input when enabled; blur when disabled. Reading `cursor`
+  // re-runs this effect whenever the active typing position changes.
   $effect(() => {
+    void cursor;
     if (enabled) {
       inputEl?.focus({ preventScroll: true });
     } else {
@@ -100,7 +105,6 @@
 </script>
 
 <input
-  id="typing-surface-input"
   bind:this={inputEl}
   type="text"
   autocapitalize="off"

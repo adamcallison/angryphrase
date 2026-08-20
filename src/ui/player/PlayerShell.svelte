@@ -20,7 +20,6 @@
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
     dispatchSelectCell(row, col);
-    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
   }
 
   function onTypingIntent(intent: TypingIntent): void {
@@ -54,7 +53,7 @@
         <ActiveClueBanner vm={vm.topBanner} />
         <div class="relative overflow-x-auto">
           <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.phase === 'solving'} onDispatch={onTypingIntent} />
+          <TypingSurface enabled={vm.phase === 'solving'} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />
