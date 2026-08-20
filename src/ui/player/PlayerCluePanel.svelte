@@ -1,35 +1,24 @@
 <script lang="ts">
   import type { CluePanelVM } from '../bindings/viewmodels/cluePanelVM';
+  import type { WordKey } from '../../domain/word/WordKey';
   import { dispatchPlayer } from '../bindings/playerStore.svelte';
 
   let { vm }: { vm: CluePanelVM } = $props();
 
   let panelEl: HTMLElement | null = $state(null);
 
-  function highlightedId(): string | null {
-    if (vm.highlightedWordKey === null) return null;
-    const key = vm.highlightedWordKey;
-    // Find the entry whose wordKey matches (across or down) and return its row id.
-    const across = vm.across.find((e) =>
-      Number(e.wordKey.startRow) === Number(key.startRow) &&
-      Number(e.wordKey.startCol) === Number(key.startCol) &&
-      e.wordKey.direction === key.direction);
-    if (across) return `across-${Number(across.number)}`;
-    const down = vm.down.find((e) =>
-      Number(e.wordKey.startRow) === Number(key.startRow) &&
-      Number(e.wordKey.startCol) === Number(key.startCol) &&
-      e.wordKey.direction === key.direction);
-    if (down) return `down-${Number(down.number)}`;
-    return null;
+  function canonicalId(k: WordKey): string {
+    return `${k.startRow}_${k.startCol}_${k.direction}`;
   }
 
+  let liRefs: Record<string, HTMLElement> = $state({});
+
   $effect(() => {
-    const id = highlightedId();
-    const el = id === null ? null : document.getElementById(id);
-    if (panelEl !== null && el !== null) {
-      const panelRect = panelEl.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      panelEl.scrollTop += elRect.top - panelRect.top;
+    const key = vm.highlightedWordKey;
+    if (key === null) return;
+    const el = liRefs[canonicalId(key)];
+    if (panelEl !== null && el !== undefined) {
+      panelEl.scrollTop += el.getBoundingClientRect().top - panelEl.getBoundingClientRect().top;
     }
   });
 </script>
@@ -39,11 +28,10 @@
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">
       {#each vm.across as entry}
-        {@const rowId = `across-${Number(entry.number)}`}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
-          id={rowId}
+          bind:this={liRefs[canonicalId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
@@ -64,11 +52,10 @@
     <h2 class="text-sm font-semibold text-gray-700">Down</h2>
     <ul class="flex flex-col gap-1">
       {#each vm.down as entry}
-        {@const rowId = `down-${Number(entry.number)}`}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
-          id={rowId}
+          bind:this={liRefs[canonicalId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });

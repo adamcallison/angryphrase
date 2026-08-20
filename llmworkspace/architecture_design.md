@@ -1258,7 +1258,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | `ImportScreen.svelte` | `importError` | `import-puzzle` (via FilePicker) | Drag-and-drop or file picker (FR-67). On reject shows `importError`. |
 | `PlayerGrid.svelte` | `GridVM` | `select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-grid-word` | Same grid component shape as Builder; check result paints incorrect/correct cells. |
 | `ActiveClueBanner.svelte` | `ActiveClueBannerVM` | (none) | Rendered twice: above and below grid (FR-71). Always reserves space (FR-71). |
-| `PlayerCluePanel.svelte` | `PlayerCluePanelVM` | `click-clue-panel-word` | Same shape as Builder but no edit inputs; just display + navigation (FR-73). |
+| `PlayerCluePanel.svelte` | `PlayerCluePanelVM` | `click-clue-panel-word` | Same shape as Builder but no edit inputs; just display + navigation (FR-73). Owns `<li>` refs via `bind:this` keyed by `canonicalId`; scroll-into-view `$effect` driven by `vm.highlightedWordKey` (G9 — no DOM id, no `getElementById`). |
 | `PlayerToolbar.svelte` | `PlayerToolbarVM` | `check`, `clear-errors`, `request-reset-player`, `import-new-puzzle`, `open-anagram-helper` | Check shows result message + colour (FR-75). Reset emits `request-reset-player` (which may pop a modal via reducer). |
 | `AnagramModal.svelte` | `AnagramModalVM` | `anagram-input`, `anagram-scramble`, `close-anagram-helper` | Modal per FR-81..FR-89. Closes on backdrop click / Escape / selection-change (FR-88 / FR-89). No grid write-back (FR-87). |
 
