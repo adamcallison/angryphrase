@@ -454,8 +454,16 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 #### G2 — Fix
 - Closed as a consequence of the G1 fix. The `id="typing-surface-input"` attribute was removed from `TypingSurface.svelte`'s `<input>` once the cross-component focus coupling was replaced with state-driven focus (consumers no longer look the input up by id). No scoped id was introduced because no consumer needs to address the input by id anymore. `grep -rn "typing-surface-input" src/` → empty.
 
-### G3. `BuilderCluePanel.svelte` mutates `drafts: Map` held in `$state(new Map())` and reads via `valueFor` 🟠
+### G3. `BuilderCluePanel.svelte` mutates `drafts: Map` held in `$state(new Map())` and reads via `valueFor` 🟠 ✅ Resolved
 `BuilderCluePanel.svelte:9,29-31,113`. Svelte 5 runes do NOT observe internal `Map` mutation; `drafts.set(...)` does not trigger reactivity. The input is bound `value={valueFor(...)}` (one-way) and user-typed DOM value persists visually, so it happens to work, but `valueFor` re-reads on parent re-render only. Fragile: any future `$derived` reading `drafts` would not update on `.set`.
+
+#### G3 — Fix
+- Replaced `const drafts = $state(new Map<string, string>())` with `const drafts = new SvelteMap<string, string>()` (imported from `svelte/reactivity`). `SvelteMap` is Svelte 5's official reactive `Map` subclass — `.has()`/`.get()` register dependencies, `.set()`/`.delete()` notify Svelte's reactivity. Same `Map` API, so all call sites (`drafts.has(id)`, `drafts.get(id)!`, `drafts.set(canonicalId(wordKey), value)`, `drafts.delete(canonicalId(wordKey))`) are unchanged. Self-reactive — no `$state` wrapping needed.
+- This was the only `$state(new Map())` in the codebase (verified: `grep -rn '\$state(new Map' src/` → empty after fix). `SvelteMap` availability in the installed Svelte 5 verified via `require('svelte/reactivity')`.
+- **Behaviour**: normal case (chain head edit succeeds) — no visible change; `setDraft` is now reactive but the input already shows the typed value (browser DOM retains it) and `valueFor` returns the same draft → `value={draft}` sets the same value → no DOM mutation. Edge case (edit-clue rejected, defensive) — `clearDraft` is now reactive → input resets to `entry.displayClue` instead of retaining stale draft in DOM. More correct; accepted (same precedent as G1's accepted Builder join/reattach behaviour change). `drafts` keying unchanged: `canonicalId` = `${row}_${col}_${direction}`.
+- No new tests: no `@testing-library/svelte` component-render infra in repo (precedent: B3/B6/C4/C5/G1/G8/G9). No test exercises the drafts Map (grep `drafts\|valueFor\|setDraft\|clearDraft` in `test/` empty). Existing suite stays green unchanged.
+- AD §7.2 `BuilderCluePanel.svelte` row amended: notes now describe `drafts` as `SvelteMap<string, string>` from `svelte/reactivity` (reactive Map; G3 closed).
+- Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (77 files / 1032 tests), `npm run ci` green. `grep -rn '\$state(new Map' src/` → empty. `grep -n "SvelteMap" src/ui/builder/BuilderCluePanel.svelte` → 2 matches (import line 4, usage line 15).
 
 ### G4. `Modal.svelte` calls `modalVM()` twice in the render branch 🟡
 `Modal.svelte:29-30`: `{#if modalVM() !== null}` then `{@const vm = modalVM()!}`. Double derivation; trivial cost, mild smell.

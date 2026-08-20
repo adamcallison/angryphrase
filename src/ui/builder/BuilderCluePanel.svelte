@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CluePanelVM, ClueEntryVM } from '../bindings/viewmodels/cluePanelVM';
   import { dispatchBuilder } from '../bindings/builderStore.svelte';
+  import { SvelteMap } from 'svelte/reactivity';
 
   let { vm }: { vm: CluePanelVM } = $props();
 
@@ -11,7 +12,7 @@
       vm.down.some((entry) => entry.isLinkableFromJoinSource),
   );
 
-  const drafts = $state(new Map<string, string>());
+  const drafts = new SvelteMap<string, string>();
 
   function canonicalId(wordKey: ClueEntryVM['wordKey']): string {
     return `${wordKey.startRow}_${wordKey.startCol}_${wordKey.direction}`;
