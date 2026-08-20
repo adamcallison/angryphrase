@@ -3,6 +3,7 @@ import type { AppIntent } from '../../app/state/intents';
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 import { reduceApp } from '../../app/state/reducer';
+import { applyEventsToApp } from '../../app/state/effects';
 import type { DomainEvent } from '../../domain/notifications/Event';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { Rng } from '../../domain/rng/Rng';
@@ -75,9 +76,10 @@ export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void
   while (pending.length > 0) {
     const next = pending.shift()!;
     const result = reduceApp(s, next, d);
-    s = result.state;
+    const folded = applyEventsToApp(result.state, result.events, d);
+    s = folded.state;
     state = s;
-    for (const event of result.events) {
+    for (const event of folded.leftoverEvents) {
       const followup = performExternalEvent(event, sched);
       if (followup !== null) {
         pending.push(followup);
@@ -86,13 +88,13 @@ export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void
   }
 }
 
-function performExternalEvent(event: DomainEvent, sched: PersistenceScheduler): PlayerIntent | null {
+function performExternalEvent(event: DomainEvent, sched: PersistenceScheduler): AppIntent | BuilderIntent | PlayerIntent | null {
   switch (event.kind) {
     case 'download': {
-      try {
-        getPorts().download.download(event.filename, event.content);
-      } catch (err) {
+      const err = getPorts().download.download(event.filename, event.content);
+      if (err !== null) {
         console.warn('appStore: download failed', err);
+        return { kind: 'report-download-failure' };
       }
       return null;
     }

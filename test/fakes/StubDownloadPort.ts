@@ -2,9 +2,17 @@ import type { DownloadPort } from '../../src/domain/ports/ports';
 
 export class StubDownloadPort implements DownloadPort {
   public downloads: { filename: string; content: string }[] = [];
+  public nextDownloadError: Error | null = null;
 
-  download(filename: string, content: string): void {
+  download(filename: string, content: string): Error | null {
+    if (this.nextDownloadError !== null) {
+      const e = this.nextDownloadError;
+      this.nextDownloadError = null;
+      this.downloads.push({ filename, content });
+      return e;
+    }
     this.downloads.push({ filename, content });
+    return null;
   }
 
   // Test helpers:
@@ -18,5 +26,6 @@ export class StubDownloadPort implements DownloadPort {
 
   reset(): void {
     this.downloads = [];
+    this.nextDownloadError = null;
   }
 }

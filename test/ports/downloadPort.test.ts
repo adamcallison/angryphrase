@@ -38,7 +38,7 @@ describe('downloadPort', () => {
     const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
 
     const port = createDownloadPort();
-    port.download(filename, content);
+    expect(port.download(filename, content)).toBeNull();
 
     expect(createObjectURLSpy).toHaveBeenCalledOnce();
     expect(createElementSpy).toHaveBeenCalledWith('a');
@@ -69,7 +69,7 @@ describe('downloadPort', () => {
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
     const port = createDownloadPort();
-    port.download('file.json', '{"x":1}');
+    expect(port.download('file.json', '{"x":1}')).toBeNull();
 
     expect(blobSpy).toHaveBeenCalledOnce();
     const [parts, options] = blobSpy.mock.calls[0]!;
@@ -82,17 +82,15 @@ describe('downloadPort', () => {
     expect(await createdBlob!.text()).toBe('{"x":1}');
   });
 
-  it('downloadPort: download() does not throw when URL.createObjectURL is missing (graceful failure)', () => {
+  it('downloadPort: download() returns an Error when URL.createObjectURL is missing', () => {
     const originalCreateObjectURL = URL.createObjectURL;
     // @ts-expect-error - intentionally deleting for test
     delete URL.createObjectURL;
 
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     const port = createDownloadPort();
-    expect(() => port.download('file.json', '{}')).not.toThrow();
+    const result = port.download('file.json', '{}');
+    expect(result).toBeInstanceOf(Error);
 
-    warnSpy.mockRestore();
     URL.createObjectURL = originalCreateObjectURL;
   });
 
@@ -112,7 +110,7 @@ describe('downloadPort', () => {
     vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
 
     const port = createDownloadPort();
-    port.download('file.json', '{}');
+    expect(port.download('file.json', '{}')).toBeNull();
 
     expect(revokeObjectURLSpy).toHaveBeenCalledWith(mockUrl);
     expect(revokeObjectURLSpy.mock.invocationCallOrder[0]).toBeGreaterThan(

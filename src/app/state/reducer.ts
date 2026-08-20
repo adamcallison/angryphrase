@@ -27,6 +27,8 @@ export function reduceApp(
       return { state: { ...state, modal: null, pendingConfirmIntent: null }, events: [] };
     case 'dismiss-toast':
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
+    case 'report-download-failure':
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Download failed. Please try again.' }] };
   }
 
   // Builder or Player intent: dispatch to the appropriate sub-reducer.

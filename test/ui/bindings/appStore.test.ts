@@ -193,6 +193,20 @@ describe('appStore.svelte.ts', () => {
     expect(last!.content).toContain(puzzle.key);
   });
 
+  it('appStore: download failure surfaces an error toast (StubDownloadPort injected to return Error)', () => {
+    const puzzle = makeCompletePuzzle(11, 3);
+    dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+
+    stubDownload.nextDownloadError = new Error('boom');
+    dispatch({ kind: 'export-complete' });
+
+    expect(stubDownload.getDownloadCount()).toBe(1);
+    const toasts = getToasts();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]!.kind).toBe('error');
+    expect(toasts[0]!.message).toBe('Download failed. Please try again.');
+  });
+
   it('appStore: clear-builder-storage event calls scheduler.clearBuilder() — verify storage cleared (no pending save fires later)', () => {
     const puzzle = makeCompletePuzzle(13, 3);
     dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });

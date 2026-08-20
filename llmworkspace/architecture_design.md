@@ -166,7 +166,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 
 | Module | Owns |
 |---|---|
-| `app/state/intents.ts` | `AppIntent` union: `navigate`, `cancel-modal`, `dismiss-toast` (no `confirm-modal` — confirm dispatches the specific `confirm-*` Builder/Player intent directly) |
+| `app/state/intents.ts` | `AppIntent` union: `navigate`, `cancel-modal`, `dismiss-toast`, `report-download-failure` (no `confirm-modal` — confirm dispatches the specific `confirm-*` Builder/Player intent directly) |
 | `app/state/state.ts` | `AppState`, `ModalRequest` reference, blank-state factory |
 | `app/state/reducer.ts` | `reduceApp(state, intent, deps): { state, events }` — the only reducer that sees all of `AppState`; invokes `reduceBuilder`/`reducePlayer` (forwarding `deps`), folds their returned `toast` and `modal-request` events via `applyEventsToApp` (using `deps.rng` and `deps.now` to construct the `Toast`/`createdAt`), and passes `download` / `clear-builder-storage` / `clear-player-storage` / `load-player-progress` events through to the bindings layer |
 | `app/state/effects.ts` | `applyEventsToApp(state, events, deps): { state, leftoverEvents }` — pure helper called from `reduceApp`; consumes `toast` and `modal-request` events (the only state-affecting events in `DomainEvent`), updating `AppState.toasts` / `AppState.modal` / `AppState.pendingConfirmIntent`; returns the leftover external events for the bindings layer |
@@ -214,7 +214,7 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 - **logic → UI:** derived view-models — leaf-shaped, serializable, plain typed objects (no methods, no Svelte). Produced in `ui/bindings` from `AppState`. Reactive via Svelte 5 runes.
 - **reducers → effects:** every reducer returns `{ state, events }`, where `events: DomainEvent[]` (§3.5a) is a discriminated union describing side effects the reducer wants performed. The full variants are: `toast`, `modal-request`, `load-player-progress`, `download`, `clear-builder-storage`, `clear-player-storage`. Events are pure data. Reducers themselves cause zero side effects (`(state, intent, deps) -> { state, events }` is a pure function of its inputs, given the injected `deps`).
 - **`reduceApp` interprets state-affecting events:** the `app/state/reducer.ts` reducer is the only function that sees all of `AppState`. It receives `deps = { rng, now }` and forwards `deps` to the underlying `reduceBuilder`/`reducePlayer` invocations. When a Builder/Player reducer emits a `toast` event, `reduceApp` consumes it (constructs a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and appends to `AppState.toasts`). When a Builder/Player reducer emits a `modal-request { modal, confirmIntent }` event, `reduceApp` consumes it (sets `AppState.modal = event.modal` and `AppState.pendingConfirmIntent = event.confirmIntent`). Events that need to cause *external* side effects (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) are *not* consumed by `reduceApp` — they pass through and the bindings layer performs them (see the next bullet). This split keeps reducers free of port knowledge while still confining all `AppState` mutation to reducer code.
-- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer sets the rune to the new state (which causes reactive VM updates) and iterates the events. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
+- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer first folds `result.events` through `applyEventsToApp` (consuming `toast`/`modal-request` into `state.toasts`/`state.modal`; passing `download`/`clear-builder-storage`/`clear-player-storage`/`load-player-progress` through as `leftoverEvents`), sets the rune to the folded state (which causes reactive VM updates), then iterates the `leftoverEvents`. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; if it returns an `Error`, the bindings layer dispatches `report-download-failure` (G7 — `reduceApp` turns it into an error toast so a failed irreversible user action no longer disappears silently; mirrors the `load-player-progress → apply-loaded-progress` follow-up pattern); `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). The fold step is what lets an AppIntent like `report-download-failure` return a `toast` event and have it reach `state.toasts` — without the fold, `performExternalEvent`'s `case 'toast': return null` would drop it. (For Builder/Player intents the fold is a no-op pass-through: `reduceApp` already folded their events internally and returns only the leftover external events, so re-folding leftover events returns them unchanged.) Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
 - **toasts stored in `AppState.toasts: Toast[]`:** added by `reduceApp` based on reducer-emitted `toast` events; removed by `dismiss-toast` intents (raised from the bindings-layer timeout in `ToastHost.svelte` or by user click). No imperative `showToast()` call from anywhere.
 - **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: ConfirmableIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. The bindings layer's `Modal.svelte` Confirm button dispatches `pendingConfirmIntent` directly (a `confirm-*` intent variant — see §4); the Cancel button dispatches the AppIntent `cancel-modal`, which clears both fields. While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
 
@@ -653,7 +653,7 @@ export interface StoragePort {
   clearPlayerProgress(key: PuzzleKey): void;
 }
 export interface DownloadPort {
-  download(filename: string, content: string): void;
+  download(filename: string, content: string): Error | null;  // null = success; Error = failure (G7 — bindings layer surfaces as toast)
 }
 export interface FilePickPort {
   pickFile(): Promise<string | null>;                 // returns file text or null if cancelled
@@ -736,6 +736,7 @@ export type AppIntent =
   | { kind: 'navigate'; route: 'landing' | 'build' | 'play' }
   | { kind: 'cancel-modal' }                                  // user clicked Cancel / pressed Escape on the modal
   | { kind: 'dismiss-toast'; id: ToastId };                   // user clicked toast or toast timeout fired
+  | { kind: 'report-download-failure' };                      // bindings layer raised after DownloadPort.download returned an Error (G7)
 
 // The unified dispatcher: takes any of the three intent unions, plus deps (rng + clock).
 export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | PlayerIntent, deps: { rng: Rng; now: () => number }): ReducerResult<AppState>;
@@ -754,6 +755,7 @@ The dispatcher narrows `intent` first by `kind` string against three `ReadonlySe
 3. If `intent` is `cancel-modal`: return `{ state: { ...state, modal: null, pendingConfirmIntent: null }, events: [] }`.
 4. If `intent` is `dismiss-toast { id }`: return `{ state: { ...state, toasts: state.toasts.filter(t => t.id !== id) }, events: [] }`.
 5. If `intent` is `navigate { route }`: return `{ state: { ...state, route }, events: [] }`.
+6. If `intent` is `report-download-failure` (G7): return `{ state, events: [{ kind: 'toast', toastKind: 'error', message: 'Download failed. Please try again.' }] }`. State unchanged; the toast event is folded back into `state.toasts` by `applyEventsToApp` on the next work-queue iteration.
 
 When a `confirm-*` Builder/Player intent is dispatched (originating from the Modal's confirm button), it flows through step 1/2 normally and executes the action — those intent variants are unconditional (no guard) by construction.
 
