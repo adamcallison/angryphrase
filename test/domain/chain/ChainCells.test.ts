@@ -1,6 +1,7 @@
 import { ChainCells } from '../../../src/domain/chain/ChainCells';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import type { Word } from '../../../src/domain/word/Word';
 import type { WordKey as WordKeyType } from '../../../src/domain/word/WordKey';
@@ -17,7 +18,7 @@ function makeWord(
   return {
     key: { startRow: Row.of(row), startCol: Col.of(col), direction },
     number: WordNumber.of(1),
-    length,
+    length: WordLength.of(length),
     clue,
     nextWord: next,
   };

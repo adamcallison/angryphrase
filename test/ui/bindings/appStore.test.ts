@@ -21,6 +21,7 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { FakeClock } from '../../fakes/FakeClock';
+import { EpochMs } from '../../../src/domain/time/EpochMs';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
@@ -328,7 +329,7 @@ describe('appStore.svelte.ts', () => {
     const newState = makeBlankAppState(99);
     const newScheduler = createPersistenceScheduler(inMemoryStorage);
 
-    bootApp(newState, { rng: newRng, now: () => 1234 }, newScheduler);
+    bootApp(newState, { rng: newRng, now: () => EpochMs.of(1234) }, newScheduler);
 
     expect(getAppState()).toBe(newState);
     expect(getScheduler()).toBe(newScheduler);

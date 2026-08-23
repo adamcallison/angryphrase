@@ -8,6 +8,7 @@ import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { DerivedWord } from '../../../../src/domain/word/DerivedWord';
@@ -24,7 +25,7 @@ function w(
   clue: string,
   nextWord: ReturnType<typeof k> | null,
 ): Word {
-  return { key, number: WordNumber.of(number), length, clue, nextWord };
+  return { key, number: WordNumber.of(number), length: WordLength.of(length), clue, nextWord };
 }
 
 function derivedWord(
@@ -33,7 +34,7 @@ function derivedWord(
   clue: string,
   nextWord: ReturnType<typeof k> | null,
 ): DerivedWord {
-  return { key, length, clue, nextWord };
+  return { key, length: WordLength.of(length), clue, nextWord };
 }
 
 function blank(size = GridSize.DEFAULT): Grid {

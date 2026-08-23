@@ -14,6 +14,7 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 import { SeededRng } from '../../../fakes/SeededRng';
@@ -40,7 +41,7 @@ function word(
   return {
     key: key(row, col, direction),
     number: WordNumber.of(number),
-    length,
+    length: WordLength.of(length),
     clue,
     nextWord,
   };
@@ -265,7 +266,7 @@ describe('change-grid-size', () => {
     const base = blankState();
     const state = {
       ...base,
-      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 1, 'a')]),
+      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 2, 'a')]),
     };
 
     const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
@@ -377,7 +378,7 @@ describe('request-switch-to-design', () => {
     const state = {
       ...base,
       mode: 'fill' as const,
-      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 1, 'a clue')]),
+      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 2, 'a clue')]),
     };
 
     const result = handleRequestSwitchToDesign(state);

@@ -8,6 +8,7 @@ import { Letter } from '../letter/Letter';
 import type { Rng } from '../rng/Rng';
 import type { CellSeparator } from '../grid/CellSeparator';
 import type { AnagramEntry } from './AnagramEntry';
+import { Position } from './Position';
 
 export type { AnagramEntry } from './AnagramEntry';
 
@@ -24,7 +25,7 @@ function validateAgainst(
 
   const fixedCounts = new Map<string, number>();
   for (const entry of entries) {
-    if (entry.fixed && entry.letter !== null) {
+    if (entry.fixed) {
       const ch = entry.letter;
       fixedCounts.set(ch, (fixedCounts.get(ch) ?? 0) + 1);
     }
@@ -72,11 +73,12 @@ export const Anagram: {
         throw new Error('Anagram.buildWordModel: word cell is black');
       }
 
-      entries.push({
-        position: i,
-        fixed: cell.playerLetter !== null,
-        letter: cell.playerLetter,
-      });
+      const playerLetter = cell.playerLetter;
+      entries.push(
+        playerLetter !== null
+          ? { position: Position.of(i), fixed: true, letter: playerLetter }
+          : { position: Position.of(i), fixed: false, letter: null }
+      );
 
       if (i < word.length - 1) {
         const marker = cell.marker;
@@ -116,7 +118,7 @@ export const Anagram: {
       const offset = entries.length;
 
       for (const entry of memberModel.entries) {
-        entries.push({ ...entry, position: entry.position + offset });
+        entries.push({ ...entry, position: Position.of(Number(entry.position) + offset) });
       }
 
       for (const separator of memberModel.separators) {
@@ -151,7 +153,7 @@ export const Anagram: {
     const filtered = Letter.from(input);
     const wordLength = entries.length;
 
-    const fixedCount = entries.filter((e) => e.fixed && e.letter !== null).length;
+    const fixedCount = entries.filter((e) => e.fixed).length;
 
     if (filtered.length < fixedCount) {
       throw new Error('Anagram.scramble: insufficient letters for fixed positions');
@@ -166,7 +168,7 @@ export const Anagram: {
     }
 
     for (const entry of entries) {
-      if (entry.fixed && entry.letter !== null) {
+      if (entry.fixed) {
         const letter = entry.letter;
         const count = inputCounts.get(letter) ?? 0;
         if (count <= 0) {

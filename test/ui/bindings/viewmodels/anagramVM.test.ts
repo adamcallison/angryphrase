@@ -8,6 +8,7 @@ import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { CellMarkerFlag } from '../../../../src/domain/grid/CellMarkerFlag';
@@ -38,7 +39,7 @@ function word3Across(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 3,
+    length: WordLength.of(3),
     clue: 'Test clue',
     nextWord: null,
   };
@@ -48,7 +49,7 @@ function word4Across(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 4,
+    length: WordLength.of(4),
     clue: 'Test clue',
     nextWord: null,
   };
@@ -58,7 +59,7 @@ function word3AcrossHead(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 3,
+    length: WordLength.of(3),
     clue: 'Head clue',
     nextWord: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
   };
@@ -68,7 +69,7 @@ function word4DownTail(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
     number: WordNumber.of(2),
-    length: 4,
+    length: WordLength.of(4),
     clue: 'Tail clue',
     nextWord: null,
   };

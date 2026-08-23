@@ -2,6 +2,7 @@ import type { Grid } from '../grid/Grid';
 import type { DerivedWord } from './DerivedWord';
 import type { WordKey } from './WordKey';
 import type { Direction } from './Direction';
+import { WordLength } from './WordLength';
 import { Row as RowCtor } from '../grid/Row';
 import { Col as ColCtor } from '../grid/Col';
 import { Cell as CellCtor } from '../grid/Cell';
@@ -47,7 +48,7 @@ function deriveDirection(g: Grid, direction: Direction): DerivedWord[] {
           };
           words.push({
             key,
-            length,
+            length: WordLength.of(length),
             clue: '',
             nextWord: null,
           });

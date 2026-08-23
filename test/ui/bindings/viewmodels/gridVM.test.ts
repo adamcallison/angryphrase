@@ -8,6 +8,7 @@ import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { Grid } from '../../../../src/domain/grid/Grid';
@@ -27,7 +28,7 @@ function wordAt0(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue: '',
     nextWord: null,
   };
@@ -37,7 +38,7 @@ function downWordAt0(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'down' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue: '',
     nextWord: null,
   };

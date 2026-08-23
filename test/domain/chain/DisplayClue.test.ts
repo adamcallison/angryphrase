@@ -1,4 +1,5 @@
 import { WordMap } from '../../../src/domain/word/WordMap';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
@@ -18,7 +19,7 @@ function makeWord(
   return {
     key: { startRow: Row.of(row), startCol: Col.of(col), direction },
     number: WordNumber.of(number),
-    length: 2,
+    length: WordLength.of(2),
     clue,
     nextWord: next,
   };

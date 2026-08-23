@@ -22,12 +22,16 @@ export default [
       'src/domain/grid/GridSize.ts',
       'src/domain/grid/CellIndex.ts',
       'src/domain/letter/Letter.ts',
+      'src/domain/anagram/Position.ts',
       'src/domain/puzzle/PuzzleKey.ts',
       'src/domain/puzzle/Title.ts',
       'src/domain/puzzle/Author.ts',
       'src/domain/builder/DisplacedClueId.ts',
+      'src/domain/word/WordLength.ts',
       'src/domain/word/WordNumber.ts',
-      'src/domain/notifications/ToastId.ts'
+      'src/domain/notifications/ToastId.ts',
+      'src/domain/time/EpochMs.ts',
+      'src/domain/time/DurationMs.ts'
     ],
     rules: {
       '@typescript-eslint/no-restricted-imports': [
@@ -75,12 +79,16 @@ export default [
       'src/domain/grid/GridSize.ts',
       'src/domain/grid/CellIndex.ts',
       'src/domain/letter/Letter.ts',
+      'src/domain/anagram/Position.ts',
       'src/domain/puzzle/PuzzleKey.ts',
       'src/domain/puzzle/Title.ts',
       'src/domain/puzzle/Author.ts',
       'src/domain/builder/DisplacedClueId.ts',
+      'src/domain/word/WordLength.ts',
       'src/domain/word/WordNumber.ts',
-      'src/domain/notifications/ToastId.ts'
+      'src/domain/notifications/ToastId.ts',
+      'src/domain/time/EpochMs.ts',
+      'src/domain/time/DurationMs.ts'
     ],
     rules: {
       '@typescript-eslint/no-restricted-imports': [

@@ -1,4 +1,5 @@
 import type { Word } from '../../../src/domain/word/Word';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
@@ -8,7 +9,7 @@ describe('Word', () => {
     const word: Word = {
       key: { startRow: Row.of(0), startCol: Col.of(1), direction: 'across' as const },
       number: WordNumber.of(1),
-      length: 3,
+      length: WordLength.of(3),
       clue: 'A test clue',
       nextWord: null,
     };

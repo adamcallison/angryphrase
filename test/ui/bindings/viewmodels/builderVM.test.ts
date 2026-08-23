@@ -22,6 +22,7 @@ import { Title } from '../../../../src/domain/puzzle/Title';
 import { Author } from '../../../../src/domain/puzzle/Author';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
@@ -100,7 +101,7 @@ function makeWord(opts: {
       direction: opts.direction,
     },
     number: WordNumber.of(opts.number),
-    length: opts.length,
+    length: WordLength.of(opts.length),
     clue: opts.clue ?? '',
     nextWord: opts.nextWord ?? null,
   };

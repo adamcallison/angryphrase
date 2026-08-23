@@ -9,6 +9,7 @@ import { GridOps } from '../grid/GridOps';
 import { Cell } from '../grid/Cell';
 import type { CellMarker } from '../grid/CellMarker';
 import { WordKey } from '../word/WordKey';
+import { WordLength } from '../word/WordLength';
 import type { Direction } from '../word/Direction';
 import type { DerivedWord } from '../word/DerivedWord';
 import type { Word } from '../word/Word';
@@ -361,7 +362,7 @@ function buildDomainWords(parsedWords: ParsedWord[]): DerivedWord[] {
       startCol: Col.of(pw.startCol),
       direction: pw.direction,
     },
-    length: pw.length,
+    length: WordLength.of(pw.length),
     clue: pw.clue,
     nextWord:
       pw.nextWord === null

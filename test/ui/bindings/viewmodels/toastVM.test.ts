@@ -2,14 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { deriveToastVM, deriveToastListVM } from '../../../../src/ui/bindings/viewmodels/toastVM';
 import type { Toast } from '../../../../src/domain/notifications/Toast';
 import { brand } from '../../../../src/domain/brand';
+import { EpochMs } from '../../../../src/domain/time/EpochMs';
+import { DurationMs } from '../../../../src/domain/time/DurationMs';
 
 function fixture(kind: Toast['kind'], message: string): Toast {
   return {
     id: brand<'ToastId', string>('abc'),
     kind,
     message,
-    createdAt: 1000,
-    ttlMs: 3500,
+    createdAt: EpochMs.of(1000),
+    ttlMs: DurationMs.of(3500),
   };
 }
 

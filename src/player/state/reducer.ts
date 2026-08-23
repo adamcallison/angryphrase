@@ -2,6 +2,7 @@ import type { PlayerIntent } from './intents';
 import { PlayerState } from './state';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import {
   handleApplyLoadedProgress,
   handleConfirmResetPlayer,
@@ -29,7 +30,7 @@ import {
 export function reducePlayer(
   state: PlayerState,
   intent: PlayerIntent,
-  deps: { rng: Rng; now: () => number },
+  deps: { rng: Rng; now: () => EpochMs },
 ): ReducerResult<PlayerState> {
   switch (intent.kind) {
     case 'import-new-puzzle':

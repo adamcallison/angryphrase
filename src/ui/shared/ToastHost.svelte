@@ -21,7 +21,7 @@
     }
     for (const t of toasts) {
       if (!timers.has(t.id)) {
-        timers.set(t.id, setTimeout(() => dismissToast(t.id), t.ttlMs));
+        timers.set(t.id, setTimeout(() => dismissToast(t.id), Number(t.ttlMs)));
       }
     }
   });

@@ -3,6 +3,7 @@ import type { AppIntent } from './intents';
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
@@ -17,7 +18,7 @@ import {
 export function reduceApp(
   state: AppState,
   intent: AppIntent | BuilderIntent | PlayerIntent,
-  deps: { rng: Rng; now: () => number },
+  deps: { rng: Rng; now: () => EpochMs },
 ): ReducerResult<AppState> {
   // App-level intents first (narrow by kind)
   switch (intent.kind) {

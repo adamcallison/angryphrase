@@ -17,6 +17,7 @@ import { PlayerState } from './player/state/state';
 import type { BuilderState } from './builder/state/state';
 import { GridSize } from './domain/grid/GridSize';
 import { PuzzleKey } from './domain/puzzle/PuzzleKey';
+import { EpochMs } from './domain/time/EpochMs';
 
 /**
  * Build the initial AppState per FR-65 / FR-64 / C6 / NFR-9:
@@ -76,7 +77,7 @@ function loadInitialAppState(): AppState {
 }
 
 const initial = loadInitialAppState();
-const deps = { rng: getPorts().rng, now: () => Date.now() };
+const deps = { rng: getPorts().rng, now: () => EpochMs.of(Date.now()) };
 const scheduler = createPersistenceScheduler(getPorts().storage);
 
 bootApp(initial, deps, scheduler);

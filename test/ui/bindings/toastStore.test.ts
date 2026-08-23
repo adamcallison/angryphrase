@@ -14,6 +14,8 @@ import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { brand } from '../../../src/domain/brand';
 import type { Toast } from '../../../src/domain/notifications/Toast';
 import type { ToastId } from '../../../src/domain/notifications/ToastId';
+import { EpochMs } from '../../../src/domain/time/EpochMs';
+import { DurationMs } from '../../../src/domain/time/DurationMs';
 
 function makeRng(seed: number): SeededRng {
   return new SeededRng(seed);
@@ -30,8 +32,8 @@ function makeToast(id: string, kind: Toast['kind'], message: string): Toast {
     id: brand<'ToastId', string>(id),
     kind,
     message,
-    createdAt: 1000,
-    ttlMs: 3500,
+    createdAt: EpochMs.of(1000),
+    ttlMs: DurationMs.of(3500),
   };
 }
 

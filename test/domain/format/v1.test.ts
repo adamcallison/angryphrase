@@ -16,6 +16,7 @@ import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import type { Word } from '../../../src/domain/word/Word';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { DisplacedClue } from '../../../src/domain/builder/DisplacedClue';
@@ -128,7 +129,7 @@ function buildPuzzle(
   const word: Word = {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue,
     nextWord: null,
   };
@@ -532,7 +533,7 @@ describe('serializeIncomplete', () => {
     const word: Word = {
       key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
       number: WordNumber.of(1),
-      length: 2,
+      length: WordLength.of(2),
       clue: '',
       nextWord: null,
     };

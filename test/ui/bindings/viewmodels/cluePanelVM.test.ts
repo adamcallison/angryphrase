@@ -6,6 +6,7 @@ import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import { WordKey } from '../../../../src/domain/word/WordKey';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { BuilderSubMode } from '../../../../src/builder/state/state';
 import type { DisplacedClueId } from '../../../../src/domain/builder/DisplacedClueId';
@@ -20,7 +21,7 @@ function across1(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue: 'Across one clue',
     nextWord: null,
   };
@@ -30,7 +31,7 @@ function across2(): Word {
   return {
     key: { startRow: Row.of(2), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(3),
-    length: 2,
+    length: WordLength.of(2),
     clue: 'Across two clue',
     nextWord: null,
   };
@@ -40,7 +41,7 @@ function down1(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'down' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue: 'Down one clue',
     nextWord: null,
   };

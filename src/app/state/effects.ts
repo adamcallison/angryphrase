@@ -1,12 +1,13 @@
 import type { AppState } from './state';
 import type { DomainEvent } from '../../domain/notifications/Event';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import { Toast } from '../../domain/notifications/Toast';
 
 export function applyEventsToApp(
   state: AppState,
   events: DomainEvent[],
-  deps: { rng: Rng; now: () => number },
+  deps: { rng: Rng; now: () => EpochMs },
 ): { state: AppState; leftoverEvents: DomainEvent[] } {
   let next = state;
   const leftover: DomainEvent[] = [];

@@ -7,11 +7,12 @@ import { applyEventsToApp } from '../../app/state/effects';
 import type { DomainEvent } from '../../domain/notifications/Event';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import { getPorts } from './ports';
 import type { PersistenceScheduler } from './persistenceScheduler';
 import { parsePlayerProgress } from './persistenceCodec';
 
-type AppDeps = { rng: Rng; now: () => number };
+type AppDeps = { rng: Rng; now: () => EpochMs };
 
 let state: AppState | null = $state(null);
 let deps: AppDeps | null = $state(null);

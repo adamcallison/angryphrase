@@ -8,6 +8,7 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { GridOps } from '../../../src/domain/grid/GridOps';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import type { Grid } from '../../../src/domain/grid/Grid';
 import type { Word } from '../../../src/domain/word/Word';
 import type { WordKey } from '../../../src/domain/word/WordKey';
@@ -28,7 +29,7 @@ function makeWord(
       direction,
     },
     number: WordNumber.of(1),
-    length,
+    length: WordLength.of(length),
     clue,
     nextWord: next,
   };

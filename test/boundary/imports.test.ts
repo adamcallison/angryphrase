@@ -246,6 +246,30 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: false
 	},
 	{
+		description: 'src/domain/word/WordLength.ts (brand owner, H4) allows brand import',
+		filename: 'src/domain/word/WordLength.ts',
+		code: "import { brand } from '../brand'",
+		expectError: false
+	},
+	{
+		description: 'src/domain/anagram/Position.ts (brand owner, H4) allows brand import',
+		filename: 'src/domain/anagram/Position.ts',
+		code: "import { brand } from '../brand'",
+		expectError: false
+	},
+	{
+		description: 'src/domain/time/EpochMs.ts (brand owner, H4) allows brand import',
+		filename: 'src/domain/time/EpochMs.ts',
+		code: "import { brand } from '../brand'",
+		expectError: false
+	},
+	{
+		description: 'src/domain/time/DurationMs.ts (brand owner, H4) allows brand import',
+		filename: 'src/domain/time/DurationMs.ts',
+		code: "import { brand } from '../brand'",
+		expectError: false
+	},
+	{
 		description: 'src/domain/format/v1.ts (non-owner) forbids brand import',
 		filename: 'src/domain/format/v1.ts',
 		code: "import { brand } from '../brand'",

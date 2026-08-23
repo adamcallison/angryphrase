@@ -3,6 +3,7 @@ import type { BuilderState } from './state';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { Result } from '../../domain/notifications/Event';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import { Puzzle } from '../../domain/puzzle/Puzzle';
 import {
   handleChangeGridSize,
@@ -32,7 +33,7 @@ import { handleConfirmResetBuilder, handleRequestResetBuilder } from './internal
 export function reduceBuilder(
   state: BuilderState,
   intent: BuilderIntent,
-  deps: { rng: Rng; now: () => number },
+  deps: { rng: Rng; now: () => EpochMs },
 ): ReducerResult<BuilderState> {
   switch (intent.kind) {
     case 'switch-to-fill':

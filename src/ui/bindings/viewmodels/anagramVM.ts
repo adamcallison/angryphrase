@@ -87,8 +87,7 @@ export function deriveAnagramModalVM(input: {
     position: i,
     fixed: entry.fixed,
     letter: entry.fixed
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B4: AnagramEntry.letter is null when fixed===true per AD §3.3 line 1387; discriminated-union fix requires AD §3.3 amendment. Deferred to H4. See llmworkspace/code_smells.md.
-      ? String(entry.letter!)
+      ? String(entry.letter)
       : scrambled !== null
         ? (scrambled[i] == null ? null : String(scrambled[i]))
         : null,

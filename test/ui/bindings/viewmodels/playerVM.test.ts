@@ -18,6 +18,7 @@ import { Title } from '../../../../src/domain/puzzle/Title';
 import { Author } from '../../../../src/domain/puzzle/Author';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 import type { Direction } from '../../../../src/domain/word/Direction';
@@ -80,7 +81,7 @@ function makeWord(opts: {
       direction: opts.direction,
     },
     number: WordNumber.of(opts.number),
-    length: opts.length,
+    length: WordLength.of(opts.length),
     clue: opts.clue ?? '',
     nextWord: opts.nextWord ?? null,
   };
