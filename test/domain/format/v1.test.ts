@@ -69,7 +69,6 @@ function makeWord(
     startCol,
     direction,
     length,
-    number: 1,
     clue,
     nextWord,
   };
@@ -375,18 +374,14 @@ describe('parsePuzzleV1', () => {
     expect(result.failures[0]!.message).toMatch(/length/);
   });
 
-  it('overwrites listed word.number with the re-derived number (FR-98a) — assert via parse then serialize back', () => {
+  it('rejects word carrying a number field (DRN5 — number dropped from v1 format, strict)', () => {
     const data = makeValidIncomplete();
-    data.words[0] = { ...data.words[0]!, number: 42 };
+    (data.words[0] as Record<string, unknown>).number = 42;
     const result = parsePuzzleV1(JSON.stringify(data));
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    const serialized = serializeIncomplete(result.puzzle, result.displacedClues);
-    const reparsed = parsePuzzleV1(serialized);
-    expect(reparsed.ok).toBe(true);
-    if (!reparsed.ok) return;
-    expect(reparsed.puzzle.words[0]!.number).toBe(WordNumber.of(1));
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.some(f => /number/.test(f.message))).toBe(true);
   });
 
   it('rejects cycle in nextWord links (ChainValidation)', () => {

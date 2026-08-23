@@ -740,7 +740,7 @@ export const Filename: {
 - Word positions within bounds; `length ≥ 2`; `nextWord` (if present) points to an existing word; no cycles, branches, dangling refs, self-refs (FR-98 + `ChainValidation`).
 - **Complete format:** every white cell has a non-null A–Z `puzzleLetter` (FR-61). Every chain-head word has a non-empty non-whitespace clue (FR-62). **Strict C5 rule:** a non-head chain word with a non-empty `clue` field is a validation failure (not silently normalized).
 - **Incomplete format:** `puzzleLetter` may be `null`; clues may be empty; `displacedClues` field is a `DisplacedClue[]` (FR-97). Extra fields not in the schema cause validation failure (strict).
-- On success, `word.number` is overwritten by the re-derived value (FR-98a), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
+- On success, `word.number` is minted by `Numbering.assign` from the grid (FR-98a — the v1 format carries no `number` field; a word object carrying `number` is a validation failure), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
 - `playerLetter` is never present in JSON; `null` is implied at runtime (FR-99).
 
 **Sample puzzle files — `puzzles/*.json`:** canonical v1 format (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). They are *not* fixtures; the app and the test suite never read them. The directory exists purely as a record of the format. No migration script is shipped — the files are already canonical.
@@ -1222,7 +1222,7 @@ Authoritative for both serialization and parsing. All field names are exact. Str
                "hyphenRight": false, "hyphenBottom": false }, ... ], ...],
   "words": [
     { "startRow": 0, "startCol": 1, "direction": "across",
-      "length": 4, "number": 1, "clue": "...", "nextWord": { "startRow": 3, "startCol": 0, "direction": "down" } | null }
+      "length": 4, "clue": "...", "nextWord": { "startRow": 3, "startCol": 0, "direction": "down" } | null }
   ],
   "displacedClues": [
     { "id": "<UUID v4>", "clue": "...", "direction": "across" }
@@ -1247,8 +1247,8 @@ Same as §6.1 with these differences:
 5. `grid` is a `gridSize × gridSize` 2D array of cell objects.
 6. Each cell's fields: `black: boolean`, `puzzleLetter: null | single A–Z`, four marker booleans (missing → `false`). Any other field present (including a stray `letter`) fails strict validation. For complete: `puzzleLetter` is never `null` on a white cell.
 7. `title`, `author` are strings (possibly empty).
-8. `words` array: each word has `startRow`, `startCol` (in bounds), `direction`, `length ≥ 2`, `number ≥ 1`, `clue: string`, `nextWord: { startRow, startCol, direction } | null`. For complete: chain heads have non-empty non-whitespace `clue`; non-heads have empty `clue` (C5 — non-empty → fail).
-9. Re-derive words from `grid` and verify each listed word matches a derived word exactly (`startRow`/`startCol`/`direction`/`length`). Derive `number` per FR-6 and overwrite the file's cached `number` (FR-98a); a mismatch in `length` between the file and the re-derived grid is a failure.
+8. `words` array: each word has `startRow`, `startCol` (in bounds), `direction`, `length ≥ 2`, `clue: string`, `nextWord: { startRow, startCol, direction } | null`. For complete: chain heads have non-empty non-whitespace `clue`; non-heads have empty `clue` (C5 — non-empty → fail). A `number` field present on a word object is a validation failure (DRN item 5 — `number` is always re-derived per FR-6, never carried).
+9. Re-derive words from `grid` and verify each listed word matches a derived word exactly (`startRow`/`startCol`/`direction`/`length`). Mint `number` per FR-6 via `Numbering.assign` (FR-98a — the file carries no `number`); a mismatch in `length` between the file and the re-derived grid is a failure.
 10. `nextWord` references resolve to existing words; `ChainValidation.validate` reports no cycles/branches/dangling/self-references.
 11. `displacedClues` (incomplete only): array of `{ id, clue, direction }`; each `id` is a valid lowercase UUID v4 string (`DisplacedClueId.try`) and unique within the array; `direction ∈ {'across', 'down'}`.
 

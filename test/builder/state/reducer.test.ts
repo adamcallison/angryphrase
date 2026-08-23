@@ -443,7 +443,6 @@ describe('reduceBuilder', () => {
       startCol,
       direction,
       length,
-      number: 1,
       clue,
       nextWord: null,
     };

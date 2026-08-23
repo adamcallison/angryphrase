@@ -70,6 +70,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Open question for later.** The JSON file format (per §3.6 and `format/v1.ts`) still requires `number` as a field in each word object, even though `Numbering.assign` overwrites it on every load. Consider whether the file format should drop `number` (let `Numbering.assign` always recompute) or keep it as a redundancy check. Not addressed in this amendment.
 
+**Resolution applied on 2026-08-23 (DRN item 5 closed).** Open question closed: the v1 JSON format drops `number` from word objects entirely (strict — a `number` field present on a word object is a validation failure, rejected as an unknown field by the existing word-extras check). `Numbering.assign` always mints `number` from the grid per FR-6; the parsed `number` was already discarded at `buildDomainWords` (returns `DerivedWord[]` with no `number` field) before this change, so the field was purely vestigial. `src/domain/format/v1.ts`: `ParsedWord.number` dropped, `WORD_KEYS` drops `'number'` (files carrying `number` auto-rejected at the word-extras check), `number` validation block removed, serializer drops `number: Number(w.number)`. `test/domain/format/v1.test.ts`: `makeWord` helper drops `number: 1`; the "overwrites listed word.number" test rewritten to "rejects word carrying a number field". 6 `puzzles/*.json` sample files reserialized (drop `number` from each word). FR-96 + FR-98a + AD §3.7 line 743 + §6 lines 1225/1250/1251 amended. No localStorage migration (single user, no in-progress data — matches C3 strict-rejection precedent). `Word.number: WordNumber` domain type unchanged (still re-derived on load).
+
 ---
 ## 6. `src/ports/**` ESLint allow-list needed `domain/puzzle/PuzzleKey.ts`
 

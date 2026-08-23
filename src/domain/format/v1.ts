@@ -43,7 +43,6 @@ type ParsedWord = {
   startCol: number;
   direction: Direction;
   length: number;
-  number: number;
   clue: string;
   nextWord: { startRow: number; startCol: number; direction: Direction } | null;
 };
@@ -71,7 +70,6 @@ const WORD_KEYS = new Set<string>([
   'startCol',
   'direction',
   'length',
-  'number',
   'clue',
   'nextWord',
 ]);
@@ -233,7 +231,6 @@ function validateWords(
     const startCol = word.startCol;
     const direction = word.direction;
     const length = word.length;
-    const number = word.number;
     const clue = word.clue;
     const nextWord = word.nextWord;
 
@@ -251,10 +248,6 @@ function validateWords(
     }
     if (typeof length !== 'number' || !Number.isInteger(length) || length < 2) {
       failures.push({ message: `Word ${i}: length must be an integer >= 2.` });
-      wordError = true;
-    }
-    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) {
-      failures.push({ message: `Word ${i}: number must be an integer >= 1.` });
       wordError = true;
     }
     if (typeof clue !== 'string') {
@@ -308,7 +301,6 @@ function validateWords(
         startCol: startCol as number,
         direction: direction as Direction,
         length: length as number,
-        number: number as number,
         clue: clue as string,
         nextWord: parsedNextWord,
       });
@@ -685,7 +677,6 @@ function buildSerializedOutput(
     startCol: Number(w.key.startCol),
     direction: w.key.direction,
     length: w.length,
-    number: Number(w.number),
     clue: w.clue,
     nextWord:
       w.nextWord === null

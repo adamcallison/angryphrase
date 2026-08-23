@@ -59,7 +59,6 @@ function makeWordJson(
     startCol,
     direction,
     length,
-    number: 1,
     clue,
     nextWord,
   };

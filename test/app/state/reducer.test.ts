@@ -160,7 +160,7 @@ describe('reduceApp', () => {
           { black: true, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
         ],
       ],
-      words: [{ startRow: 0, startCol: 0, direction: 'across', length: 2, number: 1, clue: '', nextWord: null }],
+      words: [{ startRow: 0, startCol: 0, direction: 'across', length: 2, clue: '', nextWord: null }],
       displacedClues: [],
     });
     const appState = {

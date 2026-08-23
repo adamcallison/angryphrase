@@ -221,14 +221,14 @@ Before a puzzle can be exported as **complete**, the following must all hold:
 
 - **FR-94.** The puzzle JSON format version is **1**. Both formats include a `version` field equal to 1 and a `type` discriminator (`"incomplete"` or `"complete"`). The parser shall reject files with an unrecognized version or type.
 - **FR-95.** Each cell in the JSON is represented by fields: `black` (boolean), `puzzleLetter` (single A–Z string or `null`), and the four marker booleans (`spaceRight`, `spaceBottom`, `hyphenRight`, `hyphenBottom`). The answer-letter field is named `puzzleLetter`; no other field name is accepted for the answer letter (e.g., a `letter` field is not a fallback). The player letter is **never** serialized — it is runtime-only and lives only in `localStorage` progress.
-- **FR-96.** Both formats include: `key` (string), `gridSize` (integer), `grid` (2D array of cells), `words` (array of word objects with `startRow`, `startCol`, `direction`, `length`, `number`, `clue`, `nextWord`), `title`, `author`.
+- **FR-96.** Both formats include: `key` (string), `gridSize` (integer), `grid` (2D array of cells), `words` (array of word objects with `startRow`, `startCol`, `direction`, `length`, `clue`, `nextWord`), `title`, `author`.
 - **FR-97.** The **incomplete** format additionally includes `displacedClues` (array of `{ id, clue, direction }`). The **complete** format has no `displacedClues` field.
 - **FR-98.** On import, the parser shall validate:
   - Grid dimensions match `gridSize` (square);
   - For **complete** files: every white cell has a single A–Z `puzzleLetter`; every marker field, where present, is a boolean; every chain-head word has a non-empty clue;
   - For **incomplete** files: white-cell letters may be null and clues may be empty; marker fields, where present, must be booleans;
   - For both: word positions are within bounds and `length ≥ 2`; `nextWord` references (where present) point to existing words; the chain structure has no cycles, no branching (no word pointed to by more than one word), and no dangling references; no self-references.
-- **FR-98a.** Word **numbers** are always re-derived from the grid per FR-6 on load; the `number` field carried in the file is not trusted (it is treated as redundant/cached and may be overwritten by the derived value). Likewise, word **lengths** are treated as derivable from the grid but are read from the file for validation cross-check.
+- **FR-98a.** Word **numbers** are always re-derived from the grid per FR-6 on load; the v1 format does not carry a `number` field on word objects (DRN item 5 closed — a `number` field present in a word object is a validation failure). Likewise, word **lengths** are treated as derivable from the grid but are read from the file for validation cross-check.
 - **FR-99.** The parser/validator shall, where reasonable, **normalize** the input by filling in default values (e.g., missing marker booleans default to `false`; the player letter is always initialized to `null` on import). The parser shall produce a clear, single error message listing the validation failures on rejection.
 
 ### 3.28 Deployment
