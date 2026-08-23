@@ -81,6 +81,7 @@ const scheduler = createPersistenceScheduler(getPorts().storage);
 
 bootApp(initial, deps, scheduler);
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
 const app = mount(App, { target: document.getElementById('app')! });
 
 export default app;

@@ -20,7 +20,9 @@
 
   function valueFor(wordKey: ClueEntryVM['wordKey'], displayClue: string): string {
     const id = canonicalId(wordKey);
-    return drafts.has(id) ? drafts.get(id)! : displayClue;
+    if (!drafts.has(id)) return displayClue;
+    const draft = drafts.get(id);
+    return draft === undefined ? displayClue : draft;
   }
 
   function setDraft(wordKey: ClueEntryVM['wordKey'], value: string): void {
@@ -33,7 +35,9 @@
 
   function dispatchEditClue(entry: ClueEntryVM): void {
     const id = canonicalId(entry.wordKey);
-    const clue = drafts.has(id) ? drafts.get(id)! : entry.displayClue;
+    const clue = !drafts.has(id)
+      ? entry.displayClue
+      : drafts.get(id) ?? entry.displayClue;
     dispatchBuilder({ kind: 'edit-clue', wordKey: entry.wordKey, clue });
     clearDraft(entry.wordKey);
   }

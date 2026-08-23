@@ -13,7 +13,7 @@ export default [
       }
     }
   },
-  // src/domain/** (non-owners): only sibling files under src/domain/**; brand import banned (H1)
+  // src/domain/** (non-owners): only sibling files under src/domain/**
   {
     files: ['src/domain/**/*.ts'],
     ignores: [
@@ -67,7 +67,7 @@ export default [
       ]
     }
   },
-  // src/domain/** brand owners: same domain boundary rules, brand import allowed (H1)
+  // src/domain/** brand owners: same domain boundary rules, brand import allowed
   {
     files: [
       'src/domain/grid/Row.ts',
@@ -309,7 +309,7 @@ export default [
       ]
     }
   },
-  // catch-all for src/** not covered by any block above (e.g. src/main.ts): brand import banned (H1)
+  // catch-all for src/** not covered by any block above (e.g. src/main.ts): brand import banned
   {
     files: ['src/**/*.ts', 'src/**/*.svelte'],
     ignores: [
@@ -332,6 +332,16 @@ export default [
           ]
         }
       ]
+    }
+  },
+  // Regression guard: ban non-null assertions in production code.
+  // Sanctioned exception: src/domain/grid/GridOps.ts (AD §1.1 B3 permits raw indexing inside GridOps).
+  // Two intentional retains: src/main.ts:84 (strict-null on DOM API -- not noUncheckedIndexedAccess)
+  {
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    ignores: ['src/domain/grid/GridOps.ts'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error'
     }
   }
 ];

@@ -50,8 +50,9 @@ export function handleSelectCell(
 
   let direction: Direction;
   if (sameCell) {
+    if (current === null) return Result.ok(state); // unreachable: sameCell implies current !== null
     if (inAcross && inDown) {
-      direction = current!.direction === 'across' ? 'down' : 'across';
+      direction = current.direction === 'across' ? 'down' : 'across';
     } else {
       return Result.ok(state);
     }

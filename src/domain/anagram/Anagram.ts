@@ -110,7 +110,8 @@ export const Anagram: {
     const separators: CellSeparator[] = [];
 
     for (let i = 0; i < members.length; i++) {
-      const member = members[i]!;
+      const member = members[i];
+      if (member === undefined) throw new Error('Anagram.buildChainModel: members[i] undefined');
       const memberModel = Anagram.buildWordModel(grid, member);
       const offset = entries.length;
 
@@ -185,8 +186,10 @@ export const Anagram: {
     for (let i = 0; i < pool.length - 1; i++) {
       const j = rng.nextInt(pool.length - i);
       const k = pool.length - 1 - i;
-      const temp = pool[k]!;
-      const swap = pool[j]!;
+      const temp = pool[k];
+      if (temp === undefined) throw new Error('Anagram.scramble: pool[k] undefined');
+      const swap = pool[j];
+      if (swap === undefined) throw new Error('Anagram.scramble: pool[j] undefined');
       pool[k] = swap;
       pool[j] = temp;
     }

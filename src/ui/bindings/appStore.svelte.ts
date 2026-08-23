@@ -74,7 +74,8 @@ export function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void
   let s: AppState = state;
   const pending: (AppIntent | BuilderIntent | PlayerIntent)[] = [intent];
   while (pending.length > 0) {
-    const next = pending.shift()!;
+    const next = pending.shift();
+    if (next === undefined) break;
     const result = reduceApp(s, next, d);
     const folded = applyEventsToApp(result.state, result.events, d);
     s = folded.state;

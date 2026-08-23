@@ -60,7 +60,8 @@ export function handleApplyLoadedProgress(
   const updates: { row: Row; col: Col; cell: Cell }[] = [];
   const rowsLen = Math.min(intent.playerLetters.length, size);
   for (let r = 0; r < rowsLen; r++) {
-    const savedRow = intent.playerLetters[r]!;
+    const savedRow = intent.playerLetters[r];
+    if (savedRow === undefined) continue;
     const rowLen = Math.min(savedRow.length, size);
     for (let c = 0; c < rowLen; c++) {
       const saved = savedRow[c];

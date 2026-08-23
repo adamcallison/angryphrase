@@ -42,7 +42,8 @@ export function handleUnjoin(
   if (sourceIdx === -1) {
     return Result.ok(state);
   }
-  const source = state.puzzle.words[sourceIdx]!;
+  const source = state.puzzle.words[sourceIdx];
+  if (source === undefined) return Result.ok(state);
   if (source.nextWord === null) {
     return Result.ok(state);
   }

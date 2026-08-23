@@ -325,7 +325,10 @@ function buildDomainGrid(cells: CellJson[][], gridSize: GridSize): Grid {
 
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      const cellData = cells[r]![c]!;
+      const rowData = cells[r];
+      if (rowData === undefined) throw new Error('v1.buildDomainGrid: cells[r] undefined');
+      const cellData = rowData[c];
+      if (cellData === undefined) throw new Error('v1.buildDomainGrid: cells[r][c] undefined');
       let cell;
 
       if (cellData.black) {
@@ -385,7 +388,8 @@ function crossCheckWords(
   let ok = true;
 
   for (let i = 0; i < parsedWords.length; i++) {
-    const pw = parsedWords[i]!;
+    const pw = parsedWords[i];
+    if (pw === undefined) throw new Error('v1.crossCheckWords: parsedWords[i] undefined');
     const key = WordKey.toCanonical({
       startRow: Row.of(pw.startRow),
       startCol: Col.of(pw.startCol),
@@ -421,7 +425,8 @@ function validateNextWordReferences(words: Word[], failures: ParseFailure[]): bo
   let ok = true;
 
   for (let i = 0; i < words.length; i++) {
-    const w = words[i]!;
+    const w = words[i];
+    if (w === undefined) throw new Error('v1.checkNextWordReferences: words[i] undefined');
     if (w.nextWord !== null && !WordMap.has(map, w.nextWord)) {
       failures.push({ message: `Word ${i} has a dangling nextWord reference.` });
       ok = false;

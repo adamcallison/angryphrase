@@ -92,7 +92,11 @@ export const ChainValidation: {
         if (seenInPath.has(currentCanonical)) {
           const cycleStartIndex = path.indexOf(currentCanonical);
           const cycleCanonicals = path.slice(cycleStartIndex);
-          const involved = cycleCanonicals.map((canonical) => wordMap.get(canonical)!.key);
+          const involved = cycleCanonicals.map((canonical) => {
+            const w = wordMap.get(canonical);
+            if (w === undefined) throw new Error(`ChainValidation: wordMap missing canonical ${canonical} during cycle report`);
+            return w.key;
+          });
           violations.push({ kind: 'cycle', involved });
           for (const key of cycleCanonicals) {
             cycleKnown.add(key);

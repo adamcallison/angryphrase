@@ -574,8 +574,28 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - Verification (green): `npx vitest run test/domain/grid/GridOps.test.ts` (27 passed), `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run ci` (1040 tests + build). `grep -rn 'g\[r\]?\.length\|?? -1' src/` → empty.
 - Out of scope (separate tasks): H3 (pervasive `!`), H4 (plain `number` in domain signatures — requires AD §3.3 amendment first).
 
-### H3. Pervasive non-null assertions `x!` from `noUncheckedIndexedAccess` 🟡
+### H3. Pervasive non-null assertions `x!` from `noUncheckedIndexedAccess` 🟡 ✅ Resolved 2026-08-23
 ~200 `!` uses across reducers, viewmodels, format parser (`v1.ts:329`, grid scans, etc.). Forced by `tsconfig.json:12 noUncheckedIndexedAccess: true`. Defensible but blunts the intended safety; several `!` assert grid cells where `GridOps.cellAt` is the typed path.
+
+#### H3 — Inventory (2026-08-23)
+- ~22 prod `!` (src .ts=20, .svelte=2), ~273 test `!`. Tests out of scope (smell doc targets reducers/viewmodels/format parser only).
+- Grid-cell `!`: 12, **all inside `src/domain/grid/GridOps.ts`** — sanctioned by AD §1.1 B3 ("raw indexing forbidden outside `GridOps`"). Internal `!` accepted; not refactored.
+- External grid-cell reads: 24 sites, **all already use `GridOps.cellAt`** (fillMode, solving, lifecycle, WordDerivation, CompletenessCheck, v1.ts:664, gridVM, builderVM, persistenceCodec, LengthPattern, Anagram.buildWordModel, designMode). Zero bypasses. The doc's "several `!` assert grid cells where `GridOps.cellAt` is the typed path" is stale — those external bypasses were retired by B1/B2/A3 fixes.
+- Non-grid prod `!` outside `GridOps.ts`: 9 sites across 7 files.
+
+#### H3 — Fix (adopted Option B + D 2026-08-23)
+Scope: production `!` outside `src/domain/grid/GridOps.ts` only. Behavior-preserving refactors that move the prior guard inline so TS narrows, eliminating the `!`. No type-signature changes; no AD amendment.
+- **B1 array-index `!` (6 sites):** `src/builder/state/internal/joinSubMode.ts:45` (`state.puzzle.words[sourceIdx]!` after `findIndex !== -1`), `src/player/state/internal/lifecycle.ts:63` (`intent.playerLetters[r]!` inside `r < rowsLen` loop), `src/domain/format/v1.ts:328` (`cells[r]![c]!` inside `r,c < size`), `src/domain/format/v1.ts:388` (`parsedWords[i]!`), `src/domain/format/v1.ts:424` (`words[i]!`), `src/domain/anagram/Anagram.ts:113` (`members[i]!`), `src/domain/anagram/Anagram.ts:188-189` (`pool[k]!`, `pool[j]!`). Replace each `arr[i]!` with `const x = arr[i]; if (x === undefined) { early-return / continue / throw; }` so TS narrows. Loop bodies keep existing semantics.
+- **B2 cursor `!.direction` (2 sites):** `src/builder/state/internal/fillMode.ts:54`, `src/player/state/internal/solving.ts:102`. Both have `sameCell = current !== null && …` guard above; TS can't narrow through the boolean. Lift `const c = current; if (c === null) return Result.ok(state);` before the `sameCell` branch so `c.direction` type-checks without `!`.
+- **B3 `Map.get` / `shift` `!` (5 sites):** `src/domain/chain/Chain.ts:32` (`WordMapCtor.get(words, currentKey)!` after `WordMapCtor.has(...)` at line 28), `src/domain/chain/ChainValidation.ts:95` (`wordMap.get(canonical)!.key` — `canonical` sourced from `path` of `wordMap` keys), `src/ui/builder/BuilderCluePanel.svelte:23` and `:36` (`drafts.get(id)!` after `drafts.has(id)`), `src/ui/bindings/appStore.svelte.ts:77` (`pending.shift()!` inside `while (pending.length > 0)`). Replace with narrowed local (`const x = map.get(k); if (x === undefined) throw/return;`).
+- **D lint regression guard:** ESLint `no-non-null-assertion` enabled on `src/**` excluding `src/domain/grid/GridOps.ts`. Forces future production `!` outside the sanctioned grid module to justify itself or refactor. Config in `eslint.config.js`.
+- **Out of scope (deferred):**
+  - **B4 `entry.letter!`** at `src/ui/bindings/viewmodels/anagramVM.ts:90` — deferred to H4. `AnagramEntry = { position: number; fixed: boolean; letter: Letter | null }` (AD §3.3 line 1387); the `!` is a property-null assertion (not index-access) silenced because `fixed === true` implies `letter !== null` but the type doesn't encode that. Clean fix = discriminate `AnagramEntry` by `fixed` (`{ fixed: true; letter: Letter } | { fixed: false; letter: null }`) — requires AD §3.3 amendment, same blocker class as H4. See H4 deferral note below.
+  - **B5 `document.getElementById('app')!`** at `src/main.ts:84` — dropped from H3. Source is `strict` null-check on DOM API return, not `noUncheckedIndexedAccess`. Wrong smell category. UI boot; `index.html` guarantees the element.
+  - **C GridOps internal centralization** — not adopted. AD §1.1 B3 sanctions raw indexing inside `GridOps.ts`; centralizing the 12 internal `!` into private `rowAt`/`cellUnchecked` helpers would relocate but not remove the assertion. Low value.
+  - **Test `!` (~273)** — out of scope per smell doc target list.
+- **Verification (green):** `npm run ci` green (lint + madge no cycles; svelte-check 0 errors / 0 warnings; 1040 tests passed / 77 files; vite build OK). `grep -rEn '[[:alnum:]_)\]]!' src/ --include='*.ts' --include='*.svelte'` → 12 hits, all in `src/domain/grid/GridOps.ts` (sanctioned by AD §1.1 B3); 0 production `!` outside it. `grep -rEn '!\.' src/` → empty. The two retained `!` sites (B4 `src/ui/bindings/viewmodels/anagramVM.ts:90`, B5 `src/main.ts:84`) carry `// eslint-disable-next-line @typescript-eslint/no-non-null-assertion` with rationale pointing to this doc and (for B4) to H4. `npx eslint src/domain/grid/GridOps.ts` → no `no-non-null-assertion` errors (file in the rule's `ignores`).
+- **Decomposition:** Task 1 (B1, 7 sites), Task 2 (B2, 2 sites), Task 3 (B3, 5 sites), Task 4 (D lint rule). One svelte-ts-senior dispatch each, sequenced (file paths non-overlapping but lint rule Task 4 must land after B1-B3 to avoid false positives on pre-existing sites).
 
 ### H4. Plain `number` in domain type signatures violates AD §0 Principle 4 🟠
 AD §0 principle 4 (binding): "Plain `string` and plain `number` do not appear in domain signatures." Yet the AD's own §3.3 type definitions and the repo use raw `number`:
@@ -586,6 +606,9 @@ AD §0 principle 4 (binding): "Plain `string` and plain `number` do not appear i
 - `src/domain/rng/Rng.ts:5` `nextInt(n: number): number` (function signature — clearest breach).
 
 Word length could be a `WordLength` branded range-checked type (≥2 per FR-5); AnagramEntry position could be a `Position` branded (0..length-1); Toast timestamps/durations could be `EpochMs`/`DurationMs` branded. The breach is design-level — the AD's own type catalogue breaks its own binding principle, so the code faithfully reflects the spec. **Fix path requires amending the AD §3.3 first** (introduce `WordLength`, `Position`, `EpochMs`, `DurationMs` branded types + range-checked constructors; update §3.3 type definitions; re-derive downstream signatures).
+
+#### H4 — Deferred item from H3 (2026-08-23)
+- **B4 `entry.letter!`** at `src/ui/bindings/viewmodels/anagramVM.ts:90`. `AnagramEntry` (AD §3.3 line 1387) is `{ position: number; fixed: boolean; letter: Letter | null }`; the `!` is a property-null assertion (not index-access — hence mis-categorized under H3) silenced because `fixed === true` implies `letter !== null` but the type does not encode that invariant. Clean fix = discriminate `AnagramEntry` by `fixed`: `{ fixed: true; letter: Letter } | { fixed: false; letter: null }`. Requires AD §3.3 amendment (same blocker class as H4's branded-number amendments). Folded into H4's "AD §3.3 amendment" fix path when that work lands.
 
 ---
 

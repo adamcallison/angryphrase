@@ -29,7 +29,8 @@ export const Chain: {
         throw new Error(`dangling nextWord in chain at: ${currentCanonical}`);
       }
 
-      const currentWord: Word = WordMapCtor.get(words, currentKey)!;
+      const currentWord = WordMapCtor.get(words, currentKey);
+      if (currentWord === undefined) throw new Error(`dangling nextWord in chain at: ${currentCanonical}`);
       members.push(currentWord);
       visited.add(currentCanonical);
       currentKey = currentWord.nextWord;
