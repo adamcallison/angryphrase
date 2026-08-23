@@ -75,12 +75,7 @@ export const GridOps: {
   withinBounds(g: Grid, row: Row, col: Col): boolean {
     const r = Number(row);
     const c = Number(col);
-    return (
-      r >= 0 &&
-      c >= 0 &&
-      r < g.length &&
-      c < (g[r]?.length ?? -1)
-    );
+    return r >= 0 && c >= 0 && r < g.length && c < g.length;
   },
 
   neighbours(g: Grid, row: Row, col: Col): { row: Row; col: Col }[] {

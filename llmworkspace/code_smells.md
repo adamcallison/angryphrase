@@ -556,8 +556,23 @@ Single module owns: `serializeBuilderSnapshot`, `parseBuilderSnapshot`, `seriali
 - Verification (green): `npm run test` (77 files / 1040 passed), `npm run typecheck` (0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run build`, `npm run ci` green. `grep -rn "from.*brand'" src/ --include=*.ts` → exactly 11 owner files; `grep -rn "brand<" src/ --include=*.ts` → only owner constructors + `brand.ts` itself.
 - Out of scope (separate tasks): H2 (`withinBounds` idiom), H3 (pervasive `!`), H4 (plain `number` in domain signatures — requires AD §3.3 amendment first).
 
-### H2. `GridOps.withinBounds` mixes defensive optional chaining (`g[r]?.length ?? -1`) with the project-wide aggressive `!` non-null style elsewhere 🟡
+### H2. `GridOps.withinBounds` mixes defensive optional chaining (`g[r]?.length ?? -1`) with the project-wide aggressive `!` non-null style elsewhere 🟡 ✅ Resolved
 `GridOps.ts:53-62`. Inconsistent null-handling idiom inside the one module that is supposed to be the typed grid boundary.
+
+#### H2 — Fix
+- Adopted Option B 2026-08-23. `src/domain/grid/GridOps.ts:75-79` `withinBounds` body: `c < (g[r]?.length ?? -1)` → `c < g.length`. Final body:
+  ```ts
+  withinBounds(g: Grid, row: Row, col: Col): boolean {
+    const r = Number(row);
+    const c = Number(col);
+    return r >= 0 && c >= 0 && r < g.length && c < g.length;
+  },
+  ```
+- Rationale: AD §3.2 line 377 invariant — `grid.length === gridSize` and every row `row.length === gridSize` — grids are square, so row length === `g.length` and `g[r]` is defined whenever `r < g.length`. The `?.length ?? -1` defensive guard targeted an unconstructable jagged state. Dropping the index read entirely also avoids adding another `!` (would worsen H3) and removes the lone `?.` in the module — consistent with the project-wide aggressive style.
+- Signature unchanged; no AD amendment (`withinBounds` signature in AD §3.2 unchanged, AD specifies no body).
+- No new tests: behavior-preserving under the square-grid invariant. Existing `test/domain/grid/GridOps.test.ts:83-93` covers in-bounds, OOB row, OOB col, negative row, negative col — unchanged and green. Precedent: B6/C4/C5 behavior-preserving refactors.
+- Verification (green): `npx vitest run test/domain/grid/GridOps.test.ts` (27 passed), `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run ci` (1040 tests + build). `grep -rn 'g\[r\]?\.length\|?? -1' src/` → empty.
+- Out of scope (separate tasks): H3 (pervasive `!`), H4 (plain `number` in domain signatures — requires AD §3.3 amendment first).
 
 ### H3. Pervasive non-null assertions `x!` from `noUncheckedIndexedAccess` 🟡
 ~200 `!` uses across reducers, viewmodels, format parser (`v1.ts:329`, grid scans, etc.). Forced by `tsconfig.json:12 noUncheckedIndexedAccess: true`. Defensible but blunts the intended safety; several `!` assert grid cells where `GridOps.cellAt` is the typed path.
