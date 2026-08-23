@@ -13,9 +13,75 @@ export default [
       }
     }
   },
-  // src/domain/**: only sibling files under src/domain/**
+  // src/domain/** (non-owners): only sibling files under src/domain/**; brand import banned (H1)
   {
     files: ['src/domain/**/*.ts'],
+    ignores: [
+      'src/domain/grid/Row.ts',
+      'src/domain/grid/Col.ts',
+      'src/domain/grid/GridSize.ts',
+      'src/domain/grid/CellIndex.ts',
+      'src/domain/letter/Letter.ts',
+      'src/domain/puzzle/PuzzleKey.ts',
+      'src/domain/puzzle/Title.ts',
+      'src/domain/puzzle/Author.ts',
+      'src/domain/builder/DisplacedClueId.ts',
+      'src/domain/word/WordNumber.ts',
+      'src/domain/notifications/ToastId.ts'
+    ],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(?:^src/|(?:\.\./)+)ui/',
+              message: 'src/domain/** may only import sibling files under src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\.\./)+)ports/',
+              message: 'src/domain/** may only import sibling files under src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\.\./)+)builder/state/',
+              message: 'src/domain/** may only import sibling files under src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\.\./)+)player/state/',
+              message: 'src/domain/** may only import sibling files under src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\.\./)+)app/state/',
+              message: 'src/domain/** may only import sibling files under src/domain/**.'
+            },
+            {
+              group: ['svelte', 'svelte/*'],
+              message: 'src/domain/** may not import svelte or svelte/*.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  // src/domain/** brand owners: same domain boundary rules, brand import allowed (H1)
+  {
+    files: [
+      'src/domain/grid/Row.ts',
+      'src/domain/grid/Col.ts',
+      'src/domain/grid/GridSize.ts',
+      'src/domain/grid/CellIndex.ts',
+      'src/domain/letter/Letter.ts',
+      'src/domain/puzzle/PuzzleKey.ts',
+      'src/domain/puzzle/Title.ts',
+      'src/domain/puzzle/Author.ts',
+      'src/domain/builder/DisplacedClueId.ts',
+      'src/domain/word/WordNumber.ts',
+      'src/domain/notifications/ToastId.ts'
+    ],
     rules: {
       '@typescript-eslint/no-restricted-imports': [
         'error',
@@ -77,6 +143,10 @@ export default [
             {
               group: ['svelte', 'svelte/*'],
               message: 'src/builder/state/** may not import svelte or svelte/*.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
             }
           ]
         }
@@ -110,6 +180,10 @@ export default [
             {
               group: ['svelte', 'svelte/*'],
               message: 'src/player/state/** may not import svelte or svelte/*.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
             }
           ]
         }
@@ -140,6 +214,10 @@ export default [
             {
               group: ['svelte', 'svelte/*'],
               message: 'src/app/state/** may not import svelte or svelte/*.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
             }
           ]
         }
@@ -175,6 +253,10 @@ export default [
               regex: '(?:^src/|(?:\.\./)+)domain/',
               allowTypeImports: true,
               message: 'src/ui/** may only import type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
             }
           ]
         }
@@ -200,6 +282,52 @@ export default [
             {
               regex: '^(?!src/domain/ports/ports\.ts$|src/domain/rng/Rng\.ts$|src/domain/puzzle/PuzzleKey\.ts$|(?:\.\./)+domain/ports/ports\.ts$|(?:\.\./)+domain/rng/Rng\.ts$|(?:\.\./)+domain/puzzle/PuzzleKey\.ts$).*(?:src/|\.\./).*$',
               message: 'src/ports/** may only import src/domain/ports/ports.ts, src/domain/rng/Rng.ts, and src/domain/puzzle/PuzzleKey.ts (StoragePort key type).'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  // src/ui/bindings/**: brand import banned (H1) — not covered by the src/ui/** block above (ignored)
+  {
+    files: ['src/ui/bindings/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  // catch-all for src/** not covered by any block above (e.g. src/main.ts): brand import banned (H1)
+  {
+    files: ['src/**/*.ts', 'src/**/*.svelte'],
+    ignores: [
+      'src/domain/**',
+      'src/builder/state/**',
+      'src/player/state/**',
+      'src/app/state/**',
+      'src/ui/**',
+      'src/ports/**'
+    ],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
             }
           ]
         }

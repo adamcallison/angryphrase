@@ -219,6 +219,14 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
+    it('parsePlayerProgress: invalid non-UUID key returns null (H1 corrupt-drop)', () => {
+      const json = JSON.stringify({ version: 1, kind: 'player-progress', key: 'not-a-uuid', gridSize: 2, playerLetters: [[null, null], [null, null]] });
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(parsePlayerProgress(json)).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
     it('parsePlayerProgress: returns null on garbage JSON', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress('not json')).toBeNull();

@@ -236,6 +236,32 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		filename: 'src/ports/foo.ts',
 		code: 'import type { Rng } from "../domain/rng/Rng.ts"',
 		expectError: false
+	},
+
+	// Block — domain/brand import boundary (H1)
+	{
+		description: 'src/domain/grid/Row.ts (brand owner) allows brand import',
+		filename: 'src/domain/grid/Row.ts',
+		code: "import { brand } from '../brand'",
+		expectError: false
+	},
+	{
+		description: 'src/domain/format/v1.ts (non-owner) forbids brand import',
+		filename: 'src/domain/format/v1.ts',
+		code: "import { brand } from '../brand'",
+		expectError: true
+	},
+	{
+		description: 'src/ui/bindings/foo.ts forbids brand import',
+		filename: 'src/ui/bindings/foo.ts',
+		code: "import { brand } from '../../domain/brand'",
+		expectError: true
+	},
+	{
+		description: 'test/foo.ts allows brand import (tests out of scope)',
+		filename: 'test/foo.ts',
+		code: "import { brand } from '../../src/domain/brand'",
+		expectError: false
 	}
 ];
 

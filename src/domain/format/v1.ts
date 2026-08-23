@@ -19,7 +19,6 @@ import { ChainValidation } from '../chain/ChainValidation';
 import { Chain } from '../chain/Chain';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
-import { brand } from '../brand';
 import { DisplacedClueId } from '../builder/DisplacedClueId';
 import type { Grid } from '../grid/Grid';
 
@@ -487,13 +486,13 @@ function validateClues(words: Word[], fileType: PuzzleFileType, failures: ParseF
 function validateDisplacedClues(
   displacedClues: unknown,
   failures: ParseFailure[],
-): { id: string; clue: string; direction: Direction }[] | null {
+): { id: DisplacedClueId; clue: string; direction: Direction }[] | null {
   if (!Array.isArray(displacedClues)) {
     failures.push({ message: 'displacedClues is malformed.' });
     return null;
   }
 
-  const result: { id: string; clue: string; direction: Direction }[] = [];
+  const result: { id: DisplacedClueId; clue: string; direction: Direction }[] = [];
   const seenIds = new Set<string>();
   let ok = true;
 
@@ -521,7 +520,8 @@ function validateDisplacedClues(
       continue;
     }
 
-    if (DisplacedClueId.try(id) === null) {
+    const validatedId = DisplacedClueId.try(id);
+    if (validatedId === null) {
       failures.push({ message: `displacedClue id is not a valid UUID v4: ${id}.` });
       ok = false;
       continue;
@@ -534,7 +534,7 @@ function validateDisplacedClues(
     }
     seenIds.add(id);
 
-    result.push({ id, clue, direction });
+    result.push({ id: validatedId, clue, direction });
   }
 
   return ok ? result : null;
@@ -642,7 +642,7 @@ export const parsePuzzleV1 = (
 
   const displacedClues: DisplacedClue[] =
     displacedCluesResult?.map((d) => ({
-      id: brand<'DisplacedClueId', string>(d.id),
+      id: d.id,
       clue: d.clue,
       direction: d.direction,
     })) ?? [];

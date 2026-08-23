@@ -1,11 +1,11 @@
 import { serializeIncomplete, parsePuzzleV1 } from '../../domain/format/v1';
 import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
-import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
+import { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { GridSize } from '../../domain/grid/GridSize';
 import type { Letter } from '../../domain/letter/Letter';
 import type { DisplacedClue } from '../../domain/builder/DisplacedClue';
-import { brand } from '../../domain/brand';
+
 import { GridOps } from '../../domain/grid/GridOps';
 import { GridSize as GridSizeCtor } from '../../domain/grid/GridSize';
 import { Row as RowCtor } from '../../domain/grid/Row';
@@ -125,7 +125,11 @@ export function parsePlayerProgress(blob: string): PlayerProgressBlob | null {
       return null;
     }
 
-    const key = brand<'PuzzleKey', string>((parsed as { key: string }).key);
+    const key = PuzzleKey.try((parsed as { key: string }).key);
+    if (key === null) {
+      console.warn('parsePlayerProgress: invalid PuzzleKey (not a UUID v4)');
+      return null;
+    }
     const gridSize = GridSizeCtor.of((parsed as { gridSize: number }).gridSize);
     const rawLetters = (parsed as { playerLetters: unknown[] }).playerLetters;
     const playerLetters: (Letter | null)[][] = rawLetters.map((row: unknown) => {
