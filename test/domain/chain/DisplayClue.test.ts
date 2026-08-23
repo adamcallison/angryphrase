@@ -84,7 +84,7 @@ describe('DisplayClue', () => {
     const words = wordMap([aa, b]);
 
     expect(() => DisplayClue.forWord(words, b)).toThrow(
-      'DisplayClue.forWord: non-head word has no reachable head',
+      'cycle detected in chain',
     );
   });
 
@@ -95,7 +95,7 @@ describe('DisplayClue', () => {
     const words = wordMap([aa, b]);
 
     expect(() => DisplayClue.forWord(words, b)).toThrow(
-      'DisplayClue.forWord: non-head word has no reachable head',
+      'cycle detected in chain',
     );
   });
 });
