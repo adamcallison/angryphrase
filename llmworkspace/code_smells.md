@@ -648,8 +648,14 @@ The breach was design-level — the AD's own type catalogue broke its own bindin
 
 ## J. Domain logic quirks
 
-### J1. `Chain.headOf` rebuilds predecessor-reverse map on every call 🟡
+### J1. `Chain.headOf` rebuilds predecessor-reverse map on every call 🟡 ⏸ Deferred 2026-08-23
 `src/domain/chain/Chain.ts:50-71`. Each `headOf` allocates `new Map` over all words, then walks predecessors calling `isHead` (itself an O(words) scan) per step. Cascading: `DisplayClue.forWord`, `cluePanelVM`, `builderVM`/`playerVM` `cellsOfChain`, `anagramAfterCursorChange` all call `headOf` per keystroke. No caching; O(n²) ceiling on long chains.
+
+#### J1 — Deferral
+- Deferred 2026-08-23 alongside E1. J1 is the named upstream fix for E4 (E4 deferral explicitly says "wait for E1/J1 — either automatically fixes E4"). J1 in isolation (cache `Chain.headOf`'s reverse predecessor map inside `src/domain/chain/Chain.ts`) is independently implementable, but E1's broader `ui/bindings/viewmodels/chainIndex.ts` memoization is the higher-leverage fix and the two overlap in benefit: either E1's `ChainIndex` subsumes J1 (cached reverse map lives VM-side, `headOf` becomes an O(1) lookup against the index), or J1 lands first as the domain-side cache and E1 then memoizes the already-cheaper `headOf`. Pursuing J1 in isolation now risks committing to a cache shape E1 may render redundant.
+- E1's deferral block (line 266) already names J1 in its out-of-scope set; E4's deferral block (line 301) says "pick up via E1 or via J1 — either fixes E4; do NOT pursue the head fast-path in isolation." J1 and E1 share the same two unresolved design questions: Q1 across-tick memoization (WeakMap vs per-tick rebuild) and Q2 cache-key invariant reliance (reducers never mutating `Word`/`words[]` in place — unenforced). Those decisions determine whether J1's cache lives in `domain/chain/` (domain-side, reusable) or in `ui/bindings/viewmodels/` (VM-side, per-tick). Resolving them under E1 first avoids a J1-then-E1 rework.
+- Rejected alternative: land J1 now as a domain-side `Map` cache keyed by `Word[]` ref inside `Chain.ts`. Same Q1/Q2 questions surface immediately (domain layer holding a module-level `WeakMap` is non-idiomatic — invisible to `madge -- circular`, not in Svelte's reactivity graph), so this is strictly less clean than deferring with E1.
+- Resuming this task: pick up via E1's `chainIndex.ts` sketch (resolve Q1 + Q2 first); then either fold J1 into `ChainIndex` (VM-side cache, `headOf` becomes O(1) against idx) or implement J1 as the domain-side cache if E1 chooses per-tick rebuild. J2 (`DisplayClue.forWord` duplicating `headOf`'s reverse walk) is a natural follow-on once J1's cache shape is settled.
 
 ### J2. `DisplayClue.forWord` duplicates `Chain.headOf`'s reverse-map walk 🟡
 `src/domain/chain/DisplayClue.ts:14-34` reimplements the predecessor walk that `Chain.headOf` already does. Could call `Chain.headOf` + `WordMap.get` instead.
