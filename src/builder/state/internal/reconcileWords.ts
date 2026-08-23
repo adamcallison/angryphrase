@@ -130,17 +130,14 @@ export function reconcileWords(
     });
   }
 
-  const errorEvents: DomainEvent[] = [];
   const violations = ChainValidation.validate(words);
-  for (const violation of violations) {
-    errorEvents.push({
-      kind: 'toast',
-      toastKind: 'error',
-      message: `Internal: chain violation after reconciliation: ${describeViolation(violation)}`,
-    });
+  if (violations.length > 0) {
+    throw new Error(
+      `reconcileWords: post-reconciliation invariant violated: ${violations.map(describeViolation).join('; ')}`,
+    );
   }
 
-  return { words, displacedClues, events: [...lengthChangeEvents, ...errorEvents] };
+  return { words, displacedClues, events: lengthChangeEvents };
 }
 
 function describeViolation(violation: ChainViolation): string {

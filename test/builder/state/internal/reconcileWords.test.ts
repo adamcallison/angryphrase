@@ -319,4 +319,23 @@ describe('reconcileWords', () => {
     expect(result.words).toHaveLength(1);
     expect(result.words[0]!.number).toBe(WordNumber.of(1));
   });
+
+  it('throws on post-reconciliation chain violation (cycle survives reconciliation)', () => {
+    const grid = blank();
+    const keyA = k(0, 0, 'across');
+    const keyB = k(0, 2, 'across');
+    const oldWords: Word[] = [
+      w(keyA, 1, 3, 'A clue', keyB),
+      w(keyB, 2, 3, 'B clue', keyA),
+    ];
+    const newWords: DerivedWord[] = [
+      derivedWord(keyA, 3, '', null),
+      derivedWord(keyB, 3, '', null),
+    ];
+
+    expect(() => reconcileWords(grid, oldWords, newWords, [], new SeededRng(1))).toThrow(
+      'reconcileWords: post-reconciliation invariant violated',
+    );
+    expect(() => reconcileWords(grid, oldWords, newWords, [], new SeededRng(1))).toThrow('cycle');
+  });
 });
