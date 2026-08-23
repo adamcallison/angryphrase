@@ -1,5 +1,5 @@
-import type { StoragePort } from '../domain/ports/ports.ts';
-import type { PuzzleKey } from '../domain/puzzle/PuzzleKey.ts';
+import type { StoragePort } from '../domain/ports/ports';
+import type { PuzzleKey } from '../domain/puzzle/PuzzleKey';
 
 // Key-naming convention:
 // - Builder snapshot: one shared slot at 'angryphrase:builder'.

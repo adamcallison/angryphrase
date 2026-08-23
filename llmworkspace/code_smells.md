@@ -631,8 +631,18 @@ The breach was design-level — the AD's own type catalogue broke its own bindin
 
 ## I. CI / build config
 
-### I1. ESLint `no-restricted-imports` `src/ports/**` allow-list uses negative-lookahead regex with explicit `.ts` extensions 🟡
+### I1. ESLint `no-restricted-imports` `src/ports/**` allow-list uses negative-lookahead regex with explicit `.ts` extensions 🟡 ✅ Resolved
 `eslint.config.js:205-206` (DRN item 6). Regex enumerates exact allowed paths (`src/domain/ports/ports.ts`, `src/domain/rng/Rng.ts`, `src/domain/puzzle/PuzzleKey.ts`) with `.ts` suffix. The `.ts`-extension convention is inconsistent across layer boundaries (other rules use globs). Operationally fine; stylistic inconsistency.
+
+#### I1 — Fix
+- `eslint.config.js` `src/ports/**/*.ts` block: allow-list lookahead regex `\.ts$` → `(?:\.ts)?$` on all 6 enumerated paths (3 absolute `src/domain/...` + 3 relative `(?:\.\./)+domain/...`). `.ts` now optional, matching every other layer block's extensionless prefix-regex idiom. Same 3 files allowed (`ports.ts`, `Rng.ts`, `PuzzleKey.ts`); same forbidden set; negative-lookahead structure retained (unavoidable — `no-restricted-imports` has no allow-list primitive). No boundary-enforcement behavior change.
+- `tsconfig.json`: removed `allowImportingTsExtensions: true` (line 7). Sole rationale was the former `.ts`-required ports regex; grep confirmed no other `.ts`-suffixed imports in `src/` or `test/`. `moduleResolution: "Bundler"` + `noEmit: true` retained.
+- 5 source imports dropped `.ts`: `src/ports/{localStoragePort,downloadPort,rngPort,filePickPort}.ts` (4 files, 5 imports — localStoragePort had 2). 1 test import dropped `.ts`: `test/ports/localStoragePort.test.ts:4`.
+- `test/boundary/imports.test.ts` ports block (2 positive fixtures) rewritten extensionless; 1 new positive fixture added: `'src/ports/** allows domain/puzzle/PuzzleKey (StoragePort key type, DRN item 6)'` (regex allowed PuzzleKey but no fixture asserted — gap closed). Negative fixture unchanged. Total ports fixtures 5 → 6; total fixtures 44 → 45.
+- AD §9.2 boundary table line 1610 amended: `PuzzleKey.ts` added to allowed list + new "Ports allow-list convention (I1)" note paragraph after the brand-enforcement note.
+- DRN item 6 open question closed: convention NOT extended; ports aligned to extensionless idiom; `allowImportingTsExtensions` retired.
+- Verification (green): `npm run typecheck` (svelte-check 0 errors / 0 warnings), `npm run lint` (eslint + `madge --circular` no cycles), `npm run test` (81 files / 1068 tests), `npm run ci` green. `grep -rn "\.ts'" src/ports/ test/ports/` → empty. `grep -n "allowImportingTsExtensions" tsconfig.json` → empty.
+- Out of scope (separate tasks): J1-J3 (domain logic quirks), K2/K3 (docs).
 
 ---
 

@@ -288,7 +288,7 @@ export default [
               message: 'src/ports/** may only import src/domain/ports/ports.ts and src/domain/rng/Rng.ts.'
             },
             {
-              regex: '^(?!src/domain/ports/ports\.ts$|src/domain/rng/Rng\.ts$|src/domain/puzzle/PuzzleKey\.ts$|(?:\.\./)+domain/ports/ports\.ts$|(?:\.\./)+domain/rng/Rng\.ts$|(?:\.\./)+domain/puzzle/PuzzleKey\.ts$).*(?:src/|\.\./).*$',
+              regex: '^(?!src/domain/ports/ports(?:\.ts)?$|src/domain/rng/Rng(?:\.ts)?$|src/domain/puzzle/PuzzleKey(?:\.ts)?$|(?:\.\./)+domain/ports/ports(?:\.ts)?$|(?:\.\./)+domain/rng/Rng(?:\.ts)?$|(?:\.\./)+domain/puzzle/PuzzleKey(?:\.ts)?$).*(?:src/|\.\./).*$',
               message: 'src/ports/** may only import src/domain/ports/ports.ts, src/domain/rng/Rng.ts, and src/domain/puzzle/PuzzleKey.ts (StoragePort key type).'
             },
             {

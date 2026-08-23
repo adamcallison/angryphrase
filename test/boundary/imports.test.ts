@@ -228,13 +228,19 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 	{
 		description: 'src/ports/** allows domain/ports/ports',
 		filename: 'src/ports/foo.ts',
-		code: 'import type { DownloadPort } from "../domain/ports/ports.ts"',
+		code: 'import type { DownloadPort } from "../domain/ports/ports"',
 		expectError: false
 	},
 	{
 		description: 'src/ports/** allows domain/rng/Rng',
 		filename: 'src/ports/foo.ts',
-		code: 'import type { Rng } from "../domain/rng/Rng.ts"',
+		code: 'import type { Rng } from "../domain/rng/Rng"',
+		expectError: false
+	},
+	{
+		description: 'src/ports/** allows domain/puzzle/PuzzleKey (StoragePort key type, DRN item 6)',
+		filename: 'src/ports/foo.ts',
+		code: 'import type { PuzzleKey } from "../domain/puzzle/PuzzleKey"',
 		expectError: false
 	},
 

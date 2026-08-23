@@ -1,4 +1,4 @@
-import type { DownloadPort } from '../domain/ports/ports.ts';
+import type { DownloadPort } from '../domain/ports/ports';
 
 export function createDownloadPort(): DownloadPort {
   return {

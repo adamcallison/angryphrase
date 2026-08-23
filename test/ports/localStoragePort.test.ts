@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createLocalStoragePort } from '../../src/ports/localStoragePort';
-import { PuzzleKey } from '../../src/domain/puzzle/PuzzleKey.ts';
+import { PuzzleKey } from '../../src/domain/puzzle/PuzzleKey';
 
 const KEY_A = PuzzleKey.try('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')!;
 const KEY_B = PuzzleKey.try('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')!;

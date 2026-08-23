@@ -1607,11 +1607,13 @@ angryphrase/
 | `src/app/state/**` | `src/domain/**`, value and type imports from the public root files of `src/builder/state/**` (`state.ts`, `intents.ts`, `reducer.ts`) and `src/player/state/**` (same three files), and from sibling `src/app/state/**` files | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, and `src/builder/state/internal/**` / `src/player/state/internal/**` (anything under an `internal/` subfolder of another Layer-1 module), `domain/brand` (H1) |
 | `src/ui/**` (except `src/ui/bindings/**`) | sibling files, `src/ui/bindings/**`, types-only from `src/domain/**` (for VM prop shapes only — *importing functions is blocked*) | `svelte` allowed; `src/ports/**`, `src/builder/state/**`, `src/player/state/**` blocked, `domain/brand` (H1) |
 | `src/ui/bindings/**` | all of `src/**` | `domain/brand` (H1) |
-| `src/ports/**` | `src/domain/ports/ports.ts` (interfaces only) and `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**`, `domain/brand` (H1) |
+| `src/ports/**` | `src/domain/ports/ports.ts` (interfaces only), `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`), and `src/domain/puzzle/PuzzleKey.ts` (StoragePort key type — DRN item 6) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**`, `domain/brand` (H1) |
 
 A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism.
 
 **Brand-import enforcement (H1).** The `domain/brand` ban is implemented by a `no-restricted-imports` pattern appended to every per-glob rule block (builder, player, app, ui, ports) plus a dedicated block for `src/ui/bindings/**` and a catch-all for any `src/**` file not covered by existing blocks (e.g. `src/main.ts`). The `src/domain/**` block is split: non-owners get the brand ban; the 11 owner files get a separate block without it. The self-test includes 4 brand-specific fixtures: owner allowed, non-owner domain banned, bindings banned, `test/**` allowed (scope control).
+
+**Ports allow-list convention (I1).** The `src/ports/**` block uses a negative-lookahead allow-list (unavoidable — `no-restricted-imports` has no allow-list primitive, only restrict patterns) enumerating the 3 allowed paths with `.ts` OPTIONAL. This matches every other layer block's extensionless prefix-regex idiom; imports may carry `.ts` but are not required to. `tsconfig.json` `allowImportingTsExtensions` was retired as part of I1 (its sole rationale was the former `.ts`-required ports regex).
 
 ### 9.3 Import-cycle policy
 
