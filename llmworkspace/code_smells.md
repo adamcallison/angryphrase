@@ -686,15 +686,24 @@ The breach was design-level — the AD's own type catalogue broke its own bindin
 
 ## K. Cross-cutting / documentation
 
-### K1. `architecture_design.md` §9.3 file tree out of sync with repo 🟠
-- `src/domain/word/Word.ts` not listed under `puzzle/` tree (correct) — but AD §9.3 lists `puzzle/CompletenessViolation.ts` and `format/ParseFailure.ts` / `Filename.ts` as separate files; in repo these types live inside `CompletenessCheck.ts` and `v1.ts`. Multiple AD-listed files missing or merged. Concrete drift between design file tree and actual layout.
-- `src/test/boundary/imports.test.ts` listed in §9.3, missing (see A1).
-- `src/test/builder/state/reconcileWords.property.test.ts` listed, missing.
-- `src/test/builder/state/import.test.ts` listed, missing (player has `lifecycle.test.ts`, builder has `importExport.test.ts`).
-- ~~`converted-puzzles/` directory listed, missing (see C2).~~ Resolved via C2 — AD §9.3 tree no longer lists `converted-puzzles/` or `scripts/migrate-puzzles.ts`.
+### K1. `architecture_design.md` §9 file tree out of sync with repo 🟠 ✅ Resolved
+- `src/domain/puzzle/CompletenessViolation.ts` and `src/domain/format/ParseFailure.ts` / `Filename.ts` listed as separate files; in repo these types live inside `CompletenessCheck.ts` and `v1.ts`. **Resolved** — AD §9 tree amended: `puzzle/` row now notes `CompletenessViolation` colocated in `CompletenessCheck.ts`; `format/` row collapsed to `v1.ts` with a note that `ParseFailure` + `Filename` are colocated. No code move (§9.1 permits a PascalCase module bundling its type + helpers; import paths `.../CompletenessCheck` and `.../v1` already reflect colocation).
+- `src/test/boundary/imports.test.ts` listed in §9, missing (see A1). **Resolved via A1** — file exists; §9 tree unchanged on this row.
+- `src/test/builder/state/reconcileWords.property.test.ts` listed, missing. **Resolved** — AD §9 tree row removed; AD §10.1 prose amended to mark the property-based test "optional per RISK-1, not shipped" with the recommended shape retained as a deferred optional. Shipped coverage is the exhaustive RISK-1 case suite in `reconcileWords.test.ts`.
+- `src/test/player/state/import.test.ts` listed, missing (import tests live in `lifecycle.test.ts`). **Resolved** — AD §9 tree row removed; `player/state/internal/` row notes import/apply-loaded-progress covered in `lifecycle.test.ts`.
+- ~~`converted-puzzles/` directory listed, missing (see C2).~~ Resolved via C2.
 
-### K2. `version_stamp_plan.md` not implemented 🟡
+#### K1 — Fix
+- AD §9 file tree reconciled to repo reality. Amendments: (1) `src/domain/brand.ts` added at domain root (referenced in §2/§9.2 prose but absent from tree); (2) `src/domain/grid/CellSeparator.ts` added to grid row (referenced in §3.2 prose but absent from tree); (3) `puzzle/CompletenessViolation.ts` and `format/ParseFailure.ts`+`Filename.ts` removed — types colocated in `CompletenessCheck.ts` / `v1.ts` per §9.1 bundling convention; (4) `test/builder/state/` and `test/player/state/` restructured to show the `internal/` subfolder mirroring `src/.../internal/` (handler tests live there, not at the top level); `state.test.ts` rows added; (5) `reconcileWords.property.test.ts` and `import.test.ts` removed (never created); (6) `test/domain/` subdirs `letter/ builder/ time/ uuid/` added; (7) `test/app/state/` `effects.test.ts intentKinds.test.ts state.test.ts` added; (8) `test/fakes/` note added that each fake has a co-located `.test.ts`; (9) `llmworkspace/` subtree expanded to list `design_review_notes.md`, `chain_aware_selection_addendum.md`, `code_smells.md`, `store_singleton_di_report.md`, `version_stamp_plan.md`.
+- AD §10.1 "Property-based tests" paragraph rewritten to mark the file "not shipped" and demote it to a deferred optional (RISK-1 exhaustive case suite is the shipped coverage).
+- No code changes — K1 is a documentation-only smell. The design doc is the source of truth for architecture; where the repo evolved a different (but §9.1-conformant) layout, the tree was updated to match the repo rather than the repo refactored to match a stale tree. Per-smell decisions: merged types stay merged (colocation legal under §9.1); missing optional test stays unshipped (optional); `internal/` test layout mirrors `src/` layout (consistency win, not a refactor).
+- Verification: `grep -n 'CompletenessViolation\.ts\|ParseFailure\.ts\|Filename\.ts\|reconcileWords\.property\|import\.test\.ts' llmworkspace/architecture_design.md` → only the §10.1 "not shipped" mention of `reconcileWords.property.test.ts` (intentional). Repo tree re-diffed against amended AD §9 tree for `src/domain/**`, `src/builder/state/**`, `src/player/state/**`, `src/app/state/**`, `src/ui/**`, `src/ports/**`, `test/**` — every shipped file now listed. No build/test/lint run needed (doc-only change).
+
+### K2. `version_stamp_plan.md` not implemented 🟡 ⏸ Deferred 2026-08-24
 Plan describes baked git-commit-hash/timestamp footer + `VersionStamp.svelte` + `vite.config.ts` inline plugin. Repo `vite.config.ts:1-18` has no `define` block; no `src/ui/shared/VersionStamp.svelte`; no `vite-env.d.ts` ambient declarations. `git log` shows "add git stamp design doc" commit but no implementation commit. Feature gap between plan and code.
+
+#### K2 — Deferral
+- Deferred 2026-08-24. The version stamp is a non-functional UX nicety (footer shows build commit/time); no correctness, boundary, or invariant impact. Plan exists at `llmworkspace/version_stamp_plan.md` ready to implement when prioritized. AD §9 tree (K1 fix) now lists `version_stamp_plan.md` under `llmworkspace/` with a "(K2 — not yet implemented)" note so the gap is visible in the design doc itself.
 
 ### K3. DRN follow-up items + AD-internal contradictions un-addressed 🟡 ✅ Resolved
 - DRN item 4 follow-up: "Retrofit `AppState.blank` ... to call `BuilderState.blank` and `PlayerState.importScreen` as values, eliminating the inlined construction." Done — `app/state/state.ts:21-29` does call both. ✔ Resolved.

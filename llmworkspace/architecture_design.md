@@ -1488,8 +1488,9 @@ angryphrase/
 │  ├─ main.ts                              # boot: ports, initial AppState, mount App.svelte
 │  ├─ app.css                              # tailwind imports + minimal global styles (CON-4 tokens)
 │  ├─ domain/                              # Layer 0: pure, framework-free (§2.1)
+│  │  ├─ brand.ts                          # `brand<Tag,T>()` escaper; internal to the 15 owner modules (H1, §9.2 brand ban)
 │  │  ├─ grid/
-│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts        # Cursor owned here (not builder/state)
+│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts  CellSeparator.ts   # Cursor owned here (not builder/state); CellSeparator re-exported (§3.2)
 │  │  │  ├─ Cell.ts  CellMarker.ts  CellMarkerFlag.ts
 │  │  │  ├─ Grid.ts  GridOps.ts
 │  │  ├─ word/
@@ -1504,7 +1505,7 @@ angryphrase/
 │  │  │  ├─ Anagram.ts  AnagramEntry.ts  Position.ts   # Position brands AnagramEntry.position; AnagramEntry discriminated by fixed (H4/B4)
 │  │  ├─ puzzle/
 │  │  │  ├─ Puzzle.ts  PuzzleKey.ts  Title.ts  Author.ts
-│  │  │  ├─ CompletenessCheck.ts  CompletenessViolation.ts
+│  │  │  ├─ CompletenessCheck.ts                       # also exports CompletenessViolation type (colocated, not a separate file)
 │  │  ├─ builder/
 │  │  │  └─ DisplacedClue.ts  DisplacedClueId.ts
 │  │  ├─ uuid/
@@ -1516,7 +1517,7 @@ angryphrase/
 │  │  │  ├─ ModalRequest.ts  ModalKind.ts
 │  │  │  └─ Event.ts                       # DomainEvent discriminated union; ReducerResult helper; ConfirmableIntent
 │  │  ├─ format/
-│  │  │  └─ v1.ts  ParseFailure.ts  Filename.ts
+│  │  │  └─ v1.ts                          # also exports ParseFailure type + Filename helper (colocated, not separate files)
 │  │  ├─ rng/
 │  │  │  └─ Rng.ts                        # Rng interface — deps-injection abstraction, NOT a port (§3.7, design_review_notes.md item 1); nextInt intentionally plain number (H4 carve-out)
 │  │  └─ ports/
@@ -1565,19 +1566,25 @@ angryphrase/
 ├─ test/
 │  ├─ domain/
 │  │  ├─ grid/  word/  chain/  anagram/  puzzle/  format/  notifications/
+│  │  ├─ letter/  builder/  time/  uuid/                # added as branded types / new modules landed (H4, C1, A4)
 │  │  └─ (one test file per source module; pure unit tests)
 │  ├─ builder/state/
-│  │  ├─ reducer.test.ts  designMode.test.ts  fillMode.test.ts
-│  │  ├─ joinSubMode.test.ts  reattachSubMode.test.ts
-│  │  ├─ importExport.test.ts  lifecycle.test.ts
-│  │  ├─ reconcileWords.test.ts                          # exhaustive RISK-1 cases (§8.5)
-│  │  ├─ reconcileWords.property.test.ts                # property-based over random toggles (optional)
+│  │  ├─ reducer.test.ts  state.test.ts
+│  │  └─ internal/                             # handler tests mirror src/.../internal/ layout
+│  │     ├─ designMode.test.ts  fillMode.test.ts
+│  │     ├─ joinSubMode.test.ts  reattachSubMode.test.ts
+│  │     ├─ importExport.test.ts  lifecycle.test.ts
+│  │     └─ reconcileWords.test.ts                          # exhaustive RISK-1 cases (§8.5)
 │  ├─ player/state/
-│  │  ├─ reducer.test.ts  solving.test.ts  anagram.test.ts  lifecycle.test.ts  import.test.ts
+│  │  ├─ reducer.test.ts  state.test.ts
+│  │  └─ internal/                             # handler tests mirror src/.../internal/ layout
+│  │     └─ solving.test.ts  anagram.test.ts  lifecycle.test.ts   # import/apply-loaded-progress covered in lifecycle.test.ts
 │  ├─ app/state/
-│  │  └─ reducer.test.ts                  # full flow tests: dump-events cases, request→confirm pass, cancel; toast fold; modal fold; passthrough of download/clear-storage
+│  │  ├─ reducer.test.ts                  # full flow tests: dump-events cases, request→confirm pass, cancel; toast fold; modal fold; passthrough of download/clear-storage
+│  │  ├─ effects.test.ts  intentKinds.test.ts  state.test.ts
 │  ├─ fakes/
 │  │  ├─ InMemoryStoragePort.ts  SeededRng.ts  StubDownloadPort.ts  FakeClock.ts
+│  │  └─ (each fake paired with a co-located `<name>.test.ts` unit test)
 │  └─ boundary/
 │     └─ imports.test.ts                  # asserts ESLint rule denies forbidden imports (§9.2)
 ├─ puzzles/                                  # canonical v1 sample puzzle files; not referenced by app or tests
@@ -1585,7 +1592,12 @@ angryphrase/
 └─ llmworkspace/
    ├─ requirements.md
    ├─ architectquestions0.md
-   └─ architecture_design.md                # this document
+   ├─ architecture_design.md                # this document
+   ├─ design_review_notes.md                # DRN — open questions + resolutions log
+   ├─ chain_aware_selection_addendum.md     # chain-aware selection spec addendum
+   ├─ code_smells.md                        # code/architectural smells audit (this doc's sibling)
+   ├─ store_singleton_di_report.md          # store-singleton DI investigation
+   └─ version_stamp_plan.md                 # version-stamp feature plan (K2 — not yet implemented)
 ```
 
 ### 9.1 Naming conventions
@@ -1646,7 +1658,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `reducePlayer` for the `anagram-scramble` flow (scramble via `deps.rng`).
 - `reduceApp` for modal confirm/cancel flow + toast fold (constructs `Toast` via `deps.rng` + `deps.now`).
 
-**Property-based tests (optional but strongly recommended per RISK-1):** `test/builder/state/reconcileWords.property.test.ts` uses `fast-check` or a hand-rolled random-grid toggler; asserts that after any design-mode toggle, the resulting `Word[]` is consistent with the new grid (every word's start/length matches a derived white run) and `ChainValidation` finds no violations.
+**Property-based tests (optional per RISK-1, not shipped):** `test/builder/state/reconcileWords.property.test.ts` is sketched in this section as the recommended shape — `fast-check` or a hand-rolled random-grid toggler asserting that after any design-mode toggle the resulting `Word[]` is consistent with the new grid (every word's start/length matches a derived white run) and `ChainValidation` finds no violations. The file is not present in the repo; the exhaustive RISK-1 case suite in `reconcileWords.test.ts` is the shipped coverage. Listed here as a deferred optional, not a mandate.
 
 ### 10.2 Fakes & helpers (`test/fakes/`)
 
