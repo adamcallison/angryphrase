@@ -11,7 +11,7 @@ These four principles are binding constraints on the implementation. Every other
 1. **Thin UI.** The UI layer is as thin as possible. All logic lives in pure logic modules with no knowledge of Svelte, HTML, DOM, or any rendering concept. Components render view-models and emit intents — nothing else.
 2. **Domain-Driven Design.** The domain model is the centre; persistence, format, and UI are adapters at the edges. Pure functions over immutable domain objects are the unit of behaviour.
 3. **Explicit types.** bundles of data have named types; field types are precise (`Letter | null`, not `string`); illegal states are unrepresentable where feasible.
-4. **No primitive obsession.** Row, Column, Letter, PuzzleKey, Direction, GridSize, WordNumber, DisplacedClueId, ToastId, MarkerFlag, etc. are all branded-types or discriminated unions. Plain `string` and plain `number` do not appear in domain signatures.
+4. **No primitive obsession.** Row, Column, Letter, PuzzleKey, Direction, GridSize, WordNumber, DisplacedClueId, ToastId, MarkerFlag, WordLength, Position, EpochMs, DurationMs, etc. are all branded-types or discriminated unions. Plain `string` and plain `number` do not appear in domain signatures. **Carve-out (H4):** the `Rng` primitive-abstraction interface (`domain/rng/Rng.ts`) is exempt — `nextInt(n: number): number` is intrinsically a count/upper-bound → index operation (e.g. `nextInt(256)` for a byte, `nextInt(pool.length - i)`); branding the parameter or return cascades nonsense (`Size.of(256)`, an `Index` brand immediately consumed as `pool[j]`) with negative value. This is the only deliberate plain-`number` signature in the domain.
 
 ---
 
@@ -26,14 +26,14 @@ These four principles are binding constraints on the implementation. Every other
 | **Pure-reducer + intent dispatch + events** (from A1) | Reducers are pure functions `reduce(state, intent) -> { state, events }`. They compute the next state and the *description* of any side effects they want performed (toasts, modals, downloads, storage clears) as data, but never perform them. The bindings layer interprets the returned events. Maximizes testability (NFR-4), makes the closed set of allowed actions compiler-enumerable, puts "simple domain objects" literally across the UI↔logic boundary (Principle 1), and resolves the "pure functions need to cause effects" tension without ad-hoc scratch fields. |
 | **Strict immutability** (from A2) | Reducers never mutate inputs. A tiny `clone` helper handles the few deep structures (grid). No Immer dependency (single-file build stays small). |
 | **In-app mode enum routing** (from A3) | `route: 'landing' \| 'build' \| 'play'` lives in `AppState`. No router library; no SSR concerns. Matches FR-1 (always show landing on load) and the single-file deployment. |
-| **Aggressive branded types** (from B1) | A `brand<Tag, Primitive>` utility produces nominal `Row`, `Col`, `Letter`, `PuzzleKey`, `GridSize`, `WordNumber`, `DisplacedClueId`, `ToastId`, `CellIndex` types. Range-checked constructors make illegal values unconstructable at the boundary. |
+| **Aggressive branded types** (from B1) | A `brand<Tag, Primitive>` utility produces nominal `Row`, `Col`, `Letter`, `PuzzleKey`, `GridSize`, `WordNumber`, `DisplacedClueId`, `ToastId`, `CellIndex`, `WordLength`, `Position`, `EpochMs`, `DurationMs` types (last four from H4). Range-checked constructors make illegal values unconstructable at the boundary. |
 | **Composite `WordKey`** (from B2) | `WordKey = { startRow, startCol, direction }`. Matches FR-33/FR-45 exactly; `nextWord: WordKey \| null`. Displaced clues keep a `DisplacedClueId` because they have no positional handle. A canonical string form keys a `WordMap` for O(1) lookup. |
 | **2D `Cell[][]` grid + typed `GridOps`** (from B3) | Mirrors JSON; raw indexing forbidden outside `GridOps`. |
 | **`answerLetter`/`playerLetter` runtime naming** (from B4) | The string `"letter"` never appears in the runtime model. Serialization adapter maps `answerLetter ↔ puzzleLetter` at the JSON boundary only. |
 | **`Direction` as `'across' \| 'down'`** (from B5) | Matches FR-96; helpers in a `Direction` module. |
 | **Vitest, pure-logic tests** (from D2) | Unit tests cover all pure domain logic. No DOM/component test harness required by spec; visual + mobile keyboard behaviour verified manually (RISK-4). |
 | **View-models in / Intents out** (from E2) | Components receive plain typed view-models produced in `ui/bindings`. Components emit typed intents. The bindings layer owns the runes store, dispatch, debounced persistence, and view-model derivation. Components contain no business logic and no domain-function calls. |
-| **`converted-puzzles/` directory** (from B6) | Existing `puzzles/*.json` files are non-conforming to the format (use `letter` not `puzzleLetter`, lack `version` and `type`). A migration script produces `converted-puzzles/*.json` in the current format. Neither the app nor the test suite references either directory; the converted files exist purely as a record. |
+| **`puzzles/` directory** | Canonical v1 sample puzzle files (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). Neither the app nor the test suite references the directory; the files exist purely as a record of the format. The strict parser's rejection of an unknown `letter` field (FR-95) is documented at §3.7 and §6.3; no migration script is shipped — the samples are already canonical. |
 | **Injected RNG for anagram scramble** (from D1) | `scramble(word, input, rng)` takes an `Rng` interface; production wires `Math.random`; tests inject a seeded RNG. |
 | **No cursor persistence across reload** (from C6) | Builder state autosaves everything *except* the cursor. On reload, cursor is `null`. Less code, matches your preference. |
 | **Strict non-head clue rejection** (from C5) | A complete-file import with a non-empty `clue` field on a non-head chain word is invalid (clear error, no silent normalization). |
@@ -83,8 +83,8 @@ These four principles are binding constraints on the implementation. Every other
                                                                    ▼
        ┌─────────────────────────────────────────────────────────────────────────┐
        │                              domain/                                    │
-       │  grid/  word/  letter/  chain/  anagram/  puzzle/                        │
-       │  builder/  notifications/  format/  persistence/                         │
+        │  grid/  word/  letter/  chain/  anagram/  puzzle/                        │
+        │  builder/  notifications/  format/  ports/                               │
        │  - pure TS, zero framework imports, no Svelte, no DOM                   │
        │  - immutable value objects, branded types, pure functions               │
        └─────────────────────────────────────────────────────────────────────────┘
@@ -92,8 +92,8 @@ These four principles are binding constraints on the implementation. Every other
                                                                    ▼
        ┌─────────────────────────────────────────────────────────────────────────┐
        │                              ports/                                     │
-       │  localStoragePort, downloadPort, filePickPort, rngPort                  │
-       │  - implementations of domain/persistence interfaces                      │
+        │  localStoragePort, downloadPort, filePickPort, rngPort                  │
+        │  - implementations of domain/ports interfaces                            │
        │  - side-effectful; swappable in tests                                   │
        └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -111,27 +111,28 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
-| `domain/word/` | `Word`, `WordKey`, `Direction` and its helpers, `DerivedWord` (the shape of a `Word` before `Numbering.assign` mints its `number`; output of `WordDerivation.derive`, input to `Numbering.assign`, and the `newWords` argument of §8.5 `reconcileWords`), `WordDerivation` (scan grid → `DerivedWord[]`), `Numbering` (`assign(grid, DerivedWord[]) → Word[]` per FR-6), `WordMap`. |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; owned here so Player state + viewmodels do not reach type-only into a sibling Layer-1 module), `Cell`, `CellMarker`, `CellMarkerFlag`, `Grid` (`Cell[][]`), `GridOps` (typed accessors), `CellIndex`. |
+| `domain/word/` | `Word`, `WordKey`, `WordLength` (≥2 brand, H4), `Direction` and its helpers, `DerivedWord` (the shape of a `Word` before `Numbering.assign` mints its `number`; output of `WordDerivation.derive`, input to `Numbering.assign`, and the `newWords` argument of §8.5 `reconcileWords`), `WordDerivation` (scan grid → `DerivedWord[]`), `Numbering` (`assign(grid, DerivedWord[]) → Word[]` per FR-6), `WordMap`. |
 | `domain/letter/` | `Letter` brand + parsing/validation (`Letter.try(ch)`), case-folding rules (FR-51). |
 | `domain/chain/` | `Chain` traversal, `ChainValidation` (cycles/branches/dangling/self-ref per FR-98), `DisplayClue` (FR-90), `LengthPattern` (FR-91, full suffix rule implemented and unit-tested). |
-| `domain/anagram/` | `AnagramEntry` model, `AnagramInput` validation (FR-85), `scramble` (FR-86). |
+| `domain/anagram/` | `AnagramEntry` model (discriminated by `fixed`, H4/B4), `Position` (≥0 brand, H4), `AnagramInput` validation (FR-85), `scramble` (FR-86). |
 | `domain/puzzle/` | `Puzzle` aggregate (grid + words + title + author + key), `PuzzleKey` (UUID brand), `Title`, `Author`, `CompletenessCheck` (FR-61/FR-62). |
 | `domain/builder/` | `DisplacedClue`, `DisplacedClueId`. (Builder-only concept per S1 — lives in `domain/` as a pure value-object pair; `BuilderState` carries the `DisplacedClue[]`, not `Puzzle`.) |
 | `domain/notifications/` | `Toast`, `ToastId`, `ToastKind`, `ModalRequest`, `ModalKind`, and `DomainEvent` — the discriminated union of side-effect requests that reducers return. Pure value objects whose consumers are UI, not UI themselves. |
 | `domain/format/` | `v1` JSON parse + validate, both incomplete and complete (FR-94 to FR-99), strict non-head-clue rejection (C5). Produces `Puzzle` + `DisplacedClue[]` (for the incomplete format) or a `ParseFailure[]`. |
-| `domain/persistence/` | Side-effect port *interfaces* only: `StoragePort`, `DownloadPort`, `FilePickPort`. No implementations. |
-| `domain/rng/` | `Rng` interface only — a deps-injection abstraction, not a port. Hoisted out of `domain/persistence/` to keep the "port" definition honest and break a type-only cycle (see §3.7 and `design_review_notes.md` item 1). |
+| `domain/ports/` | Side-effect port *interfaces* only: `StoragePort`, `DownloadPort`, `FilePickPort`. No implementations. |
+| `domain/rng/` | `Rng` interface only — a deps-injection abstraction, not a port. Hoisted out of `domain/ports/` to keep the "port" definition honest and break a type-only cycle (see §3.7 and `design_review_notes.md` item 1). |
+| `domain/time/` | `EpochMs` (≥0 Unix-epoch-ms brand) and `DurationMs` (>0 ms brand) — H4. Time-domain branded primitives consumed by `Toast` (`createdAt`/`ttlMs`) and the `deps.now` signature (§4.2); the only cross-cutting time concepts, hoisted out of `domain/notifications/` (where they'd be a misnomer — time is broader than toasts) so that `main.ts` wraps `Date.now()` via `EpochMs.of` at the production boundary and `FakeClock` returns `EpochMs`. |
 
 **Layer 1 — `builder/state/`, `player/state/`, and `app/state/` (pure reducers).**
-Owns the reducer functions and the `Intent` discriminated unions for each experience, plus the per-experience `State` value objects. Pure; no Svelte, no DOM, no ports. All three freely import `domain/`. **Module boundaries within Layer 1 (binding):** each of `builder/state/`, `player/state/`, and `app/state/` is a module that publishes its API at the folder root (`state.ts`, `intents.ts`, `reducer.ts`, and — for `app/state/` — `effects.ts`); implementation helpers live under that module's `internal/` subfolder. `app/state` is a client of the `builder/state` and `player/state` modules: it may import their root files (value or type, as needed) but never their `internal/` files. `builder/state` and `player/state` may not import `app/state` (no cycles). Tests may import from `internal/` freely — the `internal/` rule constrains only cross-module imports within `src/`. Components:
+Owns the reducer functions and the `Intent` discriminated unions for each experience, plus the per-experience `State` value objects. Pure; no Svelte, no DOM, no ports. All three freely import `domain/`. **Module boundaries within Layer 1 (binding):** each of `builder/state/`, `player/state/`, and `app/state/` is a module that publishes its API at the folder root (`state.ts`, `intents.ts`, `reducer.ts`, and — for `app/state/` — `effects.ts`); implementation helpers live under that module's `internal/` subfolder. `app/state` is a client of the `builder/state` and `player/state` modules: it may import their root files (value or type, as needed) but never their `internal/` files. **`builder/state` and `player/state` may not import each other at all (cross-module imports are fully forbidden; the ESLint `no-restricted-imports` rule for each forbids any import path resolving into the sibling `state/` tree, root files included). Shared concepts that both experiences need — e.g. `Cursor` — live in `domain/`; the prior "public root files only" relaxation is closed.** `builder/state` and `player/state` may not import `app/state` (no cycles). Tests may import from `internal/` freely — the `internal/` rule constrains only cross-module imports within `src/`. The boundary self-test `test/boundary/imports.test.ts` drives the ESLint `Linter` API over adversarial fixtures asserting forbidden imports fail to compile; the builder↔player and builder/player↔`internal/` edges each have positive and negative controls. Components:
 
 **`builder/state/` — public root files:**
 
 | Module | Owns |
 |---|---|
 | `builder/state/intents.ts` | `BuilderIntent` discriminated union |
-| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, `Cursor`, blank-state factory |
+| `builder/state/state.ts` | `BuilderState`, `BuilderMode`, `BuilderSubMode`, blank-state factory (`Cursor` is imported type-only from `domain/grid/Cursor.ts`; it is not owned here) |
 | `builder/state/reducer.ts` | `reduceBuilder(state, intent, deps): { state, events }` — single reducer dispatching to per-mode helpers; `deps = { rng, now }` is used in the design-mode case (passes `rng` to `reconcileWords` for fresh `DisplacedClueId`s) and the `confirm-reset-builder` case (calls `PuzzleKey.generate(rng)` for the fresh key) |
 
 **`builder/state/internal/` — implementation helpers (not importable from `app/state/`):**
@@ -162,14 +163,15 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `player/state/internal/lifecycle.ts` | `request-reset-player`, `confirm-reset-player`, `import-new-puzzle`, `import-puzzle`, `apply-loaded-progress` intents |
 | `player/state/internal/anagram.ts` | Anagram modal intents (FR-81..FR-89) including auto-close on selection change |
 
-**`app/state/` — public root files (`app/state/` has no `internal/` subfolder; all four files are the published API):**
+**`app/state/` — public root files (`app/state/` has no `internal/` subfolder; all five files are the published API):**
 
 | Module | Owns |
 |---|---|
-| `app/state/intents.ts` | `AppIntent` union: `navigate`, `cancel-modal`, `dismiss-toast` (no `confirm-modal` — confirm dispatches the specific `confirm-*` Builder/Player intent directly) |
+| `app/state/intents.ts` | `AppIntent` union: `navigate`, `cancel-modal`, `dismiss-toast`, `report-download-failure` (no `confirm-modal` — confirm dispatches the specific `confirm-*` Builder/Player intent directly) |
 | `app/state/state.ts` | `AppState`, `ModalRequest` reference, blank-state factory |
 | `app/state/reducer.ts` | `reduceApp(state, intent, deps): { state, events }` — the only reducer that sees all of `AppState`; invokes `reduceBuilder`/`reducePlayer` (forwarding `deps`), folds their returned `toast` and `modal-request` events via `applyEventsToApp` (using `deps.rng` and `deps.now` to construct the `Toast`/`createdAt`), and passes `download` / `clear-builder-storage` / `clear-player-storage` / `load-player-progress` events through to the bindings layer |
 | `app/state/effects.ts` | `applyEventsToApp(state, events, deps): { state, leftoverEvents }` — pure helper called from `reduceApp`; consumes `toast` and `modal-request` events (the only state-affecting events in `DomainEvent`), updating `AppState.toasts` / `AppState.modal` / `AppState.pendingConfirmIntent`; returns the leftover external events for the bindings layer |
+| `app/state/intentKinds.ts` | `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS` — `ReadonlySet<string>` constants used by `reduceApp` to route intents to `reduceBuilder`/`reducePlayer`. The first three are derived from their respective unions (`BuilderIntent`, `PlayerIntent`, `ConfirmableIntent`) via a `satisfies Record<Kind, null>` record literal so the compiler enforces that every union member is present exactly once (closing D1 / DRN item 7: no hand-maintained string literal that can drift from the union). `AMBIGUOUS_INTENT_KINDS` is the runtime intersection of the Builder and Player sets. |
 
 **Layer 2 — `ui/bindings/` (the seam; the only Svelte-aware logic module).**
 Owns the runes store, `dispatch(intent)`, view-model derivation, debounced persistence scheduling, and port/RNG injection. This is the *only* module that imports from all three other layers (`domain/`, reducers, ports) plus Svelte. Components:
@@ -195,7 +197,7 @@ Receives view-models as `$props()`; emits intents via `dispatch` imported from b
 | `ui/bindings/` | (covered above) |
 
 **Layer 4 — `ports/` (side-effect implementations).**
-Implements `domain/persistence` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests.
+Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests.
 
 | Module | Implements | Wraps |
 |---|---|---|
@@ -213,7 +215,7 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 - **logic → UI:** derived view-models — leaf-shaped, serializable, plain typed objects (no methods, no Svelte). Produced in `ui/bindings` from `AppState`. Reactive via Svelte 5 runes.
 - **reducers → effects:** every reducer returns `{ state, events }`, where `events: DomainEvent[]` (§3.5a) is a discriminated union describing side effects the reducer wants performed. The full variants are: `toast`, `modal-request`, `load-player-progress`, `download`, `clear-builder-storage`, `clear-player-storage`. Events are pure data. Reducers themselves cause zero side effects (`(state, intent, deps) -> { state, events }` is a pure function of its inputs, given the injected `deps`).
 - **`reduceApp` interprets state-affecting events:** the `app/state/reducer.ts` reducer is the only function that sees all of `AppState`. It receives `deps = { rng, now }` and forwards `deps` to the underlying `reduceBuilder`/`reducePlayer` invocations. When a Builder/Player reducer emits a `toast` event, `reduceApp` consumes it (constructs a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and appends to `AppState.toasts`). When a Builder/Player reducer emits a `modal-request { modal, confirmIntent }` event, `reduceApp` consumes it (sets `AppState.modal = event.modal` and `AppState.pendingConfirmIntent = event.confirmIntent`). Events that need to cause *external* side effects (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) are *not* consumed by `reduceApp` — they pass through and the bindings layer performs them (see the next bullet). This split keeps reducers free of port knowledge while still confining all `AppState` mutation to reducer code.
-- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer sets the rune to the new state (which causes reactive VM updates) and iterates the events. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
+- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer first folds `result.events` through `applyEventsToApp` (consuming `toast`/`modal-request` into `state.toasts`/`state.modal`; passing `download`/`clear-builder-storage`/`clear-player-storage`/`load-player-progress` through as `leftoverEvents`), sets the rune to the folded state (which causes reactive VM updates), then iterates the `leftoverEvents`. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; if it returns an `Error`, the bindings layer dispatches `report-download-failure` (G7 — `reduceApp` turns it into an error toast so a failed irreversible user action no longer disappears silently; mirrors the `load-player-progress → apply-loaded-progress` follow-up pattern); `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). The fold step is what lets an AppIntent like `report-download-failure` return a `toast` event and have it reach `state.toasts` — without the fold, `performExternalEvent`'s `case 'toast': return null` would drop it. (For Builder/Player intents the fold is a no-op pass-through: `reduceApp` already folded their events internally and returns only the leftover external events, so re-folding leftover events returns them unchanged.) Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
 - **toasts stored in `AppState.toasts: Toast[]`:** added by `reduceApp` based on reducer-emitted `toast` events; removed by `dismiss-toast` intents (raised from the bindings-layer timeout in `ToastHost.svelte` or by user click). No imperative `showToast()` call from anywhere.
 - **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: ConfirmableIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. The bindings layer's `Modal.svelte` Confirm button dispatches `pendingConfirmIntent` directly (a `confirm-*` intent variant — see §4); the Cancel button dispatches the AppIntent `cancel-modal`, which clears both fields. While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
 
@@ -228,7 +230,9 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 | Domain ↔ format/parse | `Puzzle` domain objects (out), JSON-shaped plain objects (in) | Adapter functions in `domain/format/` |
 | App ↔ outside world | Puzzle JSON files (file system); state blobs (`localStorage`) | `FilePickPort`, `DownloadPort`, `StoragePort` only |
 
-The ESLint `no-restricted-imports` rule mentioned in §1.2 enforces that `domain/`, `builder/state/`, `player/state/`, and `app/state/` cannot import `svelte`, `svelte/*`, anything under `ui/`, anything under `ports/`, or any DOM-global-using module. A unit test verifies the boundary by attempting adversarial imports in a fixture file and asserting they fail to compile.
+The ESLint `no-restricted-imports` rule mentioned in §1.2 enforces that `domain/`, `builder/state/`, `player/state/`, and `app/state/` cannot import `svelte`, `svelte/*`, anything under `ui/`, anything under `ports/`, or any DOM-global-using module. A unit test (`test/boundary/imports.test.ts`) verifies the boundary by running the ESLint `Linter` API over adversarial fixture strings with `filename` set so the per-glob `no-restricted-imports` rules apply, and asserts each forbidden import triggers a `no-restricted-imports` error (with negative controls: allowed imports produce no error). This self-verifies that the rule is wired and catches static and dynamic `import()` violations.
+
+**Brand-import boundary (H1).** The `brand<Tag, T>()` escaper (`domain/brand.ts`) is an unsound cast (`value as Brand<Tag, T>`); it trusts the caller and bypasses range-checked constructors. To keep the §0 Principle 4 / §1 B1 invariant ("illegal values unconstructable at the boundary"), `domain/brand` is treated as an internal dependency of the 15 branded-type owner modules only (`Row`, `Col`, `GridSize`, `CellIndex`, `Letter`, `PuzzleKey`, `Title`, `Author`, `DisplacedClueId`, `WordNumber`, `ToastId`, `WordLength`, `Position`, `EpochMs`, `DurationMs` — the last four added by H4). An ESLint `no-restricted-imports` pattern bans importing `domain/brand` from every `src/**` file except those 15 owners; `test/**` is out of scope (tests legitimately need the escaper for edge-case fixtures). The boundary self-test (`test/boundary/imports.test.ts`) includes positive and negative controls for the brand ban, extending the A1 self-verification pattern.
 
 ---
 
@@ -279,13 +283,51 @@ export const PuzzleKey: {
 // domain/word/WordNumber.ts
 export type WordNumber = number & { __brand: 'WordNumber' }; // ≥ 1
 
+// domain/uuid/uuidv4.ts
+export function uuidv4(rng: Rng): string;   // pure: 16 bytes via rng.nextInt(256), sets RFC 4122 version (0x40) + variant (0x80), formats 8-4-4-4-12 dashed lowercase; shared by PuzzleKey.generate + DisplacedClueId.generate
+
 // domain/builder/DisplacedClueId.ts
-export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };
-export const DisplacedClueId: { generate(rng: Rng): DisplacedClueId };   // takes injected Rng; called from reconcileWords with deps.rng
+export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };   // UUID v4 string (§6.1, §6.3 step 11)
+export const DisplacedClueId: {
+  generate(rng: Rng): DisplacedClueId;   // delegates to uuidv4(rng); called from reconcileWords/designMode with deps.rng
+  try(s: string): DisplacedClueId | null;   // validates UUID v4 lowercase regex; used by parsePuzzleV1 validateDisplacedClues (§6.3 step 11)
+  equals(a: DisplacedClueId, b: DisplacedClueId): boolean;   // brand-safe value equality; used by builder reattach/delete-displaced-clue reducers
+};
 
 // domain/notifications/ToastId.ts
 export type ToastId = string & { __brand: 'ToastId' };
 export const ToastId: { generate(rng: Rng): ToastId };       // takes injected Rng; called by reduceApp when constructing a Toast
+
+// domain/word/WordLength.ts  (H4 — brands Word.length / DerivedWord.length; ≥2 per FR-5)
+export type WordLength = number & { __brand: 'WordLength' };   // integer ≥ 2
+export const WordLength: {
+  try(n: number): WordLength | null;
+  of(n: number): WordLength;                                   // throws RangeError on <2 or non-integer
+  equals(a: WordLength, b: WordLength): boolean;               // brand-safe value equality
+};
+
+// domain/anagram/Position.ts  (H4 — brands AnagramEntry.position; 0-based sequence index, ≥0)
+export type Position = number & { __brand: 'Position' };        // integer ≥ 0; upper bound is contextual (word length-1 single, or total chain length-1)
+export const Position: {
+  try(n: number): Position | null;
+  of(n: number): Position;                                     // throws RangeError on <0 or non-integer
+  equals(a: Position, b: Position): boolean;
+};
+
+// domain/time/EpochMs.ts  (H4 — brands Toast.createdAt + deps.now return; Unix epoch milliseconds, ≥0)
+export type EpochMs = number & { __brand: 'EpochMs' };         // integer ≥ 0
+export const EpochMs: {
+  try(n: number): EpochMs | null;
+  of(n: number): EpochMs;                                      // throws RangeError on <0 or non-integer
+};
+
+// domain/time/DurationMs.ts  (H4 — brands Toast.ttlMs; positive duration in milliseconds, >0)
+export type DurationMs = number & { __brand: 'DurationMs' };   // integer > 0
+export const DurationMs: {
+  try(n: number): DurationMs | null;
+  of(n: number): DurationMs;                                   // throws RangeError on ≤0 or non-integer
+  DEFAULT: DurationMs;                                         // 3500 (C2 default ttl)
+};
 ```
 
 ### 3.2 Grid (`domain/grid/`)
@@ -330,12 +372,25 @@ export const Cell: {
 // the domain→UI dependency direction one-way. See `design_review_notes.md` item 3.
 export type CellSeparator = 'none' | 'space' | 'hyphen';     // rendered right/below the cell per marker flags
 
+// Cursor — the selected grid cell + travel direction. Shared by Builder, Player, and the
+// grid view-model (§5.2). Lives in `domain/grid/`: its `Row`/`Col`/`Direction`
+// dependencies already live here/next door, and placing it here lets Layer-1 modules
+// (`builder/state`, `player/state`) and the bindings VMs import it without reaching type-only
+// into a sibling state module (which §9.2's `internal/` rules exist to prevent). `| null`
+// means "no selection" (FR-7; C6: not persisted across reload).
+export type Cursor = {
+  row: Row;
+  col: Col;
+  direction: Direction;
+} | null;
+
 // Grid is a 2D array (B3) but indexed only through GridOps
 export type Grid = Cell[][];                                // outer = Row, inner = Col
 export const GridOps: {
   blank(size: GridSize): Grid;                              // FR-19 all-white empty grid
   cellAt(g: Grid, row: Row, col: Col): Cell;
   setCell(g: Grid, row: Row, col: Col, c: Cell): Grid;      // returns new grid (immutability)
+  updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid; // batch immutability; empty updates returns g; all-or-nothing bounds check (D6)
   withinBounds(g: Grid, row: Row, col: Col): boolean;
   neighbours(g: Grid, row: Row, col: Col): { row: Row; col: Col }[]; // orthogonal in-bounds
   neighboursInDirection(g: Grid, row: Row, col: Col, d: Direction): { row: Row; col: Col } | null;
@@ -353,6 +408,7 @@ export const GridOps: {
 **Invariants — `Grid`:**
 - `grid.length === gridSize` and every row `row.length === gridSize`.
 - All `row`/`col` args are within `GridSize` bounds; `GridOps.cellAt` throws on out-of-bounds (defensive; UI never produces OOB coords).
+- `GridOps.updateCells` validates all updates up front and throws `RangeError` on the first out-of-bounds entry before mutating (all-or-nothing); empty `updates` returns `g` ref-equal.
 
 ### 3.3 Words (`domain/word/`)
 
@@ -370,7 +426,7 @@ export const WordKey: {
 export type Word = {
   key: WordKey;
   number: WordNumber;                                       // FR-6, re-derived on load (FR-98a)
-  length: number;                                            // ≥ 2 (FR-5)
+  length: WordLength;                                       // ≥ 2 (FR-5) — branded range-checked (H4)
   clue: string;                                             // empty allowed; non-head chain words carry empty (FR-31, C5)
   nextWord: WordKey | null;                                 // FR-33
 };
@@ -386,6 +442,17 @@ export const WordMap: {
   remove(m: WordMap, k: WordKey): WordMap;
 };
 
+// Pure linear-scan helper over `Word[]` + a `Cursor`. Lives in `domain/word/`
+// (single source of truth; previously duplicated across player reducers + builder/player
+// viewmodels). `Cursor` is imported from `domain/grid/Cursor.ts` — no Layer-1
+// reach. The parameter accepts the nullable `Cursor` (`| null`) and early-returns `null`
+// when the cursor is null; call-sites already null-check before invoking, so the early
+// return is defensive. Returns `Word | null` to match the project's nullable idiom
+// (not `undefined`).
+export const WordSelection: {
+  findContainingWord(words: Word[], cursor: Cursor): Word | null;
+};
+
 // `DerivedWord` is the shape of a `Word` before `Numbering.assign` mints its `number`:
 // the output of `WordDerivation.derive` and the input of `Numbering.assign`. It carries
 // `clue` and `nextWord` so that §8.5 `reconcileWords` (which runs BEFORE `Numbering.assign`)
@@ -394,7 +461,7 @@ export const WordMap: {
 // and `assign`; the type that lives on `Puzzle.words` is always the numbered `Word`.
 export type DerivedWord = {
   key: WordKey;
-  length: number;
+  length: WordLength;                                       // ≥ 2 (FR-5) — branded range-checked (H4)
   clue: string;
   nextWord: WordKey | null;
 };
@@ -410,7 +477,7 @@ export const Numbering: {
 ```
 
 **Invariants — `Word`:**
-- `length >= 2`.
+- `length >= 2` — enforced at the type level by the `WordLength` branded range-checked constructor (H4); illegal values are unconstructable.
 - `startRow`/`startCol` point to a white cell; the `length` cells in `direction` from there are all white and form a maximal run (no white cell continues the run beyond either end).
 - `nextWord`, if present, points to a `WordKey` that exists in the same `WordMap` (validated at parse time, reconciled at every grid change in Design mode — FR-47).
 - No self-reference. No cycles. No branching (no `WordKey` pointed to by more than one `nextWord`). Enforced by `ChainValidation`.
@@ -448,6 +515,15 @@ export const LengthPattern: {
 
   // C4 helper used only by the active-clue banner VM:
   forActiveClueBanner(grid: Grid, words: WordMap, w: Word): LengthPattern | null;
+};
+
+// Pure cell-coord helpers shared by builderVM + playerVM (B2 dedup). Lives in domain/chain/
+// because cellsOfChain composes Chain.headOf + Chain.fromHead over a WordMap; domain/word/
+// cannot import domain/chain/ (acyclic — Chain.ts already imports domain/word/*).
+export const ChainCells: {
+  cellsOfWord(w: Word): Set<string>;                        // "${row},${col}" per cell along w's run
+  cellsOfChain(words: Word[], cursorWord: Word | null): Set<string>; // union of all chain members'
+                                                             // cells; empty set when cursorWord === null
 };
 ```
 
@@ -490,16 +566,17 @@ export type Toast = {
   id: ToastId;
   kind: ToastKind;
   message: string;
-  createdAt: number;                                          // epoch ms
-  ttlMs: number;                                              // C2 default 3500
+  createdAt: EpochMs;                                        // epoch ms — branded (H4)
+  ttlMs: DurationMs;                                         // C2 default 3500 — branded (H4)
 };
 export const Toast: {
-  create(rng: Rng, kind: ToastKind, message: string, now: () => number, ttlMs?: number): Toast;
+  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs, ttlMs?: DurationMs): Toast;
 };
-// `rng` generates `id`; `now` provides `createdAt`. Called by reduceApp (not by Builder/Player reducers)
-// when folding a `toast` event into AppState.toasts. Builder/Player reducers themselves only emit
-// `{ kind: 'toast'; toastKind; message }` events — they have `deps` available but don't use it for
-// toasts, because toasts live at AppState level and the reducer can't store the constructed Toast.
+// `rng` generates `id`; `now` provides `createdAt` (EpochMs). `ttlMs` defaults to `DurationMs.DEFAULT` (3500).
+// Called by reduceApp (not by Builder/Player reducers) when folding a `toast` event into AppState.toasts.
+// Builder/Player reducers themselves only emit `{ kind: 'toast'; toastKind; message }` events — they have
+// `deps` available but don't use it for toasts, because toasts live at AppState level and the reducer
+// can't store the constructed Toast.
 
 // domain/notifications/ModalRequest.ts
 export type ModalKind =
@@ -575,7 +652,7 @@ export const Puzzle: {
   blank(size: GridSize, key: PuzzleKey): Puzzle;             // FR-19
   isBlank(p: Puzzle): boolean;                               // FR-22 / FR-53 work-detector at the puzzle layer:
                                                               //   no answer letters, no non-empty clues, no chains (no word has nextWord)
-  withGrid(p: Puzzle, g: Grid): Puzzle;                      // returns new Puzzle
+  withGrid(p: Puzzle, g: Grid): Puzzle;                      // returns new Puzzle; re-syncs gridSize from g.length (invariant §3.6)
   withWords(p: Puzzle, ws: Word[]): Puzzle;
   withMetadata(p: Puzzle, title: Title, author: Author): Puzzle;
 };
@@ -583,8 +660,9 @@ export const Puzzle: {
 // Completeness — FR-61, FR-62
 export type CompletenessViolation =
   | { kind: 'missing-answer-letter'; row: Row; col: Col }
-  | { kind: 'invalid-answer-letter'; row: Row; col: Col; value: string }
   | { kind: 'missing-clue'; wordNumber: WordNumber; direction: Direction };
+// Note: `invalid-answer-letter` removed per §0 Principle 3 — `Cell.answerLetter: Letter | null`
+// where `Letter` is a range-checked branded type, so an invalid letter is unrepresentable.
 
 export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[];
@@ -597,7 +675,7 @@ export const CompletenessCheck: {
 - Every `Word` in `words` corresponds to a maximal white run actually present in `grid` (re-derived on every change, validated on load per FR-98a).
 - Displaced clues never block completeness (FR-63); `CompletenessCheck.check` does not consult `BuilderState.displacedClues`.
 
-### 3.7 Persistence & format (`domain/persistence/`, `domain/format/`, `domain/rng/`)
+### 3.7 Persistence & format (`domain/ports/`, `domain/format/`, `domain/rng/`)
 
 ```ts
 // Port interfaces only — implementations live in ports/
@@ -610,7 +688,7 @@ export interface StoragePort {
   clearPlayerProgress(key: PuzzleKey): void;
 }
 export interface DownloadPort {
-  download(filename: string, content: string): void;
+  download(filename: string, content: string): Error | null;  // null = success; Error = failure (G7 — bindings layer surfaces as toast)
 }
 export interface FilePickPort {
   pickFile(): Promise<string | null>;                 // returns file text or null if cancelled
@@ -619,9 +697,9 @@ export interface FilePickPort {
 // domain/rng/Rng.ts — NOT a port. Rng is a deps-injection abstraction (a determinism
 // knob), not a side-effect hole against the outside world. Unlike the three interfaces
 // above, reducers ARE allowed to call Rng directly (e.g., PuzzleKey.generate(rng),
-// Anagram.scramble(rng, …), Toast.create(rng, …)). Hoisting Rng out of `domain/persistence/`
+// Anagram.scramble(rng, …), Toast.create(rng, …)). Hoisting Rng out of `domain/ports/`
 // keeps the "port" definition honest and breaks the type-only cycle that would otherwise
-// form between `domain/persistence/ports.ts` (importing PuzzleKey) and `domain/puzzle/PuzzleKey.ts`
+// form between `domain/ports/ports.ts` (importing PuzzleKey) and `domain/puzzle/PuzzleKey.ts`
 // (importing Rng). See `llmworkspace/design_review_notes.md` item 1.
 export interface Rng {
   nextInt(n: number): number;                          // 0 ≤ result < n
@@ -658,20 +736,20 @@ export const Filename: {
 - Top-level `version === 1` and `type ∈ {'incomplete', 'complete'}` (FR-94).
 - `gridSize` integer, 2 ≤ n ≤ 25.
 - `grid` is a 2D array of `gridSize` × `gridSize`; each cell is `{ black, puzzleLetter, spaceRight, spaceBottom, hyphenRight, hyphenBottom }`. Missing marker booleans default to `false` (FR-99). `puzzleLetter` is `null` or single A–Z.
-- `puzzleLetter` is the only accepted answer-letter field name (FR-95). A field named `letter` is *not* a fallback; the parser rejects files that use `letter` as an unknown extra field (strict). See migration note below for the existing `puzzles/*.json` files.
+- `puzzleLetter` is the only accepted answer-letter field name (FR-95). A field named `letter` is *not* a fallback; the parser rejects files that use `letter` as an unknown extra field (strict).
 - Word positions within bounds; `length ≥ 2`; `nextWord` (if present) points to an existing word; no cycles, branches, dangling refs, self-refs (FR-98 + `ChainValidation`).
 - **Complete format:** every white cell has a non-null A–Z `puzzleLetter` (FR-61). Every chain-head word has a non-empty non-whitespace clue (FR-62). **Strict C5 rule:** a non-head chain word with a non-empty `clue` field is a validation failure (not silently normalized).
 - **Incomplete format:** `puzzleLetter` may be `null`; clues may be empty; `displacedClues` field is a `DisplacedClue[]` (FR-97). Extra fields not in the schema cause validation failure (strict).
-- On success, `word.number` is overwritten by the re-derived value (FR-98a), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
+- On success, `word.number` is minted by `Numbering.assign` from the grid (FR-98a — the v1 format carries no `number` field; a word object carrying `number` is a validation failure), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
 - `playerLetter` is never present in JSON; `null` is implied at runtime (FR-99).
 
-**Migration note — existing `puzzles/*.json` files:** they use `letter` and lack `version`/`type`, so they fail the strict parser. They are *not* fixtures; the app never reads them. A one-shot migration script (`scripts/migrate-puzzles.ts`, run manually) rewrites each into `converted-puzzles/puzzleN-incomplete.json` (renaming `letter → puzzleLetter`, adding `version: 1`, `type: 'incomplete'`, generating fresh `key`s, adding `displacedClues: []`). The `converted-puzzles/` directory is committed for the record but is referenced by neither the app nor the test suite (per B6).
+**Sample puzzle files — `puzzles/*.json`:** canonical v1 format (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). They are *not* fixtures; the app and the test suite never read them. The directory exists purely as a record of the format. No migration script is shipped — the files are already canonical.
 
 ---
 
 ## 4. State Model & Reducers
 
-All reducer modules — `domain/`, `builder/state/`, `player/state/`, and `app/state/` — are pure. Each reducer has the signature `(state, intent, deps) -> { state, events }` where `events: DomainEvent[]` (§3.5a) and `deps = { rng: Rng; now: () => number }` is injected by the bindings layer at dispatch time. Reducers never call ports, never call Svelte, never touch the DOM; if a reducer case needs randomness or clock values, it uses `deps`. (Most reducer cases ignore `deps`.) State objects are immutable; transitions return new state values (A2 immutability discipline).
+All reducer modules — `domain/`, `builder/state/`, `player/state/`, and `app/state/` — are pure. Each reducer has the signature `(state, intent, deps) -> { state, events }` where `events: DomainEvent[]` (§3.5a) and `deps = { rng: Rng; now: () => EpochMs }` is injected by the bindings layer at dispatch time. Reducers never call ports, never call Svelte, never touch the DOM; if a reducer case needs randomness or clock values, it uses `deps`. (Most reducer cases ignore `deps`.) State objects are immutable; transitions return new state values (A2 immutability discipline).
 
 ### 4.1 App-level state (`app/state/`)
 
@@ -693,12 +771,15 @@ export type AppIntent =
   | { kind: 'navigate'; route: 'landing' | 'build' | 'play' }
   | { kind: 'cancel-modal' }                                  // user clicked Cancel / pressed Escape on the modal
   | { kind: 'dismiss-toast'; id: ToastId };                   // user clicked toast or toast timeout fired
+  | { kind: 'report-download-failure' };                      // bindings layer raised after DownloadPort.download returned an Error (G7)
 
 // The unified dispatcher: takes any of the three intent unions, plus deps (rng + clock).
-export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | PlayerIntent, deps: { rng: Rng; now: () => number }): ReducerResult<AppState>;
+export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | PlayerIntent, deps: { rng: Rng; now: () => EpochMs }): ReducerResult<AppState>;
 ```
 
 **`reduceApp` responsibilities:**
+
+The dispatcher narrows `intent` first by `kind` string against three `ReadonlySet<string>` constants in `app/state/intentKinds.ts`: `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS` (the variant after a `confirm-*` has executed — clears `modal`/`pendingConfirmIntent`), and `AMBIGUOUS_INTENT_KINDS` (the runtime intersection of Builder and Player kinds). The first three sets are derived from their unions via a `satisfies Record<Kind, null>` record so the compiler enforces coverage (closing D1 / DRN item 7); `AMBIGUOUS_INTENT_KINDS` is computed as the set intersection. For ambiguous kinds, the dispatcher routes by `state.route`: `'build' → reduceBuilder`, `'play' → reducePlayer`, and `'landing' → throws` (closing D2 / DRN item 9: no Builder/Player UI is mounted on the landing route, so an ambiguous kind dispatched during landing is a bug — the reducer surfaces it rather than silently mutating `state.builder`).
 
 1. If `intent` is a `BuilderIntent`: invoke `reduceBuilder(state.builder, intent, deps)` — the Builder reducer does its own rng-dependent work directly (e.g., `confirm-reset-builder` generates the new `PuzzleKey` via `PuzzleKey.generate(deps.rng)`; the design-mode case passes `deps.rng` to `reconcileWords` for fresh `DisplacedClueId`s). It returns `{ state: nextBuilder, events }`. Fold `nextBuilder` into `state.builder`. Then for each event:
    - `toast { toastKind, message }` → construct a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and append to `state.toasts`.
@@ -709,6 +790,7 @@ export function reduceApp(state: AppState, intent: AppIntent | BuilderIntent | P
 3. If `intent` is `cancel-modal`: return `{ state: { ...state, modal: null, pendingConfirmIntent: null }, events: [] }`.
 4. If `intent` is `dismiss-toast { id }`: return `{ state: { ...state, toasts: state.toasts.filter(t => t.id !== id) }, events: [] }`.
 5. If `intent` is `navigate { route }`: return `{ state: { ...state, route }, events: [] }`.
+6. If `intent` is `report-download-failure` (G7): return `{ state, events: [{ kind: 'toast', toastKind: 'error', message: 'Download failed. Please try again.' }] }`. State unchanged; the toast event is folded back into `state.toasts` by `applyEventsToApp` on the next work-queue iteration.
 
 When a `confirm-*` Builder/Player intent is dispatched (originating from the Modal's confirm button), it flows through step 1/2 normally and executes the action — those intent variants are unconditional (no guard) by construction.
 
@@ -722,13 +804,13 @@ The three reducers' signatures:
 export function reduceApp(
   state: AppState,
   intent: AppIntent | BuilderIntent | PlayerIntent,
-  deps: { rng: Rng; now: () => number }
+  deps: { rng: Rng; now: () => EpochMs }
 ): ReducerResult<AppState>;
 
 export function reduceBuilder(
   state: BuilderState,
   intent: BuilderIntent,
-  deps: { rng: Rng; now: () => number }
+  deps: { rng: Rng; now: () => EpochMs }
 ): ReducerResult<BuilderState>;
 // `rng` used by: `confirm-reset-builder` (PuzzleKey.generate), design-mode toggle
 // (passes rng to reconcileWords for DisplacedClueId.generate). `now` unused today.
@@ -736,22 +818,22 @@ export function reduceBuilder(
 export function reducePlayer(
   state: PlayerState,
   intent: PlayerIntent,
-  deps: { rng: Rng; now: () => number }
+  deps: { rng: Rng; now: () => EpochMs }
 ): ReducerResult<PlayerState>;
 // `rng` used by: `anagram-scramble` (Anagram.scramble). `now` unused today.
 ```
 
-Most reducer cases ignore `deps`. Production wires `deps = { rng: MathRandomRng, now: Date.now }` at boot. Tests inject `SeededRng` and `FakeClock`. This is consistent with the Anagram scramble's already-injected RNG (D1) and the F2 "inject as a config value" principle. The three signatures are uniform, so the bindings-layer `dispatch` is also uniform.
+Most reducer cases ignore `deps`. Production wires `deps = { rng: MathRandomRng, now: () => EpochMs.of(Date.now()) }` at boot. Tests inject `SeededRng` and `FakeClock` (returns `EpochMs`). This is consistent with the Anagram scramble's already-injected RNG (D1) and the F2 "inject as a config value" principle. The three signatures are uniform, so the bindings-layer `dispatch` is also uniform.
 
 ### 4.3 Builder state and intents
 
 ```ts
 // builder/state/state.ts
-export type Cursor = {
-  row: Row;
-  col: Col;
-  direction: Direction;
-} | null;                                                     // FR-7: null = no selection; C6: not persisted across reload
+import type { Cursor } from '../../domain/grid/Cursor';     // Cursor owned by `domain/grid/` (§3.2)
+                                                              //   — was defined inline here, imported type-only by
+                                                              //   Player state + grid/VMs (sibling Layer-1 reach).
+// (Cursor type definition lives in §3.2; shape: { row: Row; col: Col; direction: Direction } | null,
+//  FR-7: null = no selection; C6: not persisted across reload.)
 
 export type BuilderMode = 'design' | 'fill';                  // FR-16
 export type BuilderSubMode =
@@ -868,7 +950,7 @@ export type CheckResult = {
 export type AnagramModalState = {
   openedForWord: WordKey;                                     // modal closes if selection moves off this word (FR-88)
   input: string;                                              // uppercased A–Z; clamped to word length
-  scrambledArrangement: Letter[] | null;                      // null until first Scramble (FR-86)
+  scrambledArrangement: (Letter | null)[] | null;             // entries-aligned (length === chain entries); fixed slots hold grid letter, non-fixed hold pool letter or null; null until first Scramble (FR-86)
 };
 
 export const PlayerState: {
@@ -909,7 +991,7 @@ export type PlayerIntent =
 
 **`open-anagram-helper`:** requires `cursor != null` and the cursor's cell to belong to a word. Computes the word from the cursor/direction and stores `openedForWord`. If the cursor changes such that the new selected word's `WordKey` differs from `openedForWord`, every cell/click/arrow reducer closes the anagram modal (`anagram = null`) — implementing FR-88.
 
-**`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState.
+**`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState. Stores `scrambled.map(e => e.letter)` (entries-aligned, nulls preserved — not filtered).
 
 **`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`.
 - On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same.
@@ -920,12 +1002,14 @@ export type PlayerIntent =
 
 Persistence is the bindings layer's responsibility — driven by two mechanisms:
 
-1. **State observation (autosave).** The bindings layer runs a `$effect` over `state.builder` (the full BuilderState) and `state.player` (when `phase === 'solving'`). On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
+1. **State observation (autosave).** The bindings layer runs two `$effect`s — one over `state.builder` (the full BuilderState) and one over `state.player` (when `phase === 'solving'`) — split per-slice so a change to one slice does not re-arm the other's debounce timer. On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
    ```ts
    // Player progress blob: { version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }
-   // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
-   //     puzzle: <incomplete puzzle JSON>, displacedClues: [...], mode: 'design'|'fill', subMode: 'none' }
-   //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
+    // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
+    //     puzzle: <incomplete puzzle JSON>, mode: 'design'|'fill', subMode: 'none' }
+    //   (subMode forced to 'none' on save per FR-64; cursor omitted per C6)
+    //   (displacedClues lives only inside the embedded puzzle JSON via serializeIncomplete;
+    //    no top-level displacedClues field — the dead duplicate was removed)
    ```
    The bindings layer constructs the Builder snapshot wrapper; the `serializeIncomplete(state.builder.puzzle, state.builder.displacedClues)` adapter produces just the embedded puzzle-JSON portion.
 
@@ -970,7 +1054,7 @@ export type GridCellVM = {
 export type GridVM = {
   size: GridSize;
   cells: GridCellVM[][];                                     // row-major
-  cursor: { row: Row; col: Col; direction: Direction } | null;
+  cursor: Cursor;                                            // `Cursor` imported type-only from `domain/grid/Cursor.ts` (§3.2)
 };
 ```
 
@@ -1068,7 +1152,7 @@ export type PlayerToolbarVM = {
 export type AnagramTileVM = {
   position: number;                                          // 0-based within word
   fixed: boolean;                                            // grid letter present -> fixed (FR-82)
-  letter: string | null;                                      // fixed: grid letter; else: from scrambledArrangement or input pool
+  letter: string | null;                                      // fixed: grid letter; else: scrambledArrangement[i] (entries-aligned) or null
 };
 export type AnagramModalVM = {
   open: boolean;
@@ -1138,7 +1222,7 @@ Authoritative for both serialization and parsing. All field names are exact. Str
                "hyphenRight": false, "hyphenBottom": false }, ... ], ...],
   "words": [
     { "startRow": 0, "startCol": 1, "direction": "across",
-      "length": 4, "number": 1, "clue": "...", "nextWord": { "startRow": 3, "startCol": 0, "direction": "down" } | null }
+      "length": 4, "clue": "...", "nextWord": { "startRow": 3, "startCol": 0, "direction": "down" } | null }
   ],
   "displacedClues": [
     { "id": "<UUID v4>", "clue": "...", "direction": "across" }
@@ -1163,10 +1247,10 @@ Same as §6.1 with these differences:
 5. `grid` is a `gridSize × gridSize` 2D array of cell objects.
 6. Each cell's fields: `black: boolean`, `puzzleLetter: null | single A–Z`, four marker booleans (missing → `false`). Any other field present (including a stray `letter`) fails strict validation. For complete: `puzzleLetter` is never `null` on a white cell.
 7. `title`, `author` are strings (possibly empty).
-8. `words` array: each word has `startRow`, `startCol` (in bounds), `direction`, `length ≥ 2`, `number ≥ 1`, `clue: string`, `nextWord: { startRow, startCol, direction } | null`. For complete: chain heads have non-empty non-whitespace `clue`; non-heads have empty `clue` (C5 — non-empty → fail).
-9. Re-derive words from `grid` and verify each listed word matches a derived word exactly (`startRow`/`startCol`/`direction`/`length`). Derive `number` per FR-6 and overwrite the file's cached `number` (FR-98a); a mismatch in `length` between the file and the re-derived grid is a failure.
+8. `words` array: each word has `startRow`, `startCol` (in bounds), `direction`, `length ≥ 2`, `clue: string`, `nextWord: { startRow, startCol, direction } | null`. For complete: chain heads have non-empty non-whitespace `clue`; non-heads have empty `clue` (C5 — non-empty → fail). A `number` field present on a word object is a validation failure (DRN item 5 — `number` is always re-derived per FR-6, never carried).
+9. Re-derive words from `grid` and verify each listed word matches a derived word exactly (`startRow`/`startCol`/`direction`/`length`). Mint `number` per FR-6 via `Numbering.assign` (FR-98a — the file carries no `number`); a mismatch in `length` between the file and the re-derived grid is a failure.
 10. `nextWord` references resolve to existing words; `ChainValidation.validate` reports no cycles/branches/dangling/self-references.
-11. `displacedClues` (incomplete only): array of `{ id, clue, direction }`; each `id` is a unique string; `direction ∈ {'across', 'down'}`.
+11. `displacedClues` (incomplete only): array of `{ id, clue, direction }`; each `id` is a valid lowercase UUID v4 string (`DisplacedClueId.try`) and unique within the array; `direction ∈ {'across', 'down'}`.
 
 On any failure, return a single human-readable error list (FR-99) and change no app state (NFR-10).
 
@@ -1194,12 +1278,14 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | Component | Props (VM) | Emits intents | Notes |
 |---|---|---|---|
 | `BuilderShell.svelte` | `BuilderShellVM` | (composes children) | Lays out toolbar + grid + clue panel + displaced panel; renders `JoinReattachBanner` when sub-mode active. Layout per CON-4: grid+controls left, clues right. |
-| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). The matching `confirm-*` intents are dispatched by `Modal.svelte`, not by this toolbar. |
+| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). The matching `confirm-*` intents are dispatched by `Modal.svelte`, not by this toolbar. Marker flag → `CellMarker` field key via `Record<CellMarkerFlag, keyof CellMarker>` map (compile-safe exhaustiveness — adding a flag variant breaks the build). |
 | `GridSizeControl.svelte` | min/max/value/disabled | `change-grid-size` | `<input type="number" min=2 max=25 step=1>`; clamps on blur. Disabled+explanatory text when grid not blank. |
 | `BuilderGrid.svelte` | `GridVM` + cell-selected flag | `select-cell`, `toggle-design-cell` (in design mode), `click-grid-word` | Renders the grid; in Design mode clicks toggle; in Fill mode clicks select. Markers render as bars/hyphens per separators. Number rendered corner. Uses `TypingSurface` for input. |
-| `BuilderCluePanel.svelte` | `CluePanelVM` | `click-clue-panel-word`, `begin-join`, `unjoin`, `edit-clue` | Two sections Across/Down sorted by number (FR-32). Chain heads have an editable text input (FR-31); non-heads show "See N Direction" reference, no input. Per-clue "Link next" / "Unlink" controls (FR-38) when relevant. Scrolls the highlighted clue into view (FR-32). |
+| `BuilderCluePanel.svelte` | `CluePanelVM` | `click-clue-panel-word`, `begin-join`, `unjoin`, `edit-clue` | Single owner of the `<aside>` scroll container, all `<li>` refs (`bind:this` keyed by `canonicalId`), the scroll-into-view `$effect` (driven by `vm.highlightedWordKey` — no DOM id, no `getElementById`, no cross-component DOM; G8 closed), `isInJoinMode` derived, the per-row `drafts` store (`SvelteMap<string, string>` from `svelte/reactivity` — reactive Map; G3 closed; keyed by `canonicalId` = `${row}_${col}_${direction}` so Across/Down never collide), and all per-row dispatch helpers. The per-row `<li>` body is deduplicated via a Svelte 5 `{#snippet clueRow(entry)}` rendered in both the Across `<ul>` and the Down `<ul>` (replaces the B3 `ClueSection.svelte` component extraction — see snippet guidance below). Sections Across/Down sorted by number (FR-32). Chain heads have an editable text input (FR-31); non-heads show "See N Direction" reference, no input. Per-clue "Link next" / "Unlink" controls (FR-38) when relevant. Scrolls the highlighted clue into view (FR-32) via manual delta on `panelEl` (preserved exactly — not native `scrollIntoView`, which would scroll all ancestors). |
 | `DisplacedCluesPanel.svelte` | `DisplacedCluesPanelVM` | `begin-reattach`, `delete-displaced-clue` | Always rendered (C1). Empty state shows "No displaced clues". Per-entry "Reattach" / "Delete" controls (FR-40). |
 | `JoinReattachBanner.svelte` | `BuilderSubModeBannerVM` | `escape` | Instructional banner (FR-34, FR-41); visible in join & reattach sub-modes; Escape cancels. |
+
+**Markup dedup guidance (from G8).** Svelte 5 `{#snippet}` is the approved mechanism for deduplicating presentational markup that shares one component's reactive scope. Extract a child `.svelte` component only when there is a genuine ownership boundary (a distinct sub-view-model, isolated state, or a reusable unit mounted in multiple parents). Do NOT extract a component solely to dedup markup when the parent must still reach into the child's DOM (scroll containers, focus targets, `bind:this` refs) — that splits ownership of things that must move together and reintroduces the cross-component DOM coupling G1/G8 closed. `BuilderCluePanel.svelte`'s `{#snippet clueRow(entry)}` (rendered in the Across + Down `<ul>`s) is the reference example.
 
 ### 7.3 Component inventory (Player)
 
@@ -1209,7 +1295,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | `ImportScreen.svelte` | `importError` | `import-puzzle` (via FilePicker) | Drag-and-drop or file picker (FR-67). On reject shows `importError`. |
 | `PlayerGrid.svelte` | `GridVM` | `select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-grid-word` | Same grid component shape as Builder; check result paints incorrect/correct cells. |
 | `ActiveClueBanner.svelte` | `ActiveClueBannerVM` | (none) | Rendered twice: above and below grid (FR-71). Always reserves space (FR-71). |
-| `PlayerCluePanel.svelte` | `PlayerCluePanelVM` | `click-clue-panel-word` | Same shape as Builder but no edit inputs; just display + navigation (FR-73). |
+| `PlayerCluePanel.svelte` | `PlayerCluePanelVM` | `click-clue-panel-word` | Same shape as Builder but no edit inputs; just display + navigation (FR-73). Owns `<li>` refs via `bind:this` keyed by `canonicalId`; scroll-into-view `$effect` driven by `vm.highlightedWordKey` (G9 — no DOM id, no `getElementById`). |
 | `PlayerToolbar.svelte` | `PlayerToolbarVM` | `check`, `clear-errors`, `request-reset-player`, `import-new-puzzle`, `open-anagram-helper` | Check shows result message + colour (FR-75). Reset emits `request-reset-player` (which may pop a modal via reducer). |
 | `AnagramModal.svelte` | `AnagramModalVM` | `anagram-input`, `anagram-scramble`, `close-anagram-helper` | Modal per FR-81..FR-89. Closes on backdrop click / Escape / selection-change (FR-88 / FR-89). No grid write-back (FR-87). |
 
@@ -1217,10 +1303,10 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 
 | Component | Props | Emits | Notes |
 |---|---|---|---|
-| `Modal.svelte` | `ModalVM` | the deferred `confirm-*` Builder/Player intent from `state.pendingConfirmIntent` (on Confirm); `cancel-modal` (on Cancel/Escape) | One reusable modal (G4). Backdrop, Confirm/Cancel buttons, Escape cancels. No focus trap (a11y out of scope). The bindings layer reads `pendingConfirmIntent` off `AppState` and dispatches it directly on confirm. |
-| `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via bindings-layer timeout (C2 = 3500 ms). |
+| `Modal.svelte` | `ModalVM` | the deferred `confirm-*` Builder/Player intent from `state.pendingConfirmIntent` (on Confirm); `cancel-modal` (on Cancel/Escape) | One reusable modal (G4 closed: single `const vm = $derived(modalVM())` derivation per tick; template narrows via `{#if vm !== null}` — no double-call, no `!`). Backdrop, Confirm/Cancel buttons, Escape cancels. No focus trap (a11y out of scope). The bindings layer reads `pendingConfirmIntent` off `AppState` and dispatches it directly on confirm. |
+| `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via bindings-layer timeout (C2 = 3500 ms). Per-toast diff scheduling (G5 closed): a persistent `Map<ToastId, timer>` keyed by id; each toast gets exactly one timer scheduled when it first appears, timers for dismissed toasts are cleared — sibling mutations no longer reset unrelated timers (deadline ≈ `createdAt + ttlMs`). `onDestroy` clears all on unmount; `$effect` has no cleanup-return. |
 | `Toast.svelte` | `ToastVM` | `dismiss-toast` | Single toast row. |
-| `TypingSurface.svelte` | `enabled: boolean` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focused when grid is interactive (Builder Fill / Player solving). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. |
+| `TypingSurface.svelte` | `enabled: boolean; cursor: Cursor` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focus is state-driven: the existing `$effect` reads `enabled` and `cursor` and re-focuses the input when `enabled` is true and the `cursor` ref changes (i.e. whenever `select-cell` / `click-clue-panel-word` reducers produce a new cursor). No DOM id, no imperative cross-component focus calls, no Svelte context (G1/G2 — closed). `Cursor` type-imported from `domain/grid/Cursor` (AD §2.3 permits UI→domain type imports; precedent `gridVM.ts`). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. Emits `TypingIntent` values (B6 — type owned by `ui/shared/typingIntent.ts`, imported type-only here + by both shells). Accepted behaviour change: Builder clue-panel click during `join`/`reattach` subMode no longer refocuses the surface (those reducers mutate `subMode` but not `cursor`); user stays oriented and clicks a cell/clue to refocus, which now works via state. |
 | `FilePicker.svelte` | accept label | `pick-file` (callback with text) | Wraps `<input type="file">` + drag-and-drop; returns file text to caller. |
 
 ### 7.5 Layout (top-level)
@@ -1299,8 +1385,8 @@ Input: `grid: Grid` (the post-toggle grid, needed for `Numbering.assign`), previ
    - For each destroyed word `d`, traverse its chain forward (via `nextWord`) over surviving downstream words (i.e., words that *were* displaying a "See …" reference attributable to `d`'s chain) and clear each such downstream word's clue (set to empty). Note: chain traversal must stop at any cleared/destroyed word to avoid spurious walks.
 5. **Newly-appearing words** (in new, not in old): `clue: ''`, `nextWord: null` (FR-48). For surviving words, the retained `clue`/`nextWord` from step 2 stays.
 6. Run `Numbering.assign(grid, derivedWords)` to produce the final `Word[]` with numbers.
-7. Run `ChainValidation.validate` on the resulting `Word[]` as a safety net; if it reports branches/dangling (a destroyed word was a non-head and its head survived), the cleanup in step 4 should have prevented these — but the validator is run as a safety net, and any violation is logged as an internal error toast (should be unreachable, but defensive). (Chain structure is independent of `number`, so running validation after numbering is observability-equivalent to running it before; the order was swapped from the original draft so the validator can operate on `Word[]`, matching `ChainValidation.validate`'s existing signature without a wider refactor of `Chain`/`WordMap` to be generic.)
-8. For each `{ wordKey, direction, change }` recorded in step 2, look up the word's new `number` from the step-6 result and emit a `toast` event: `"Word N Direction was shortened."` or `"Word N Direction was lengthened."` (FR-45). Append any internal-error toasts from step 7. Return `{ words, displacedClues, events }`.
+7. Run `ChainValidation.validate` on the resulting `Word[]` as a safety net; if it reports any violation (branches/dangling/cycle/self-reference — e.g., a destroyed word was a non-head and its head survived), the cleanup in step 4 should have prevented these, so a violation indicates an algorithm bug, not a user-facing condition. Therefore any violation **throws** `Error('reconcileWords: post-reconciliation invariant violated: <describe>')` where `<describe>` is the violation rendered via the `describeViolation` helper. (Chain structure is independent of `number`, so running validation after numbering is observability-equivalent to running it before; the order was swapped from the original draft so the validator can operate on `Word[]`, matching `ChainValidation.validate`'s existing signature without a wider refactor of `Chain`/`WordMap` to be generic.) Throw, not toast, because surfacing an invariant violation as a user-facing `Internal:` toast misrepresents an illegal state as a recoverable condition (§0 Principle 3); the same function already throws on its other "unreachable" path at the `survivingByCanonical` lookup.
+8. For each `{ wordKey, direction, change }` recorded in step 2, look up the word's new `number` from the step-6 result and emit a `toast` event: `"Word N Direction was shortened."` or `"Word N Direction was lengthened."` (FR-45). Return `{ words, displacedClues, events }`.
 
 **Edge cases the test suite MUST cover (RISK-1):**
 - Destroyed head of a chain surviving only in part (head destroyed, mid survives with downstream).
@@ -1331,10 +1417,20 @@ Reducer case for `click-clue-panel-word` when `subMode = reattach { displacedClu
 ### 8.8 Anagram helper (`domain/anagram/`)
 
 ```ts
-export type AnagramEntry = { position: number; fixed: boolean; letter: Letter | null };   // position 0..length-1
+// H4 + B4: discriminated by `fixed` so that `fixed === true ⇒ letter !== null` is encoded in the type
+// (kills the `entry.letter!` non-null assertion at anagramVM.ts:90). The `fixed === false` variant
+// retains `letter: Letter | null` because scramble output places shuffled Letters into non-fixed slots
+// (consumed via `.map(e => e.letter)` into `scrambledArrangement`); the base model from buildWordModel
+// emits `letter: null` for non-fixed slots. `position` is branded `Position` (≥0; upper bound is
+// contextual — word length-1 single, or total chain length-1 in buildChainModel).
+export type AnagramEntry =
+  | { position: Position; fixed: true; letter: Letter }
+  | { position: Position; fixed: false; letter: Letter | null };
 export const Anagram: {
   buildWordModel(grid: Grid, word: Word): { entries: AnagramEntry[]; separators: CellSeparator[] }; // FR-82
+  buildChainModel(grid: Grid, members: Word[]): { entries: AnagramEntry[]; separators: CellSeparator[] }; // FR-82 chain variant
   validateInput(word: Word, entries: AnagramEntry[], input: string): { ok: true } | { ok: false; reason: string }; // FR-85
+  validateChainInput(totalLength: number, entries: AnagramEntry[], input: string): { ok: true } | { ok: false; reason: string }; // FR-85 chain variant
   scramble(entries: AnagramEntry[], input: string, rng: Rng): AnagramEntry[]; // FR-86
 };
 ```
@@ -1392,33 +1488,39 @@ angryphrase/
 │  ├─ main.ts                              # boot: ports, initial AppState, mount App.svelte
 │  ├─ app.css                              # tailwind imports + minimal global styles (CON-4 tokens)
 │  ├─ domain/                              # Layer 0: pure, framework-free (§2.1)
+│  │  ├─ brand.ts                          # `brand<Tag,T>()` escaper; internal to the 15 owner modules (H1, §9.2 brand ban)
 │  │  ├─ grid/
-│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  CellIndex.ts
+│  │  │  ├─ GridSize.ts  Row.ts  Col.ts  Cursor.ts  CellIndex.ts  CellSeparator.ts   # Cursor owned here (not builder/state); CellSeparator re-exported (§3.2)
 │  │  │  ├─ Cell.ts  CellMarker.ts  CellMarkerFlag.ts
 │  │  │  ├─ Grid.ts  GridOps.ts
 │  │  ├─ word/
-│  │  │  ├─ Direction.ts  WordKey.ts  Word.ts  WordNumber.ts  DerivedWord.ts
-│  │  │  ├─ WordDerivation.ts  Numbering.ts  WordMap.ts
+│  │  │  ├─ Direction.ts  WordKey.ts  Word.ts  WordNumber.ts  WordLength.ts  DerivedWord.ts   # WordLength brands Word/DerivedWord .length (H4)
+│  │  │  ├─ WordDerivation.ts  Numbering.ts  WordMap.ts  WordSelection.ts
 │  │  ├─ letter/Letter.ts
 │  │  ├─ chain/
 │  │  │  ├─ Chain.ts  ChainValidation.ts  ChainViolation.ts
 │  │  │  ├─ DisplayClue.ts  LengthPattern.ts
+│  │  │  └─ ChainCells.ts                    # B2: shared cellsOfWord/cellsOfChain (builderVM + playerVM)
 │  │  ├─ anagram/
-│  │  │  ├─ Anagram.ts  AnagramEntry.ts
+│  │  │  ├─ Anagram.ts  AnagramEntry.ts  Position.ts   # Position brands AnagramEntry.position; AnagramEntry discriminated by fixed (H4/B4)
 │  │  ├─ puzzle/
 │  │  │  ├─ Puzzle.ts  PuzzleKey.ts  Title.ts  Author.ts
-│  │  │  ├─ CompletenessCheck.ts  CompletenessViolation.ts
+│  │  │  ├─ CompletenessCheck.ts                       # also exports CompletenessViolation type (colocated, not a separate file)
 │  │  ├─ builder/
 │  │  │  └─ DisplacedClue.ts  DisplacedClueId.ts
+│  │  ├─ uuid/
+│  │  │  └─ uuidv4.ts                       # pure UUID v4 minting from Rng; shared by PuzzleKey.generate + DisplacedClueId.generate
+│  │  ├─ time/                              # H4: time-domain branded primitives (broader than notifications)
+│  │  │  ├─ EpochMs.ts  DurationMs.ts       # EpochMs (≥0) brands Toast.createdAt + deps.now return; DurationMs (>0) brands Toast.ttlMs
 │  │  ├─ notifications/                    # Pure value objects whose consumers happen to be UI (§3.5a, revised S2)
 │  │  │  ├─ Toast.ts  ToastId.ts  ToastKind.ts
 │  │  │  ├─ ModalRequest.ts  ModalKind.ts
 │  │  │  └─ Event.ts                       # DomainEvent discriminated union; ReducerResult helper; ConfirmableIntent
 │  │  ├─ format/
-│  │  │  └─ v1.ts  ParseFailure.ts  Filename.ts
+│  │  │  └─ v1.ts                          # also exports ParseFailure type + Filename helper (colocated, not separate files)
 │  │  ├─ rng/
-│  │  │  └─ Rng.ts                        # Rng interface — deps-injection abstraction, NOT a port (§3.7, design_review_notes.md item 1)
-│  │  └─ persistence/
+│  │  │  └─ Rng.ts                        # Rng interface — deps-injection abstraction, NOT a port (§3.7, design_review_notes.md item 1); nextInt intentionally plain number (H4 carve-out)
+│  │  └─ ports/
 │  │     └─ ports.ts                      # StoragePort, DownloadPort, FilePickPort (side-effect port interfaces only)
 │  ├─ builder/state/                       # Layer 1: pure reducers (§2.1)
 │  │  ├─ state.ts  intents.ts  reducer.ts   # public API (app/state imports these)
@@ -1429,7 +1531,8 @@ angryphrase/
 │  │     └─ reconcileWords.ts
 │  ├─ app/state/                            # Layer 1 (app): the only reducer that sees all of AppState (§4.1, revised S2)
 │  │  ├─ state.ts  intents.ts
-│  │  └─ reducer.ts  effects.ts            # effects.ts = applyEventsToApp helper; no internal/ subfolder
+│  │  ├─ reducer.ts  effects.ts            # effects.ts = applyEventsToApp helper; no internal/ subfolder
+│  │  └─ intentKinds.ts                    # D1/DRN-7: type-derived kind Sets for reducer dispatch (BUILDER/PLAYER/CONFIRMABLE/AMBIGUOUS)
 │  ├─ player/state/
 │  │  ├─ state.ts  intents.ts  reducer.ts   # public API (app/state imports these)
 │  │  └─ internal/
@@ -1447,11 +1550,11 @@ angryphrase/
 │  │  │  ├─ ActiveClueBanner.svelte  PlayerToolbar.svelte  AnagramModal.svelte
 │  │  ├─ shared/
 │  │  │  ├─ Modal.svelte  ToastHost.svelte  Toast.svelte
-│  │  │  ├─ TypingSurface.svelte  FilePicker.svelte
+│  │  │  ├─ TypingSurface.svelte  FilePicker.svelte  typingIntent.ts
 │  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §5.5)
 │  │     ├─ appStore.svelte.ts  builderStore.svelte.ts  playerStore.svelte.ts
 │  │     ├─ toastStore.svelte.ts  modalStore.svelte.ts
-│  │     ├─ ports.ts  persistenceScheduler.ts
+  │  │     ├─ ports.ts  persistenceCodec.ts  persistenceScheduler.ts
 │  │     ├─ viewmodels/
 │  │        ├─ builderVM.ts  playerVM.ts  gridVM.ts  cluePanelVM.ts
 │  │        ├─ anagramVM.ts  toastVM.ts  modalVM.ts
@@ -1463,29 +1566,38 @@ angryphrase/
 ├─ test/
 │  ├─ domain/
 │  │  ├─ grid/  word/  chain/  anagram/  puzzle/  format/  notifications/
+│  │  ├─ letter/  builder/  time/  uuid/                # added as branded types / new modules landed (H4, C1, A4)
 │  │  └─ (one test file per source module; pure unit tests)
 │  ├─ builder/state/
-│  │  ├─ reducer.test.ts  designMode.test.ts  fillMode.test.ts
-│  │  ├─ joinSubMode.test.ts  reattachSubMode.test.ts
-│  │  ├─ importExport.test.ts  lifecycle.test.ts
-│  │  ├─ reconcileWords.test.ts                          # exhaustive RISK-1 cases (§8.5)
-│  │  ├─ reconcileWords.property.test.ts                # property-based over random toggles (optional)
+│  │  ├─ reducer.test.ts  state.test.ts
+│  │  └─ internal/                             # handler tests mirror src/.../internal/ layout
+│  │     ├─ designMode.test.ts  fillMode.test.ts
+│  │     ├─ joinSubMode.test.ts  reattachSubMode.test.ts
+│  │     ├─ importExport.test.ts  lifecycle.test.ts
+│  │     └─ reconcileWords.test.ts                          # exhaustive RISK-1 cases (§8.5)
 │  ├─ player/state/
-│  │  ├─ reducer.test.ts  solving.test.ts  anagram.test.ts  lifecycle.test.ts  import.test.ts
+│  │  ├─ reducer.test.ts  state.test.ts
+│  │  └─ internal/                             # handler tests mirror src/.../internal/ layout
+│  │     └─ solving.test.ts  anagram.test.ts  lifecycle.test.ts   # import/apply-loaded-progress covered in lifecycle.test.ts
 │  ├─ app/state/
-│  │  └─ reducer.test.ts                  # full flow tests: dump-events cases, request→confirm pass, cancel; toast fold; modal fold; passthrough of download/clear-storage
+│  │  ├─ reducer.test.ts                  # full flow tests: dump-events cases, request→confirm pass, cancel; toast fold; modal fold; passthrough of download/clear-storage
+│  │  ├─ effects.test.ts  intentKinds.test.ts  state.test.ts
 │  ├─ fakes/
 │  │  ├─ InMemoryStoragePort.ts  SeededRng.ts  StubDownloadPort.ts  FakeClock.ts
+│  │  └─ (each fake paired with a co-located `<name>.test.ts` unit test)
 │  └─ boundary/
 │     └─ imports.test.ts                  # asserts ESLint rule denies forbidden imports (§9.2)
-├─ converted-puzzles/                       # B6 — migrated from puzzles/, for the record only
-│  └─ puzzle1-incomplete.json …
-├─ puzzles/                                  # B6 — left untouched, non-conforming
-├─ scripts/migrate-puzzles.ts                # one-shot migration: puzzles/ → converted-puzzles/
+├─ puzzles/                                  # canonical v1 sample puzzle files; not referenced by app or tests
+│  └─ puzzle1.json … puzzle6.json
 └─ llmworkspace/
    ├─ requirements.md
    ├─ architectquestions0.md
-   └─ architecture_design.md                # this document
+   ├─ architecture_design.md                # this document
+   ├─ design_review_notes.md                # DRN — open questions + resolutions log
+   ├─ chain_aware_selection_addendum.md     # chain-aware selection spec addendum
+   ├─ code_smells.md                        # code/architectural smells audit (this doc's sibling)
+   ├─ store_singleton_di_report.md          # store-singleton DI investigation
+   └─ version_stamp_plan.md                 # version-stamp feature plan (K2 — not yet implemented)
 ```
 
 ### 9.1 Naming conventions
@@ -1502,14 +1614,18 @@ angryphrase/
 
 | Source path | May import | May NOT import |
 |---|---|---|
-| `src/domain/**` | only sibling files under `src/domain/**` | `svelte`, `svelte/*`, DOM-global-only modules, `src/ui/**`, `src/ports/**`, `src/builder/state/**`, `src/player/state/**`, `src/app/state/**` |
-| `src/builder/state/**`, `src/player/state/**` | `src/domain/**`, sibling files within the same module (including its own `internal/` subfolder); the other module's public root files only | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, `src/app/state/**`, the other module's `internal/**` subfolder (no cycles, no reaching into another module's internals) |
-| `src/app/state/**` | `src/domain/**`, value and type imports from the public root files of `src/builder/state/**` (`state.ts`, `intents.ts`, `reducer.ts`) and `src/player/state/**` (same three files), and from sibling `src/app/state/**` files | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, and `src/builder/state/internal/**` / `src/player/state/internal/**` (anything under an `internal/` subfolder of another Layer-1 module) |
-| `src/ui/**` (except `src/ui/bindings/**`) | sibling files, `src/ui/bindings/**`, types-only from `src/domain/**` (for VM prop shapes only — *importing functions is blocked*) | `svelte` allowed; `src/ports/**`, `src/builder/state/**`, `src/player/state/**` blocked |
-| `src/ui/bindings/**` | all of `src/**` | (none) |
-| `src/ports/**` | `src/domain/persistence/ports.ts` (interfaces only) and `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**` |
+| `src/domain/**` | only sibling files under `src/domain/**` | `svelte`, `svelte/*`, DOM-global-only modules, `src/ui/**`, `src/ports/**`, `src/builder/state/**`, `src/player/state/**`, `src/app/state/**`; `domain/brand` is banned except for the 15 branded-type owner modules (H1, H4) |
+| `src/builder/state/**`, `src/player/state/**` | `src/domain/**`, sibling files within the same module (including its own `internal/` subfolder); the other module's public root files only | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, `src/app/state/**`, the other module's `internal/**` subfolder (no cycles, no reaching into another module's internals), `domain/brand` (H1) |
+| `src/app/state/**` | `src/domain/**`, value and type imports from the public root files of `src/builder/state/**` (`state.ts`, `intents.ts`, `reducer.ts`) and `src/player/state/**` (same three files), and from sibling `src/app/state/**` files | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, and `src/builder/state/internal/**` / `src/player/state/internal/**` (anything under an `internal/` subfolder of another Layer-1 module), `domain/brand` (H1) |
+| `src/ui/**` (except `src/ui/bindings/**`) | sibling files, `src/ui/bindings/**`, types-only from `src/domain/**` (for VM prop shapes only — *importing functions is blocked*) | `svelte` allowed; `src/ports/**`, `src/builder/state/**`, `src/player/state/**` blocked, `domain/brand` (H1) |
+| `src/ui/bindings/**` | all of `src/**` | `domain/brand` (H1) |
+| `src/ports/**` | `src/domain/ports/ports.ts` (interfaces only), `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`), and `src/domain/puzzle/PuzzleKey.ts` (StoragePort key type — DRN item 6) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**`, `domain/brand` (H1) |
 
-A `test/boundary/imports.test.ts` runs `tsc` on a small fixture file that attempts each forbidden import and asserts compilation fails. This makes the boundary self-verifying (NFR-4).
+A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism.
+
+**Brand-import enforcement (H1).** The `domain/brand` ban is implemented by a `no-restricted-imports` pattern appended to every per-glob rule block (builder, player, app, ui, ports) plus a dedicated block for `src/ui/bindings/**` and a catch-all for any `src/**` file not covered by existing blocks (e.g. `src/main.ts`). The `src/domain/**` block is split: non-owners get the brand ban; the 11 owner files get a separate block without it. The self-test includes 4 brand-specific fixtures: owner allowed, non-owner domain banned, bindings banned, `test/**` allowed (scope control).
+
+**Ports allow-list convention (I1).** The `src/ports/**` block uses a negative-lookahead allow-list (unavoidable — `no-restricted-imports` has no allow-list primitive, only restrict patterns) enumerating the 3 allowed paths with `.ts` OPTIONAL. This matches every other layer block's extensionless prefix-regex idiom; imports may carry `.ts` but are not required to. `tsconfig.json` `allowImportingTsExtensions` was retired as part of I1 (its sole rationale was the former `.ts`-required ports regex).
 
 ### 9.3 Import-cycle policy
 
@@ -1528,6 +1644,8 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 **Coverage targets (binding):**
 - All `domain/grid/` accessors + `GridOps.isSelectable` (FR-8).
 - `WordDerivation.derive` + `Numbering.assign` against several grid shapes.
+- `WordSelection.findContainingWord` for: across hit, down hit, direction mismatch, cursor outside run, empty word list, cursor at last cell of run, cursor one past run end (B1).
+- `ChainCells.cellsOfWord` for: across run, down run, direction drives r/c offset. `ChainCells.cellsOfChain` for: null cursor → empty; single word with no chain; two-member chain union; cursor on non-head returns whole chain; empty words list (B2).
 - `ChainValidation.validate` for each violation kind.
 - `LengthPattern.forWord` for: standalone no markers; space separators; hyphen separators; mixed; chain suffixes (full FR-91).
 - `LengthPattern.forActiveClueBanner` returns `null` for non-heads (C4).
@@ -1540,13 +1658,13 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `reducePlayer` for the `anagram-scramble` flow (scramble via `deps.rng`).
 - `reduceApp` for modal confirm/cancel flow + toast fold (constructs `Toast` via `deps.rng` + `deps.now`).
 
-**Property-based tests (optional but strongly recommended per RISK-1):** `test/builder/state/reconcileWords.property.test.ts` uses `fast-check` or a hand-rolled random-grid toggler; asserts that after any design-mode toggle, the resulting `Word[]` is consistent with the new grid (every word's start/length matches a derived white run) and `ChainValidation` finds no violations.
+**Property-based tests (optional per RISK-1, not shipped):** `test/builder/state/reconcileWords.property.test.ts` is sketched in this section as the recommended shape — `fast-check` or a hand-rolled random-grid toggler asserting that after any design-mode toggle the resulting `Word[]` is consistent with the new grid (every word's start/length matches a derived white run) and `ChainValidation` finds no violations. The file is not present in the repo; the exhaustive RISK-1 case suite in `reconcileWords.test.ts` is the shipped coverage. Listed here as a deferred optional, not a mandate.
 
 ### 10.2 Fakes & helpers (`test/fakes/`)
 
 - `InMemoryStoragePort` — full `StoragePort` impl over a `Map<string, string>`; throws on demand for corruption tests.
 - `SeededRng` — Mulberry32 with a configurable seed.
-- `FakeClock` — a manually-advanced `() => number` for deterministic `Toast.createdAt` values.
+- `FakeClock` — a manually-advanced `() => EpochMs` for deterministic `Toast.createdAt` values.
 - `StubDownloadPort` — records filename + content; never touches the DOM.
 
 Tests for reducers wire these directly; bindings-layer tests (if any) are not required, since the bindings layer is largely mechanical.
@@ -1582,15 +1700,15 @@ A single `AppConfig` object is constructed in `main.ts` and passed (or imported)
 ```ts
 export type AppConfig = {
   ports: { storage: StoragePort; download: DownloadPort; filePick: FilePickPort; rng: Rng };
-  now: () => number;                              // clock for Toast.createdAt; production uses Date.now
+  now: () => EpochMs;                              // clock for Toast.createdAt (H4); production wraps Date.now() via EpochMs.of at the boundary in main.ts
   autosave: { builderDebounceMs: number; playerDebounceMs: number };
-  toast: { ttlMs: number };
+  toast: { ttlMs: DurationMs };                   // H4 — branded; feeds Toast.create's ttlMs param
 };
 ```
 Production defaults:
 - `builderDebounceMs: 400`, `playerDebounceMs: 400` (F2).
-- `toast.ttlMs: 3500` (C2).
-- `rng`: `Math.random`-backed; `now`: `Date.now`.
+- `toast.ttlMs: DurationMs.DEFAULT` (3500) (C2).
+- `rng`: `Math.random`-backed; `now`: `() => EpochMs.of(Date.now())`.
 
 Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The bindings layer constructs `deps = { rng: config.ports.rng, now: config.now }` once and passes it to all three reducers (`reduceApp`, `reduceBuilder`, `reducePlayer`) on every dispatch (§4.2).
 
@@ -1622,7 +1740,7 @@ Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `S
 ### 12.2 Anticipated future requirements (not in scope, but designed-not-to-block)
 
 - **Undo/redo** (currently out of scope, §8). The pure-reducer + intent dispatch model is trivially amenable to an undo stack: store recent `(state, intent)` pairs and reuse the reducers in reverse isn't possible (reducers aren't reversible), but storing past `BuilderState`/`PlayerState` snapshots and popping on undo is. The strict immutability (A2) makes snapshots cheap via structural sharing.
-- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `converted-puzzles/` migration path already shows the format; `domain/format/parsePuzzleV1` is the only entry.
+- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `puzzles/*.json` files already show the canonical v1 format; `domain/format/parsePuzzleV1` is the only entry.
 - **Plugin for foreign puzzle formats** (`.puz`, `.xd`, `.jpz`). Out of scope (§8) and explicitly unsupported, but if added, it would be a sibling to `domain/format/` producing the same `Puzzle` type.
 
 ### 12.3 Things that would change under scale
@@ -1696,7 +1814,7 @@ Every FR is covered. Highlighted mappings of subtle ones:
 - Moved `DisplacedClue` ownership from `Puzzle` to `BuilderState` (S1) to match the spec's "Builder-only concept" declaration; serialization adapter now takes displaced clues as a separate argument to `serializeIncomplete`.
 - Kept both `lastImportError` (for inline `ImportScreen` rendering) and a `toast` event (for transient notification); an earlier draft had dropped one of them redundantly.
 - Added the `madge --circular` step to CI (§9.3, §10.4) after recognizing that the bindings layer's blanket import rights could invite a cycle.
-- Reconfirmed the parser's strictness on unknown fields (the `letter` field in existing `puzzles/*.json`) — failure, not normalization — and tied it to the `converted-puzzles/` migration path so the builder knows the strict path is intentional, not a bug (§3.7, §6.3, §9 tree).
+- Reconfirmed the parser's strictness on unknown fields (a `letter` field is rejected, not normalized) so the builder knows the strict path is intentional, not a bug (§3.7, §6.3). The `puzzles/*.json` samples are canonical v1 (`puzzleLetter`, `version: 1`); no migration script is shipped.
 - Added `viewmodels/` subdirectory under `ui/bindings/` to keep VM derivation files organized; the original E1 tree showed only stores at that level.
 - Fixed several inconsistencies and typos (the "DisposedClue" typo, an inconsistent `confirm-import` vs `confirm-import-builder` modal kind, a stale "select-mode" reference in toolbar emissions, an indented `①` glyph, etc.).
 

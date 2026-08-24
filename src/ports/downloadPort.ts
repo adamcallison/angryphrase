@@ -1,8 +1,8 @@
-import type { DownloadPort } from '../domain/persistence/ports.ts';
+import type { DownloadPort } from '../domain/ports/ports';
 
 export function createDownloadPort(): DownloadPort {
   return {
-    download(filename: string, content: string): void {
+    download(filename: string, content: string): Error | null {
       try {
         const blob = new Blob([content], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -13,8 +13,9 @@ export function createDownloadPort(): DownloadPort {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        return null;
       } catch (err) {
-        console.warn('downloadPort.download failed:', err);
+        return err instanceof Error ? err : new Error(String(err));
       }
     },
   };

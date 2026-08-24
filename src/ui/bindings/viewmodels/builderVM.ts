@@ -1,13 +1,12 @@
 import { BuilderState } from '../../../builder/state/state';
-import type { BuilderMode, Cursor } from '../../../builder/state/state';
+import type { BuilderMode } from '../../../builder/state/state';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import { CompletenessCheck, type CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 import { WordKey } from '../../../domain/word/WordKey';
-import { WordMap } from '../../../domain/word/WordMap';
-import type { Word } from '../../../domain/word/Word';
+import { WordSelection } from '../../../domain/word/WordSelection';
 import type { Direction } from '../../../domain/word/Direction';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainCells } from '../../../domain/chain/ChainCells';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { deriveGridVM, type GridVM } from './gridVM';
@@ -58,6 +57,7 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
   const markerFlags = state.cursor
     ? GridOps.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
     : CellMarker.EMPTY;
+  const exportCompleteViolations = CompletenessCheck.check(state.puzzle);
   return {
     mode: state.mode,
     canSwitchToDesignWithoutConfirm: isBlank,
@@ -67,8 +67,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     maxGridSize: 25,
     cellSelected: state.cursor !== null,
     markerFlags,
-    canExportComplete: CompletenessCheck.isComplete(state.puzzle),
-    exportCompleteViolations: CompletenessCheck.check(state.puzzle),
+    canExportComplete: exportCompleteViolations.length === 0,
+    exportCompleteViolations,
   };
 }
 
@@ -106,9 +106,9 @@ export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
   const displacedClues = deriveDisplacedCluesPanelVM(state);
   const subModeBanner = deriveBuilderSubModeBannerVM(state);
 
-  const cursorWord = state.cursor ? findContainingWord(state.puzzle.words, state.cursor) : null;
+  const cursorWord = state.cursor ? WordSelection.findContainingWord(state.puzzle.words, state.cursor) : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
-  const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
+  const selectedWordCells = ChainCells.cellsOfChain(state.puzzle.words, cursorWord);
 
   const grid = deriveGridVM({
     grid: state.puzzle.grid,
@@ -136,47 +136,3 @@ export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
   };
 }
 
-function findContainingWord(words: Word[], cursor: Cursor): Word | null {
-  if (cursor === null) {
-    return null;
-  }
-  const r = Number(cursor.row);
-  const c = Number(cursor.col);
-  for (const w of words) {
-    if (w.key.direction !== cursor.direction) continue;
-    const sr = Number(w.key.startRow);
-    const sc = Number(w.key.startCol);
-    if (cursor.direction === 'across') {
-      if (sr === r && c >= sc && c < sc + w.length) return w;
-    } else {
-      if (sc === c && r >= sr && r < sr + w.length) return w;
-    }
-  }
-  return null;
-}
-
-function cellsOfChain(words: Word[], cursorWord: Word | null): Set<string> {
-  if (cursorWord === null) {
-    return new Set<string>();
-  }
-  const wordMap = WordMap.fromWords(words);
-  const headKey = Chain.headOf(wordMap, cursorWord.key);
-  const chain = Chain.fromHead(wordMap, headKey);
-  const set = new Set<string>();
-  for (const member of chain.members) {
-    for (const cell of cellsOfWord(member)) {
-      set.add(cell);
-    }
-  }
-  return set;
-}
-
-function cellsOfWord(w: Word): Set<string> {
-  const set = new Set<string>();
-  for (let i = 0; i < w.length; i++) {
-    const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
-    const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
-    set.add(`${r},${c}`);
-  }
-  return set;
-}

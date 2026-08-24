@@ -2,16 +2,14 @@ import type { Grid } from '../grid/Grid';
 import type { DerivedWord } from './DerivedWord';
 import type { WordKey } from './WordKey';
 import type { Direction } from './Direction';
+import { WordLength } from './WordLength';
 import { Row as RowCtor } from '../grid/Row';
 import { Col as ColCtor } from '../grid/Col';
 import { Cell as CellCtor } from '../grid/Cell';
+import { GridOps } from '../grid/GridOps';
 
 function isWhite(g: Grid, r: number, c: number): boolean {
-  const row = g[r];
-  if (row === undefined) return false;
-  const cell = row[c];
-  if (cell === undefined) return false;
-  return CellCtor.isWhite(cell);
+  return CellCtor.isWhite(GridOps.cellAt(g, RowCtor.of(r), ColCtor.of(c)));
 }
 
 function deriveDirection(g: Grid, direction: Direction): DerivedWord[] {
@@ -34,7 +32,7 @@ function deriveDirection(g: Grid, direction: Direction): DerivedWord[] {
         let length = 0;
         let cr = r;
         let cc = c;
-        while (isWhite(g, cr, cc)) {
+        while ((direction === 'across' ? cc : cr) < size && isWhite(g, cr, cc)) {
           length++;
           if (direction === 'across') {
             cc++;
@@ -50,7 +48,7 @@ function deriveDirection(g: Grid, direction: Direction): DerivedWord[] {
           };
           words.push({
             key,
-            length,
+            length: WordLength.of(length),
             clue: '',
             nextWord: null,
           });

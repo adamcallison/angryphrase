@@ -1,6 +1,6 @@
-import type { StoragePort } from '../../domain/persistence/ports';
-import type { DownloadPort } from '../../domain/persistence/ports';
-import type { FilePickPort } from '../../domain/persistence/ports';
+import type { StoragePort } from '../../domain/ports/ports';
+import type { DownloadPort } from '../../domain/ports/ports';
+import type { FilePickPort } from '../../domain/ports/ports';
 import type { Rng } from '../../domain/rng/Rng';
 import { localStoragePort as defaultStoragePort } from '../../ports/localStoragePort';
 import { downloadPort as defaultDownloadPort } from '../../ports/downloadPort';

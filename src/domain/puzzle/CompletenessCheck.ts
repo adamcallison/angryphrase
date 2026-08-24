@@ -3,12 +3,12 @@ import type { WordNumber } from '../word/WordNumber';
 import type { Direction } from '../word/Direction';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
+import { GridOps } from '../grid/GridOps';
 import { WordMap } from '../word/WordMap';
 import { Chain } from '../chain/Chain';
 
 export type CompletenessViolation =
   | { kind: 'missing-answer-letter'; row: Row; col: Col }
-  | { kind: 'invalid-answer-letter'; row: Row; col: Col; value: string }
   | { kind: 'missing-clue'; wordNumber: WordNumber; direction: Direction };
 
 export const CompletenessCheck: {
@@ -18,10 +18,10 @@ export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[] {
     const violations: CompletenessViolation[] = [];
 
-    for (let r = 0; r < p.grid.length; r++) {
-      const row = p.grid[r]!;
-      for (let c = 0; c < row.length; c++) {
-        const cell = row[c]!;
+    const size = p.grid.length;
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const cell = GridOps.cellAt(p.grid, Row.of(r), Col.of(c));
         if (!cell.black && cell.answerLetter === null) {
           violations.push({
             kind: 'missing-answer-letter',

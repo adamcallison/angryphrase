@@ -12,21 +12,14 @@
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import type { TypingIntent } from '../shared/typingIntent';
 
   // No props — PlayerShell owns the entire Player scene.
   const vm: PlayerShellVM = $derived(playerShellVM());
 
-  // TypingSurface TypingIntent union (inlined structural type — same shape as in BuilderShell.svelte).
-  type TypingIntent =
-    | { kind: 'type-letter'; letter: string }
-    | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: 'across' | 'down'; sign: -1 | 1 }
-    | { kind: 'escape' };
-
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
     dispatchSelectCell(row, col);
-    (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
   }
 
   function onTypingIntent(intent: TypingIntent): void {
@@ -60,7 +53,7 @@
         <ActiveClueBanner vm={vm.topBanner} />
         <div class="relative overflow-x-auto">
           <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.phase === 'solving'} onDispatch={onTypingIntent} />
+          <TypingSurface enabled={vm.phase === 'solving'} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />

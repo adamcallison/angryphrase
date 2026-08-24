@@ -1,6 +1,8 @@
 <script lang="ts">
   import { modalVM, confirmModal, cancelModal } from '../bindings/modalStore.svelte';
 
+  const vm = $derived(modalVM());
+
   function handleKey(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -26,8 +28,7 @@
 
 <svelte:window onkeydown={handleKey} />
 
-{#if modalVM() !== null}
-  {@const vm = modalVM()!}
+{#if vm !== null}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onclick={onBackdropClick}>

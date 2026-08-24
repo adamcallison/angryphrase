@@ -1,18 +1,34 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { toastVMs, dismissToast } from '../bindings/toastStore.svelte';
   import { getToasts } from '../bindings/appStore.svelte';
   import Toast from './Toast.svelte';
+  import type { ToastId } from '../../domain/notifications/ToastId';
 
-  // Auto-dismiss per toast: re-runs whenever the underlying toast list identity changes.
+  // Auto-dismiss per toast: each toast gets exactly one timer, scheduled when it first
+  // appears; timers for dismissed toasts are cleared. Sibling mutations no longer reset
+  // unrelated timers. Deadline ≈ createdAt + ttlMs (default 3500 ms).
+  const timers = new Map<ToastId, ReturnType<typeof setTimeout>>();
+
   $effect(() => {
     const toasts = getToasts();
-    const timers = toasts.map((t) => {
-      // Per C2 = 3500 ms default (the toast carries its own ttlMs picked up by Toast.create).
-      return setTimeout(() => dismissToast(t.id), t.ttlMs);
-    });
-    return () => {
-      for (const timer of timers) clearTimeout(timer);
-    };
+    const liveIds = new Set(toasts.map((t) => t.id));
+    for (const [id, timer] of timers) {
+      if (!liveIds.has(id)) {
+        clearTimeout(timer);
+        timers.delete(id);
+      }
+    }
+    for (const t of toasts) {
+      if (!timers.has(t.id)) {
+        timers.set(t.id, setTimeout(() => dismissToast(t.id), Number(t.ttlMs)));
+      }
+    }
+  });
+
+  onDestroy(() => {
+    for (const timer of timers.values()) clearTimeout(timer);
+    timers.clear();
   });
 </script>
 

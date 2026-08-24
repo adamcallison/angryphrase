@@ -11,13 +11,10 @@ import { Col } from '../../../../src/domain/grid/Col';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 import { SeededRng } from '../../../fakes/SeededRng';
-import { FakeClock } from '../../../fakes/FakeClock';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 
 const rng = new SeededRng(42);
-const clock = new FakeClock(1000);
-const deps = { rng, now: clock.now.bind(clock) };
 
 function blankState() {
   return BuilderState.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(1)));
@@ -43,7 +40,7 @@ describe('request-reset-builder', () => {
     const state = blankState();
     const originalKey = state.puzzle.key;
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.state.puzzle.gridSize).toBe(state.puzzle.gridSize);
     expect(isBlankGrid(result.state.puzzle.grid)).toBe(true);
@@ -53,7 +50,7 @@ describe('request-reset-builder', () => {
   it('when blank, emits a single clear-builder-storage event', () => {
     const state = blankState();
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
   });
@@ -61,7 +58,7 @@ describe('request-reset-builder', () => {
   it('when blank, fresh state has mode=design, subMode=none, cursor=null', () => {
     const state = blankState();
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -72,7 +69,7 @@ describe('request-reset-builder', () => {
     const key = PuzzleKey.generate(new SeededRng(1));
     const state = BuilderState.blank(GridSize.of(5), key);
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(5));
     expect(result.state.puzzle.grid.length).toBe(5);
@@ -81,7 +78,7 @@ describe('request-reset-builder', () => {
   it('when NOT blank, emits modal-request with confirmIntent=confirm-reset-builder', () => {
     const state = nonBlankState();
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.events).toEqual([
       {
@@ -95,7 +92,7 @@ describe('request-reset-builder', () => {
   it('when NOT blank, state is returned unchanged', () => {
     const state = nonBlankState();
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.state).toEqual(state);
   });
@@ -103,7 +100,7 @@ describe('request-reset-builder', () => {
   it('when NOT blank, events is exactly the expected modal-request', () => {
     const state = nonBlankState();
 
-    const result = handleRequestResetBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = handleRequestResetBuilder(state, rng);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toEqual({
@@ -118,7 +115,7 @@ describe('confirm-reset-builder', () => {
   it('unconditionally resets to blank', () => {
     const state = nonBlankState();
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.state.puzzle.gridSize).toBe(state.puzzle.gridSize);
     expect(isBlankGrid(result.state.puzzle.grid)).toBe(true);
@@ -130,7 +127,7 @@ describe('confirm-reset-builder', () => {
   it('emits clear-builder-storage event', () => {
     const state = nonBlankState();
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
   });
@@ -139,7 +136,7 @@ describe('confirm-reset-builder', () => {
     const key = PuzzleKey.generate(new SeededRng(1));
     const state = BuilderState.blank(GridSize.of(5), key);
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.state.puzzle.key).not.toBe(key);
   });
@@ -148,7 +145,7 @@ describe('confirm-reset-builder', () => {
     const key = PuzzleKey.generate(new SeededRng(1));
     const state = BuilderState.blank(GridSize.of(7), key);
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(7));
     expect(result.state.puzzle.grid.length).toBe(7);
@@ -162,7 +159,7 @@ describe('confirm-reset-builder', () => {
       cursor: { row: Row.of(1), col: Col.of(2), direction: 'down' as const },
     };
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -172,10 +169,10 @@ describe('confirm-reset-builder', () => {
   it('clears existing displacedClues', () => {
     const state = {
       ...nonBlankState(),
-      displacedClues: [DisplacedClue.create(deps.rng, 'clue', 'across')],
+      displacedClues: [DisplacedClue.create(rng, 'clue', 'across')],
     };
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     expect(result.state.displacedClues).toEqual([]);
   });
@@ -183,7 +180,7 @@ describe('confirm-reset-builder', () => {
   it('throws out user edits', () => {
     const state = nonBlankState();
 
-    const result = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = handleConfirmResetBuilder(state, rng);
 
     const expectedWords = Numbering.assign(
       result.state.puzzle.grid,
@@ -197,11 +194,11 @@ describe('confirm-reset-builder', () => {
 
   it('deterministic: confirm-reset-builder with two different SeededRng produces two different keys', () => {
     const state = BuilderState.blank(GridSize.of(5), PuzzleKey.generate(new SeededRng(1)));
-    const deps1 = { rng: new SeededRng(1), now: clock.now.bind(clock) };
-    const deps2 = { rng: new SeededRng(2), now: clock.now.bind(clock) };
+    const rng1 = new SeededRng(1);
+    const rng2 = new SeededRng(2);
 
-    const result1 = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps1);
-    const result2 = handleConfirmResetBuilder(state, { kind: 'confirm-reset-builder' }, deps2);
+    const result1 = handleConfirmResetBuilder(state, rng1);
+    const result2 = handleConfirmResetBuilder(state, rng2);
 
     expect(String(result1.state.puzzle.key)).not.toBe(String(result2.state.puzzle.key));
   });

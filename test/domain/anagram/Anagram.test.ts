@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Anagram } from '../../../src/domain/anagram/Anagram';
 import type { AnagramEntry } from '../../../src/domain/anagram/AnagramEntry';
+import { Position } from '../../../src/domain/anagram/Position';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
@@ -10,6 +11,7 @@ import { GridOps } from '../../../src/domain/grid/GridOps';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import { Letter } from '../../../src/domain/letter/Letter';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import type { Word } from '../../../src/domain/word/Word';
 import { SeededRng } from '../../fakes/SeededRng';
@@ -41,12 +43,12 @@ describe('Anagram', () => {
     );
   }
 
-  function buildWord(overrides: Partial<Word> & Pick<Word, 'length'>): Word {
+  function buildWord(overrides: Partial<Omit<Word, 'length'>> & { length: number }): Word {
     const { length, ...rest } = overrides;
     return {
       key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' as const },
       number: WordNumber.of(1),
-      length,
+      length: WordLength.of(length),
       clue: '',
       nextWord: null,
       ...rest,
@@ -115,11 +117,11 @@ describe('Anagram', () => {
   it('validateInput returns ok:true when input length matches and covers fixed letters', () => {
     const word = buildWord({ length: 5 });
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: false, letter: null },
-      { position: 2, fixed: false, letter: null },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: true, letter: Letter.try('E') },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: false, letter: null },
+      { position: Position.of(2), fixed: false, letter: null },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: true, letter: Letter.try('E')! },
     ];
 
     const result = Anagram.validateInput(word, entries, 'ABCDE');
@@ -129,7 +131,7 @@ describe('Anagram', () => {
   it('validateInput returns ok:false when input length is wrong (too short)', () => {
     const word = buildWord({ length: 5 });
     const entries: AnagramEntry[] = Array.from({ length: 5 }, (_, i) => ({
-      position: i,
+      position: Position.of(i),
       fixed: false,
       letter: null,
     }));
@@ -141,7 +143,7 @@ describe('Anagram', () => {
   it('validateInput returns ok:false when input length is wrong (too long)', () => {
     const word = buildWord({ length: 5 });
     const entries: AnagramEntry[] = Array.from({ length: 5 }, (_, i) => ({
-      position: i,
+      position: Position.of(i),
       fixed: false,
       letter: null,
     }));
@@ -153,11 +155,11 @@ describe('Anagram', () => {
   it('validateInput returns ok:false when multiset does not cover fixed letters', () => {
     const word = buildWord({ length: 5 });
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: true, letter: Letter.try('A') },
-      { position: 2, fixed: false, letter: null },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: false, letter: null },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(2), fixed: false, letter: null },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: false, letter: null },
     ];
 
     const result = Anagram.validateInput(word, entries, 'ABCDE');
@@ -170,7 +172,7 @@ describe('Anagram', () => {
   it('validateInput filters non-AZ characters and uppercases before checking length', () => {
     const word = buildWord({ length: 5 });
     const entries: AnagramEntry[] = Array.from({ length: 5 }, (_, i) => ({
-      position: i,
+      position: Position.of(i),
       fixed: false,
       letter: null,
     }));
@@ -181,9 +183,9 @@ describe('Anagram', () => {
 
   it('scramble with all-fixed entries returns a deep copy with no shuffle', () => {
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: true, letter: Letter.try('B') },
-      { position: 2, fixed: true, letter: Letter.try('C') },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: true, letter: Letter.try('B')! },
+      { position: Position.of(2), fixed: true, letter: Letter.try('C')! },
     ];
 
     const rng = new SeededRng(12345);
@@ -199,11 +201,11 @@ describe('Anagram', () => {
 
   it('scramble places shuffled non-fixed letters using SeededRng deterministically', () => {
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: false, letter: null },
-      { position: 2, fixed: false, letter: null },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: true, letter: Letter.try('E') },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: false, letter: null },
+      { position: Position.of(2), fixed: false, letter: null },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: true, letter: Letter.try('E')! },
     ];
 
     const rng = new SeededRng(12345);
@@ -224,11 +226,11 @@ describe('Anagram', () => {
 
   it('scramble does not mutate input entries', () => {
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: false, letter: null },
-      { position: 2, fixed: false, letter: null },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: true, letter: Letter.try('E') },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: false, letter: null },
+      { position: Position.of(2), fixed: false, letter: null },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: true, letter: Letter.try('E')! },
     ];
     const original = entries.map((e) => ({ ...e }));
 
@@ -238,11 +240,11 @@ describe('Anagram', () => {
 
   it('scramble with two SeededRng instances seeded identically produces identical output', () => {
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: false, letter: null },
-      { position: 1, fixed: false, letter: null },
-      { position: 2, fixed: false, letter: null },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: false, letter: null },
+      { position: Position.of(0), fixed: false, letter: null },
+      { position: Position.of(1), fixed: false, letter: null },
+      { position: Position.of(2), fixed: false, letter: null },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: false, letter: null },
     ];
 
     const resultA = Anagram.scramble(entries, 'HELLO', new SeededRng(42));
@@ -253,11 +255,11 @@ describe('Anagram', () => {
 
   it('scramble throws when input shorter than fixed-count', () => {
     const entries: AnagramEntry[] = [
-      { position: 0, fixed: true, letter: Letter.try('A') },
-      { position: 1, fixed: true, letter: Letter.try('B') },
-      { position: 2, fixed: true, letter: Letter.try('C') },
-      { position: 3, fixed: false, letter: null },
-      { position: 4, fixed: false, letter: null },
+      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
+      { position: Position.of(1), fixed: true, letter: Letter.try('B')! },
+      { position: Position.of(2), fixed: true, letter: Letter.try('C')! },
+      { position: Position.of(3), fixed: false, letter: null },
+      { position: Position.of(4), fixed: false, letter: null },
     ];
 
     expect(() => Anagram.scramble(entries, 'AB', new SeededRng(1))).toThrow(
@@ -267,7 +269,7 @@ describe('Anagram', () => {
 
   it('scramble throws when input longer than word.length', () => {
     const entries: AnagramEntry[] = Array.from({ length: 5 }, (_, i) => ({
-      position: i,
+      position: Position.of(i),
       fixed: false,
       letter: null,
     }));

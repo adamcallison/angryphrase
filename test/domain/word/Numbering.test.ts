@@ -8,6 +8,7 @@ import { Row } from '../../../src/domain/grid/Row';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { DerivedWord } from '../../../src/domain/word/DerivedWord';
 import type { Word } from '../../../src/domain/word/Word';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { Numbering } from '../../../src/domain/word/Numbering';
 
 describe('Numbering', () => {
@@ -27,7 +28,7 @@ describe('Numbering', () => {
   ): DerivedWord {
     return {
       key: { startRow: Row.of(row), startCol: Col.of(col), direction },
-      length,
+      length: WordLength.of(length),
       clue: '',
       nextWord: null,
     };
@@ -139,7 +140,7 @@ describe('Numbering', () => {
     const words: DerivedWord[] = [
       {
         key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
-        length: 3,
+        length: WordLength.of(3),
         clue: 'sample clue',
         nextWord: nextKey,
       },

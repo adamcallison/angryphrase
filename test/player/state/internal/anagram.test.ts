@@ -26,8 +26,6 @@ import type { Direction } from '../../../../src/domain/word/Direction';
 
 type SolvingPlayerState = Extract<PlayerStateType, { phase: 'solving' }>;
 
-const deps = { rng: new SeededRng(1), now: () => 0 };
-
 function makeGrid(size: number, blackCells: [number, number][]): ReturnType<typeof GridOps.blank> {
   let grid = GridOps.blank(GridSize.of(size));
   for (const [r, c] of blackCells) {
@@ -65,7 +63,7 @@ function withAnagram(
   state: SolvingPlayerState,
   openedForWord: WordKey,
   input = '',
-  scrambledArrangement: Letter[] | null = null,
+  scrambledArrangement: (Letter | null)[] | null = null,
 ): SolvingPlayerState {
   return {
     ...state,
@@ -139,14 +137,14 @@ function makeTwoWordChainState(): {
 describe('handleOpenAnagramHelper', () => {
   it('open-anagram-helper: no-op when phase is import', () => {
     const state = importState();
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('open-anagram-helper: no-op when cursor is null', () => {
     const state = solvingState(5);
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
@@ -159,14 +157,14 @@ describe('handleOpenAnagramHelper', () => {
       ]),
       { row: 0, col: 0, direction: 'across' },
     );
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('open-anagram-helper: opens modal with openedForWord set to the cursor-direction word containing the cell (FR-81)', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     const expectedKey = findWordKey(state, 0, 0, 'across');
     expect(result.state.anagram).toEqual({
@@ -178,7 +176,7 @@ describe('handleOpenAnagramHelper', () => {
 
   it('open-anagram-helper: input is empty string and scrambledArrangement is null on open', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('');
     expect(result.state.anagram?.scrambledArrangement).toBe(null);
@@ -194,7 +192,7 @@ describe('handleOpenAnagramHelper', () => {
         emptyCells: [],
       },
     };
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.cursor).toEqual(state.cursor);
     expect(result.state.checkResult).toEqual(state.checkResult);
@@ -207,7 +205,7 @@ describe('handleOpenAnagramHelper', () => {
     const downKey = findWordKey(state, 0, 0, 'down');
     state = withAnagram(state, acrossKey);
     state = withCursor(state, { row: 0, col: 0, direction: 'down' });
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.openedForWord).toEqual(downKey);
     expect(result.state.anagram?.input).toBe('');
@@ -218,7 +216,7 @@ describe('handleOpenAnagramHelper', () => {
     const { state: base, headKey, tailKey } = makeTwoWordChainState();
     let state = base;
     state = withCursor(state, { row: 1, col: 0, direction: 'across' });
-    const result = handleOpenAnagramHelper(state, { kind: 'open-anagram-helper' }, deps);
+    const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(WordKey.equals(result.state.anagram!.openedForWord, headKey)).toBe(true);
     expect(WordKey.equals(result.state.anagram!.openedForWord, tailKey)).toBe(false);
@@ -229,7 +227,7 @@ describe('handleAnagramInput', () => {
   it('anagram-input: no-op when phase is import', () => {
     const state = importState();
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
@@ -237,7 +235,7 @@ describe('handleAnagramInput', () => {
   it('anagram-input: no-op when anagram is null', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
@@ -247,7 +245,7 @@ describe('handleAnagramInput', () => {
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABC');
   });
@@ -257,7 +255,7 @@ describe('handleAnagramInput', () => {
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABCDEFGHIJ' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toHaveLength(5);
     expect(result.state.anagram?.input).toBe('ABCDE');
@@ -268,7 +266,7 @@ describe('handleAnagramInput', () => {
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'abc' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABC');
   });
@@ -278,7 +276,7 @@ describe('handleAnagramInput', () => {
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'a1b!c@d#e' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABCDE');
   });
@@ -294,7 +292,7 @@ describe('handleAnagramInput', () => {
       Letter.try('E')!,
     ]);
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'XYZ' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('XYZ');
     expect(result.state.anagram?.scrambledArrangement).toBe(null);
@@ -311,7 +309,7 @@ describe('handleAnagramInput', () => {
       Letter.try('E')!,
     ]);
     const intent: PlayerIntent = { kind: 'anagram-input', input: '' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('');
     expect(result.state.anagram?.scrambledArrangement).toBe(null);
@@ -321,7 +319,7 @@ describe('handleAnagramInput', () => {
     const { state: base, headKey } = makeTwoWordChainState();
     const state = withAnagram(base, headKey, 'ABCDEFG');
     const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABCDEFG' };
-    const result = handleAnagramInput(state, intent, deps);
+    const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABCDEF');
   });
@@ -338,46 +336,41 @@ describe('handleAnagramScramble', () => {
 
   it('anagram-scramble: no-op when phase is import', () => {
     const state = importState();
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('anagram-scramble: no-op when anagram is null', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('anagram-scramble: sets scrambledArrangement from Anagram.scramble result (FR-86)', () => {
     const state = scrambleState('ABCDE');
+    const expectedRng = new SeededRng(1);
+    const resultRng = new SeededRng(1);
     const word = state.puzzle.words.find((w) =>
       WordKey.equals(w.key, state.anagram!.openedForWord),
     )!;
     const { entries } = Anagram.buildWordModel(state.puzzle.grid, word);
-    const expected = Anagram.scramble(entries, 'ABCDE', deps.rng)
-      .map((e) => e.letter)
-      .filter((l): l is Letter => l !== null);
+    const expected = Anagram.scramble(entries, 'ABCDE', expectedRng).map((e) => e.letter);
 
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, {
-      rng: new SeededRng(1),
-      now: () => 0,
-    });
+    const result = handleAnagramScramble(state, resultRng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.scrambledArrangement).toEqual(expected);
   });
 
-  it('anagram-scramble: uses deps.rng (deterministic given seed)', () => {
+  it('anagram-scramble: uses rng (deterministic given seed)', () => {
     const state = scrambleState('ABCDE');
-    const resultA = handleAnagramScramble(state, { kind: 'anagram-scramble' }, {
-      rng: new SeededRng(1),
-      now: () => 0,
-    });
-    const resultB = handleAnagramScramble(state, { kind: 'anagram-scramble' }, {
-      rng: new SeededRng(1),
-      now: () => 0,
-    });
+    const rngA = new SeededRng(1);
+    const rngB = new SeededRng(1);
+    const resultA = handleAnagramScramble(state, rngA);
+    const resultB = handleAnagramScramble(state, rngB);
     if (resultA.state.phase !== 'solving' || resultB.state.phase !== 'solving') {
       throw new Error('expected solving');
     }
@@ -388,14 +381,9 @@ describe('handleAnagramScramble', () => {
 
   it('anagram-scramble: with two different SeededRng seeds, produces different scrambledArrangement', () => {
     const state = scrambleState('ABCDE');
-    const resultA = handleAnagramScramble(state, { kind: 'anagram-scramble' }, {
-      rng: new SeededRng(1),
-      now: () => 0,
-    });
-    const resultB = handleAnagramScramble(state, { kind: 'anagram-scramble' }, {
-      rng: new SeededRng(2),
-      now: () => 0,
-    });
+    const rng = new SeededRng(1);
+    const resultA = handleAnagramScramble(state, rng);
+    const resultB = handleAnagramScramble(state, new SeededRng(2));
     if (resultA.state.phase !== 'solving' || resultB.state.phase !== 'solving') {
       throw new Error('expected solving');
     }
@@ -406,7 +394,8 @@ describe('handleAnagramScramble', () => {
 
   it('anagram-scramble: preserves input length and the scrambled arrangement has the correct entries (non-null letters)', () => {
     const state = scrambleState('ABCDE');
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.scrambledArrangement).toHaveLength(5);
     expect(result.state.anagram?.scrambledArrangement?.every((l) => l !== null)).toBe(true);
@@ -414,8 +403,9 @@ describe('handleAnagramScramble', () => {
 
   it('anagram-scramble: does not mutate the grid (FR-87 scratchpad only)', () => {
     const state = scrambleState('ABCDE');
+    const rng = new SeededRng(1);
     const originalGrid = state.puzzle.grid;
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const result = handleAnagramScramble(state, rng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.puzzle.grid).toBe(originalGrid);
     expect(GridOps.equals(result.state.puzzle.grid, originalGrid)).toBe(true);
@@ -423,6 +413,7 @@ describe('handleAnagramScramble', () => {
 
   it('anagram-scramble: does not modify cursor, checkResult, or puzzle', () => {
     let state = scrambleState('ABCDE');
+    const rng = new SeededRng(1);
     state = {
       ...state,
       checkResult: {
@@ -431,7 +422,7 @@ describe('handleAnagramScramble', () => {
         emptyCells: [],
       },
     };
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const result = handleAnagramScramble(state, rng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.cursor).toEqual(state.cursor);
     expect(result.state.checkResult).toEqual(state.checkResult);
@@ -443,26 +434,43 @@ describe('handleAnagramScramble', () => {
     let state = withPlayerLetter(base, 0, 0, 'A');
     state = withPlayerLetter(state, 1, 0, 'B');
     state = withAnagram(state, headKey, 'ABCDEF');
-    const result = handleAnagramScramble(state, { kind: 'anagram-scramble' }, deps);
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     const arrangement = result.state.anagram?.scrambledArrangement;
     expect(arrangement).toHaveLength(6);
     expect(arrangement?.[0]).toEqual(Letter.try('A')!);
     expect(arrangement?.[3]).toEqual(Letter.try('B')!);
   });
+
+  it('anagram-scramble: scrambledArrangement is entries-aligned when input is short (E3 structural contract)', () => {
+    // 3-letter across word at row 0, cols 0..2; fix A at col 2; input 'BA' (1 fixed + 1 pool).
+    let state = withCursor(solvingState(3), { row: 0, col: 0, direction: 'across' });
+    state = withPlayerLetter(state, 0, 2, 'A');
+    const key = findWordKey(state, 0, 0, 'across');
+    state = withAnagram(state, key, 'BA');
+    const rng = new SeededRng(1);
+    const result = handleAnagramScramble(state, rng);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    const arrangement = result.state.anagram?.scrambledArrangement;
+    expect(arrangement).toHaveLength(3);
+    expect(arrangement?.[0]).not.toBeNull();              // pool letter 'B' lands in a non-fixed slot
+    expect(arrangement?.[1]).toBeNull();                 // unfilled non-fixed slot (pool exhausted)
+    expect(arrangement?.[2]).toEqual(Letter.try('A')!);  // fixed slot preserved
+  });
 });
 
 describe('handleCloseAnagramHelper', () => {
   it('close-anagram-helper: no-op when phase is import', () => {
     const state = importState();
-    const result = handleCloseAnagramHelper(state, { kind: 'close-anagram-helper' }, deps);
+    const result = handleCloseAnagramHelper(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('close-anagram-helper: no-op when anagram is already null', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const result = handleCloseAnagramHelper(state, { kind: 'close-anagram-helper' }, deps);
+    const result = handleCloseAnagramHelper(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
@@ -471,7 +479,7 @@ describe('handleCloseAnagramHelper', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const result = handleCloseAnagramHelper(state, { kind: 'close-anagram-helper' }, deps);
+    const result = handleCloseAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram).toBe(null);
   });
@@ -488,7 +496,7 @@ describe('handleCloseAnagramHelper', () => {
         emptyCells: [],
       },
     };
-    const result = handleCloseAnagramHelper(state, { kind: 'close-anagram-helper' }, deps);
+    const result = handleCloseAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.cursor).toEqual(state.cursor);
     expect(result.state.checkResult).toEqual(state.checkResult);
@@ -499,14 +507,14 @@ describe('handleCloseAnagramHelper', () => {
 describe('handleEscape', () => {
   it('escape: no-op when phase is import', () => {
     const state = importState();
-    const result = handleEscape(state, { kind: 'escape' }, deps);
+    const result = handleEscape(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
   it('escape: no-op when anagram is already null in solving phase', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const result = handleEscape(state, { kind: 'escape' }, deps);
+    const result = handleEscape(state);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
@@ -515,7 +523,7 @@ describe('handleEscape', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const result = handleEscape(state, { kind: 'escape' }, deps);
+    const result = handleEscape(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram).toBe(null);
   });
@@ -524,7 +532,7 @@ describe('handleEscape', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const result = handleEscape(state, { kind: 'escape' }, deps);
+    const result = handleEscape(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.cursor).toEqual(state.cursor);
     expect(result.state.puzzle).toBe(state.puzzle);

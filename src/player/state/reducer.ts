@@ -2,6 +2,7 @@ import type { PlayerIntent } from './intents';
 import { PlayerState } from './state';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import type { Rng } from '../../domain/rng/Rng';
+import type { EpochMs } from '../../domain/time/EpochMs';
 import {
   handleApplyLoadedProgress,
   handleConfirmResetPlayer,
@@ -29,59 +30,59 @@ import {
 export function reducePlayer(
   state: PlayerState,
   intent: PlayerIntent,
-  deps: { rng: Rng; now: () => number },
+  deps: { rng: Rng; now: () => EpochMs },
 ): ReducerResult<PlayerState> {
   switch (intent.kind) {
     case 'import-new-puzzle':
-      return handleImportNewPuzzle(state, intent, deps);
+      return handleImportNewPuzzle();
 
     case 'import-puzzle':
-      return handleImportPuzzle(state, intent, deps);
+      return handleImportPuzzle(intent);
 
     case 'apply-loaded-progress':
-      return handleApplyLoadedProgress(state, intent, deps);
+      return handleApplyLoadedProgress(state, intent);
 
     case 'request-reset-player':
-      return handleRequestResetPlayer(state, intent, deps);
+      return handleRequestResetPlayer(state);
 
     case 'confirm-reset-player':
-      return handleConfirmResetPlayer(state, intent, deps);
+      return handleConfirmResetPlayer(state);
 
     case 'escape':
-      return handleEscape(state, intent, deps);
+      return handleEscape(state);
 
     case 'close-anagram-helper':
-      return handleCloseAnagramHelper(state, intent, deps);
+      return handleCloseAnagramHelper(state);
 
     case 'open-anagram-helper':
-      return handleOpenAnagramHelper(state, intent, deps);
+      return handleOpenAnagramHelper(state);
 
     case 'anagram-input':
-      return handleAnagramInput(state, intent, deps);
+      return handleAnagramInput(state, intent);
 
     case 'anagram-scramble':
-      return handleAnagramScramble(state, intent, deps);
+      return handleAnagramScramble(state, deps.rng);
 
     case 'select-cell':
-      return handleSelectCell(state, intent, deps);
+      return handleSelectCell(state, intent);
 
     case 'move-cursor':
-      return handleMoveCursor(state, intent, deps);
+      return handleMoveCursor(state, intent);
 
     case 'click-clue-panel-word':
-      return handleClickCluePanelWord(state, intent, deps);
+      return handleClickCluePanelWord(state, intent);
 
     case 'type-letter':
-      return handleTypeLetter(state, intent, deps);
+      return handleTypeLetter(state, intent);
 
     case 'backspace':
-      return handleBackspace(state, intent, deps);
+      return handleBackspace(state);
 
     case 'check':
-      return handleCheck(state, intent, deps);
+      return handleCheck(state);
 
     case 'clear-errors':
-      return handleClearErrors(state, intent, deps);
+      return handleClearErrors(state);
 
     default:
       assertUnreachable(intent);

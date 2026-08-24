@@ -50,6 +50,7 @@ describe('modalStore.svelte.ts', () => {
 
     const initial = makeBlankAppState(42);
     bootApp(initial, { rng: seededRng, now: () => fakeClock.now() }, createPersistenceScheduler(inMemoryStorage));
+    dispatch({ kind: 'navigate', route: 'build' });
   });
 
   afterEach(() => {

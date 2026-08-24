@@ -8,6 +8,7 @@ import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { CellMarkerFlag } from '../../../../src/domain/grid/CellMarkerFlag';
@@ -38,7 +39,7 @@ function word3Across(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 3,
+    length: WordLength.of(3),
     clue: 'Test clue',
     nextWord: null,
   };
@@ -48,7 +49,7 @@ function word4Across(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 4,
+    length: WordLength.of(4),
     clue: 'Test clue',
     nextWord: null,
   };
@@ -58,7 +59,7 @@ function word3AcrossHead(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 3,
+    length: WordLength.of(3),
     clue: 'Head clue',
     nextWord: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
   };
@@ -68,7 +69,7 @@ function word4DownTail(): Word {
   return {
     key: { startRow: Row.of(0), startCol: Col.of(2), direction: 'down' },
     number: WordNumber.of(2),
-    length: 4,
+    length: WordLength.of(4),
     clue: 'Tail clue',
     nextWord: null,
   };
@@ -107,6 +108,18 @@ function makeAnagramModal(
     openedForWord,
     input,
     scrambledArrangement: scrambledArrangement === null ? null : makeLetters(scrambledArrangement),
+  };
+}
+
+function makeAnagramModalAligned(
+  input: string,
+  scrambled: (string | null)[],
+  openedForWord: Word['key'] = { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+): AnagramModalState {
+  return {
+    openedForWord,
+    input,
+    scrambledArrangement: scrambled.map((ch) => (ch === null ? null : Letter.try(ch)!)),
   };
 }
 
@@ -161,6 +174,17 @@ describe('deriveAnagramModalVM', () => {
     expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
     expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: 'B' });
     expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
+  });
+
+  it('deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (E3 — short input does not desync)', () => {
+    let grid = grid3x3();
+    grid = setPlayerLetter(grid, 0, 2, 'A');   // fix A at position 2
+    const word = word3Across();
+    const modal = makeAnagramModalAligned('B', ['B', null, 'A']);
+    const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    expect(result.tiles[0]).toEqual({ position: 0, fixed: false, letter: 'B' });
+    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null });
+    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'A' });
   });
 
   it('deriveAnagramModalVM: separators echo from Anagram.buildWordModel', () => {

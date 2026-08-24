@@ -18,11 +18,12 @@ import { Title } from '../../../../src/domain/puzzle/Title';
 import { Author } from '../../../../src/domain/puzzle/Author';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
-import type { Cursor } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { PlayerState, CheckResult, AnagramModalState } from '../../../../src/player/state/state';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 
@@ -80,7 +81,7 @@ function makeWord(opts: {
       direction: opts.direction,
     },
     number: WordNumber.of(opts.number),
-    length: opts.length,
+    length: WordLength.of(opts.length),
     clue: opts.clue ?? '',
     nextWord: opts.nextWord ?? null,
   };
@@ -376,6 +377,23 @@ describe('derivePlayerShellVM', () => {
       canOpenAnagram: false,
       canImportNew: false,
     });
+  });
+
+  it('derivePlayerShellVM: import phase bottomBanner === topBanner (same shared instance)', () => {
+    const state = makeImportState();
+    const vm = derivePlayerShellVM(state);
+    expect(vm.bottomBanner).toBe(vm.topBanner);
+  });
+
+  it('derivePlayerShellVM: import phase grid + anagram + toolbar identical across two calls (module-level constants); only importError tracks state.lastImportError', () => {
+    const vmA = derivePlayerShellVM(makeImportState('err one'));
+    const vmB = derivePlayerShellVM(makeImportState('err two'));
+    expect(vmA.grid).toBe(vmB.grid);
+    expect(vmA.anagram).toBe(vmB.anagram);
+    expect(vmA.toolbar).toBe(vmB.toolbar);
+    expect(vmA.cluePanel).toBe(vmB.cluePanel);
+    expect(vmA.importError).toBe('err one');
+    expect(vmB.importError).toBe('err two');
   });
 
   it('derivePlayerShellVM: solving phase empty cursor → phase="solving"; grid empty cursor reflected; topBanner nulls; bottomBanner === topBanner (same instance)', () => {

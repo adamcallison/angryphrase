@@ -1,7 +1,7 @@
 import type { Word } from '../word/Word';
 import type { WordMap } from '../word/WordMap';
 import { Chain } from './Chain';
-import { WordKey } from '../word/WordKey';
+import { WordMap as WordMapCtor } from '../word/WordMap';
 
 export const DisplayClue: {
   forWord(words: WordMap, w: Word): string;
@@ -11,29 +11,13 @@ export const DisplayClue: {
       return w.clue;
     }
 
-    const reverse = new Map<string, Word>();
-    for (const src of words.values()) {
-      if (src.nextWord !== null) {
-        reverse.set(WordKey.toCanonical(src.nextWord), src);
-      }
+    const headKey = Chain.headOf(words, w.key);
+    const head = WordMapCtor.get(words, headKey);
+    if (head === undefined) {
+      throw new Error('DisplayClue.forWord: head missing from word map');
     }
 
-    const visited = new Set<string>();
-    let current: Word = w;
-
-    while (!Chain.isHead(words, current.key)) {
-      const pred = reverse.get(WordKey.toCanonical(current.key));
-      if (pred === undefined) {
-        throw new Error('DisplayClue.forWord: non-head word has no reachable head');
-      }
-      if (visited.has(WordKey.toCanonical(current.key))) {
-        throw new Error('DisplayClue.forWord: non-head word has no reachable head');
-      }
-      visited.add(WordKey.toCanonical(current.key));
-      current = pred;
-    }
-
-    const directionName = current.key.direction.charAt(0).toUpperCase() + current.key.direction.slice(1);
-    return `See ${Number(current.number)} ${directionName}`;
+    const directionName = head.key.direction.charAt(0).toUpperCase() + head.key.direction.slice(1);
+    return `See ${Number(head.number)} ${directionName}`;
   },
 };

@@ -21,6 +21,7 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { FakeClock } from '../../fakes/FakeClock';
+import { EpochMs } from '../../../src/domain/time/EpochMs';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
@@ -83,6 +84,7 @@ describe('appStore.svelte.ts', () => {
 
     const initial = makeBlankAppState(42);
     bootApp(initial, { rng: seededRng, now: () => fakeClock.now() }, createPersistenceScheduler(inMemoryStorage));
+    dispatch({ kind: 'navigate', route: 'build' });
   });
 
   afterEach(() => {
@@ -190,6 +192,20 @@ describe('appStore.svelte.ts', () => {
     expect(last).toBeDefined();
     expect(last!.filename).toContain('complete');
     expect(last!.content).toContain(puzzle.key);
+  });
+
+  it('appStore: download failure surfaces an error toast (StubDownloadPort injected to return Error)', () => {
+    const puzzle = makeCompletePuzzle(11, 3);
+    dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+
+    stubDownload.nextDownloadError = new Error('boom');
+    dispatch({ kind: 'export-complete' });
+
+    expect(stubDownload.getDownloadCount()).toBe(1);
+    const toasts = getToasts();
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]!.kind).toBe('error');
+    expect(toasts[0]!.message).toBe('Download failed. Please try again.');
   });
 
   it('appStore: clear-builder-storage event calls scheduler.clearBuilder() — verify storage cleared (no pending save fires later)', () => {
@@ -313,7 +329,7 @@ describe('appStore.svelte.ts', () => {
     const newState = makeBlankAppState(99);
     const newScheduler = createPersistenceScheduler(inMemoryStorage);
 
-    bootApp(newState, { rng: newRng, now: () => 1234 }, newScheduler);
+    bootApp(newState, { rng: newRng, now: () => EpochMs.of(1234) }, newScheduler);
 
     expect(getAppState()).toBe(newState);
     expect(getScheduler()).toBe(newScheduler);

@@ -9,14 +9,16 @@
 
   const route = $derived(getRoute());
 
-  // Autosave: observe builder / player state and schedule debounced persistence.
-  // Reading inside $effect registers the reactive subscription; scheduler.takeState
-  // coalesces multiple rapid changes into one save (400ms default).
+  // Autosave: observe each state slice independently and schedule debounced persistence.
+  // Reading inside each $effect registers that slice's reactive subscription; the
+  // scheduler coalesces multiple rapid changes into one save (400ms default).
+  // Split per-slice so a builder keystroke does not re-arm the player timer, and vice versa.
+  // Relies on reducers preserving sibling substate refs (spreads copy the other ref unchanged).
   $effect(() => {
-    const builder = getBuilder();
-    const player = getPlayer();
-    getScheduler().scheduleBuilderSave(builder);
-    getScheduler().schedulePlayerSave(player);
+    getScheduler().scheduleBuilderSave(getBuilder());
+  });
+  $effect(() => {
+    getScheduler().schedulePlayerSave(getPlayer());
   });
 </script>
 

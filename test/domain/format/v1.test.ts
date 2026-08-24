@@ -16,12 +16,15 @@ import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import type { Word } from '../../../src/domain/word/Word';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { DisplacedClue } from '../../../src/domain/builder/DisplacedClue';
 import { SeededRng } from '../../fakes/SeededRng';
 
 const VALID_UUID = '00000000-0000-4000-8000-000000000000';
+const UUID_A = '01234567-89ab-4def-89ab-0123456789ab';
+const UUID_B = '01234567-89ab-4def-89ab-0123456789cd';
 
 function makeKey() {
   return PuzzleKey.generate(new SeededRng(42));
@@ -66,7 +69,6 @@ function makeWord(
     startCol,
     direction,
     length,
-    number: 1,
     clue,
     nextWord,
   };
@@ -126,7 +128,7 @@ function buildPuzzle(
   const word: Word = {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue,
     nextWord: null,
   };
@@ -372,18 +374,14 @@ describe('parsePuzzleV1', () => {
     expect(result.failures[0]!.message).toMatch(/length/);
   });
 
-  it('overwrites listed word.number with the re-derived number (FR-98a) — assert via parse then serialize back', () => {
+  it('rejects word carrying a number field (DRN5 — number dropped from v1 format, strict)', () => {
     const data = makeValidIncomplete();
-    data.words[0] = { ...data.words[0]!, number: 42 };
+    (data.words[0] as Record<string, unknown>).number = 42;
     const result = parsePuzzleV1(JSON.stringify(data));
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    const serialized = serializeIncomplete(result.puzzle, result.displacedClues);
-    const reparsed = parsePuzzleV1(serialized);
-    expect(reparsed.ok).toBe(true);
-    if (!reparsed.ok) return;
-    expect(reparsed.puzzle.words[0]!.number).toBe(WordNumber.of(1));
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.some(f => /number/.test(f.message))).toBe(true);
   });
 
   it('rejects cycle in nextWord links (ChainValidation)', () => {
@@ -432,21 +430,21 @@ describe('parsePuzzleV1', () => {
   it('rejects displacedClues with duplicate id', () => {
     const data = makeValidIncomplete();
     data.displacedClues = [
-      { id: 'same-id', clue: 'First', direction: 'across' },
-      { id: 'same-id', clue: 'Second', direction: 'down' },
+      { id: UUID_A, clue: 'First', direction: 'across' },
+      { id: UUID_A, clue: 'Second', direction: 'down' },
     ];
     const result = parsePuzzleV1(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.failures.map((f) => f.message)).toContain(
-      'Duplicate displacedClue id: same-id.',
+      `Duplicate displacedClue id: ${UUID_A}.`,
     );
   });
 
   it('rejects displacedClues with malformed entry (missing direction)', () => {
     const data = makeValidIncomplete();
-    data.displacedClues = [{ id: 'id-1', clue: 'Clue' }] as typeof data.displacedClues;
+    data.displacedClues = [{ id: UUID_A, clue: 'Clue' }] as typeof data.displacedClues;
     const result = parsePuzzleV1(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
@@ -454,9 +452,33 @@ describe('parsePuzzleV1', () => {
     expect(result.failures.map((f) => f.message)).toContain('displacedClues is malformed.');
   });
 
+  it('rejects displacedClues with a non-UUID id', () => {
+    const data = makeValidIncomplete();
+    data.displacedClues = [{ id: 'not-a-uuid', clue: 'Clue', direction: 'across' }];
+    const result = parsePuzzleV1(JSON.stringify(data));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.map((f) => f.message)).toContain(
+      'displacedClue id is not a valid UUID v4: not-a-uuid.',
+    );
+  });
+
+  it('rejects displacedClues with an id that is raw 32-hex (legacy non-UUID format)', () => {
+    const data = makeValidIncomplete();
+    data.displacedClues = [{ id: 'ab'.repeat(16), clue: 'Clue', direction: 'across' }];
+    const result = parsePuzzleV1(JSON.stringify(data));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.map((f) => f.message)).toContain(
+      `displacedClue id is not a valid UUID v4: ${'ab'.repeat(16)}.`,
+    );
+  });
+
   it('rejects complete file that includes displacedClues', () => {
     const data = makeValidComplete() as Record<string, unknown>;
-    data.displacedClues = [{ id: 'id-1', clue: 'Clue', direction: 'across' }];
+    data.displacedClues = [{ id: UUID_A, clue: 'Clue', direction: 'across' }];
     const result = parsePuzzleV1(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
@@ -482,7 +504,7 @@ describe('parsePuzzleV1', () => {
 describe('serializeIncomplete', () => {
   it('serializeIncomplete produces exactly the field set specified in §6.1', () => {
     const p = buildPuzzle('incomplete', [null, null], '');
-    const displaced = [{ id: 'dc-1', clue: 'Displaced clue', direction: 'across' as Direction }] as DisplacedClue[];
+    const displaced = [{ id: UUID_A, clue: 'Displaced clue', direction: 'across' as Direction }] as DisplacedClue[];
     const json = serializeIncomplete(p, displaced);
     const result = parsePuzzleV1(json);
 
@@ -506,7 +528,7 @@ describe('serializeIncomplete', () => {
     const word: Word = {
       key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
       number: WordNumber.of(1),
-      length: 2,
+      length: WordLength.of(2),
       clue: '',
       nextWord: null,
     };
@@ -514,8 +536,8 @@ describe('serializeIncomplete', () => {
     p = Puzzle.withMetadata(p, Title.try('My Title'), Author.try('My Author'));
 
     const displaced = [
-      { id: 'dc-1', clue: 'First displaced', direction: 'across' as Direction },
-      { id: 'dc-2', clue: 'Second displaced', direction: 'down' as Direction },
+      { id: UUID_A, clue: 'First displaced', direction: 'across' as Direction },
+      { id: UUID_B, clue: 'Second displaced', direction: 'down' as Direction },
     ] as DisplacedClue[];
     const json = serializeIncomplete(p, displaced);
     const result = parsePuzzleV1(json);

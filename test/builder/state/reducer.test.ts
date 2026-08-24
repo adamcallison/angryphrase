@@ -146,6 +146,7 @@ describe('reduceBuilder', () => {
     expect(result.state.puzzle.words).toStrictEqual(
       Numbering.assign(result.state.puzzle.grid, WordDerivation.derive(result.state.puzzle.grid)),
     );
+    expect(result.state.puzzle.gridSize).toBe(GridSize.of(20));
   });
 
   it('returns ReducerResult shape (state + events: [])', () => {
@@ -442,7 +443,6 @@ describe('reduceBuilder', () => {
       startCol,
       direction,
       length,
-      number: 1,
       clue,
       nextWord: null,
     };

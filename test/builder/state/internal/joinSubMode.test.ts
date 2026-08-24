@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleBeginJoin, handleUnjoin, resolveJoin } from '../../../../src/builder/state/internal/joinSubMode';
-import { BuilderState, type Cursor } from '../../../../src/builder/state/state';
+import { BuilderState } from '../../../../src/builder/state/state';
+import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
@@ -17,7 +18,7 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 import { DisplacedClueId } from '../../../../src/domain/builder/DisplacedClueId';
 
-const deps = { rng: new SeededRng(1), now: () => 0 };
+const rng = new SeededRng(1);
 
 function makeState(
   size: number,
@@ -81,7 +82,7 @@ describe('handleBeginJoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(state, intent, deps);
+    const result = handleBeginJoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -96,7 +97,7 @@ describe('handleBeginJoin', () => {
     };
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(state, intent, deps);
+    const result = handleBeginJoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -107,7 +108,7 @@ describe('handleBeginJoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(state, intent, deps);
+    const result = handleBeginJoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -118,7 +119,7 @@ describe('handleBeginJoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(state, intent, deps);
+    const result = handleBeginJoin(state, intent);
 
     expect(result.state.subMode).toEqual({ kind: 'join', source });
     expect(result.state.puzzle).toBe(state.puzzle);
@@ -132,12 +133,12 @@ describe('handleBeginJoin', () => {
       ...state,
       subMode: {
         kind: 'reattach' as const,
-        displacedClueId: DisplacedClueId.generate(deps.rng),
+        displacedClueId: DisplacedClueId.generate(rng),
       },
     };
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(stateWithReattach, intent, deps);
+    const result = handleBeginJoin(stateWithReattach, intent);
 
     expect(result.state.subMode).toEqual({ kind: 'join', source });
     expect(result.events).toEqual([]);
@@ -151,7 +152,7 @@ describe('handleBeginJoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'begin-join', source };
 
-    const result = handleBeginJoin(state, intent, deps);
+    const result = handleBeginJoin(state, intent);
 
     expect(result.state.cursor).toEqual({ row: Row.of(2), col: Col.of(3), direction: 'across' });
     expect(result.state.puzzle).toBe(state.puzzle);
@@ -164,7 +165,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -179,7 +180,7 @@ describe('handleUnjoin', () => {
     };
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -190,7 +191,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -201,7 +202,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toBeNull();
@@ -214,7 +215,7 @@ describe('handleUnjoin', () => {
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const downstreamAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey));
     expect(downstreamAfter!.clue).toBe('');
@@ -234,7 +235,7 @@ describe('handleUnjoin', () => {
     const downstreamBefore = state.puzzle.words[1]!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const downstreamAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey))!;
     expect(downstreamAfter.key).toEqual(downstreamBefore.key);
@@ -257,7 +258,7 @@ describe('handleUnjoin', () => {
     const cKey = state.puzzle.words[2]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const bAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, bKey))!;
     expect(WordKey.equals(bAfter.nextWord!, cKey)).toBe(true);
@@ -277,7 +278,7 @@ describe('handleUnjoin', () => {
     const cKey = state.puzzle.words[2]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const cAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, cKey))!;
     expect(cAfter).toEqual(cBefore);
@@ -291,7 +292,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source))!;
     expect(sourceAfter.clue).toBe('Source clue');
@@ -307,7 +308,7 @@ describe('handleUnjoin', () => {
     const otherBefore = state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent, deps);
+    const result = handleUnjoin(state, intent);
 
     const otherAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     expect(otherAfter).toEqual(otherBefore);
@@ -320,7 +321,7 @@ describe('resolveJoin', () => {
     const source = state.puzzle.words[0]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, source, deps);
+    const result = resolveJoin(stateWithJoin, source, source, rng);
 
     expect(result.state.subMode).toEqual({ kind: 'none' });
     expect(result.state.puzzle).toBe(stateWithJoin.puzzle);
@@ -339,7 +340,7 @@ describe('resolveJoin', () => {
       direction: 'across',
     };
 
-    const result = resolveJoin(stateWithJoin, missingSource, target, deps);
+    const result = resolveJoin(stateWithJoin, missingSource, target, rng);
 
     expect(result.state).toBe(stateWithJoin);
     expect(result.events).toEqual([]);
@@ -355,7 +356,7 @@ describe('resolveJoin', () => {
       direction: 'across',
     };
 
-    const result = resolveJoin(stateWithJoin, source, missingTarget, deps);
+    const result = resolveJoin(stateWithJoin, source, missingTarget, rng);
 
     expect(result.state).toBe(stateWithJoin);
     expect(result.events).toEqual([]);
@@ -367,7 +368,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[2]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     expect(result.state).toBe(stateWithJoin);
     expect(result.events).toEqual([
@@ -390,7 +391,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[2]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source: state.puzzle.words[3]!.key } };
 
-    const result = resolveJoin(stateWithJoin, state.puzzle.words[3]!.key, target, deps);
+    const result = resolveJoin(stateWithJoin, state.puzzle.words[3]!.key, target, rng);
 
     expect(result.state).toBe(stateWithJoin);
     expect(result.events).toEqual([
@@ -408,7 +409,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toEqual(target);
@@ -420,7 +421,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     expect(result.state.subMode).toEqual({ kind: 'none' });
     expect(result.events).toEqual([]);
@@ -432,7 +433,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     expect(result.state.displacedClues).toHaveLength(1);
     expect(result.state.displacedClues[0]!.clue).toBe('Target clue');
@@ -445,7 +446,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     const targetAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, target));
     expect(targetAfter!.clue).toBe('');
@@ -457,7 +458,7 @@ describe('resolveJoin', () => {
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     expect(result.state.displacedClues).toHaveLength(0);
   });
@@ -468,7 +469,7 @@ describe('resolveJoin', () => {
       if (i === 2) return { ...w, clue: 'Other clue' };
       return w;
     });
-    const displaced = DisplacedClue.create(deps.rng, 'existing', 'down');
+    const displaced = DisplacedClue.create(rng, 'existing', 'down');
     const state = {
       ...base,
       puzzle: Puzzle.withWords(base.puzzle, words),
@@ -480,7 +481,7 @@ describe('resolveJoin', () => {
     const otherKey = state.puzzle.words[2]!.key;
     const otherBefore = state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
 
-    const result = resolveJoin(stateWithJoin, source, target, deps);
+    const result = resolveJoin(stateWithJoin, source, target, rng);
 
     const otherAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     expect(otherAfter).toEqual(otherBefore);

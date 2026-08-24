@@ -16,6 +16,7 @@ export const GridOps: {
   blank(size: GridSize): Grid;
   cellAt(g: Grid, row: Row, col: Col): Cell;
   setCell(g: Grid, row: Row, col: Col, c: Cell): Grid;
+  updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid;
   withinBounds(g: Grid, row: Row, col: Col): boolean;
   neighbours(g: Grid, row: Row, col: Col): { row: Row; col: Col }[];
   neighboursInDirection(g: Grid, row: Row, col: Col, d: Direction): { row: Row; col: Col } | null;
@@ -50,15 +51,31 @@ export const GridOps: {
     return newGrid;
   },
 
+  updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid {
+    if (updates.length === 0) return g;
+    for (const u of updates) {
+      if (!GridOps.withinBounds(g, u.row, u.col)) {
+        throw new RangeError(outOfBoundsMessage(g, u.row, u.col));
+      }
+    }
+    const newGrid = [...g];
+    const clonedRows = new Set<number>();
+    for (const u of updates) {
+      const r = Number(u.row);
+      const c = Number(u.col);
+      if (!clonedRows.has(r)) {
+        newGrid[r] = [...g[r]!];
+        clonedRows.add(r);
+      }
+      newGrid[r]![c] = u.cell;
+    }
+    return newGrid;
+  },
+
   withinBounds(g: Grid, row: Row, col: Col): boolean {
     const r = Number(row);
     const c = Number(col);
-    return (
-      r >= 0 &&
-      c >= 0 &&
-      r < g.length &&
-      c < (g[r]?.length ?? -1)
-    );
+    return r >= 0 && c >= 0 && r < g.length && c < g.length;
   },
 
   neighbours(g: Grid, row: Row, col: Col): { row: Row; col: Col }[] {

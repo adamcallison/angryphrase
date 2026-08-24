@@ -1,14 +1,15 @@
 import type { Puzzle } from '../../../domain/puzzle/Puzzle';
-import type { Word } from '../../../domain/word/Word';
 import type { WordKey } from '../../../domain/word/WordKey';
 import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
-import type { Cursor } from '../../../builder/state/state';
+import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerState, CheckResult, CheckClassification } from '../../../player/state/state';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { GridSize } from '../../../domain/grid/GridSize';
 import { WordMap } from '../../../domain/word/WordMap';
+import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
+import { ChainCells } from '../../../domain/chain/ChainCells';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { deriveGridVM, type GridVM } from './gridVM';
@@ -71,6 +72,36 @@ function emptyBanner(): ActiveClueBannerVM {
   };
 }
 
+const IMPORT_GRID_VM: GridVM = deriveGridVM({
+  grid: GridOps.blank(GridSize.of(2)),
+  cursor: null,
+  words: [],
+  whichLetter: 'player',
+  selectedWordCells: new Set<string>(),
+});
+
+const IMPORT_BANNER: ActiveClueBannerVM = emptyBanner();
+
+const IMPORT_CLUE_PANEL: PlayerCluePanelVM = {
+  across: [],
+  down: [],
+  highlightedWordKey: null,
+};
+
+const IMPORT_ANAGRAM: AnagramModalVM = deriveAnagramModalVM({
+  anagramModal: null,
+  grid: GridOps.blank(GridSize.of(2)),
+  words: [],
+});
+
+const IMPORT_TOOLBAR: PlayerToolbarVM = {
+  canCheck: false,
+  canClearErrors: false,
+  canReset: false,
+  canOpenAnagram: false,
+  canImportNew: false,
+};
+
 export function deriveActiveClueBannerVM(input: {
   puzzle: Puzzle | null;
   cursor: Cursor;
@@ -80,7 +111,7 @@ export function deriveActiveClueBannerVM(input: {
     return emptyBanner();
   }
 
-  const word = findContainingWord(puzzle.words, cursor);
+  const word = WordSelection.findContainingWord(puzzle.words, cursor);
   if (word === null) {
     return emptyBanner();
   }
@@ -114,19 +145,13 @@ export function derivePlayerCluePanelVM(input: {
 
 export function derivePlayerToolbarVM(state: PlayerState): PlayerToolbarVM {
   if (state.phase === 'import') {
-    return {
-      canCheck: false,
-      canClearErrors: false,
-      canReset: false,
-      canOpenAnagram: false,
-      canImportNew: false,
-    };
+    return IMPORT_TOOLBAR;
   }
 
   const hasIncorrect =
     state.checkResult !== null && state.checkResult.incorrectCells.length > 0;
   const cursorOnWord =
-    state.cursor !== null && findContainingWord(state.puzzle.words, state.cursor) !== null;
+    state.cursor !== null && WordSelection.findContainingWord(state.puzzle.words, state.cursor) !== null;
 
   return {
     canCheck: true,
@@ -177,50 +202,32 @@ export function deriveCheckResultVM(
   };
 }
 
+function deriveImportShellVM(state: Extract<PlayerState, { phase: 'import' }>): PlayerShellVM {
+  return {
+    phase: 'import',
+    importError: state.lastImportError,
+    title: '',
+    author: '',
+    grid: IMPORT_GRID_VM,
+    topBanner: IMPORT_BANNER,
+    bottomBanner: IMPORT_BANNER,
+    cluePanel: IMPORT_CLUE_PANEL,
+    toolbar: IMPORT_TOOLBAR,
+    anagram: IMPORT_ANAGRAM,
+    checkResult: null,
+  };
+}
+
 export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   if (state.phase === 'import') {
-    const blankGrid = GridOps.blank(GridSize.of(2));
-    const grid = deriveGridVM({
-      grid: blankGrid,
-      cursor: null,
-      words: [],
-      whichLetter: 'player',
-      selectedWordCells: new Set<string>(),
-    });
-    const topBanner = deriveActiveClueBannerVM({ puzzle: null, cursor: null });
-    const bottomBanner = topBanner;
-    const cluePanel: PlayerCluePanelVM = {
-      across: [],
-      down: [],
-      highlightedWordKey: null,
-    };
-    const toolbar = derivePlayerToolbarVM(state);
-    const anagram = deriveAnagramModalVM({
-      anagramModal: null,
-      grid: blankGrid,
-      words: [],
-    });
-
-    return {
-      phase: 'import',
-      importError: state.lastImportError,
-      title: '',
-      author: '',
-      grid,
-      topBanner,
-      bottomBanner,
-      cluePanel,
-      toolbar,
-      anagram,
-      checkResult: null,
-    };
+    return deriveImportShellVM(state);
   }
 
   const cursorWord = state.cursor
-    ? findContainingWord(state.puzzle.words, state.cursor)
+    ? WordSelection.findContainingWord(state.puzzle.words, state.cursor)
     : null;
   const highlightedWordKey = cursorWord ? cursorWord.key : null;
-  const selectedWordCells = cellsOfChain(state.puzzle.words, cursorWord);
+  const selectedWordCells = ChainCells.cellsOfChain(state.puzzle.words, cursorWord);
 
   const grid = deriveGridVM({
     grid: state.puzzle.grid,
@@ -261,47 +268,3 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   };
 }
 
-function findContainingWord(words: Word[], cursor: Cursor): Word | null {
-  if (cursor === null) {
-    return null;
-  }
-  const r = Number(cursor.row);
-  const c = Number(cursor.col);
-  for (const w of words) {
-    if (w.key.direction !== cursor.direction) continue;
-    const sr = Number(w.key.startRow);
-    const sc = Number(w.key.startCol);
-    if (cursor.direction === 'across') {
-      if (sr === r && c >= sc && c < sc + w.length) return w;
-    } else {
-      if (sc === c && r >= sr && r < sr + w.length) return w;
-    }
-  }
-  return null;
-}
-
-function cellsOfWord(w: Word): Set<string> {
-  const set = new Set<string>();
-  for (let i = 0; i < w.length; i++) {
-    const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
-    const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
-    set.add(`${r},${c}`);
-  }
-  return set;
-}
-
-function cellsOfChain(words: Word[], cursorWord: Word | null): Set<string> {
-  if (cursorWord === null) {
-    return new Set<string>();
-  }
-  const wordMap = WordMap.fromWords(words);
-  const head = Chain.headOf(wordMap, cursorWord.key);
-  const members = Chain.fromHead(wordMap, head).members;
-  const set = new Set<string>();
-  for (const m of members) {
-    for (const cell of cellsOfWord(m)) {
-      set.add(cell);
-    }
-  }
-  return set;
-}

@@ -1,5 +1,4 @@
 import type { Puzzle } from '../puzzle/Puzzle';
-import { Puzzle as PuzzleOps } from '../puzzle/Puzzle';
 import { Title } from '../puzzle/Title';
 import { Author } from '../puzzle/Author';
 import { PuzzleKey } from '../puzzle/PuzzleKey';
@@ -10,6 +9,7 @@ import { GridOps } from '../grid/GridOps';
 import { Cell } from '../grid/Cell';
 import type { CellMarker } from '../grid/CellMarker';
 import { WordKey } from '../word/WordKey';
+import { WordLength } from '../word/WordLength';
 import type { Direction } from '../word/Direction';
 import type { DerivedWord } from '../word/DerivedWord';
 import type { Word } from '../word/Word';
@@ -20,7 +20,7 @@ import { ChainValidation } from '../chain/ChainValidation';
 import { Chain } from '../chain/Chain';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
-import { brand } from '../brand';
+import { DisplacedClueId } from '../builder/DisplacedClueId';
 import type { Grid } from '../grid/Grid';
 
 export type PuzzleFileType = 'incomplete' | 'complete';
@@ -43,7 +43,6 @@ type ParsedWord = {
   startCol: number;
   direction: Direction;
   length: number;
-  number: number;
   clue: string;
   nextWord: { startRow: number; startCol: number; direction: Direction } | null;
 };
@@ -71,7 +70,6 @@ const WORD_KEYS = new Set<string>([
   'startCol',
   'direction',
   'length',
-  'number',
   'clue',
   'nextWord',
 ]);
@@ -233,7 +231,6 @@ function validateWords(
     const startCol = word.startCol;
     const direction = word.direction;
     const length = word.length;
-    const number = word.number;
     const clue = word.clue;
     const nextWord = word.nextWord;
 
@@ -251,10 +248,6 @@ function validateWords(
     }
     if (typeof length !== 'number' || !Number.isInteger(length) || length < 2) {
       failures.push({ message: `Word ${i}: length must be an integer >= 2.` });
-      wordError = true;
-    }
-    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) {
-      failures.push({ message: `Word ${i}: number must be an integer >= 1.` });
       wordError = true;
     }
     if (typeof clue !== 'string') {
@@ -308,7 +301,6 @@ function validateWords(
         startCol: startCol as number,
         direction: direction as Direction,
         length: length as number,
-        number: number as number,
         clue: clue as string,
         nextWord: parsedNextWord,
       });
@@ -326,7 +318,10 @@ function buildDomainGrid(cells: CellJson[][], gridSize: GridSize): Grid {
 
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      const cellData = cells[r]![c]!;
+      const rowData = cells[r];
+      if (rowData === undefined) throw new Error('v1.buildDomainGrid: cells[r] undefined');
+      const cellData = rowData[c];
+      if (cellData === undefined) throw new Error('v1.buildDomainGrid: cells[r][c] undefined');
       let cell;
 
       if (cellData.black) {
@@ -359,7 +354,7 @@ function buildDomainWords(parsedWords: ParsedWord[]): DerivedWord[] {
       startCol: Col.of(pw.startCol),
       direction: pw.direction,
     },
-    length: pw.length,
+    length: WordLength.of(pw.length),
     clue: pw.clue,
     nextWord:
       pw.nextWord === null
@@ -386,7 +381,8 @@ function crossCheckWords(
   let ok = true;
 
   for (let i = 0; i < parsedWords.length; i++) {
-    const pw = parsedWords[i]!;
+    const pw = parsedWords[i];
+    if (pw === undefined) throw new Error('v1.crossCheckWords: parsedWords[i] undefined');
     const key = WordKey.toCanonical({
       startRow: Row.of(pw.startRow),
       startCol: Col.of(pw.startCol),
@@ -422,7 +418,8 @@ function validateNextWordReferences(words: Word[], failures: ParseFailure[]): bo
   let ok = true;
 
   for (let i = 0; i < words.length; i++) {
-    const w = words[i]!;
+    const w = words[i];
+    if (w === undefined) throw new Error('v1.checkNextWordReferences: words[i] undefined');
     if (w.nextWord !== null && !WordMap.has(map, w.nextWord)) {
       failures.push({ message: `Word ${i} has a dangling nextWord reference.` });
       ok = false;
@@ -487,13 +484,13 @@ function validateClues(words: Word[], fileType: PuzzleFileType, failures: ParseF
 function validateDisplacedClues(
   displacedClues: unknown,
   failures: ParseFailure[],
-): { id: string; clue: string; direction: Direction }[] | null {
+): { id: DisplacedClueId; clue: string; direction: Direction }[] | null {
   if (!Array.isArray(displacedClues)) {
     failures.push({ message: 'displacedClues is malformed.' });
     return null;
   }
 
-  const result: { id: string; clue: string; direction: Direction }[] = [];
+  const result: { id: DisplacedClueId; clue: string; direction: Direction }[] = [];
   const seenIds = new Set<string>();
   let ok = true;
 
@@ -521,6 +518,13 @@ function validateDisplacedClues(
       continue;
     }
 
+    const validatedId = DisplacedClueId.try(id);
+    if (validatedId === null) {
+      failures.push({ message: `displacedClue id is not a valid UUID v4: ${id}.` });
+      ok = false;
+      continue;
+    }
+
     if (seenIds.has(id)) {
       failures.push({ message: `Duplicate displacedClue id: ${id}.` });
       ok = false;
@@ -528,7 +532,7 @@ function validateDisplacedClues(
     }
     seenIds.add(id);
 
-    result.push({ id, clue, direction });
+    result.push({ id: validatedId, clue, direction });
   }
 
   return ok ? result : null;
@@ -625,14 +629,18 @@ export const parsePuzzleV1 = (
     return { ok: false, failures };
   }
 
-  let puzzle = PuzzleOps.blank(gridSize, puzzleKey);
-  puzzle = PuzzleOps.withGrid(puzzle, grid);
-  puzzle = PuzzleOps.withWords(puzzle, numberedWords);
-  puzzle = PuzzleOps.withMetadata(puzzle, Title.try(titleRaw), Author.try(authorRaw));
+  const puzzle: Puzzle = {
+    key: puzzleKey,
+    gridSize,
+    grid,
+    words: numberedWords,
+    title: Title.try(titleRaw),
+    author: Author.try(authorRaw),
+  };
 
   const displacedClues: DisplacedClue[] =
     displacedCluesResult?.map((d) => ({
-      id: brand<'DisplacedClueId', string>(d.id),
+      id: d.id,
       clue: d.clue,
       direction: d.direction,
     })) ?? [];
@@ -669,7 +677,6 @@ function buildSerializedOutput(
     startCol: Number(w.key.startCol),
     direction: w.key.direction,
     length: w.length,
-    number: Number(w.number),
     clue: w.clue,
     nextWord:
       w.nextWord === null

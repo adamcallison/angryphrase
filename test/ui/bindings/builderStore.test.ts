@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
-import { bootApp } from '../../../src/ui/bindings/appStore.svelte';
+import { bootApp, dispatch } from '../../../src/ui/bindings/appStore.svelte';
 import { setPorts, resetPorts } from '../../../src/ui/bindings/ports';
 import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
@@ -87,6 +87,7 @@ describe('builderStore.svelte.ts', () => {
 
     const initial = makeBlankAppState(42);
     bootApp(initial, { rng: seededRng, now: () => fakeClock.now() }, createPersistenceScheduler(inMemoryStorage));
+    dispatch({ kind: 'navigate', route: 'build' });
   });
 
   afterEach(() => {

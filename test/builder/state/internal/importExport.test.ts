@@ -7,7 +7,6 @@ import {
 } from '../../../../src/builder/state/internal/importExport';
 import { BuilderState } from '../../../../src/builder/state/state';
 import { SeededRng } from '../../../fakes/SeededRng';
-import { FakeClock } from '../../../fakes/FakeClock';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
@@ -31,8 +30,6 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 const VALID_UUID = '00000000-0000-4000-8000-000000000000';
 
 const rng = new SeededRng(42);
-const clock = new FakeClock(1000);
-const deps = { rng, now: clock.now.bind(clock) };
 
 function blankState() {
   return BuilderState.blank(GridSize.of(2), PuzzleKey.generate(new SeededRng(1)));
@@ -62,7 +59,6 @@ function makeWordJson(
     startCol,
     direction,
     length,
-    number: 1,
     clue,
     nextWord,
   };
@@ -194,7 +190,7 @@ describe('request-import-puzzle', () => {
     const json = validIncompleteJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(2));
@@ -209,7 +205,7 @@ describe('request-import-puzzle', () => {
     const json = validCompleteJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
     expect(result.state.displacedClues).toEqual([]);
@@ -223,7 +219,7 @@ describe('request-import-puzzle', () => {
     const json = invalidJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toHaveLength(1);
@@ -238,7 +234,7 @@ describe('request-import-puzzle', () => {
     const state = blankState();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: '{not json' };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toHaveLength(1);
@@ -254,7 +250,7 @@ describe('request-import-puzzle', () => {
     const json = validIncompleteJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
@@ -271,7 +267,7 @@ describe('request-import-puzzle', () => {
     const json = invalidJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
@@ -288,7 +284,7 @@ describe('request-import-puzzle', () => {
     const json = validIncompleteJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
   });
@@ -298,7 +294,7 @@ describe('request-import-puzzle', () => {
     const json = validIncompleteJson();
     const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
 
-    const result = handleRequestImportPuzzle(state, intent, deps);
+    const result = handleRequestImportPuzzle(state, intent);
 
     expect(result.events).toHaveLength(0);
     expect(result.events.some((e) => e.kind === 'download')).toBe(false);
@@ -313,7 +309,7 @@ describe('confirm-import-puzzle', () => {
     const json = validIncompleteJson();
     const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
 
-    const result = handleConfirmImportPuzzle(state, intent, deps);
+    const result = handleConfirmImportPuzzle(state, intent);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(2));
@@ -328,7 +324,7 @@ describe('confirm-import-puzzle', () => {
     const json = invalidJson();
     const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
 
-    const result = handleConfirmImportPuzzle(state, intent, deps);
+    const result = handleConfirmImportPuzzle(state, intent);
 
     expect(result.state).toEqual(state);
     expect(result.events).toHaveLength(1);
@@ -344,7 +340,7 @@ describe('confirm-import-puzzle', () => {
     const json = validCompleteJson();
     const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
 
-    const result = handleConfirmImportPuzzle(state, intent, deps);
+    const result = handleConfirmImportPuzzle(state, intent);
 
     expect(result.state.displacedClues).toEqual([]);
     expect(result.state.mode).toBe('fill');
@@ -354,12 +350,12 @@ describe('confirm-import-puzzle', () => {
   it('replaces existing displacedClues even if non-empty pre-import', () => {
     const state = {
       ...nonBlankState(),
-      displacedClues: [DisplacedClue.create(deps.rng, 'Existing clue', 'across')],
+      displacedClues: [DisplacedClue.create(rng, 'Existing clue', 'across')],
     };
     const json = validIncompleteJson();
     const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
 
-    const result = handleConfirmImportPuzzle(state, intent, deps);
+    const result = handleConfirmImportPuzzle(state, intent);
 
     expect(result.state.displacedClues).toEqual([]);
   });
@@ -369,7 +365,7 @@ describe('confirm-import-puzzle', () => {
 describe('export-incomplete', () => {
   it('emits a single download event', () => {
     const state = blankState();
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({ kind: 'download' });
@@ -377,7 +373,7 @@ describe('export-incomplete', () => {
 
   it('filename follows Filename.incomplete pattern', () => {
     const state = blankState();
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.events[0]).toMatchObject({
       kind: 'download',
@@ -387,7 +383,7 @@ describe('export-incomplete', () => {
 
   it('content matches serializeIncomplete output', () => {
     const state = blankState();
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.events[0]).toMatchObject({
       kind: 'download',
@@ -397,14 +393,14 @@ describe('export-incomplete', () => {
 
   it('state is returned unchanged (no export side effects)', () => {
     const state = blankState();
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.state).toBe(state);
   });
 
   it('works on blank puzzle (always available)', () => {
     const state = blankState();
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.events[0]).toMatchObject({ kind: 'download' });
   });
@@ -412,9 +408,9 @@ describe('export-incomplete', () => {
   it('works on a partially filled puzzle', () => {
     const state = {
       ...nonBlankState(),
-      displacedClues: [DisplacedClue.create(deps.rng, 'Displaced clue', 'across')],
+      displacedClues: [DisplacedClue.create(rng, 'Displaced clue', 'across')],
     };
-    const result = handleExportIncomplete(state, { kind: 'export-incomplete' }, deps);
+    const result = handleExportIncomplete(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({
@@ -427,7 +423,7 @@ describe('export-incomplete', () => {
 describe('export-complete', () => {
   it('emits download event when puzzle is complete', () => {
     const state = completeState(2);
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({ kind: 'download' });
@@ -435,7 +431,7 @@ describe('export-complete', () => {
 
   it('filename follows Filename.complete pattern', () => {
     const state = completeState(2);
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events[0]).toMatchObject({
       kind: 'download',
@@ -445,7 +441,7 @@ describe('export-complete', () => {
 
   it('content matches serializeComplete output', () => {
     const state = completeState(2);
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events[0]).toMatchObject({
       kind: 'download',
@@ -457,7 +453,7 @@ describe('export-complete', () => {
     const state = BuilderState.blank(GridSize.of(2), PuzzleKey.generate(new SeededRng(1)));
     const violations = CompletenessCheck.check(state.puzzle);
 
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events).toHaveLength(violations.length);
     expect(result.events.every((e) => e.kind === 'toast' && e.toastKind === 'error')).toBe(true);
@@ -468,7 +464,7 @@ describe('export-complete', () => {
     const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.white());
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     const toast = result.events.find(
       (e): e is { kind: 'toast'; toastKind: 'error'; message: string } =>
@@ -486,7 +482,7 @@ describe('export-complete', () => {
     );
     const state = { ...base, puzzle: Puzzle.withWords(base.puzzle, words) };
 
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     const toast = result.events.find(
       (e): e is { kind: 'toast'; toastKind: 'error'; message: string } =>
@@ -502,7 +498,7 @@ describe('export-complete', () => {
     state = withDerivedWords(state);
     const violations = CompletenessCheck.check(state.puzzle);
 
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events).toHaveLength(violations.length);
     expect(result.events.every((e) => e.kind === 'toast' && e.toastKind === 'error')).toBe(true);
@@ -511,11 +507,11 @@ describe('export-complete', () => {
 
   it('state is returned unchanged on both success and failure', () => {
     const complete = completeState(2);
-    const success = handleExportComplete(complete, { kind: 'export-complete' }, deps);
+    const success = handleExportComplete(complete);
     expect(success.state).toBe(complete);
 
     const incomplete = blankState();
-    const failure = handleExportComplete(incomplete, { kind: 'export-complete' }, deps);
+    const failure = handleExportComplete(incomplete);
     expect(failure.state).toBe(incomplete);
   });
 
@@ -523,7 +519,7 @@ describe('export-complete', () => {
     const state = completeStateWithChain();
     expect(CompletenessCheck.check(state.puzzle)).toHaveLength(0);
 
-    const result = handleExportComplete(state, { kind: 'export-complete' }, deps);
+    const result = handleExportComplete(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({ kind: 'download' });

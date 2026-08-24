@@ -9,6 +9,7 @@ import { Cell } from '../../../src/domain/grid/Cell';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
+import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { Word } from '../../../src/domain/word/Word';
@@ -30,7 +31,7 @@ function makeWord(
   return {
     key: { startRow: Row.of(row), startCol: Col.of(col), direction },
     number: WordNumber.of(1),
-    length: 2,
+    length: WordLength.of(2),
     clue,
     nextWord: next,
   };
@@ -103,11 +104,21 @@ describe('Puzzle', () => {
     const p2 = Puzzle.withGrid(p, newGrid);
 
     expect(p2.grid).toBe(newGrid);
-    expect(p2.gridSize).toBe(p.gridSize);
+    expect(p2.gridSize).toBe(GridSize.of(4));
+    expect(Number(p2.gridSize)).toBe(p2.grid.length);
     expect(p2.words).toBe(p.words);
     expect(p2.title).toBe(p.title);
     expect(p2.author).toBe(p.author);
     expect(p2.key).toBe(p.key);
+  });
+
+  it('withGrid re-syncs gridSize from g.length when grid differs in size from p.gridSize', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const newGrid = GridOps.blank(GridSize.of(5));
+    const p2 = Puzzle.withGrid(p, newGrid);
+
+    expect(p2.gridSize).toBe(GridSize.of(5));
+    expect(Number(p2.gridSize)).toBe(p2.grid.length);
   });
 
   it('withWords returns a new Puzzle with the replaced words', () => {

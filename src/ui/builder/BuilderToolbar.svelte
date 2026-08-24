@@ -12,6 +12,8 @@
     dispatchRequestImportPuzzle,
   } from '../bindings/builderStore.svelte';
   import type { BuilderToolbarVM } from '../bindings/viewmodels/builderVM';
+  import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
+  import type { CellMarker } from '../../domain/grid/CellMarker';
   import FilePicker from '../shared/FilePicker.svelte';
   import GridSizeControl from './GridSizeControl.svelte';
 
@@ -43,6 +45,13 @@
     { flag: 'hyphen-right', label: 'Hyphen right' },
     { flag: 'hyphen-bottom', label: 'Hyphen bottom' },
   ];
+
+  const markerFlagToKey: Record<CellMarkerFlag, keyof CellMarker> = {
+    'space-right': 'spaceRight',
+    'space-bottom': 'spaceBottom',
+    'hyphen-right': 'hyphenRight',
+    'hyphen-bottom': 'hyphenBottom',
+  };
 
   function onImportPicked(text: string | null, errorMessage: string | null): void {
     if (errorMessage !== null) {
@@ -116,15 +125,7 @@
       <button
         type="button"
         disabled={!vm.cellSelected}
-        class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[
-          flag === 'space-right'
-            ? 'spaceRight'
-            : flag === 'space-bottom'
-              ? 'spaceBottom'
-              : flag === 'hyphen-right'
-                ? 'hyphenRight'
-                : 'hyphenBottom'
-        ]
+        class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[markerFlagToKey[flag]]
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50 disabled:cursor-not-allowed"
         onclick={() => dispatchToggleMarker(flag)}

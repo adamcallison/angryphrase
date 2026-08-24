@@ -1,4 +1,4 @@
-import type { Rng } from '../domain/rng/Rng.ts';
+import type { Rng } from '../domain/rng/Rng';
 
 export function createRngPort(): Rng {
   return {

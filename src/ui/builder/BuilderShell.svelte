@@ -16,16 +16,10 @@
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import type { TypingIntent } from '../shared/typingIntent';
 
   // No props — BuilderShell owns the entire Builder scene.
   const vm: BuilderShellVM = $derived(builderShellVM());
-
-  type Direction = 'across' | 'down';
-  type TypingIntent =
-    | { kind: 'type-letter'; letter: string }
-    | { kind: 'backspace' }
-    | { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 }
-    | { kind: 'escape' };
 
   function onCellClick(row: number, col: number): void {
     // §7.2: Design → toggle-design-cell; Fill → select-cell (auto-direction per FR-10/11 reducer).
@@ -34,7 +28,6 @@
       dispatchToggleDesignCell(row, col);
     } else {
       dispatchSelectCell(row, col);
-      (document.getElementById('typing-surface-input') as HTMLInputElement | null)?.focus({ preventScroll: true });
     }
   }
 
@@ -68,7 +61,7 @@
     <section class="flex flex-col gap-4">
       <div class="relative overflow-x-auto">
         <BuilderGrid vm={vm.grid} mode={getBuilderState().mode} onCellClick={onCellClick} />
-        <TypingSurface enabled={getBuilderState().mode === 'fill'} onDispatch={onTypingIntent} />
+        <TypingSurface enabled={getBuilderState().mode === 'fill'} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
       </div>
       <DisplacedCluesPanel vm={vm.displacedClues} />
     </section>

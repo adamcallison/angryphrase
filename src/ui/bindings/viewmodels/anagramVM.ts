@@ -83,18 +83,15 @@ export function deriveAnagramModalVM(input: {
   });
 
   const scrambled = anagramModal.scrambledArrangement;
-  const tiles = entries.map((entry, i) => {
-    const letter = entry.fixed
-      ? String(entry.letter!)
-      : scrambled !== null && i < scrambled.length
-        ? String(scrambled[i]!)
-        : null;
-    return {
-      position: i,
-      fixed: entry.fixed,
-      letter,
-    };
-  });
+  const tiles = entries.map((entry, i) => ({
+    position: i,
+    fixed: entry.fixed,
+    letter: entry.fixed
+      ? String(entry.letter)
+      : scrambled !== null
+        ? (scrambled[i] == null ? null : String(scrambled[i]))
+        : null,
+  }));
 
   const scrambleEnabled = inputValid && entries.some((e) => !e.fixed);
 

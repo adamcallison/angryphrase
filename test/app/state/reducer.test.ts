@@ -61,6 +61,19 @@ describe('reduceApp', () => {
     expect(result.events.length).toBe(0);
   });
 
+  it('reduceApp: report-download-failure emits an error toast event, state unchanged', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const result = reduceApp(state, { kind: 'report-download-failure' }, deps);
+    expect(result.state).toBe(state);
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      message: 'Download failed. Please try again.',
+    });
+  });
+
   it('switch-to-fill (a BuilderIntent) dispatches to reduceBuilder and folds result', () => {
     const state = makeState();
     const deps = makeDeps();
@@ -147,7 +160,7 @@ describe('reduceApp', () => {
           { black: true, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
         ],
       ],
-      words: [{ startRow: 0, startCol: 0, direction: 'across', length: 2, number: 1, clue: '', nextWord: null }],
+      words: [{ startRow: 0, startCol: 0, direction: 'across', length: 2, clue: '', nextWord: null }],
       displacedClues: [],
     });
     const appState = {
@@ -242,7 +255,7 @@ describe('reduceApp', () => {
     expect(result.state.builder.cursor!.col).toBe(Col.of(0));
   });
 
-  it('reduceApp: ambiguous kind (select-cell) routes to Builder when state.route="landing" (back-compat) — verify state.builder.cursor changes', () => {
+  it('reduceApp: ambiguous kind (select-cell) on landing route throws (must navigate first)', () => {
     const state = makeState();
     const deps = makeDeps();
     const landingState = {
@@ -250,10 +263,9 @@ describe('reduceApp', () => {
       route: 'landing' as const,
       builder: { ...state.builder, mode: 'fill' as const },
     };
-    const result = reduceApp(landingState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
-    expect(result.state.builder.cursor).not.toBeNull();
-    expect(result.state.builder.cursor!.row).toBe(Row.of(0));
-    expect(result.state.builder.cursor!.col).toBe(Col.of(0));
+    expect(() =>
+      reduceApp(landingState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps),
+    ).toThrow(/ambiguous intent kind on landing route: select-cell; navigate first/);
   });
 
   it('reduceApp: ambiguous kind (type-letter) on play route goes to Player; backspace on build route goes to Builder', () => {

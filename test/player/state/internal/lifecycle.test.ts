@@ -14,12 +14,6 @@ import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { Cell } from '../../../../src/domain/grid/Cell';
-import { SeededRng } from '../../../fakes/SeededRng';
-import { FakeClock } from '../../../fakes/FakeClock';
-
-const rng = new SeededRng(42);
-const clock = new FakeClock(1000);
-const deps = { rng, now: clock.now.bind(clock) };
 
 const VALID_UUID = '00000000-0000-4000-8000-000000000000';
 
@@ -62,7 +56,6 @@ function makeCompleteFixture(): string {
         startCol: 0,
         direction: 'across',
         length: 2,
-        number: 1,
         clue: 'Head clue',
         nextWord: null,
       },
@@ -79,11 +72,7 @@ function parsedPuzzle() {
 
 describe('handleImportPuzzle', () => {
   it('import-puzzle: valid complete file → solving phase + load-player-progress event', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     expect(result.events).toHaveLength(1);
@@ -91,11 +80,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: valid complete file → checkResult null, anagram null, cursor null', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -105,11 +90,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: valid complete file → puzzle.key preserved from file', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -117,11 +98,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: parse failure → toast with joined failure messages, phase import', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: 'not json' },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: 'not json' });
 
     expect(result.state.phase).toBe('import');
     expect(result.events).toHaveLength(1);
@@ -133,11 +110,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: parse failure → state is phase=import with lastImportError set to joined messages', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: '{"version":2}' },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{\"version\":2}' });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -150,11 +123,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: malformed JSON → toast with "File is not valid JSON."', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: '{ invalid' },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{ invalid' });
 
     expect(result.events[0]).toEqual({
       kind: 'toast',
@@ -181,7 +150,6 @@ describe('handleImportPuzzle', () => {
           startCol: 0,
           direction: 'across',
           length: 2,
-          number: 1,
           clue: '',
           nextWord: null,
         },
@@ -189,11 +157,7 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: incomplete },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
 
     expect(result.events[0]).toEqual({
       kind: 'toast',
@@ -220,7 +184,6 @@ describe('handleImportPuzzle', () => {
           startCol: 0,
           direction: 'across',
           length: 2,
-          number: 1,
           clue: '',
           nextWord: null,
         },
@@ -228,11 +191,7 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: incomplete },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -259,7 +218,6 @@ describe('handleImportPuzzle', () => {
           startCol: 0,
           direction: 'across',
           length: 2,
-          number: 1,
           clue: '',
           nextWord: null,
         },
@@ -267,21 +225,13 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: incomplete },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
 
     expect(result.state.phase).toBe('import');
   });
 
   it('import-puzzle: success emits exactly one event (load-player-progress), no toast', () => {
-    const result = handleImportPuzzle(
-      PlayerState.importScreen(),
-      { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]!.kind).toBe('load-player-progress');
@@ -289,11 +239,7 @@ describe('handleImportPuzzle', () => {
 
   it('import-puzzle: from a solving-phase state, success REPLACES state (does not merge)', () => {
     const previous = PlayerState.loaded(parsedPuzzle());
-    const result = handleImportPuzzle(
-      previous,
-      { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
-      deps,
-    );
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -321,7 +267,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[Letter.try('A')]],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     expect(result.state).toBe(state);
@@ -340,7 +285,6 @@ describe('handleApplyLoadedProgress', () => {
         ],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     expect(result.state.phase).toBe('solving');
@@ -358,7 +302,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[Letter.try('X'), null]],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     if (withLetter.state.phase !== 'solving') throw new Error('expected solving');
@@ -369,7 +312,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[null, null]],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     if (cleared.state.phase !== 'solving') throw new Error('expected solving');
@@ -386,7 +328,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[Letter.try('X'), Letter.try('Y')]],
         savedGridSize: GridSize.of(13),
       },
-      deps,
     );
 
     expect(result.state).toBe(state);
@@ -405,7 +346,6 @@ describe('handleApplyLoadedProgress', () => {
         ],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -425,7 +365,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[Letter.try('X')]],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 0)).toBe(Letter.try('X'));
@@ -445,7 +384,6 @@ describe('handleApplyLoadedProgress', () => {
         ],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 0)).toBe(Letter.try('A'));
@@ -464,7 +402,6 @@ describe('handleApplyLoadedProgress', () => {
         ],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     expect(result.state).toBe(state);
@@ -479,7 +416,6 @@ describe('handleApplyLoadedProgress', () => {
         playerLetters: [[Letter.try('X'), Letter.try('Y')]],
         savedGridSize: GridSize.of(2),
       },
-      deps,
     );
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -533,11 +469,7 @@ function cellIsBlack(state: SolvingState, row: number, col: number) {
 
 describe('handleImportNewPuzzle', () => {
   it('import-new-puzzle: from solving phase, returns to import screen (FR-78)', () => {
-    const result = handleImportNewPuzzle(
-      solving(),
-      { kind: 'import-new-puzzle' },
-      deps,
-    );
+    const result = handleImportNewPuzzle();
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -545,8 +477,7 @@ describe('handleImportNewPuzzle', () => {
   });
 
   it('import-new-puzzle: from import phase, returns import screen with null lastImportError', () => {
-    const state = PlayerState.importScreen();
-    const result = handleImportNewPuzzle(state, { kind: 'import-new-puzzle' }, deps);
+    const result = handleImportNewPuzzle();
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -554,13 +485,13 @@ describe('handleImportNewPuzzle', () => {
   });
 
   it('import-new-puzzle: emits no events (FR-78 — autosave retained via key, no storage clear)', () => {
-    const result = handleImportNewPuzzle(solving(), { kind: 'import-new-puzzle' }, deps);
+    const result = handleImportNewPuzzle();
 
     expect(result.events).toEqual([]);
   });
 
   it('import-new-puzzle: returned state is deep-equal to PlayerState.importScreen()', () => {
-    const result = handleImportNewPuzzle(solving(), { kind: 'import-new-puzzle' }, deps);
+    const result = handleImportNewPuzzle();
 
     expect(result.state).toEqual(PlayerState.importScreen());
   });
@@ -569,7 +500,7 @@ describe('handleImportNewPuzzle', () => {
 describe('handleRequestResetPlayer', () => {
   it('request-reset-player: import phase is no-op', () => {
     const state = PlayerState.importScreen();
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -577,7 +508,7 @@ describe('handleRequestResetPlayer', () => {
 
   it('request-reset-player: solving phase emits modal-request with confirmIntent confirm-reset-player', () => {
     const state = solving();
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.events).toEqual([
       {
@@ -590,7 +521,7 @@ describe('handleRequestResetPlayer', () => {
 
   it('request-reset-player: solving phase emits no toast, no clear-player-storage event', () => {
     const state = solving();
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.events.some((e) => e.kind === 'toast')).toBe(false);
     expect(result.events.some((e) => e.kind === 'clear-player-storage')).toBe(false);
@@ -598,14 +529,14 @@ describe('handleRequestResetPlayer', () => {
 
   it('request-reset-player: state is returned unchanged (modal fires after user confirms)', () => {
     const state = solving();
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.state).toBe(state);
   });
 
   it('request-reset-player: returns modal { kind: "confirm-reset-player" }', () => {
     const state = solving();
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.events[0]).toEqual({
       kind: 'modal-request',
@@ -619,7 +550,7 @@ describe('handleRequestResetPlayer', () => {
     if (state.phase !== 'solving') throw new Error('expected solving');
     expect(GridOps.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
 
-    const result = handleRequestResetPlayer(state, { kind: 'request-reset-player' }, deps);
+    const result = handleRequestResetPlayer(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toEqual({
@@ -633,7 +564,7 @@ describe('handleRequestResetPlayer', () => {
 describe('handleConfirmResetPlayer', () => {
   it('confirm-reset-player: import phase is no-op (defensive)', () => {
     const state = PlayerState.importScreen();
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -644,7 +575,7 @@ describe('handleConfirmResetPlayer', () => {
       [0, 0, 'X'],
       [0, 1, 'Y'],
     ]);
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(cellPlayerLetter(result.state, 0, 0)).toBe(null);
@@ -653,7 +584,7 @@ describe('handleConfirmResetPlayer', () => {
 
   it('confirm-reset-player: solving phase leaves black cells unchanged', () => {
     const state = solving();
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(cellIsBlack(result.state, 1, 0)).toBe(true);
@@ -662,7 +593,7 @@ describe('handleConfirmResetPlayer', () => {
 
   it('confirm-reset-player: solving phase leaves answerLetter intact (FR-77 "answer letters intact")', () => {
     const state = solving();
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(cellAnswerLetter(result.state, 0, 0)).toBe(Letter.try('A'));
@@ -678,7 +609,7 @@ describe('handleConfirmResetPlayer', () => {
         direction: 'across' as const,
       },
     };
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -694,7 +625,7 @@ describe('handleConfirmResetPlayer', () => {
         emptyCells: [],
       },
     };
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.checkResult).toBe(null);
@@ -709,7 +640,7 @@ describe('handleConfirmResetPlayer', () => {
         scrambledArrangement: null,
       },
     };
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram).toBe(null);
@@ -717,7 +648,7 @@ describe('handleConfirmResetPlayer', () => {
 
   it('confirm-reset-player: emits a single clear-player-storage event with puzzle.key', () => {
     const state = solving();
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toEqual({ kind: 'clear-player-storage', key: state.puzzle.key });
@@ -725,14 +656,14 @@ describe('handleConfirmResetPlayer', () => {
 
   it('confirm-reset-player: no toast events', () => {
     const state = solving();
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     expect(result.events.some((e) => e.kind === 'toast')).toBe(false);
   });
 
   it('confirm-reset-player: preserves puzzle.key, gridSize, words, and other puzzle fields', () => {
     const state = withPlayerLetters(solving(), [[0, 0, 'X']]);
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     if (state.phase !== 'solving') throw new Error('expected solving');
@@ -748,7 +679,7 @@ describe('handleConfirmResetPlayer', () => {
     if (state.phase !== 'solving') throw new Error('expected solving');
     expect(cellPlayerLetter(state, 0, 0)).toBe(null);
 
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     expect(result.events).toEqual([{ kind: 'clear-player-storage', key: state.puzzle.key }]);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -759,7 +690,7 @@ describe('handleConfirmResetPlayer', () => {
     const state = withPlayerLetters(solving(), [[0, 0, 'X']]);
     const originalCell1 = cellPlayerLetter(state, 0, 1);
 
-    const result = handleConfirmResetPlayer(state, { kind: 'confirm-reset-player' }, deps);
+    const result = handleConfirmResetPlayer(state);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(cellPlayerLetter(result.state, 0, 0)).toBe(null);

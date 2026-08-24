@@ -10,12 +10,14 @@ import { mount } from 'svelte';
 import App from './ui/app/App.svelte';
 import { bootApp } from './ui/bindings/appStore.svelte';
 import { getPorts } from './ui/bindings/ports';
-import { parseBuilderSnapshot } from './ui/bindings/persistenceScheduler';
+import { parseBuilderSnapshot } from './ui/bindings/persistenceCodec';
+import { createPersistenceScheduler } from './ui/bindings/persistenceScheduler';
 import { AppState } from './app/state/state';
 import { PlayerState } from './player/state/state';
 import type { BuilderState } from './builder/state/state';
 import { GridSize } from './domain/grid/GridSize';
 import { PuzzleKey } from './domain/puzzle/PuzzleKey';
+import { EpochMs } from './domain/time/EpochMs';
 
 /**
  * Build the initial AppState per FR-65 / FR-64 / C6 / NFR-9:
@@ -75,10 +77,12 @@ function loadInitialAppState(): AppState {
 }
 
 const initial = loadInitialAppState();
-const deps = { rng: getPorts().rng, now: () => Date.now() };
+const deps = { rng: getPorts().rng, now: () => EpochMs.of(Date.now()) };
+const scheduler = createPersistenceScheduler(getPorts().storage);
 
-bootApp(initial, deps);
+bootApp(initial, deps, scheduler);
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
 const app = mount(App, { target: document.getElementById('app')! });
 
 export default app;

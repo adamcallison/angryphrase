@@ -1,28 +1,23 @@
 import type { BuilderState } from '../state';
 import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import type { Rng } from '../../../domain/rng/Rng';
-import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
+import { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { Result } from '../../../domain/notifications/Event';
 import { WordMap } from '../../../domain/word/WordMap';
 import { Chain } from '../../../domain/chain/Chain';
 import { WordKey } from '../../../domain/word/WordKey';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 
-const idEquals = (a: DisplacedClueId, b: DisplacedClueId): boolean => String(a) === String(b);
 
 export function handleBeginReattach(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'begin-reattach' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   if (state.mode !== 'fill') {
     return Result.ok(state);
   }
 
-  const exists = state.displacedClues.some(d => idEquals(d.id, intent.displacedClueId));
+  const exists = state.displacedClues.some(d => DisplacedClueId.equals(d.id, intent.displacedClueId));
   if (!exists) {
     return Result.ok(state);
   }
@@ -36,19 +31,16 @@ export function handleBeginReattach(
 export function handleDeleteDisplacedClue(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'delete-displaced-clue' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
-  const exists = state.displacedClues.some(d => idEquals(d.id, intent.id));
+  const exists = state.displacedClues.some(d => DisplacedClueId.equals(d.id, intent.id));
   if (!exists) {
     return Result.ok(state);
   }
 
-  const newDisplacedClues = state.displacedClues.filter(d => !idEquals(d.id, intent.id));
+  const newDisplacedClues = state.displacedClues.filter(d => !DisplacedClueId.equals(d.id, intent.id));
 
   let subMode = state.subMode;
-  if (subMode.kind === 'reattach' && idEquals(subMode.displacedClueId, intent.id)) {
+  if (subMode.kind === 'reattach' && DisplacedClueId.equals(subMode.displacedClueId, intent.id)) {
     subMode = { kind: 'none' };
   }
 
@@ -63,12 +55,9 @@ export function resolveReattach(
   state: BuilderState,
   displacedClueId: DisplacedClueId,
   targetKey: WordKey,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
-
   const displacedClue = state.displacedClues.find(d =>
-    String(d.id) === String(displacedClueId),
+    DisplacedClueId.equals(d.id, displacedClueId),
   );
   if (displacedClue === undefined) {
     return Result.ok(state); // defensive — UI should not dispatch
@@ -104,7 +93,7 @@ export function resolveReattach(
     WordKey.equals(w.key, targetKey) ? { ...w, clue: displacedClue.clue } : w,
   );
   const newDisplacedClues = state.displacedClues.filter(d =>
-    String(d.id) !== String(displacedClueId),
+    !DisplacedClueId.equals(d.id, displacedClueId),
   );
 
   return Result.ok({

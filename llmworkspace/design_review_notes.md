@@ -22,6 +22,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Recommendation for later.** Option A if/when the next port arrives. Until then, C.
 
+**Resolution applied on 2026-08-18.** Option A adopted. `src/domain/persistence/` renamed to `src/domain/ports/` (`git mv` preserved history). All 10 importer paths, the `eslint.config.js` `src/ports/**` allow-list regex + messages, and the §9.3 file tree + §1.3 module table + §3.7 heading/body + §9.2 boundary table in `architecture_design.md` were amended. `Rng.ts` comment re-pointed to the new former-path. DRN item 1: closed.
+
 ---
 
 ## 2. `DisplacedClue.create` signature in §3.5 omitted `rng`
@@ -68,6 +70,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Open question for later.** The JSON file format (per §3.6 and `format/v1.ts`) still requires `number` as a field in each word object, even though `Numbering.assign` overwrites it on every load. Consider whether the file format should drop `number` (let `Numbering.assign` always recompute) or keep it as a redundancy check. Not addressed in this amendment.
 
+**Resolution applied on 2026-08-23 (DRN item 5 closed).** Open question closed: the v1 JSON format drops `number` from word objects entirely (strict — a `number` field present on a word object is a validation failure, rejected as an unknown field by the existing word-extras check). `Numbering.assign` always mints `number` from the grid per FR-6; the parsed `number` was already discarded at `buildDomainWords` (returns `DerivedWord[]` with no `number` field) before this change, so the field was purely vestigial. `src/domain/format/v1.ts`: `ParsedWord.number` dropped, `WORD_KEYS` drops `'number'` (files carrying `number` auto-rejected at the word-extras check), `number` validation block removed, serializer drops `number: Number(w.number)`. `test/domain/format/v1.test.ts`: `makeWord` helper drops `number: 1`; the "overwrites listed word.number" test rewritten to "rejects word carrying a number field". 6 `puzzles/*.json` sample files reserialized (drop `number` from each word). FR-96 + FR-98a + AD §3.7 line 743 + §6 lines 1225/1250/1251 amended. No localStorage migration (single user, no in-progress data — matches C3 strict-rejection precedent). `Word.number: WordNumber` domain type unchanged (still re-derived on load).
+
 ---
 ## 6. `src/ports/**` ESLint allow-list needed `domain/puzzle/PuzzleKey.ts`
 
@@ -83,6 +87,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Open question for later.** Whether to extend the `.ts`-extension-required convention to OTHER layer boundaries (currently the `src/ports/**` regex is the only one that requires `.ts` extensions for allow-listed cross-layer imports, because it uses an explicit enumerate allow-list rather than a glob). If we adopt the convention everywhere, we'd update ALL `no-restricted-imports` regexes accordingly. Deferred.
 
+**Resolution applied on 2026-08-23 (code smells I1).** Open question closed: convention NOT extended; instead the `src/ports/**` regex was aligned to the extensionless idiom used by every other layer block — `.ts` is now OPTIONAL in the allow-list lookahead (`ports(?:\.ts)?$` etc.), not required. The 5 `src/ports/*.ts` source imports + 1 `test/ports/localStoragePort.test.ts` import dropped their `.ts` suffix. `tsconfig.json` `allowImportingTsExtensions: true` was removed (its sole rationale was the former `.ts`-required ports regex; grep confirmed no other `.ts`-suffixed imports in `src/` or `test/`). `test/boundary/imports.test.ts` ports fixtures rewritten extensionless + 1 new PuzzleKey positive fixture (regex allowed it but no fixture asserted — gap closed). AD §9.2 boundary table row amended to list `PuzzleKey.ts` + an "Ports allow-list convention (I1)" note. The negative-lookahead structure is retained (unavoidable — `no-restricted-imports` has no allow-list primitive); only the `.ts` requirement was the smell.
+
 ## 7. `reduceApp` did not implement the "deferred confirm pass" — modal/pendingConfirmIntent never cleared on `confirm-*` dispatch
 
 **Symptom.** Task 62 surfaced the bug: the bindings-layer `modalStore.confirmModal()` dispatches `state.pendingConfirmIntent` (a `confirm-*` intent variant). `reduceApp` routes that intent through `reduceBuilder`/`reducePlayer` cleanly, but never clears `AppState.modal` or `AppState.pendingConfirmIntent` — even though §1.1 G4 + §4.1 both say the modal is "cleared by `cancel-modal` or by the deferred confirm pass." As a result the modal stayed open after Confirm was clicked.
@@ -92,6 +98,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 **Resolution applied on 2026-07-22.** Added a `CONFIRMABLE_INTENT_KINDS` string set to `src/app/state/reducer.ts` enumerating `'confirm-switch-to-design'`, `'confirm-import-puzzle'`, `'confirm-reset-builder'`, `'confirm-reset-player'` — aliased to the `ConfirmableIntent` union from `domain/notifications/Event`. In both the Builder and Player branches of `reduceApp`, after `applyEventsToApp` runs and the result is computed, if the dispatched intent kind is in this set, the returned `state` is reshaped with `modal: null` and `pendingConfirmIntent: null`. Safe because `confirm-*` reducers never re-emit `modal-request` (no `force`, no recursive guard re-fire per §4.1). 4 tests added to `src/app/state/reducer.test.ts`.
 
 **Open question for later.** The `CONFIRMABLE_INTENT_KINDS` string set must stay in sync with the `ConfirmableIntent` union at `domain/notifications/Event`. If a fifth confirmable action is ever added, both arrays must be updated. A static type-derived set would be safer; deferred to a future clean-up.
+
+**Resolution applied on 2026-08-10.** Closed by the D1 fix (code smells `D1`). All four kind sets (`BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS`) were extracted to a new `src/app/state/intentKinds.ts` module. The first three are now built from a `Record<Kind, null>` record literal annotated with `satisfies` so `tsc` fails the build when the record literal omits a union member or carries an extra key — the union is the source of truth and the set is a derived view, no manual string maintenance. `AMBIGUOUS_INTENT_KINDS` is computed at module load as the runtime intersection of the Builder and Player sets (`new Set([...BUILDER].filter(k => PLAYER.has(k)))`), so adding a new shared kind to both unions automatically enrols it in the ambiguous set. `reduceApp` imports the sets rather than redeclaring them. §9.3 file tree and the §1.3 `app/state/` module table were amended to list `intentKinds.ts`. Drift path closed.
 
 
 ## 8. `Puzzle.withGrid` does not sync `gridSize` — surfaced by builderStore.change-grid-size test
@@ -104,6 +112,8 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 
 **Open question for later.** Whether to broaden this to `Puzzle.withGrid` itself (always re-sync from `g.length`). The "you shouldn't be able to swap a grid whose length disagrees with the field" property argues for hardening in one place, but that means changing the contract of `Puzzle.withGrid` and auditing every other call-site (most are same-size swaps but `lifecycle.ts` line 88 / 152 are guaranteed safe because the puzzle is freshly-imported). Deferred.
 
+**Resolution applied on 2026-08-10 (DRN item 8 closed, code-smell D3 resolved).** `Puzzle.withGrid` now re-syncs `gridSize` from `g.length` via `GridSize.of(g.length)` (src/domain/puzzle/Puzzle.ts). `GridSize.of` throws `RangeError` for out-of-range/non-integer `g.length`, so an invariant-breaking caller fails loudly rather than silently corrupting downstream state (e.g. `serializePlayerProgress`, which sizes `playerLetters` from `gridSize`). The redundant `gridSize: intent.size` re-write in `src/builder/state/internal/designMode.ts:71` (`change-grid-size`) is removed — `Puzzle.withGrid` now carries the invariant. All other 11 `withGrid` call-sites swap same-size grids and are unaffected. The test at `test/domain/puzzle/Puzzle.test.ts:100` that asserted `p2.gridSize === p.gridSize` after a size-3→size-4 swap (encoding the bug) is flipped to assert `p2.gridSize === GridSize.of(4)` plus an invariant assertion `Number(p2.gridSize) === p2.grid.length`; a new test asserts the re-sync for a size-3→size-5 swap. `designMode.test.ts` and `reducer.test.ts` `change-grid-size` tests gain `gridSize` assertions. AD §3.6 `withGrid` comment amended to "re-syncs gridSize from g.length (invariant §3.6)".
+
 
 ## 9. `reduceApp` ambiguous-intent-kind disambiguation via `state.route`
 
@@ -114,13 +124,15 @@ C. **Status quo.** Keep `domain/persistence/` for the three true ports; keep `Rn
 **Resolution applied on 2026-07-22.** Added an `AMBIGUOUS_INTENT_KINDS` set (the intersection of the two existing sets, hardcoded six string literals) in `src/app/state/reducer.ts`. The dispatcher now:
 1. Routes AppIntent kinds (`navigate`, `cancel-modal`, `dismiss-toast`) as before.
 2. Routes unique Builder kinds to `reduceBuilder`; unique Player kinds to `reducePlayer`.
-3. For ambiguous kinds, routes based on `state.route`: `'play' → reducePlayer`, `'build' → reduceBuilder`, `'landing' → reduceBuilder` (back-compat default — existing reducer/store tests dispatch ambiguous kinds on `route='landing'` expecting Builder behaviour).
+3. For ambiguous kinds, routes based on `state.route`: `'play' → reducePlayer`, `'build' → reduceBuilder`, `'landing' → reduceBuilder` (back-compat default at time of writing — existing reducer/store tests dispatch ambiguous kinds on `route='landing'` expecting Builder behaviour). **Superseded 2026-08-10: the `'landing'` branch now throws (see resolution below; DRN item 9 closed, code-smell D2 resolved).**
 
 Also extracted `routeToBuilder`/`routeToPlayer` in-reducer helpers that re-apply the deferred-confirm-pass pattern (Task 62a) to keep the new code DRY.
 
 4 test cases added to `src/app/state/reducer.test.ts` covering ambiguous dispatch on each route. 2 previously-failing `playerStore` tests now `navigate` to `'play'` before dispatching ambiguous kinds.
 
 **Open question for later.** Whether `'landing'` should route ambiguous kinds to Builder silently or throw. The 'play'-intent-dispatched-without-route-'play' case (e.g., a stray dispatch while in landing) currently silently routes to Builder. Strict semantics could throw and require a navigate intent first. Deferred — would need every test that dispatches ambiguous kinds during landing to first `navigate`. Cost-benefit currently tips toward back-compat.
+
+**Resolution applied on 2026-08-10 (DRN item 9 closed, code-smell D2 resolved).** The `'landing'` route now **throws** on ambiguous intent kinds instead of silently routing to `reduceBuilder`. Rationale: FR-1/FR-2 require the landing screen to present only Build/Play `navigate` actions; no Builder or Player UI is mounted on landing, so an ambiguous kind (`select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-clue-panel-word`) dispatched while `route === 'landing'` can only be a bug — there is no legitimate grid interaction to forward. The previous silent routing hid such bugs and mutated `state.builder` without any user-visible signal. The decision reverses the original back-compat stance: the single test asserting landing→Builder behaviour (`test/app/state/reducer.test.ts:245`) is rewritten to assert the throw, and no other test, store, or UI path dispatches ambiguous kinds during landing. `src/app/state/reducer.ts:69-77` now reproduces the unknown-kind throw pattern already used at line 66. AD §4.1 amended to state `'landing'` throws. **DRN item 9: closed.**
 
 ## 10. `move-cursor` intent lacked a sign field; arrow keys could only go forward along each axis
 

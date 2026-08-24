@@ -14,14 +14,12 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
+import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 import { SeededRng } from '../../../fakes/SeededRng';
-import { FakeClock } from '../../../fakes/FakeClock';
 
 const rng = new SeededRng(42);
-const clock = new FakeClock(1000);
-const deps = { rng, now: clock.now.bind(clock) };
 
 function blankState() {
   return BuilderState.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(1)));
@@ -43,7 +41,7 @@ function word(
   return {
     key: key(row, col, direction),
     number: WordNumber.of(number),
-    length,
+    length: WordLength.of(length),
     clue,
     nextWord,
   };
@@ -76,7 +74,7 @@ describe('toggle-design-cell', () => {
   it('white cell becomes black', () => {
     const state = blankState();
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(true);
   });
@@ -85,7 +83,7 @@ describe('toggle-design-cell', () => {
     const grid = GridOps.setCell(GridOps.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), Cell.black());
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(false);
   });
@@ -96,7 +94,7 @@ describe('toggle-design-cell', () => {
       cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },
     };
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
     expect(result.state.cursor).toBeNull();
   });
@@ -116,7 +114,7 @@ describe('toggle-design-cell', () => {
     const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, grid) };
     const acrossKey = key(0, 0, 'across');
 
-    const result = handleToggleDesignCell(before, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, deps);
+    const result = handleToggleDesignCell(before, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
 
     expect(result.state.puzzle.words.find((w) => WordKey.toCanonical(w.key) === WordKey.toCanonical(acrossKey))).toBeUndefined();
   });
@@ -134,7 +132,7 @@ describe('toggle-design-cell', () => {
     ]);
     const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, grid) };
 
-    const result = handleToggleDesignCell(before, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, deps);
+    const result = handleToggleDesignCell(before, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
 
     expect(result.state.displacedClues).toHaveLength(1);
     expect(result.state.displacedClues[0]!.clue).toBe('My clue');
@@ -145,7 +143,7 @@ describe('toggle-design-cell', () => {
     // (0,0) is white, (0,1) is black, (0,2) is black: no words initially.
     const state = designState(GridSize.of(3), [[0, 1], [0, 2]], []);
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
 
     const acrossKey = key(0, 0, 'across');
     const newWord = result.state.puzzle.words.find((w) => WordKey.toCanonical(w.key) === WordKey.toCanonical(acrossKey));
@@ -158,7 +156,7 @@ describe('toggle-design-cell', () => {
     // Length-4 across word at (0,0)-(0,3); (0,4) is black to cap the run.
     const state = designState(GridSize.of(5), [[0, 4]], [word(0, 0, 'across', 1, 4, 'A clue')]);
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(3) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(3) }, rng);
 
     expect(result.events).toContainEqual({
       kind: 'toast',
@@ -170,7 +168,7 @@ describe('toggle-design-cell', () => {
   it('no-op when state.mode is fill', () => {
     const state = { ...blankState(), mode: 'fill' as const };
 
-    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([]);
@@ -182,7 +180,7 @@ describe('toggle-design-cell', () => {
     const result = handleToggleDesignCell(
       state,
       { kind: 'toggle-design-cell', row: Row.of(Number(GridSize.DEFAULT)), col: Col.of(Number(GridSize.DEFAULT)) },
-      deps,
+      rng,
     );
 
     expect(result.state).toEqual(state);
@@ -196,11 +194,11 @@ describe('toggle-design-cell', () => {
     const grid = GridOps.setCell(GridOps.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), whiteCell);
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
-    const afterBlack = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const afterBlack = handleToggleDesignCell(state, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
     const afterWhite = handleToggleDesignCell(
       afterBlack.state,
       { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) },
-      deps,
+      rng,
     );
 
     const finalCell = GridOps.cellAt(afterWhite.state.puzzle.grid, Row.of(0), Col.of(0));
@@ -215,17 +213,19 @@ describe('change-grid-size', () => {
     const key = PuzzleKey.generate(new SeededRng(1));
     const state = BuilderState.blank(GridSize.of(15), key);
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(Number(result.state.puzzle.grid.length)).toBe(20);
     expect(Number(result.state.puzzle.grid[0]!.length)).toBe(20);
+    expect(result.state.puzzle.gridSize).toBe(GridSize.of(20));
+    expect(Number(result.state.puzzle.gridSize)).toBe(result.state.puzzle.grid.length);
     expect(result.events).toEqual([]);
   });
 
   it('when blank, all new cells are white and empty', () => {
     const state = BuilderState.blank(GridSize.of(15), PuzzleKey.generate(new SeededRng(1)));
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(5), Col.of(5))).toEqual(Cell.white());
   });
@@ -240,7 +240,7 @@ describe('change-grid-size', () => {
       cursor: { row: Row.of(2), col: Col.of(3), direction: 'across' as const },
     };
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(result.state.cursor).toBeNull();
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -256,7 +256,7 @@ describe('change-grid-size', () => {
     );
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([]);
@@ -266,10 +266,10 @@ describe('change-grid-size', () => {
     const base = blankState();
     const state = {
       ...base,
-      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 1, 'a')]),
+      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 2, 'a')]),
     };
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([]);
@@ -278,7 +278,7 @@ describe('change-grid-size', () => {
   it('no-op when not in design mode', () => {
     const state = { ...blankState(), mode: 'fill' as const };
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([]);
@@ -288,14 +288,14 @@ describe('change-grid-size', () => {
     const key = PuzzleKey.generate(new SeededRng(1));
     const state = BuilderState.blank(GridSize.of(15), key);
 
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(20) });
 
     expect(result.state.puzzle.key).toBe(key);
   });
 
   it('re-derives words for the new grid size so words correspond to maximal white runs in the new grid', () => {
     const state = BuilderState.blank(GridSize.of(15), PuzzleKey.generate(new SeededRng(1)));
-    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(10) }, deps);
+    const result = handleChangeGridSize(state, { kind: 'change-grid-size', size: GridSize.of(10) });
     const expected = Numbering.assign(result.state.puzzle.grid, WordDerivation.derive(result.state.puzzle.grid));
     expect(result.state.puzzle.words).toStrictEqual(expected);
     for (const w of result.state.puzzle.words) {
@@ -314,7 +314,7 @@ describe('request-switch-to-design', () => {
       cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },
     };
 
-    const result = handleRequestSwitchToDesign(state, { kind: 'request-switch-to-design' }, deps);
+    const result = handleRequestSwitchToDesign(state);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -324,7 +324,7 @@ describe('request-switch-to-design', () => {
   it('when blank, emits no events', () => {
     const state = { ...blankState(), mode: 'fill' as const };
 
-    const result = handleRequestSwitchToDesign(state, { kind: 'request-switch-to-design' }, deps);
+    const result = handleRequestSwitchToDesign(state);
 
     expect(result.events).toEqual([]);
   });
@@ -339,7 +339,7 @@ describe('request-switch-to-design', () => {
     );
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = handleRequestSwitchToDesign(state, { kind: 'request-switch-to-design' }, deps);
+    const result = handleRequestSwitchToDesign(state);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
@@ -361,7 +361,7 @@ describe('request-switch-to-design', () => {
     );
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = handleRequestSwitchToDesign(state, { kind: 'request-switch-to-design' }, deps);
+    const result = handleRequestSwitchToDesign(state);
 
     expect(result.events).toHaveLength(1);
     const event = result.events[0]!;
@@ -378,10 +378,10 @@ describe('request-switch-to-design', () => {
     const state = {
       ...base,
       mode: 'fill' as const,
-      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 1, 'a clue')]),
+      puzzle: Puzzle.withWords(base.puzzle, [word(0, 0, 'across', 1, 2, 'a clue')]),
     };
 
-    const result = handleRequestSwitchToDesign(state, { kind: 'request-switch-to-design' }, deps);
+    const result = handleRequestSwitchToDesign(state);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
@@ -403,7 +403,7 @@ describe('confirm-switch-to-design', () => {
       cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },
     };
 
-    const result = handleConfirmSwitchToDesign(state, { kind: 'confirm-switch-to-design' }, deps);
+    const result = handleConfirmSwitchToDesign(state);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -420,7 +420,7 @@ describe('confirm-switch-to-design', () => {
     );
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = handleConfirmSwitchToDesign(state, { kind: 'confirm-switch-to-design' }, deps);
+    const result = handleConfirmSwitchToDesign(state);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -431,7 +431,7 @@ describe('confirm-switch-to-design', () => {
   it('emits no events', () => {
     const state = { ...blankState(), mode: 'fill' as const };
 
-    const result = handleConfirmSwitchToDesign(state, { kind: 'confirm-switch-to-design' }, deps);
+    const result = handleConfirmSwitchToDesign(state);
 
     expect(result.events).toEqual([]);
   });

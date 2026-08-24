@@ -1,3 +1,5 @@
+import { EpochMs } from '../../src/domain/time/EpochMs';
+
 export class FakeClock {
   private current: number;
 
@@ -5,8 +7,8 @@ export class FakeClock {
     this.current = start;
   }
 
-  now(): number {
-    return this.current;
+  now(): EpochMs {
+    return EpochMs.of(this.current);
   }
 
   advance(by: number): void {

@@ -13,9 +13,8 @@ import { reconcileWords } from './reconcileWords';
 export function handleToggleDesignCell(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'toggle-design-cell' }>,
-  deps: { rng: Rng; now: () => number },
+  rng: Rng,
 ): ReducerResult<BuilderState> {
-  void deps.now;
 
   if (state.mode !== 'design') {
     return Result.ok(state);
@@ -36,7 +35,7 @@ export function handleToggleDesignCell(
     state.puzzle.words,
     newDerived,
     state.displacedClues,
-    deps.rng,
+    rng,
   );
 
   const newPuzzle = Puzzle.withWords(puzzleWithNewGrid, words);
@@ -55,9 +54,7 @@ export function handleToggleDesignCell(
 export function handleChangeGridSize(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'change-grid-size' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _deps;
 
   if (state.mode !== 'design') {
     return Result.ok(state);
@@ -68,7 +65,7 @@ export function handleChangeGridSize(
 
   const newGrid = GridOps.blank(intent.size);
   const newWords = Numbering.assign(newGrid, WordDerivation.derive(newGrid));
-  const newPuzzle = { ...Puzzle.withGrid(state.puzzle, newGrid), gridSize: intent.size, words: newWords };
+  const newPuzzle = Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords);
 
   return Result.ok({
     ...state,
@@ -80,11 +77,7 @@ export function handleChangeGridSize(
 
 export function handleRequestSwitchToDesign(
   state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'request-switch-to-design' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _intent;
-  void _deps;
 
   if (BuilderState.isBlank(state)) {
     return Result.ok({
@@ -106,11 +99,7 @@ export function handleRequestSwitchToDesign(
 
 export function handleConfirmSwitchToDesign(
   state: BuilderState,
-  _intent: Extract<BuilderIntent, { kind: 'confirm-switch-to-design' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<BuilderState> {
-  void _intent;
-  void _deps;
 
   return Result.ok({
     ...state,

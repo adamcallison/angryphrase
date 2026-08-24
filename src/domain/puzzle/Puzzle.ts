@@ -1,5 +1,5 @@
 import type { PuzzleKey } from './PuzzleKey';
-import type { GridSize } from '../grid/GridSize';
+import { GridSize } from '../grid/GridSize';
 import type { Grid } from '../grid/Grid';
 import type { Word } from '../word/Word';
 import { Title } from './Title';
@@ -48,7 +48,7 @@ export const Puzzle: {
   },
 
   withGrid(p: Puzzle, g: Grid): Puzzle {
-    return { ...p, grid: g };
+    return { ...p, grid: g, gridSize: GridSize.of(g.length) };
   },
 
   withWords(p: Puzzle, ws: Word[]): Puzzle {

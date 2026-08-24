@@ -1,4 +1,4 @@
-import type { FilePickPort } from '../domain/persistence/ports.ts';
+import type { FilePickPort } from '../domain/ports/ports';
 
 // Click-pick path only. Drag-and-drop file reading is handled by the
 // FilePicker.svelte component in Task 67; the FilePickPort interface's single

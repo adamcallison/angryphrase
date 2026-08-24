@@ -10,7 +10,7 @@ export interface StoragePort {
 }
 
 export interface DownloadPort {
-  download(filename: string, content: string): void;
+  download(filename: string, content: string): Error | null; // null = success; Error = failure
 }
 
 export interface FilePickPort {

@@ -1,16 +1,15 @@
 import type { PlayerState, AnagramModalState, CheckClassification, CheckResult } from '../state';
-import type { Cursor } from '../../../builder/state/state';
+import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import type { Rng } from '../../../domain/rng/Rng';
 import type { Direction } from '../../../domain/word/Direction';
-import type { Word } from '../../../domain/word/Word';
 import { Result } from '../../../domain/notifications/Event';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
+import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import type { Grid } from '../../../domain/grid/Grid';
@@ -56,23 +55,6 @@ function hasWhiteNeighbour(
   return Cell.isWhite(GridOps.cellAt(g, neighbourRow, neighbourCol));
 }
 
-function findWordContaining(
-  puzzle: Puzzle,
-  cursor: { row: Row; col: Col; direction: Direction },
-): Word | undefined {
-  const r = Number(cursor.row);
-  const c = Number(cursor.col);
-  return puzzle.words.find((w) => {
-    if (w.key.direction !== cursor.direction) return false;
-    const sr = Number(w.key.startRow);
-    const sc = Number(w.key.startCol);
-    if (cursor.direction === 'across') {
-      return sr === r && c >= sc && c < sc + w.length;
-    }
-    return sc === c && r >= sr && r < sr + w.length;
-  });
-}
-
 function anagramAfterCursorChange(
   anagram: AnagramModalState | null,
   puzzle: Puzzle,
@@ -80,8 +62,8 @@ function anagramAfterCursorChange(
 ): AnagramModalState | null {
   if (anagram === null) return null;
   if (newCursor === null) return null;
-  const word = findWordContaining(puzzle, newCursor);
-  if (word === undefined) return null;
+  const word = WordSelection.findContainingWord(puzzle.words, newCursor);
+  if (word === null) return null;
   const wordMap = WordMap.fromWords(puzzle.words);
   const head = Chain.headOf(wordMap, word.key);
   if (!WordKey.equals(head, anagram.openedForWord)) return null;
@@ -91,10 +73,7 @@ function anagramAfterCursorChange(
 export function handleSelectCell(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'select-cell' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -119,8 +98,13 @@ export function handleSelectCell(
 
   let direction: Direction;
   if (sameCell) {
+    if (current === null)
+      return Result.ok({
+        ...state,
+        checkResult: null,
+      }); // unreachable: sameCell implies current !== null
     if (inAcross && inDown) {
-      direction = current!.direction === 'across' ? 'down' : 'across';
+      direction = current.direction === 'across' ? 'down' : 'across';
     } else {
       return Result.ok({
         ...state,
@@ -144,10 +128,7 @@ export function handleSelectCell(
 export function handleMoveCursor(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'move-cursor' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -183,10 +164,7 @@ export function handleMoveCursor(
 export function handleClickCluePanelWord(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'click-clue-panel-word' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -213,10 +191,7 @@ export function handleClickCluePanelWord(
 export function handleTypeLetter(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'type-letter' }>,
-  _deps: { rng: Rng; now: () => number },
 ): ReducerResult<PlayerState> {
-  void _deps;
-
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -252,14 +227,7 @@ export function handleTypeLetter(
   });
 }
 
-export function handleBackspace(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'backspace' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);
   }
@@ -312,14 +280,7 @@ export function handleBackspace(
   });
 }
 
-export function handleCheck(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'check' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleCheck(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);
   }
@@ -328,10 +289,10 @@ export function handleCheck(
   const incorrectCells: { row: Row; col: Col }[] = [];
   const emptyCells: { row: Row; col: Col }[] = [];
 
-  for (let r = 0; r < g.length; r++) {
-    const row = g[r]!;
-    for (let c = 0; c < row.length; c++) {
-      const cell = row[c]!;
+  const size = g.length;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
       if (cell.black) continue;
       if (cell.playerLetter === null) {
         emptyCells.push({ row: Row.of(r), col: Col.of(c) });
@@ -355,14 +316,7 @@ export function handleCheck(
   return Result.ok({ ...state, checkResult });
 }
 
-export function handleClearErrors(
-  state: PlayerState,
-  _intent: Extract<PlayerIntent, { kind: 'clear-errors' }>,
-  _deps: { rng: Rng; now: () => number },
-): ReducerResult<PlayerState> {
-  void _deps;
-  void _intent;
-
+export function handleClearErrors(state: PlayerState): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.checkResult === null) {
     return Result.ok(state);
   }

@@ -5,10 +5,12 @@ import {
   parseBuilderSnapshot,
   serializePlayerProgress,
   parsePlayerProgress,
-  createPersistenceScheduler,
-  type PersistenceScheduler,
   type BuilderSnapshot,
   type PlayerProgressBlob,
+} from '../../../src/ui/bindings/persistenceCodec';
+import {
+  createPersistenceScheduler,
+  type PersistenceScheduler,
 } from '../../../src/ui/bindings/persistenceScheduler';
 import { BuilderState } from '../../../src/builder/state/state';
 import { PlayerState } from '../../../src/player/state/state';
@@ -25,7 +27,7 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import type { StoragePort } from '../../../src/domain/persistence/ports';
+import type { StoragePort } from '../../../src/domain/ports/ports';
 import type { BuilderState as BuilderStateType } from '../../../src/builder/state/state';
 import type { PlayerState as PlayerStateType } from '../../../src/player/state/state';
 import type { Puzzle as PuzzleType } from '../../../src/domain/puzzle/Puzzle';
@@ -84,14 +86,14 @@ describe('persistenceScheduler.ts', () => {
       expect(parsed.cursor).toBeUndefined();
     });
 
-    it('serializeBuilderSnapshot: the embedded puzzle has its displacedClues matched in the snapshot top-level displacedClues', () => {
+    it('serializeBuilderSnapshot: no top-level displacedClues field (lives only inside embedded puzzle)', () => {
       const rng = makeRng(2);
       const clue = DisplacedClue.create(rng, 'a clue', 'across');
       const state = makeBuilderState(3, { displacedClues: [clue] });
       const json = serializeBuilderSnapshot(state);
       const parsed = JSON.parse(json);
+      expect(parsed.displacedClues).toBeUndefined();
       expect(parsed.puzzle.displacedClues).toEqual([{ id: clue.id, clue: clue.clue, direction: clue.direction }]);
-      expect(parsed.displacedClues).toEqual(parsed.puzzle.displacedClues);
     });
 
     it('parseBuilderSnapshot: round-trips a BuilderState: returns puzzle, displacedClues, mode; subMode is discarded', () => {
@@ -209,11 +211,20 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid letter in playerLetters drops to null per FR-80 (Letter.try returns null on invalid)', () => {
+    it('parsePlayerProgress: invalid letter in playerLetters returns null (NFR-9 corrupt-drop, consistent with row/cell throws)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: '00000000-0000-4000-8000-000000000000', gridSize: 2, playerLetters: [['@', null], [null, null]] });
-      const result = parsePlayerProgress(json);
-      expect(result).not.toBeNull();
-      expect(result?.playerLetters[0]![0]).toBeNull();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(parsePlayerProgress(json)).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('parsePlayerProgress: invalid non-UUID key returns null (H1 corrupt-drop)', () => {
+      const json = JSON.stringify({ version: 1, kind: 'player-progress', key: 'not-a-uuid', gridSize: 2, playerLetters: [[null, null], [null, null]] });
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      expect(parsePlayerProgress(json)).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
 
     it('parsePlayerProgress: returns null on garbage JSON', () => {
