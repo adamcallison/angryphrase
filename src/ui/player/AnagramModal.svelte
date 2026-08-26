@@ -8,6 +8,15 @@
 
   let { vm }: { vm: AnagramModalVM } = $props();
 
+  let inputEl: HTMLInputElement | null = $state(null);
+  let wasOpen = $state(false);
+  $effect(() => {
+    if (vm.open && !wasOpen) {
+      inputEl?.focus();
+    }
+    wasOpen = vm.open;
+  });
+
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     // FR-83: filter A-Z, uppercase, clamp to wordLength
@@ -69,8 +78,10 @@
       <input
         id="anagram-input"
         type="text"
+        bind:this={inputEl}
         value={vm.input}
         oninput={onInput}
+        onkeydown={(e) => { if (e.key === 'Escape') dispatchCloseAnagramHelper(); }}
         autocomplete="off"
         autocapitalize="off"
         autocorrect="off"

@@ -53,7 +53,7 @@
         <ActiveClueBanner vm={vm.topBanner} />
         <div class="relative overflow-x-auto">
           <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.phase === 'solving'} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
+          <TypingSurface enabled={vm.phase === 'solving' && !vm.anagram.open} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />
