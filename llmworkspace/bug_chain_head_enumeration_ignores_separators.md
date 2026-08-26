@@ -46,8 +46,33 @@ single-word branch, not re-enter the chain branch.
 ## Workaround
 Add the enumeration literally to the chain head's clue text.
 
+## Resolution (2026-08-26)
+Root cause was a spec bug: FR-91 (`requirements.md`) and §3.4/§8.4
+(`architecture_design.md`) mandated `map(m => String(m.length)).join(',')`
+for the chain branch — i.e. whole length per member, ignoring separators. The
+code faithfully implemented the (wrong) spec. Docs amended first, then code.
+
+- `requirements.md` FR-91: chain branch now computes each member's
+  separator-aware sub-pattern (markers split a member's own runs; a member's
+  `nextWord` is not consulted → no recursion) and joins member sub-patterns
+  with `", "`.
+- `architecture_design.md` §3.4 behaviour block + §8.4 step 1 + the
+  `LengthPattern` type example comment updated to match.
+- `src/domain/chain/LengthPattern.ts`: single-word cell-iteration extracted to
+  a module-private `singleWordPattern(grid, w)` helper (no `nextWord` check);
+  `forWord` chain branch maps `Chain.membersOf(...)` through that helper and
+  joins with `", "`; `forWord` else branch delegates to the same helper.
+- Spacing canonicalised to `", "` (comma + space) everywhere — matches the
+  pre-existing standalone-word convention (`5, 4`); zero regression for
+  standalone space-separated words. Chain display changes from `5,9,7` (buggy)
+  to `5, 9, 2, 5` (correct, separator-aware).
+- Tests: `test/domain/chain/LengthPattern.test.ts` — existing chain tests
+  updated to expect `", "`; 5 new chain-with-separator cases added (space
+  marker in tail, hyphen marker in tail, markers in two members, marked head
+  member, banner variant). 16/16 pass.
+- Gate: `npm run ci` green (lint + typecheck + test + build).
+
 ## Notes
 - Non-chain multi-word entries enumerate correctly.
-- Cosmetic: single-word branch emits `5, 4` (space after comma) due to
-  `pieces.push(String(run), ', ')`; chain branch emits `5,9,7` (no space). A
-  fix should also normalise spacing.
+- Cosmetic spacing inconsistency (single-word `5, 4` vs chain `5,9,7`) is
+  resolved: both branches now emit `", "`.

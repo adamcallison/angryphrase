@@ -507,7 +507,7 @@ export const DisplayClue: {
   forWord(words: WordMap, w: Word): string;                // FR-90: own clue if head; "See N Direction" otherwise
 };
 
-export type LengthPattern = string;                         // e.g., "4,4,5", "4-4", "2, 2-3", "8"
+export type LengthPattern = string;                         // e.g., "4, 4, 5", "4-4", "2, 2-3", "8"
 export const LengthPattern: {
   // FR-91 full suffix rule — implemented and unit-tested as the literal spec describes,
   // even though the banner uses a restricted variant for non-head words (see §7 / C4).
@@ -528,7 +528,7 @@ export const ChainCells: {
 ```
 
 **Behaviour — `LengthPattern.forWord` (FR-91, full):**
-- If `w.nextWord != null`: return `chain.membersOf(words, w.key).map(m => String(m.length)).join(',')` (suffix of chain from `w` onward, comma-joined, no space).
+- If `w.nextWord != null`: for each member `m` in `chain.membersOf(words, w.key)` (the suffix of the chain from `w` onward), compute `m`'s **separator-aware sub-pattern** using the single-word cell-iteration rule in the next bullet (a member's own markers split its runs; the member's own `nextWord` is **not** consulted, so there is no recursion into the chain branch). Join the member sub-patterns with `", "` (comma + space). Example: chain `5, 9, 7` whose tail has a `spaceRight` after its 2nd cell renders `5, 9, 2, 5`.
 - Else: split `w`'s cells into runs using the cell markers in `direction`. Between cells `i` and `i+1` of the word: a `spaceRight`/`spaceBottom` marker (whichever matches `direction`) inserts a `", "` separator; a `hyphenRight`/`hyphenBottom` inserts `"-"`. Otherwise the run extends. Each contiguous run contributes its length. Single run with no markers → just `String(w.length)`.
 
 **Behaviour — `LengthPattern.forActiveClueBanner` (C4 deviation):**
@@ -1364,7 +1364,7 @@ Implementation: build a map `target → sources[]` for branch detection; build a
 ### 8.4 Length pattern (`LengthPattern.forWord`)
 
 Full FR-91 algorithm (unit-tested even though the banner UI uses a restricted variant — §3.4, C4):
-1. If `w.nextWord != null`: collect `chainMembersFrom(words, w.key)`, map each to `String(member.length)`, join with `","` (no space). Return.
+1. If `w.nextWord != null`: collect `chainMembersFrom(words, w.key)`. For each member, compute its **separator-aware sub-pattern** by running the step-2 cell-iteration on that member's own cells (a member's own `nextWord` is **not** consulted — this prevents re-entering the chain branch and any recursion). Join the member sub-patterns with `", "` (comma + space). Return.
 2. Else (no nextWord): walk the word's cells. Maintain a running run-length counter and an output buffer. For each pair of adjacent cells (i, i+1) in the word:
    - Determine the separator in `direction`: for `across`, look at cell `i`'s `marker.spaceRight` / `hyphenRight`; for `down`, `marker.spaceBottom` / `hyphenBottom`.
    - If neither is set, increment the current run-length counter.

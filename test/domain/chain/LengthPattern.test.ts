@@ -107,23 +107,23 @@ describe('LengthPattern', () => {
     expect(LengthPattern.forWord(grid, words, w)).toBe('2, 2');
   });
 
-  it('word with nextWord != null returns comma-joined chain lengths, no space', () => {
+  it('word with nextWord != null joins separator-aware member patterns with comma+space', () => {
     const grid = GridOps.blank(GridSize.of(7));
     const b = makeWord(1, 1, 'across', null, 4);
     const a = makeWord(0, 0, 'across', b.key, 3);
     const words = wordMap([a, b]);
 
-    expect(LengthPattern.forWord(grid, words, a)).toBe('3,4');
+    expect(LengthPattern.forWord(grid, words, a)).toBe('3, 4');
   });
 
-  it('three-deep chain A->B->C returns "lenA,lenB,lenC"', () => {
+  it('three-deep chain A->B->C returns "lenA, lenB, lenC"', () => {
     const grid = GridOps.blank(GridSize.of(7));
     const c = makeWord(2, 2, 'across', null, 5);
     const b = makeWord(1, 1, 'across', c.key, 4);
     const a = makeWord(0, 0, 'across', b.key, 3);
     const words = wordMap([a, b, c]);
 
-    expect(LengthPattern.forWord(grid, words, a)).toBe('3,4,5');
+    expect(LengthPattern.forWord(grid, words, a)).toBe('3, 4, 5');
   });
 
   it('forActiveClueBanner returns forWord result when w is a chain head', () => {
@@ -132,7 +132,7 @@ describe('LengthPattern', () => {
     const a = makeWord(0, 0, 'across', b.key, 3);
     const words = wordMap([a, b]);
 
-    expect(LengthPattern.forActiveClueBanner(grid, words, a)).toBe('3,4');
+    expect(LengthPattern.forActiveClueBanner(grid, words, a)).toBe('3, 4');
   });
 
   it('forActiveClueBanner returns null when w is a non-head', () => {
@@ -150,5 +150,59 @@ describe('LengthPattern', () => {
     const words = wordMap([w]);
 
     expect(LengthPattern.forActiveClueBanner(grid, words, w)).toBe('5');
+  });
+
+  it('chain head enumeration splits a non-head member on its space marker', () => {
+    let grid = GridOps.blank(GridSize.of(9));
+    const tail = makeWord(2, 0, 'across', null, 7);
+    const middle = makeWord(1, 0, 'across', tail.key, 9);
+    const head = makeWord(0, 0, 'across', middle.key, 5);
+    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    const words = wordMap([head, middle, tail]);
+
+    expect(LengthPattern.forWord(grid, words, head)).toBe('5, 9, 2, 5');
+  });
+
+  it('chain head enumeration splits a non-head member on its hyphen marker', () => {
+    let grid = GridOps.blank(GridSize.of(9));
+    const tail = makeWord(2, 0, 'across', null, 7);
+    const middle = makeWord(1, 0, 'across', tail.key, 9);
+    const head = makeWord(0, 0, 'across', middle.key, 5);
+    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    const words = wordMap([head, middle, tail]);
+
+    expect(LengthPattern.forWord(grid, words, head)).toBe('5, 9, 2-5');
+  });
+
+  it('chain head with markers in two members enumerates each separator-aware', () => {
+    let grid = GridOps.blank(GridSize.of(9));
+    const middle = makeWord(1, 0, 'across', null, 4);
+    const head = makeWord(0, 0, 'across', middle.key, 4);
+    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 1, 1, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    const words = wordMap([head, middle]);
+
+    expect(LengthPattern.forWord(grid, words, head)).toBe('2, 2, 2-2');
+  });
+
+  it('chain head with a marked head member and plain tail', () => {
+    let grid = GridOps.blank(GridSize.of(9));
+    const tail = makeWord(1, 0, 'across', null, 5);
+    const head = makeWord(0, 0, 'across', tail.key, 4);
+    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    const words = wordMap([head, tail]);
+
+    expect(LengthPattern.forWord(grid, words, head)).toBe('2, 2, 5');
+  });
+
+  it('forActiveClueBanner returns separator-aware chain pattern for a head with a marked tail', () => {
+    let grid = GridOps.blank(GridSize.of(9));
+    const tail = makeWord(2, 0, 'across', null, 7);
+    const middle = makeWord(1, 0, 'across', tail.key, 9);
+    const head = makeWord(0, 0, 'across', middle.key, 5);
+    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    const words = wordMap([head, middle, tail]);
+
+    expect(LengthPattern.forActiveClueBanner(grid, words, head)).toBe('5, 9, 2, 5');
   });
 });
