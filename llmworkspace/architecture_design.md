@@ -198,7 +198,7 @@ Receives view-models and typed action bags as `$props()`; action functions are w
 | `ui/app/` | `App.svelte` (top-level switch on `route`), `Landing.svelte` (FR-1), `Header.svelte` |
 | `ui/builder/` | `BuilderShell.svelte`, `BuilderToolbar.svelte` (Design/Fill toggle, markers, Export Incomplete, Export Complete, Reset, Import), `BuilderGrid.svelte`, `BuilderCluePanel.svelte`, `DisplacedCluesPanel.svelte` (always rendered, empty state per C1), `JoinReattachBanner.svelte`, `GridSizeControl.svelte` |
 | `ui/player/` | `PlayerShell.svelte`, `PlayerGrid.svelte`, `ActiveClueBanner.svelte` (rendered twice: above and below grid — FR-71), `PlayerCluePanel.svelte`, `PlayerToolbar.svelte` (Check, Clear Errors, Reset, Import New, Anagram Helper), `ImportScreen.svelte`, `AnagramModal.svelte` |
-| `ui/shared/` | `Modal.svelte`, `Toast.svelte`, `ToastHost.svelte`, `TypingSurface.svelte` (FR-93 — owns the hidden `<input>`), `FilePicker.svelte` |
+| `ui/shared/` | `Modal.svelte`, `Toast.svelte`, `ToastHost.svelte`, `TypingSurface.svelte` (FR-93 — owns the hidden `<input>`), `FilePicker.svelte`, `VersionStamp.svelte` (K2 — build-time git stamp footer; no props, no imports) |
 | `ui/bindings/` | (covered above) |
 
 **Layer 4 — `ports/` (side-effect implementations).**
@@ -311,7 +311,7 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade;
 
    One `<Leaf>Actions` type per leaf that needs actions, exported from the owning facade module (type-only import at the leaf). Bag functions are implemented inside the facade factory: each constructs the typed intent — branded fields via the domain constructors (`Row.of`, `Col.of`, `Letter.try`, `GridSize.of`, `Title.try`, `Author.try`), which only bindings may call (§9.2 + H1 brand ban make leaf-side intent construction impossible for any intent with branded fields) — and dispatches it. Fieldless intents (`{ kind: 'export-incomplete' }`) are wrapped as zero-arg bag functions for uniformity.
 4. **Intent-data principle preserved:** intents remain data at the dispatch seam (§2.2). Leaves emit semantic actions because branded intent fields cannot be constructed outside bindings; the leaf↔shell edge is intra-UI and carries VMs + action bags, both declared in `$props()`.
-5. Shared leaves: `Modal.svelte` takes `{ vm: ModalVM; confirmIntent: ConfirmableIntent | null; actions: ModalActions }` (`ModalActions = { confirm(): void; cancel(): void }`); `ToastHost.svelte` takes `{ vms: ToastVM[]; actions: ToastHostActions }` (`ToastHostActions = { dismiss(id: ToastId): void }` — the id is a VM-provided branded value passed through, not constructed); `Landing.svelte` takes `{ actions: LandingActions }` (`{ build(): void; play(): void }`); `FilePicker.svelte` takes `{ label: string; pick: () => Promise<string | null>; onpick: (text: string) => void }` — the `FilePickPort` call is wired from `AppPorts.filePick` by the parent, never imported by the component; a `null` result from `pick` (cancel or failed pick) is a silent no-op — `onpick` is not called and nothing is logged (cancel is not an error; the port already warned once if the pick genuinely failed). `Header.svelte` stays store-free (static). `TypingSurface.svelte` keeps its existing `enabled` + `onDispatch: (intent: TypingIntent) => void` props (already presentational).
+5. Shared leaves: `Modal.svelte` takes `{ vm: ModalVM; confirmIntent: ConfirmableIntent | null; actions: ModalActions }` (`ModalActions = { confirm(): void; cancel(): void }`); `ToastHost.svelte` takes `{ vms: ToastVM[]; actions: ToastHostActions }` (`ToastHostActions = { dismiss(id: ToastId): void }` — the id is a VM-provided branded value passed through, not constructed); `Landing.svelte` takes `{ actions: LandingActions }` (`{ build(): void; play(): void }`); `FilePicker.svelte` takes `{ label: string; pick: () => Promise<string | null>; onpick: (text: string) => void }` — the `FilePickPort` call is wired from `AppPorts.filePick` by the parent, never imported by the component; a `null` result from `pick` (cancel or failed pick) is a silent no-op — `onpick` is not called and nothing is logged (cancel is not an error; the port already warned once if the pick genuinely failed). `Header.svelte` stays store-free (static). `TypingSurface.svelte` keeps its existing `enabled` + `onDispatch: (intent: TypingIntent) => void` props (already presentational). `VersionStamp.svelte` takes no props — it renders the build-time-injected globals `__APP_COMMIT_HASH__` / `__APP_BUILD_TIME__` (Vite `define` from an inline `gitInfo()` in `vite.config.ts`, ambient-declared in `src/vite-env.d.ts`) as a fixed bottom-right `pointer-events-none` footer inside `App.svelte`'s root div after `<Modal />`; imports nothing (staleness detector, not cache-buster — `version_stamp_plan.md`, implemented 2026-09-07).
 6. **No `setContext` / `getContext`** — context is a runtime back-channel with the same hidden-dependency problem as bare imports (report, "What this eliminates").
 7. **Autosave `$effect`s stay in `App.svelte`**, reading `appStore.getScheduler()` / `getBuilder()` / `getPlayer()` (§4.5) — they cross both slices, so they live at the composition root, not inside a facade.
 8. **Tests construct independent stores per test**: `createAppStore(initial, { rng: SeededRng, now: FakeClock }, { storage: InMemoryStoragePort, download: StubDownloadPort, filePick: stub }, createPersistenceScheduler(storage))`. No shared singleton, no state reset helper, no port-register swapping, no import-order sensitivity. Facade tests call `createBuilderFacade(store)` / etc. on a fresh `AppStore`. Multi-instance mounting (dual-pane, parallel test apps, isolated subtree previews) works because no module-level state exists anywhere in the chain.
@@ -1572,6 +1572,7 @@ angryphrase/
 ├─ vitest.config.ts
 ├─ src/
 │  ├─ main.ts                              # boot: ports, initial AppState, mount App.svelte
+│  ├─ vite-env.d.ts                        # ambient decls for build-time globals __APP_COMMIT_HASH__ / __APP_BUILD_TIME__ (version stamp, K2)
 │  ├─ app.css                              # tailwind imports + minimal global styles (CON-4 tokens)
 │  ├─ domain/                              # Layer 0: pure, framework-free (§2.1)
 │  │  ├─ brand.ts                          # `brand<Tag,T>()` escaper; internal to the 15 owner modules (H1, §9.2 brand ban)
@@ -1637,6 +1638,7 @@ angryphrase/
 │  │  ├─ shared/
 │  │  │  ├─ Modal.svelte  ToastHost.svelte  Toast.svelte
 │  │  │  ├─ TypingSurface.svelte  FilePicker.svelte  typingIntent.ts
+│  │  │  ├─ VersionStamp.svelte             # build-time git stamp footer (K2) — no props, no imports
 │  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §2.4, §5.5)
 │  │     ├─ appStore.svelte.ts            # createAppStore factory + AppStore/AppDeps/AppPorts/LandingActions types (§2.4) — sole $state cell; only rune-using file; ports.ts register DELETED
 │  │     ├─ builderFacade.ts              # createBuilderFacade(appStore) + BuilderFacade type + per-leaf action-bag types — plain .ts, owns no state
@@ -1691,7 +1693,7 @@ angryphrase/
    ├─ code_smells.md                        # code/architectural smells log (active; fresh start 2026-09-07)
    ├─ code_smells_archive.md               # frozen 2026-09-07 — A/B/C/D audit + F9, all resolved
    ├─ store_singleton_di_report.md          # store-singleton DI investigation
-   └─ version_stamp_plan.md                 # version-stamp feature plan (K2 — not yet implemented)
+   └─ version_stamp_plan.md                 # version-stamp feature plan (K2 — implemented 2026-09-07)
 ```
 
 ### 9.1 Naming conventions

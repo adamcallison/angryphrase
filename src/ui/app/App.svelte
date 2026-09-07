@@ -5,6 +5,7 @@
   import PlayerShell from '../player/PlayerShell.svelte';
   import ToastHost from '../shared/ToastHost.svelte';
   import Modal from '../shared/Modal.svelte';
+  import VersionStamp from '../shared/VersionStamp.svelte';
   import type { AppStore, LandingActions } from '../bindings/appStore.svelte';
   import { createBuilderFacade } from '../bindings/builderFacade';
   import { createPlayerFacade } from '../bindings/playerFacade';
@@ -58,4 +59,5 @@
   </main>
   <ToastHost vms={toastVms} actions={toastFacade.actions} />
   <Modal vm={modalVm} confirmIntent={confirmIntent} actions={modalFacade.actions} />
+  <VersionStamp />
 </div>

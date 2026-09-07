@@ -1,6 +1,6 @@
 # Version Stamp — Implementation Plan
 
-> Status: Planned. Not yet implemented. Pair with `architecture_design.md` (no design-doc change required; this is a build/presentation detail, not a domain/architecture concern).
+> Status: **Implemented 2026-09-07** (all four files + ci green; hash verified baked into `dist/index.html`). Pair with `architecture_design.md` (AD bookkeeping only: §2.1 `ui/shared/` row, §2.4 item 5, §9 tree — no domain/architecture change, as planned).
 
 ## Goal
 
