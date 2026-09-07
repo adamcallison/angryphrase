@@ -6,7 +6,9 @@ const linter = new Linter({ configType: 'flat' });
 
 function lintFor(filename: string, code: string) {
 	const messages = linter.verify(code, config as Linter.Config[], { filename });
-	return messages.filter((m) => m.ruleId === '@typescript-eslint/no-restricted-imports');
+	return messages.filter(
+		(m) => m.ruleId === '@typescript-eslint/no-restricted-imports' || m.ruleId === 'no-restricted-syntax'
+	);
 }
 
 const fixtures: { description: string; filename: string; code: string; expectError: boolean }[] = [
@@ -204,6 +206,30 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		filename: 'src/ui/player/foo.svelte',
 		code: '<script>import { onMount } from "svelte";</script>',
 		expectError: false
+	},
+	{
+		description: 'src/ui/** (non-bindings) forbids value import of ui/bindings from a leaf',
+		filename: 'src/ui/builder/foo.svelte',
+		code: '<script>import { createBuilderFacade } from "../bindings/builderFacade";</script>',
+		expectError: true
+	},
+	{
+		description: 'src/ui/app/App.svelte allows value import of ui/bindings',
+		filename: 'src/ui/app/App.svelte',
+		code: '<script>import { createBuilderFacade } from "../bindings/builderFacade";</script>',
+		expectError: false
+	},
+	{
+		description: 'src/ui/** (non-bindings) allows type-only import of ui/bindings from a leaf',
+		filename: 'src/ui/builder/foo.svelte',
+		code: '<script>import type { BuilderFacade } from "../bindings/builderFacade";</script>',
+		expectError: false
+	},
+	{
+		description: 'src/ui/** (non-bindings) forbids dynamic import() of ui/bindings from a leaf',
+		filename: 'src/ui/builder/foo.svelte',
+		code: "<script>const x = import('../bindings/builderFacade');</script>",
+		expectError: true
 	},
 
 	// Block 6 — src/ports/**/*.ts

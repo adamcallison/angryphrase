@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { DisplacedCluesPanelVM } from '../bindings/viewmodels/builderVM';
-  import { dispatchBuilder } from '../bindings/builderStore.svelte';
+  import type { DisplacedCluesPanelActions } from '../bindings/builderFacade';
 
-  let { vm }: { vm: DisplacedCluesPanelVM } = $props();
+  let { vm, actions }: { vm: DisplacedCluesPanelVM; actions: DisplacedCluesPanelActions } = $props();
 </script>
 
 {#if vm.visible === true}
@@ -20,9 +20,9 @@
             </div>
             <div class="flex gap-2">
               <button class="text-xs text-blue-600 underline"
-                      onclick={() => dispatchBuilder({ kind: 'begin-reattach', displacedClueId: entry.id })}>Reattach</button>
+                      onclick={() => actions.beginReattach(entry.id)}>Reattach</button>
               <button class="text-xs text-red-600 underline"
-                      onclick={() => dispatchBuilder({ kind: 'delete-displaced-clue', id: entry.id })}>Delete</button>
+                      onclick={() => actions.deleteDisplacedClue(entry.id)}>Delete</button>
               {#if entry.isBeingReattached}
                 <span class="text-xs text-amber-700">(Reattaching…)</span>
               {/if}

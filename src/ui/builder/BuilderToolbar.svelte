@@ -1,16 +1,5 @@
 <script lang="ts">
-  import {
-    dispatchSwitchToFill,
-    dispatchRequestSwitchToDesign,
-    dispatchChangeGridSize,
-    dispatchToggleMarker,
-    dispatchExportIncomplete,
-    dispatchExportComplete,
-    dispatchRequestResetBuilder,
-    dispatchEditTitle,
-    dispatchEditAuthor,
-    dispatchRequestImportPuzzle,
-  } from '../bindings/builderStore.svelte';
+  import type { BuilderToolbarActions } from '../bindings/builderFacade';
   import type { BuilderToolbarVM } from '../bindings/viewmodels/builderVM';
   import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
   import type { CellMarker } from '../../domain/grid/CellMarker';
@@ -21,10 +10,14 @@
     vm,
     title,
     author,
+    actions,
+    pick,
   }: {
     vm: BuilderToolbarVM;
     title: string;
     author: string;
+    actions: BuilderToolbarActions;
+    pick: () => Promise<string | null>;
   } = $props();
 
   // svelte-ignore state_referenced_locally
@@ -53,14 +46,7 @@
     'hyphen-bottom': 'hyphenBottom',
   };
 
-  function onImportPicked(text: string | null, errorMessage: string | null): void {
-    if (errorMessage !== null) {
-      console.warn('BuilderToolbar: import failed:', errorMessage);
-      return;
-    }
-    if (text === null) return;
-    dispatchRequestImportPuzzle(text);
-  }
+
 </script>
 
 <div class="flex flex-col gap-4 p-4">
@@ -71,7 +57,7 @@
       <input
         type="text"
         bind:value={titleDraft}
-        onchange={() => dispatchEditTitle(titleDraft)}
+        onchange={() => actions.editTitle(titleDraft)}
         class="rounded border border-gray-300 px-2 py-1 text-sm"
       />
     </label>
@@ -80,7 +66,7 @@
       <input
         type="text"
         bind:value={authorDraft}
-        onchange={() => dispatchEditAuthor(authorDraft)}
+        onchange={() => actions.editAuthor(authorDraft)}
         class="rounded border border-gray-300 px-2 py-1 text-sm"
       />
     </label>
@@ -94,7 +80,7 @@
       class="rounded px-3 py-1 text-sm font-medium {vm.mode === 'design'
         ? 'bg-blue-600 text-white'
         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-      onclick={() => dispatchRequestSwitchToDesign()}
+      onclick={() => actions.requestSwitchToDesign()}
     >
       Design
     </button>
@@ -103,7 +89,7 @@
       class="rounded px-3 py-1 text-sm font-medium {vm.mode === 'fill'
         ? 'bg-blue-600 text-white'
         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-      onclick={() => dispatchSwitchToFill()}
+      onclick={() => actions.switchToFill()}
     >
       Fill
     </button>
@@ -115,7 +101,7 @@
     min={vm.minGridSize}
     max={vm.maxGridSize}
     disabled={!vm.canChangeGridSize}
-    onCommit={(n) => dispatchChangeGridSize(n)}
+    onCommit={(n) => actions.changeGridSize(n)}
   />
 
   <!-- Marker toolbar -->
@@ -128,7 +114,7 @@
         class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[markerFlagToKey[flag]]
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50 disabled:cursor-not-allowed"
-        onclick={() => dispatchToggleMarker(flag)}
+        onclick={() => actions.toggleMarker(flag)}
       >
         {label}
       </button>
@@ -137,11 +123,11 @@
 
   <!-- Import / export / reset -->
   <div class="flex flex-wrap items-center gap-2">
-    <FilePicker label="Import" onpick={onImportPicked} />
+    <FilePicker label="Import" pick={pick} onpick={(text) => actions.requestImportPuzzle(text)} />
     <button
       type="button"
       class="rounded bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-300"
-      onclick={() => dispatchExportIncomplete()}
+      onclick={() => actions.exportIncomplete()}
     >
       Export Incomplete
     </button>
@@ -151,14 +137,14 @@
       class="rounded px-3 py-1 text-sm font-medium {vm.canExportComplete
         ? 'bg-green-600 text-white hover:bg-green-700'
         : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
-      onclick={() => dispatchExportComplete()}
+      onclick={() => actions.exportComplete()}
     >
       Export Complete
     </button>
     <button
       type="button"
       class="rounded bg-red-100 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-200"
-      onclick={() => dispatchRequestResetBuilder()}
+      onclick={() => actions.requestResetBuilder()}
     >
       Reset
     </button>

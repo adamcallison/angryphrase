@@ -106,4 +106,26 @@ describe('filePickPort', () => {
     expect(result).toBeNull();
     warnSpy.mockRestore();
   });
+
+  it('filePickPort: pickFile() ignores a second change event after settlement (settle guard — input removed once, resolves once)', async () => {
+    const fakeInput = createFakeInput();
+    vi.spyOn(document, 'createElement').mockReturnValue(fakeInput);
+
+    const port = createFilePickPort();
+    const promise = port.pickFile();
+
+    const addEventListenerMock = fakeInput.addEventListener as unknown as ReturnType<typeof vi.fn>;
+    const onChange = addEventListenerMock.mock.calls[0]![1] as () => void;
+    const firstFile = new File(['first'], 'first.json', { type: 'application/json' });
+    Object.defineProperty(fakeInput, 'files', { value: [firstFile], writable: true });
+    await onChange();
+
+    const secondFile = new File(['second'], 'second.json', { type: 'application/json' });
+    Object.defineProperty(fakeInput, 'files', { value: [secondFile], writable: true });
+    await onChange();
+
+    const result = await promise;
+    expect(result).toBe('first');
+    expect(document.body.contains(fakeInput)).toBe(false);
+  });
 });

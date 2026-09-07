@@ -33,6 +33,7 @@ These four principles are binding constraints on the implementation. Every other
 | **`Direction` as `'across' \| 'down'`** (from B5) | Matches FR-96; helpers in a `Direction` module. |
 | **Vitest, pure-logic tests** (from D2) | Unit tests cover all pure domain logic. No DOM/component test harness required by spec; visual + mobile keyboard behaviour verified manually (RISK-4). |
 | **View-models in / Intents out** (from E2) | Components receive plain typed view-models produced in `ui/bindings`. Components emit typed intents. The bindings layer owns the runes store, dispatch, debounced persistence, and view-model derivation. Components contain no business logic and no domain-function calls. |
+| **DI store instance + experience facades + action-bag prop contract** (from `store_singleton_di_report.md`, amended 2026-09-07) | The bindings layer exposes one real store — `createAppStore`, never a module-level singleton, nothing runs at import time — plus four **experience facades** (`createBuilderFacade`, `createPlayerFacade`, `createModalFacade`, `createToastFacade`): per-instance adapters over the `AppStore` that own no state, provide typed dispatch narrowing, VM getters, per-leaf action bags, and `pickFile`. `main.ts` composes the `AppStore` (ports folded in as `AppPorts`) and injects it as a prop; `App.svelte` constructs the facades and passes them as props to the shells; leaves receive view-models + typed **action bags** — never a store, never a facade, never a bindings import. Fixes the report's findings 1-5 (singleton state, satellite sub-stores, bare-import reaching, eager init at import (F9), global ports register); enables multi-instance mounting and per-test store construction. See §2.4. |
 | **`puzzles/` directory** | Canonical v1 sample puzzle files (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). Neither the app nor the test suite references the directory; the files exist purely as a record of the format. The strict parser's rejection of an unknown `letter` field (FR-95) is documented at §3.7 and §6.3; no migration script is shipped — the samples are already canonical. |
 | **Injected RNG for anagram scramble** (from D1) | `scramble(word, input, rng)` takes an `Rng` interface; production wires `Math.random`; tests inject a seeded RNG. |
 | **No cursor persistence across reload** (from C6) | Builder state autosaves everything *except* the cursor. On reload, cursor is `null`. Less code, matches your preference. |
@@ -174,19 +175,23 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `app/state/intentKinds.ts` | `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS`, `AMBIGUOUS_INTENT_KINDS` — `ReadonlySet<string>` constants used by `reduceApp` to route intents to `reduceBuilder`/`reducePlayer`. The first three are derived from their respective unions (`BuilderIntent`, `PlayerIntent`, `ConfirmableIntent`) via a `satisfies Record<Kind, null>` record literal so the compiler enforces that every union member is present exactly once (closing D1 / DRN item 7: no hand-maintained string literal that can drift from the union). `AMBIGUOUS_INTENT_KINDS` is the runtime intersection of the Builder and Player sets. |
 
 **Layer 2 — `ui/bindings/` (the seam; the only Svelte-aware logic module).**
-Owns the runes store, `dispatch(intent)`, view-model derivation, debounced persistence scheduling, and port/RNG injection. This is the *only* module that imports from all three other layers (`domain/`, reducers, ports) plus Svelte. Components:
+Owns the runes store, `dispatch(intent)`, view-model derivation, debounced persistence scheduling, and port/RNG injection. This is the *only* module that imports from all three other layers (`domain/`, reducers, ports) plus Svelte. **The `AppStore` and the four experience facades are all factories (§2.4): no `ui/bindings/` file holds module-level mutable state, and no bindings code runs at import time.** Components:
 
 | Module | Owns |
 |---|---|
-| `appStore.svelte.ts` | `AppState` rune, `reduceApp`, route transitions, toasts array, current modal |
-| `builderStore.svelte.ts` | `BuilderState` rune nested inside app state, `dispatch(BuilderIntent)`, debounced autosave, builder view-models (`BuilderGridVM`, `BuilderCluePanelVM`, `BuilderToolbarVM`, `DisplacedCluesPanelVM`) |
-| `playerStore.svelte.ts` | `PlayerState` rune, `dispatch(PlayerIntent)`, debounced player-progress autosave, player view-models (`PlayerGridVM`, `PlayerCluePanelVM`, `ActiveClueBannerVM`, `AnagramModalVM`) |
-| `toastStore.svelte.ts` | Toast list exposed as VM; toast dismissal intent dispatch |
-| `modalStore.svelte.ts` | Current modal request exposed as VM; modal confirm/cancel intent dispatch |
-| `ports.ts` | Singleton port instances wired at boot (`localStoragePort`, `downloadPort`, `filePickPort`, `rngPort`), injectable for tests |
+| `appStore.svelte.ts` | `createAppStore(initial, deps, ports, scheduler): AppStore` factory + `AppStore` / `AppDeps` / `AppPorts` types (§2.4) — the sole `$state` cell lives in the factory closure; `reduceApp` dispatch work-queue; external-event performance via the injected `AppPorts`; route/toast/modal getters. The only rune-using file in the layer (hence the only `.svelte.ts`) |
+| `builderFacade.ts` | `createBuilderFacade(appStore): BuilderFacade` + `BuilderFacade` type + per-leaf action-bag types — typed dispatch narrowing to `BuilderIntent`, builder view-model getters (`BuilderGridVM`, `BuilderCluePanelVM`, `BuilderToolbarVM`, `DisplacedCluesPanelVM`), `pickFile`, branded intent construction (`Row.of` / `Letter.try` / `GridSize.of` / `Title.try` / `Author.try`) — never in components. Owns no state |
+| `playerFacade.ts` | `createPlayerFacade(appStore): PlayerFacade` + `PlayerFacade` type + per-leaf action-bag types — player view-model getters (`PlayerGridVM`, `PlayerCluePanelVM`, `ActiveClueBannerVM`, `AnagramModalVM`), `pickFile`, player action bags. Owns no state |
+| `toastFacade.ts` | `createToastFacade(appStore): ToastFacade` — toast list VM getter + `ToastHostActions`. Owns no state |
+| `modalFacade.ts` | `createModalFacade(appStore): ModalFacade` — modal VM getter + pending-confirm access + `ModalActions`. Owns no state |
+| `persistenceCodec.ts` / `persistenceScheduler.ts` | unchanged (pure codec; `createPersistenceScheduler(storage, debounceMs)` — scheduler is a factory argument of `createAppStore`) |
+
+Naming rule (binding): **"store" is reserved for state-owning modules.** `AppStore` owns the reactive cell; the four experience modules are **facades** — per-instance adapters over the `AppStore` (typed dispatch narrowing + VM getters + action bags + port forwarding), holding no state of their own, hence plain `.ts`. "Sub-store" is a retired term.
+
+The former `ports.ts` singleton register is **deleted**: `main.ts` instantiates the production ports directly from `ports/` and passes them as the `AppPorts` factory argument; tests pass fake ports the same way. `Rng` stays in `AppDeps` (reducer deps, §4.2), not in `AppPorts`.
 
 **Layer 3 — `ui/` (presentational Svelte components).**
-Receives view-models as `$props()`; emits intents via `dispatch` imported from bindings. No domain imports. Three sub-trees:
+Receives view-models and typed action bags as `$props()`; action functions are wired by the parent shell to store dispatch (§2.4). No domain value imports; no `ui/bindings` value imports — type-only imports of VM/store/action-bag prop types from `ui/bindings` are allowed, and `App.svelte` (the UI composition root) is the sole component permitted to import bindings **values** (the store factories). Three sub-trees:
 
 | Module | Owns |
 |---|---|
@@ -197,7 +202,7 @@ Receives view-models as `$props()`; emits intents via `dispatch` imported from b
 | `ui/bindings/` | (covered above) |
 
 **Layer 4 — `ports/` (side-effect implementations).**
-Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests.
+Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests. **Statelessness rule (binding):** port implementations hold no instance state — every method is self-contained over per-call locals; all DOM/global work (`document.createElement`, `localStorage`, `URL.createObjectURL`) happens per call, never at construction. The module-level `export const xPort = createXPort()` instances are the production defaults `main.ts` threads into `createAppStore` — permitted precisely because construction is trivial and nothing mutates the instance (a stateless shared service is a benign singleton, unlike the store singletons removed by §2.4; a port that ever gains internal state must become a per-call factory). Only `main.ts` may import port implementation modules; tests inject fakes via the `AppPorts` factory argument. **Never-throw contract (binding, §3.7):** `StoragePort`/`FilePickPort` methods never throw — the adapter catches, warns (single warn site), and returns the benign value (`void`/`null`). Consumers add no redundant catch layers: `persistenceScheduler` calls storage methods bare, and facades pass `pickFile()`'s `null` through untouched for the leaf to treat as a silent no-op.
 
 | Module | Implements | Wraps |
 |---|---|---|
@@ -207,23 +212,23 @@ Implements `domain/ports` interfaces. Each is a small adapter over a browser API
 | `ports/rngPort.ts` | `Rng` | `Math.random` (production); seeded Mulberry32 in tests |
 
 **Layer 5 — `main.ts`.**
-Boots the app: instantiates ports, loads initial `AppState` (Builder state from `localStorage` or a fresh blank puzzle per FR-19; player starts at the import screen), mounts `App.svelte` to `#app`. Wires the debounced persistence delays as config values (the "inject as config value" principle from F2).
+Boots the app: instantiates the production ports directly from `ports/` (no register — the `ports.ts` singleton is deleted, §2.4), loads initial `AppState` (Builder state from `localStorage` or a fresh blank puzzle per FR-19; player starts at the import screen), constructs `AppDeps` (`{ rng, now }`), `AppPorts` (`{ storage, download, filePick }`), and the `PersistenceScheduler`, calls `createAppStore(initial, deps, ports, scheduler)` exactly once, and mounts `<App appStore={store} />` to `#app`. Wires the debounced persistence delays as config values (the "inject as config value" principle from F2). `main.ts` is the only composer — nothing else constructs an `AppStore` in production.
 
 ### 2.2 Communication patterns
 
-- **UI → logic:** typed `Intent` discriminated-union objects, delivered via `dispatch(intent)`. Intents are data, not callbacks. Components never call reducers directly.
+- **UI → logic:** typed `Intent` discriminated-union objects, delivered via `dispatch(intent)` on a store instance (§2.4). Intents are data, not callbacks, at the dispatch seam. Components never call reducers directly and never construct branded values: leaves invoke typed action-bag props, and the store-side action implementations construct the intents (branded fields via `Row.of` / `Letter.try` / `GridSize.of` / `Title.try` / `Author.try` — domain constructors are bindings-only, §9.2) and dispatch them.
 - **logic → UI:** derived view-models — leaf-shaped, serializable, plain typed objects (no methods, no Svelte). Produced in `ui/bindings` from `AppState`. Reactive via Svelte 5 runes.
 - **reducers → effects:** every reducer returns `{ state, events }`, where `events: DomainEvent[]` (§3.5a) is a discriminated union describing side effects the reducer wants performed. The full variants are: `toast`, `modal-request`, `load-player-progress`, `download`, `clear-builder-storage`, `clear-player-storage`. Events are pure data. Reducers themselves cause zero side effects (`(state, intent, deps) -> { state, events }` is a pure function of its inputs, given the injected `deps`).
 - **`reduceApp` interprets state-affecting events:** the `app/state/reducer.ts` reducer is the only function that sees all of `AppState`. It receives `deps = { rng, now }` and forwards `deps` to the underlying `reduceBuilder`/`reducePlayer` invocations. When a Builder/Player reducer emits a `toast` event, `reduceApp` consumes it (constructs a `Toast` via `Toast.create(deps.rng, event.toastKind, event.message, deps.now)` and appends to `AppState.toasts`). When a Builder/Player reducer emits a `modal-request { modal, confirmIntent }` event, `reduceApp` consumes it (sets `AppState.modal = event.modal` and `AppState.pendingConfirmIntent = event.confirmIntent`). Events that need to cause *external* side effects (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) are *not* consumed by `reduceApp` — they pass through and the bindings layer performs them (see the next bullet). This split keeps reducers free of port knowledge while still confining all `AppState` mutation to reducer code.
-- **bindings layer performs external side effects:** after `dispatch(intent)` returns `{ state, events }`, the bindings layer first folds `result.events` through `applyEventsToApp` (consuming `toast`/`modal-request` into `state.toasts`/`state.modal`; passing `download`/`clear-builder-storage`/`clear-player-storage`/`load-player-progress` through as `leftoverEvents`), sets the rune to the folded state (which causes reactive VM updates), then iterates the `leftoverEvents`. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; if it returns an `Error`, the bindings layer dispatches `report-download-failure` (G7 — `reduceApp` turns it into an error toast so a failed irreversible user action no longer disappears silently; mirrors the `load-player-progress → apply-loaded-progress` follow-up pattern); `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). The fold step is what lets an AppIntent like `report-download-failure` return a `toast` event and have it reach `state.toasts` — without the fold, `performExternalEvent`'s `case 'toast': return null` would drop it. (For Builder/Player intents the fold is a no-op pass-through: `reduceApp` already folded their events internally and returns only the leftover external events, so re-folding leftover events returns them unchanged.) Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
-- **toasts stored in `AppState.toasts: Toast[]`:** added by `reduceApp` based on reducer-emitted `toast` events; removed by `dismiss-toast` intents (raised from the bindings-layer timeout in `ToastHost.svelte` or by user click). No imperative `showToast()` call from anywhere.
-- **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: ConfirmableIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. The bindings layer's `Modal.svelte` Confirm button dispatches `pendingConfirmIntent` directly (a `confirm-*` intent variant — see §4); the Cancel button dispatches the AppIntent `cancel-modal`, which clears both fields. While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
+- **the `AppStore` instance performs external side effects** (via its injected `AppPorts` + `PersistenceScheduler`): after `dispatch(intent)` returns `{ state, events }`, the `AppStore` instance first folds `result.events` through `applyEventsToApp` (consuming `toast`/`modal-request` into `state.toasts`/`state.modal`; passing `download`/`clear-builder-storage`/`clear-player-storage`/`load-player-progress` through as `leftoverEvents`), sets the rune to the folded state (which causes reactive VM updates), then iterates the `leftoverEvents`. For each leftover event: `download` → calls `downloadPort.download(filename, content)`; if it returns an `Error`, the bindings layer dispatches `report-download-failure` (G7 — `reduceApp` turns it into an error toast so a failed irreversible user action no longer disappears silently; mirrors the `load-player-progress → apply-loaded-progress` follow-up pattern); `clear-builder-storage` → calls `storagePort.clearBuilder()`; `clear-player-storage { key }` → calls `storagePort.clearPlayerProgress(key)`; `load-player-progress { key }` → calls `storagePort.loadPlayerProgress(key)` and dispatches `apply-loaded-progress` (see §4.4). The fold step is what lets an AppIntent like `report-download-failure` return a `toast` event and have it reach `state.toasts` — without the fold, `performExternalEvent`'s `case 'toast': return null` would drop it. (For Builder/Player intents the fold is a no-op pass-through: `reduceApp` already folded their events internally and returns only the leftover external events, so re-folding leftover events returns them unchanged.) Toast auto-dismiss timeouts likewise dispatch `dismiss-toast` intents, never direct mutations.
+- **toasts stored in `AppState.toasts: Toast[]`:** added by `reduceApp` based on reducer-emitted `toast` events; removed by `dismiss-toast` intents (raised from `ToastHost.svelte`'s auto-dismiss timeout or by user click, via its `ToastHostActions.dismiss`). No imperative `showToast()` call from anywhere.
+- **confirmation modals:** stored in `AppState.modal: ModalRequest | null`, with `AppState.pendingConfirmIntent: ConfirmableIntent | null` describing what to dispatch on confirm. Set by `reduceApp` based on `modal-request` events. `Modal.svelte`'s Confirm button invokes `ModalActions.confirm()` (which dispatches `pendingConfirmIntent` — a `confirm-*` intent variant, see §4); the Cancel button invokes `ModalActions.cancel()` (which dispatches the AppIntent `cancel-modal`, clearing both fields). While `state.modal != null`, components should disable other guarded controls to avoid stacking modals.
 
 ### 2.3 Boundary definitions
 
 | Boundary | What crosses | How |
 |---|---|---|
-| Component ↔ bindings | View-models (in), Intents (out) | `$props()` in, `dispatch()` out |
+| Component ↔ bindings | View-models + typed action bags (in), action invocations (out) | `$props()` in; action fns wired to store dispatch by the parent shell (§2.4) |
 | Bindings ↔ reducers | `State` + `Intent` (in), `ReducerResult<State>` = `{ state, events }` (out) | Plain function calls; pure |
 | Reducers ↔ domain | Domain value objects and pure-function calls | Direct TS imports |
 | Reducers ↔ ports | Ports are **not** called from reducers. External side effects (download / storage clear / player-progress load) flow as `DomainEvent`s returned by reducers and are performed by the bindings layer. Autosave flows through the bindings layer's state observation + debounce, not from reducers. | Indirect — via returned events plus bindings-layer state observation |
@@ -233,6 +238,83 @@ Boots the app: instantiates ports, loads initial `AppState` (Builder state from 
 The ESLint `no-restricted-imports` rule mentioned in §1.2 enforces that `domain/`, `builder/state/`, `player/state/`, and `app/state/` cannot import `svelte`, `svelte/*`, anything under `ui/`, anything under `ports/`, or any DOM-global-using module. A unit test (`test/boundary/imports.test.ts`) verifies the boundary by running the ESLint `Linter` API over adversarial fixture strings with `filename` set so the per-glob `no-restricted-imports` rules apply, and asserts each forbidden import triggers a `no-restricted-imports` error (with negative controls: allowed imports produce no error). This self-verifies that the rule is wired and catches static and dynamic `import()` violations.
 
 **Brand-import boundary (H1).** The `brand<Tag, T>()` escaper (`domain/brand.ts`) is an unsound cast (`value as Brand<Tag, T>`); it trusts the caller and bypasses range-checked constructors. To keep the §0 Principle 4 / §1 B1 invariant ("illegal values unconstructable at the boundary"), `domain/brand` is treated as an internal dependency of the 15 branded-type owner modules only (`Row`, `Col`, `GridSize`, `CellIndex`, `Letter`, `PuzzleKey`, `Title`, `Author`, `DisplacedClueId`, `WordNumber`, `ToastId`, `WordLength`, `Position`, `EpochMs`, `DurationMs` — the last four added by H4). An ESLint `no-restricted-imports` pattern bans importing `domain/brand` from every `src/**` file except those 15 owners; `test/**` is out of scope (tests legitimately need the escaper for edge-case fixtures). The boundary self-test (`test/boundary/imports.test.ts`) includes positive and negative controls for the brand ban, extending the A1 self-verification pattern.
+
+### 2.4 Store construction & injection (DI — resolves `store_singleton_di_report.md`)
+
+The bindings layer exposes **one real store and four experience facades — all factories, never module-level singletons**. No `ui/bindings/` file holds module-level mutable state; no bindings code runs at import time. The `AppStore` owns its `$state` cell in factory-closure scope; the facades own nothing and are threaded into the component tree as props. This section is binding for every bindings and component file.
+
+**Construction — `main.ts` is the only composer:**
+
+```ts
+// ui/bindings/appStore.svelte.ts
+export type AppDeps = { rng: Rng; now: () => EpochMs };        // reducer deps (§4.2) — rng + clock only
+export type AppPorts = {
+  storage: StoragePort;
+  download: DownloadPort;
+  filePick: FilePickPort;                                     // external-side-effect ports; no rng (rng is a deps concern)
+};
+export type AppStore = {
+  getState(): AppState;
+  getRoute(): AppState['route'];
+  getToasts(): Toast[];
+  getModal(): ModalRequest | null;
+  getPendingConfirmIntent(): ConfirmableIntent | null;
+  getBuilder(): BuilderState;
+  getPlayer(): PlayerState;
+  getScheduler(): PersistenceScheduler;
+  getPorts(): AppPorts;
+  dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void;
+};
+export function createAppStore(
+  initial: AppState,
+  deps: AppDeps,
+  ports: AppPorts,
+  scheduler: PersistenceScheduler,
+): AppStore;
+```
+
+`dispatch` is the work-queue loop over `reduceApp` → `applyEventsToApp` fold → external-event performance (§2.2), reading only closure-scoped `state` / `deps` / `ports` / `scheduler`. `handleLoadPlayerProgress` reads `ports.storage`. No `bootApp`, no `_resetAppStateForTests`, no `getPorts()` register — the `ports.ts` file is deleted; `main.ts` instantiates the production ports directly from `ports/` and passes them as the `AppPorts` argument.
+
+**Experience facades are per-instance adapters over an `AppStore` (they own no state):**
+
+```ts
+// ui/bindings/builderFacade.ts — plain .ts: no runes, no state, nothing reactive of its own
+export type BuilderFacade = {
+  dispatch(intent: BuilderIntent): void;      // delegates to appStore.dispatch (typed narrowing)
+  builderShellVM(): BuilderShellVM;           // reactive pass-through — reactivity flows from appStore's cell; call inside $derived / $effect
+  getBuilderState(): BuilderState;
+  pickFile(): Promise<string | null>;         // pass-through of appStore.getPorts().filePick.pickFile() — null (cancel or failed pick) flows to the FilePicker `pick` prop, which treats it as a silent no-op (item 5); genuine failures warn once inside the port (never-throw contract, §3.7)
+  actions: {                                   // per-leaf action bags — see below
+    toolbar: BuilderToolbarActions;
+    grid: BuilderGridActions;
+    cluePanel: BuilderCluePanelActions;
+    displacedClues: DisplacedCluesPanelActions;
+    banner: BuilderBannerActions;              // JoinReattachBanner
+  };
+};
+export function createBuilderFacade(appStore: AppStore): BuilderFacade;
+// createPlayerFacade(appStore): PlayerFacade — same shape (playerShellVM, getPlayerState, pickFile, per-leaf bags)
+// createModalFacade(appStore): ModalFacade — { modalVM(): ModalVM; getPendingConfirm(): ConfirmableIntent | null; actions: ModalActions }
+// createToastFacade(appStore): ToastFacade — { toastVMs(): ToastVM[]; actions: ToastHostActions }
+```
+
+**Prop contract (binding):**
+
+1. `App.svelte` declares `let { appStore }: { appStore: AppStore } = $props()`. It is the **only** component that imports bindings values (the store + facade factories). It constructs the four experience facades and passes each as a prop: `<BuilderShell builderFacade={builderFacade} />`, `<PlayerShell playerFacade={playerFacade} />`; `Modal` / `ToastHost` receive their VMs + action bags wired from the modal/toast facades.
+2. Shells declare their facade prop (`let { builderFacade }: { builderFacade: BuilderFacade } = $props()`), derive VMs reactively (`const vm = $derived(builderFacade.builderShellVM())`), and pass **view-model + action-bag props** to their leaves.
+3. **Leaves never receive a store.** Each leaf declares exactly the VM(s) + action bag(s) it invokes, e.g.:
+
+   ```ts
+   // ui/builder/BuilderToolbar.svelte
+   let { vm, actions }: { vm: BuilderToolbarVM; actions: BuilderToolbarActions } = $props();
+   ```
+
+   One `<Leaf>Actions` type per leaf that needs actions, exported from the owning facade module (type-only import at the leaf). Bag functions are implemented inside the facade factory: each constructs the typed intent — branded fields via the domain constructors (`Row.of`, `Col.of`, `Letter.try`, `GridSize.of`, `Title.try`, `Author.try`), which only bindings may call (§9.2 + H1 brand ban make leaf-side intent construction impossible for any intent with branded fields) — and dispatches it. Fieldless intents (`{ kind: 'export-incomplete' }`) are wrapped as zero-arg bag functions for uniformity.
+4. **Intent-data principle preserved:** intents remain data at the dispatch seam (§2.2). Leaves emit semantic actions because branded intent fields cannot be constructed outside bindings; the leaf↔shell edge is intra-UI and carries VMs + action bags, both declared in `$props()`.
+5. Shared leaves: `Modal.svelte` takes `{ vm: ModalVM; confirmIntent: ConfirmableIntent | null; actions: ModalActions }` (`ModalActions = { confirm(): void; cancel(): void }`); `ToastHost.svelte` takes `{ vms: ToastVM[]; actions: ToastHostActions }` (`ToastHostActions = { dismiss(id: ToastId): void }` — the id is a VM-provided branded value passed through, not constructed); `Landing.svelte` takes `{ actions: LandingActions }` (`{ build(): void; play(): void }`); `FilePicker.svelte` takes `{ label: string; pick: () => Promise<string | null>; onpick: (text: string) => void }` — the `FilePickPort` call is wired from `AppPorts.filePick` by the parent, never imported by the component; a `null` result from `pick` (cancel or failed pick) is a silent no-op — `onpick` is not called and nothing is logged (cancel is not an error; the port already warned once if the pick genuinely failed). `Header.svelte` stays store-free (static). `TypingSurface.svelte` keeps its existing `enabled` + `onDispatch: (intent: TypingIntent) => void` props (already presentational).
+6. **No `setContext` / `getContext`** — context is a runtime back-channel with the same hidden-dependency problem as bare imports (report, "What this eliminates").
+7. **Autosave `$effect`s stay in `App.svelte`**, reading `appStore.getScheduler()` / `getBuilder()` / `getPlayer()` (§4.5) — they cross both slices, so they live at the composition root, not inside a facade.
+8. **Tests construct independent stores per test**: `createAppStore(initial, { rng: SeededRng, now: FakeClock }, { storage: InMemoryStoragePort, download: StubDownloadPort, filePick: stub }, createPersistenceScheduler(storage))`. No shared singleton, no state reset helper, no port-register swapping, no import-order sensitivity. Facade tests call `createBuilderFacade(store)` / etc. on a fresh `AppStore`. Multi-instance mounting (dual-pane, parallel test apps, isolated subtree previews) works because no module-level state exists anywhere in the chain.
 
 ---
 
@@ -678,7 +760,11 @@ export const CompletenessCheck: {
 ### 3.7 Persistence & format (`domain/ports/`, `domain/format/`, `domain/rng/`)
 
 ```ts
-// Port interfaces only — implementations live in ports/
+// Port interfaces only — implementations live in ports/.
+// Never-throw contract (binding): StoragePort and FilePickPort methods never throw —
+// the ports/ adapter catches, warns (single warn site), and returns the benign value
+// (void / null). Consumers (scheduler, facades, leaves) rely on this contract and
+// add no redundant catch layers.
 export interface StoragePort {
   loadBuilder(): string | null;                       // raw JSON string of BuilderState blob; null if missing or unreadable
   saveBuilder(blob: string): void;
@@ -691,7 +777,7 @@ export interface DownloadPort {
   download(filename: string, content: string): Error | null;  // null = success; Error = failure (G7 — bindings layer surfaces as toast)
 }
 export interface FilePickPort {
-  pickFile(): Promise<string | null>;                 // returns file text or null if cancelled
+  pickFile(): Promise<string | null>;                 // file text, or null if cancelled/failed (impl warns once on genuine failure; cancel is silent)
 }
 
 // domain/rng/Rng.ts — NOT a port. Rng is a deps-injection abstraction (a determinism
@@ -1002,7 +1088,7 @@ export type PlayerIntent =
 
 Persistence is the bindings layer's responsibility — driven by two mechanisms:
 
-1. **State observation (autosave).** The bindings layer runs two `$effect`s — one over `state.builder` (the full BuilderState) and one over `state.player` (when `phase === 'solving'`) — split per-slice so a change to one slice does not re-arm the other's debounce timer. On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
+1. **State observation (autosave).** `App.svelte` runs two `$effect`s over its `appStore` prop (§2.4 item 7) — one over `state.builder` (the full BuilderState) and one over `state.player` (when `phase === 'solving'`) — split per-slice so a change to one slice does not re-arm the other's debounce timer. On any change, debounce (configurable; default 400 ms per F2) and call `storagePort.saveBuilder(blob)` or `storagePort.savePlayerProgress(key, blob)`. The persisted Builder blob is richer than the incomplete-puzzle JSON — it includes `mode` and `subMode` for restore — so it is a wrapper around the puzzle JSON, not the puzzle JSON directly:
    ```ts
    // Player progress blob: { version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }
     // Builder snapshot blob: { version: 1, kind: 'builder-snapshot',
@@ -1021,14 +1107,14 @@ Persistence is the bindings layer's responsibility — driven by two mechanisms:
 
 ## 5. View-Models (UI ↔ Bindings Contract)
 
-All view-model definitions live in `ui/bindings/`. They are plain typed objects: leaf-shaped, serializable, with no methods and no Svelte awareness. Components consume them as `$props()`. Components never call domain functions; they emit intents via `dispatch`.
+All view-model definitions live in `ui/bindings/`. They are plain typed objects: leaf-shaped, serializable, with no methods and no Svelte awareness. Components consume them (plus typed action bags, §2.4) as `$props()`. Components never call domain functions; they invoke action-bag props whose store-side implementations construct and dispatch intents.
 
 Each VM below is derived from `AppState` purely and reactively (Svelte 5 `$derived`). Components use `$derived` locally only for trivial presentational computations (e.g., resolving a cell-colour flag into a CSS class).
 
 ### 5.1 Shared
 
 ```ts
-export type ToastVM = { id: ToastId; kind: ToastKind; message: string };
+export type ToastVM = { id: ToastId; kind: ToastKind; message: string; ttlMs: DurationMs };   // ttlMs added 2026-09-07 (§2.4 DI): ToastHost's auto-dismiss timer (G5) is leaf behavior and needs the duration; branded types in VMs are established practice (§5.2 GridCellVM)
 export type ModalVM = { kind: ModalRequest['kind']; title: string; body: string; confirmLabel: string; cancelLabel: string } | null;
 ```
 
@@ -1304,7 +1390,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | Component | Props | Emits | Notes |
 |---|---|---|---|
 | `Modal.svelte` | `ModalVM` | the deferred `confirm-*` Builder/Player intent from `state.pendingConfirmIntent` (on Confirm); `cancel-modal` (on Cancel/Escape) | One reusable modal (G4 closed: single `const vm = $derived(modalVM())` derivation per tick; template narrows via `{#if vm !== null}` — no double-call, no `!`). Backdrop, Confirm/Cancel buttons, Escape cancels. No focus trap (a11y out of scope). The bindings layer reads `pendingConfirmIntent` off `AppState` and dispatches it directly on confirm. |
-| `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via bindings-layer timeout (C2 = 3500 ms). Per-toast diff scheduling (G5 closed): a persistent `Map<ToastId, timer>` keyed by id; each toast gets exactly one timer scheduled when it first appears, timers for dismissed toasts are cleared — sibling mutations no longer reset unrelated timers (deadline ≈ `createdAt + ttlMs`). `onDestroy` clears all on unmount; `$effect` has no cleanup-return. |
+| `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via the component's own timeout over `ToastVM.ttlMs` (C2 default 3500 ms; under §2.4 the `vms` prop carries `ttlMs` so the leaf can schedule). Per-toast diff scheduling (G5 closed): a persistent `Map<ToastId, timer>` keyed by id; each toast gets exactly one timer scheduled when it first appears, timers for dismissed toasts are cleared — sibling mutations no longer reset unrelated timers (deadline ≈ `createdAt + ttlMs`). `onDestroy` clears all on unmount; `$effect` has no cleanup-return. |
 | `Toast.svelte` | `ToastVM` | `dismiss-toast` | Single toast row. |
 | `TypingSurface.svelte` | `enabled: boolean; cursor: Cursor` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focus is state-driven: the existing `$effect` reads `enabled` and `cursor` and re-focuses the input when `enabled` is true and the `cursor` ref changes (i.e. whenever `select-cell` / `click-clue-panel-word` reducers produce a new cursor). No DOM id, no imperative cross-component focus calls, no Svelte context (G1/G2 — closed). `Cursor` type-imported from `domain/grid/Cursor` (AD §2.3 permits UI→domain type imports; precedent `gridVM.ts`). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. Emits `TypingIntent` values (B6 — type owned by `ui/shared/typingIntent.ts`, imported type-only here + by both shells). Accepted behaviour change: Builder clue-panel click during `join`/`reattach` subMode no longer refocuses the surface (those reducers mutate `subMode` but not `cursor`); user stays oriented and clicks a cell/clue to refocus, which now works via state. `PlayerShell` additionally drives `enabled` to `false` while the Anagram Helper modal is open (see `PlayerShell.svelte` row) so the modal's textbox retains focus; `BuilderShell` does not (no anagram modal in the Builder — FR-81 is Player-only). |
 | `FilePicker.svelte` | accept label | `pick-file` (callback with text) | Wraps `<input type="file">` + drag-and-drop; returns file text to caller. |
@@ -1551,10 +1637,13 @@ angryphrase/
 │  │  ├─ shared/
 │  │  │  ├─ Modal.svelte  ToastHost.svelte  Toast.svelte
 │  │  │  ├─ TypingSurface.svelte  FilePicker.svelte  typingIntent.ts
-│  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §5.5)
-│  │     ├─ appStore.svelte.ts  builderStore.svelte.ts  playerStore.svelte.ts
-│  │     ├─ toastStore.svelte.ts  modalStore.svelte.ts
-  │  │     ├─ ports.ts  persistenceCodec.ts  persistenceScheduler.ts
+│  │  ├─ bindings/                        # Layer 2: the seam — the only place that crosses all layers (§2.1, §2.4, §5.5)
+│  │     ├─ appStore.svelte.ts            # createAppStore factory + AppStore/AppDeps/AppPorts/LandingActions types (§2.4) — sole $state cell; only rune-using file; ports.ts register DELETED
+│  │     ├─ builderFacade.ts              # createBuilderFacade(appStore) + BuilderFacade type + per-leaf action-bag types — plain .ts, owns no state
+│  │     ├─ playerFacade.ts               # createPlayerFacade(appStore) + PlayerFacade type + per-leaf action-bag types
+│  │     ├─ toastFacade.ts                # createToastFacade(appStore) + ToastHostActions
+│  │     ├─ modalFacade.ts                # createModalFacade(appStore) + ModalActions
+│  │     ├─ persistenceCodec.ts  persistenceScheduler.ts
 │  │     ├─ viewmodels/
 │  │        ├─ builderVM.ts  playerVM.ts  gridVM.ts  cluePanelVM.ts
 │  │        ├─ anagramVM.ts  toastVM.ts  modalVM.ts
@@ -1582,6 +1671,10 @@ angryphrase/
 │  ├─ app/state/
 │  │  ├─ reducer.test.ts                  # full flow tests: dump-events cases, request→confirm pass, cancel; toast fold; modal fold; passthrough of download/clear-storage
 │  │  ├─ effects.test.ts  intentKinds.test.ts  state.test.ts
+│  ├─ ui/bindings/                        # store + facade tests; each test constructs an independent store instance via the factories (§2.4 item 8) — no shared singleton
+│  │  ├─ appStore.test.ts  builderFacade.test.ts  playerFacade.test.ts
+│  │  ├─ modalFacade.test.ts  toastFacade.test.ts
+│  │  ├─ persistenceScheduler.test.ts  viewmodels/ (per-VM pure tests)
 │  ├─ fakes/
 │  │  ├─ InMemoryStoragePort.ts  SeededRng.ts  StubDownloadPort.ts  FakeClock.ts
 │  │  └─ (each fake paired with a co-located `<name>.test.ts` unit test)
@@ -1595,7 +1688,8 @@ angryphrase/
    ├─ architecture_design.md                # this document
    ├─ design_review_notes.md                # DRN — open questions + resolutions log
    ├─ chain_aware_selection_addendum.md     # chain-aware selection spec addendum
-   ├─ code_smells.md                        # code/architectural smells audit (this doc's sibling)
+   ├─ code_smells.md                        # code/architectural smells log (active; fresh start 2026-09-07)
+   ├─ code_smells_archive.md               # frozen 2026-09-07 — A/B/C/D audit + F9, all resolved
    ├─ store_singleton_di_report.md          # store-singleton DI investigation
    └─ version_stamp_plan.md                 # version-stamp feature plan (K2 — not yet implemented)
 ```
@@ -1617,11 +1711,11 @@ angryphrase/
 | `src/domain/**` | only sibling files under `src/domain/**` | `svelte`, `svelte/*`, DOM-global-only modules, `src/ui/**`, `src/ports/**`, `src/builder/state/**`, `src/player/state/**`, `src/app/state/**`; `domain/brand` is banned except for the 15 branded-type owner modules (H1, H4) |
 | `src/builder/state/**`, `src/player/state/**` | `src/domain/**`, sibling files within the same module (including its own `internal/` subfolder); the other module's public root files only | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, `src/app/state/**`, the other module's `internal/**` subfolder (no cycles, no reaching into another module's internals), `domain/brand` (H1) |
 | `src/app/state/**` | `src/domain/**`, value and type imports from the public root files of `src/builder/state/**` (`state.ts`, `intents.ts`, `reducer.ts`) and `src/player/state/**` (same three files), and from sibling `src/app/state/**` files | `svelte`, `svelte/*`, DOM globals, `src/ui/**`, `src/ports/**`, and `src/builder/state/internal/**` / `src/player/state/internal/**` (anything under an `internal/` subfolder of another Layer-1 module), `domain/brand` (H1) |
-| `src/ui/**` (except `src/ui/bindings/**`) | sibling files, `src/ui/bindings/**`, types-only from `src/domain/**` (for VM prop shapes only — *importing functions is blocked*) | `svelte` allowed; `src/ports/**`, `src/builder/state/**`, `src/player/state/**` blocked, `domain/brand` (H1) |
+| `src/ui/**` (except `src/ui/bindings/**`) | sibling files; **type-only** imports from `src/ui/bindings/**` (VM, store, and action-bag prop types, §2.4) and from `src/domain/**` (VM prop shapes only — *importing functions is blocked*); **value** imports from `src/ui/bindings/**` for `src/ui/app/App.svelte` **only** (the UI composition root, §2.4) | `svelte` allowed; **value** imports from `src/ui/bindings/**` (blocked for every component except `App.svelte`); `src/ports/**`, `src/app/state/**`, `src/builder/state/**`, `src/player/state/**` blocked; `domain/brand` (H1) |
 | `src/ui/bindings/**` | all of `src/**` | `domain/brand` (H1) |
 | `src/ports/**` | `src/domain/ports/ports.ts` (interfaces only), `src/domain/rng/Rng.ts` (the rngPort adapter needs `Rng`), and `src/domain/puzzle/PuzzleKey.ts` (StoragePort key type — DRN item 6) | `svelte`, `src/state/**`, `src/ui/**`, rest of `src/**`, `domain/brand` (H1) |
 
-A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism.
+A `test/boundary/imports.test.ts` runs the ESLint `Linter` API over adversarial fixture strings (with `filename` matching the per-glob rule's `files` pattern) and asserts each forbidden import triggers a `@typescript-eslint/no-restricted-imports` error. Negative controls assert allowed imports produce no error, proving the rule fires on the forbidden cases rather than blanket-erroring. The self-test includes positive + negative controls for the §2.4 rule: a **value** import of `ui/bindings` from any component other than `App.svelte` errors; `App.svelte`'s value import passes; a **type-only** import of a VM/action-bag type from a leaf passes. This makes the boundary self-verifying (NFR-4); `tsc` does not enforce path boundaries, so ESLint is the enforcement mechanism — the bare-import-reaching pattern (report finding 3) is now compiler-blocked, not convention.
 
 **Brand-import enforcement (H1).** The `domain/brand` ban is implemented by a `no-restricted-imports` pattern appended to every per-glob rule block (builder, player, app, ui, ports) plus a dedicated block for `src/ui/bindings/**` and a catch-all for any `src/**` file not covered by existing blocks (e.g. `src/main.ts`). The `src/domain/**` block is split: non-owners get the brand ban; the 11 owner files get a separate block without it. The self-test includes 4 brand-specific fixtures: owner allowed, non-owner domain banned, bindings banned, `test/**` allowed (scope control).
 
@@ -1667,7 +1761,7 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `FakeClock` — a manually-advanced `() => EpochMs` for deterministic `Toast.createdAt` values.
 - `StubDownloadPort` — records filename + content; never touches the DOM.
 
-Tests for reducers wire these directly; bindings-layer tests (if any) are not required, since the bindings layer is largely mechanical.
+Tests for reducers wire these directly. Store tests (`test/ui/bindings/`) construct independent store instances per test via the factories (§2.4 item 8): `createAppStore(initial, fakeDeps, fakePorts, createPersistenceScheduler(inMemoryStorage))` — no shared singleton, no `bootApp`, no `_resetAppStateForTests`, no `setPorts`/`resetPorts` register swapping.
 
 ### 10.3 Manual verification (must be done before release)
 
@@ -1695,7 +1789,7 @@ The existing workflow already runs `npm run ci` before deploy. The `ci` script i
 
 ### 11.1 Runtime configuration (injected, per the F2 principle)
 
-A single `AppConfig` object is constructed in `main.ts` and passed (or imported) into the bindings layer:
+A single `AppConfig` object is constructed in `main.ts` and feeds the `createAppStore` arguments (§2.4): `ports` → `AppPorts` + `AppDeps.rng`; `now` → `AppDeps.now`; `autosave` debounce values → `createPersistenceScheduler`; `toast.ttlMs` flows through reducer deps into `Toast.create`.
 
 ```ts
 export type AppConfig = {
@@ -1710,7 +1804,7 @@ Production defaults:
 - `toast.ttlMs: DurationMs.DEFAULT` (3500) (C2).
 - `rng`: `Math.random`-backed; `now`: `() => EpochMs.of(Date.now())`.
 
-Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The bindings layer constructs `deps = { rng: config.ports.rng, now: config.now }` once and passes it to all three reducers (`reduceApp`, `reduceBuilder`, `reducePlayer`) on every dispatch (§4.2).
+Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `SeededRng`, a `FakeClock`, and tight debounce intervals (e.g., 0 ms). The test constructs `AppDeps`/`AppPorts` from the config and passes them to `createAppStore` (§2.4); the store threads `deps = { rng, now }` to all three reducers (`reduceApp`, `reduceBuilder`, `reducePlayer`) on every dispatch (§4.2).
 
 ### 11.2 Build & deploy
 

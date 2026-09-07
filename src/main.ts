@@ -8,8 +8,11 @@ link.href = faviconUrl;
 document.head.appendChild(link);
 import { mount } from 'svelte';
 import App from './ui/app/App.svelte';
-import { bootApp } from './ui/bindings/appStore.svelte';
-import { getPorts } from './ui/bindings/ports';
+import { createAppStore } from './ui/bindings/appStore.svelte';
+import { localStoragePort } from './ports/localStoragePort';
+import { downloadPort } from './ports/downloadPort';
+import { filePickPort } from './ports/filePickPort';
+import { rngPort } from './ports/rngPort';
 import { parseBuilderSnapshot } from './ui/bindings/persistenceCodec';
 import { createPersistenceScheduler } from './ui/bindings/persistenceScheduler';
 import { AppState } from './app/state/state';
@@ -18,6 +21,10 @@ import type { BuilderState } from './builder/state/state';
 import { GridSize } from './domain/grid/GridSize';
 import { PuzzleKey } from './domain/puzzle/PuzzleKey';
 import { EpochMs } from './domain/time/EpochMs';
+
+const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort };
+const deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) };
+const scheduler = createPersistenceScheduler(ports.storage);
 
 /**
  * Build the initial AppState per FR-65 / FR-64 / C6 / NFR-9:
@@ -30,8 +37,7 @@ import { EpochMs } from './domain/time/EpochMs';
  * 5. Route always starts at 'landing' (FR-1 — choice of Build/Play is NOT persisted across sessions).
  */
 function loadInitialAppState(): AppState {
-  const ports = getPorts();
-  const rng = ports.rng;
+  const rng = rngPort;
 
   // No choice persistence across sessions — FR-1.
   const freshBlank = (): AppState =>
@@ -77,12 +83,9 @@ function loadInitialAppState(): AppState {
 }
 
 const initial = loadInitialAppState();
-const deps = { rng: getPorts().rng, now: () => EpochMs.of(Date.now()) };
-const scheduler = createPersistenceScheduler(getPorts().storage);
-
-bootApp(initial, deps, scheduler);
+const store = createAppStore(initial, deps, ports, scheduler);
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
-const app = mount(App, { target: document.getElementById('app')! });
+const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });
 
 export default app;

@@ -118,4 +118,40 @@ describe('localStoragePort', () => {
     warnSpy.mockRestore();
     getItemSpy.mockRestore();
   });
+
+  it('localStoragePort: savePlayerProgress does not throw when localStorage.setItem throws (graceful failure)', () => {
+    const port = createLocalStoragePort();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError');
+    });
+    expect(() => port.savePlayerProgress(KEY_A, 'progress-v1')).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledOnce();
+    warnSpy.mockRestore();
+    setItemSpy.mockRestore();
+  });
+
+  it('localStoragePort: clearBuilder does not throw when localStorage.removeItem throws (graceful failure)', () => {
+    const port = createLocalStoragePort();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    expect(() => port.clearBuilder()).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledOnce();
+    warnSpy.mockRestore();
+    removeItemSpy.mockRestore();
+  });
+
+  it('localStoragePort: clearPlayerProgress does not throw when localStorage.removeItem throws (graceful failure)', () => {
+    const port = createLocalStoragePort();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    expect(() => port.clearPlayerProgress(KEY_A)).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledOnce();
+    warnSpy.mockRestore();
+    removeItemSpy.mockRestore();
+  });
 });

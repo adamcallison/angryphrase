@@ -1,12 +1,8 @@
 <script lang="ts">
   import type { AnagramModalVM } from '../bindings/viewmodels/anagramVM';
-  import {
-    dispatchAnagramInput,
-    dispatchAnagramScramble,
-    dispatchCloseAnagramHelper,
-  } from '../bindings/playerStore.svelte';
+  import type { PlayerAnagramActions } from '../bindings/playerFacade';
 
-  let { vm }: { vm: AnagramModalVM } = $props();
+  let { vm, actions }: { vm: AnagramModalVM; actions: PlayerAnagramActions } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
   let wasOpen = $state(false);
@@ -22,12 +18,12 @@
     // FR-83: filter A-Z, uppercase, clamp to wordLength
     let s = target.value.toUpperCase().replace(/[^A-Z]/g, '');
     if (s.length > vm.wordLength) s = s.slice(0, vm.wordLength);
-    dispatchAnagramInput(s);
+    actions.input(s);
   }
 
   function onBackdropClick(event: MouseEvent): void {
     if (event.target === event.currentTarget) {
-      dispatchCloseAnagramHelper();
+      actions.close();
     }
   }
 </script>
@@ -45,7 +41,7 @@
         <button
           type="button"
           class="text-2xl text-gray-500 hover:text-gray-700"
-          onclick={() => dispatchCloseAnagramHelper()}
+          onclick={() => actions.close()}
           aria-label="Close"
         >
           ×
@@ -81,7 +77,7 @@
         bind:this={inputEl}
         value={vm.input}
         oninput={onInput}
-        onkeydown={(e) => { if (e.key === 'Escape') dispatchCloseAnagramHelper(); }}
+        onkeydown={(e) => { if (e.key === 'Escape') actions.close(); }}
         autocomplete="off"
         autocapitalize="off"
         autocorrect="off"
@@ -109,11 +105,11 @@
           type="button"
           class="rounded bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={!vm.scrambleEnabled}
-          onclick={() => dispatchAnagramScramble()}>Scramble</button>
+          onclick={() => actions.scramble()}>Scramble</button>
         <button
           type="button"
           class="rounded bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
-          onclick={() => dispatchCloseAnagramHelper()}>Close</button>
+          onclick={() => actions.close()}>Close</button>
       </div>
     </div>
   </div>

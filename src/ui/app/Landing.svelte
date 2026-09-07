@@ -1,13 +1,7 @@
 <script lang="ts">
-  import { dispatch } from '../bindings/appStore.svelte';
+  import type { LandingActions } from '../bindings/appStore.svelte';
 
-  function goToBuild(): void {
-    dispatch({ kind: 'navigate', route: 'build' });
-  }
-
-  function goToPlay(): void {
-    dispatch({ kind: 'navigate', route: 'play' });
-  }
+  let { actions }: { actions: LandingActions } = $props();
 </script>
 
 <main class="mx-auto flex max-w-3xl flex-col items-center gap-12 px-4 py-16">
@@ -16,13 +10,13 @@
     <button
       type="button"
       class="flex-1 rounded-md bg-blue-600 px-6 py-12 text-white text-xl font-bold hover:bg-blue-700"
-      onclick={goToBuild}>
+      onclick={actions.build}>
       Build
     </button>
     <button
       type="button"
       class="flex-1 rounded-md bg-green-600 px-6 py-12 text-white text-xl font-bold hover:bg-green-700"
-      onclick={goToPlay}>
+      onclick={actions.play}>
       Play
     </button>
   </div>

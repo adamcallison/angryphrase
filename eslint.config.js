@@ -235,7 +235,7 @@ export default [
   // src/ui/** except bindings: bindings + siblings; type-only domain; no state/ports
   {
     files: ['src/ui/**/*.ts', 'src/ui/**/*.svelte'],
-    ignores: ['src/ui/bindings/**'],
+    ignores: ['src/ui/bindings/**', 'src/ui/app/App.svelte'],
     rules: {
       '@typescript-eslint/no-restricted-imports': [
         'error',
@@ -259,6 +259,57 @@ export default [
             },
             {
               regex: '(?:^src/|(?:\.\./)+)domain/',
+              allowTypeImports: true,
+              message: 'src/ui/** may only import type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/domain/brand(?:\\.ts)?$|(?:\\.\\./)+domain/brand(?:\\.ts)?$|(?:\\.\\./)+brand(?:\\.ts)?$)',
+              message: 'domain/brand is internal to branded-type owner modules; use the type constructor (e.g. Row.of, PuzzleKey.try, Letter.try) instead of brand().'
+            },
+            {
+              regex: '(?:^src/ui/bindings/|(?:\\.\\./)+bindings/)',
+              allowTypeImports: true,
+              message: 'src/ui/** may only import type-only imports from src/ui/bindings/**; value imports are permitted only in src/ui/app/App.svelte.'
+            }
+          ]
+        }
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ImportExpression[source.type='Literal'][source.value=/bindings/]",
+          message: 'src/ui/** may not dynamically import src/ui/bindings/**.'
+        }
+      ]
+    }
+  },
+  // src/ui/app/App.svelte: the only component permitted to import bindings values.
+  // Same boundary rules as the src/ui/** block, minus the ui/bindings value-import ban.
+  {
+    files: ['src/ui/app/App.svelte'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(?:^src/|(?:\.\./)+)ports/',
+              message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\\.\\./)+)builder/state/',
+              message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\\.\\./)+)player/state/',
+              message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\\.\\./)+)app/state/',
+              message: 'src/ui/** may only import src/ui/bindings/**, sibling UI files, and type-only imports from src/domain/**.'
+            },
+            {
+              regex: '(?:^src/|(?:\\.\\./)+)domain/',
               allowTypeImports: true,
               message: 'src/ui/** may only import type-only imports from src/domain/**.'
             },

@@ -5,9 +5,32 @@
   import PlayerShell from '../player/PlayerShell.svelte';
   import ToastHost from '../shared/ToastHost.svelte';
   import Modal from '../shared/Modal.svelte';
-  import { getRoute, getBuilder, getPlayer, getScheduler } from '../bindings/appStore.svelte';
+  import type { AppStore, LandingActions } from '../bindings/appStore.svelte';
+  import { createBuilderFacade } from '../bindings/builderFacade';
+  import { createPlayerFacade } from '../bindings/playerFacade';
+  import { createModalFacade } from '../bindings/modalFacade';
+  import { createToastFacade } from '../bindings/toastFacade';
 
-  const route = $derived(getRoute());
+  let { appStore }: { appStore: AppStore } = $props();
+
+  // svelte-ignore state_referenced_locally
+  const builderFacade = createBuilderFacade(appStore);
+  // svelte-ignore state_referenced_locally
+  const playerFacade = createPlayerFacade(appStore);
+  // svelte-ignore state_referenced_locally
+  const modalFacade = createModalFacade(appStore);
+  // svelte-ignore state_referenced_locally
+  const toastFacade = createToastFacade(appStore);
+
+  const landingActions: LandingActions = {
+    build: () => appStore.dispatch({ kind: 'navigate', route: 'build' }),
+    play: () => appStore.dispatch({ kind: 'navigate', route: 'play' }),
+  };
+
+  const route = $derived(appStore.getRoute());
+  const modalVm = $derived(modalFacade.modalVM());
+  const confirmIntent = $derived(modalFacade.getPendingConfirm());
+  const toastVms = $derived(toastFacade.toastVMs());
 
   // Autosave: observe each state slice independently and schedule debounced persistence.
   // Reading inside each $effect registers that slice's reactive subscription; the
@@ -15,10 +38,10 @@
   // Split per-slice so a builder keystroke does not re-arm the player timer, and vice versa.
   // Relies on reducers preserving sibling substate refs (spreads copy the other ref unchanged).
   $effect(() => {
-    getScheduler().scheduleBuilderSave(getBuilder());
+    appStore.getScheduler().scheduleBuilderSave(appStore.getBuilder());
   });
   $effect(() => {
-    getScheduler().schedulePlayerSave(getPlayer());
+    appStore.getScheduler().schedulePlayerSave(appStore.getPlayer());
   });
 </script>
 
@@ -26,13 +49,13 @@
   <Header />
   <main class="flex-1">
     {#if route === 'landing'}
-      <Landing />
+      <Landing actions={landingActions} />
     {:else if route === 'build'}
-      <BuilderShell />
+      <BuilderShell builderFacade={builderFacade} />
     {:else if route === 'play'}
-      <PlayerShell />
+      <PlayerShell playerFacade={playerFacade} />
     {/if}
   </main>
-  <ToastHost />
-  <Modal />
+  <ToastHost vms={toastVms} actions={toastFacade.actions} />
+  <Modal vm={modalVm} confirmIntent={confirmIntent} actions={modalFacade.actions} />
 </div>

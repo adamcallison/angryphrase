@@ -1,27 +1,38 @@
 <script lang="ts">
-  import { modalVM, confirmModal, cancelModal } from '../bindings/modalStore.svelte';
+  import type { ModalVM, ModalActions } from '../bindings/modalFacade';
+  import type { ConfirmableIntent } from '../../domain/notifications/Event';
 
-  const vm = $derived(modalVM());
+  let {
+    vm,
+    confirmIntent,
+    actions,
+  }: {
+    vm: ModalVM;
+    confirmIntent: ConfirmableIntent | null;
+    actions: ModalActions;
+  } = $props();
 
   function handleKey(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
-      cancelModal();
+      actions.cancel();
     }
   }
 
   function onConfirmClick(): void {
-    confirmModal();
+    if (confirmIntent !== null) {
+      actions.confirm();
+    }
   }
 
   function onCancelClick(): void {
-    cancelModal();
+    actions.cancel();
   }
 
   function onBackdropClick(event: MouseEvent): void {
     // Click outside the modal content but inside the backdrop cancels.
     if (event.target === event.currentTarget) {
-      cancelModal();
+      actions.cancel();
     }
   }
 </script>

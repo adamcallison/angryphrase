@@ -27,7 +27,6 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import type { StoragePort } from '../../../src/domain/ports/ports';
 import type { BuilderState as BuilderStateType } from '../../../src/builder/state/state';
 import type { PlayerState as PlayerStateType } from '../../../src/player/state/state';
 import type { Puzzle as PuzzleType } from '../../../src/domain/puzzle/Puzzle';
@@ -329,26 +328,6 @@ describe('persistenceScheduler.ts', () => {
       vi.advanceTimersByTime(400);
       // Still exactly one save each.
       expect(storage.getPlayerProgressMap().size).toBe(1);
-    });
-
-    it('createPersistenceScheduler: storage errors are caught via console.warn, not thrown', () => {
-      const throwingStorage: StoragePort = {
-        loadBuilder: () => null,
-        saveBuilder: () => { throw new Error('save failed'); },
-        clearBuilder: () => { throw new Error('clear failed'); },
-        loadPlayerProgress: () => null,
-        savePlayerProgress: () => { throw new Error('save player failed'); },
-        clearPlayerProgress: () => { throw new Error('clear player failed'); },
-      };
-      const throwingScheduler = createPersistenceScheduler(throwingStorage, 400);
-      const builderState = makeBuilderState(20);
-      const playerState = makePlayerSolvingState(21);
-      throwingScheduler.scheduleBuilderSave(builderState);
-      throwingScheduler.schedulePlayerSave(playerState);
-      vi.advanceTimersByTime(400);
-      throwingScheduler.clearBuilder();
-      throwingScheduler.clearPlayer(playerState.puzzle.key);
-      expect(warnSpy).toHaveBeenCalledTimes(4);
     });
 
     it('createPersistenceScheduler: flush() with phase=import pending PlayerSave is a no-op (no savePlayerProgress call)', () => {

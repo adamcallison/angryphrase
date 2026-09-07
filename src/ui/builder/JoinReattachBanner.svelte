@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { BuilderSubModeBannerVM } from '../bindings/viewmodels/builderVM';
-  import { dispatchEscape } from '../bindings/builderStore.svelte';
+  import type { BuilderBannerActions } from '../bindings/builderFacade';
 
-  let { vm }: { vm: BuilderSubModeBannerVM } = $props();
+  let { vm, actions }: { vm: BuilderSubModeBannerVM; actions: BuilderBannerActions } = $props();
 </script>
 
 {#if vm.kind === 'join'}
@@ -12,7 +12,7 @@
       Click the next clue-list entry to link it after #{Number(vm.sourceNumber)} {vm.sourceDirection}.
       Press Escape or click Cancel to abort.
     </div>
-    <button class="text-xs text-blue-700 underline" onclick={() => dispatchEscape()}>Cancel</button>
+    <button class="text-xs text-blue-700 underline" onclick={() => actions.escape()}>Cancel</button>
   </div>
 {:else if vm.kind === 'reattach'}
   <div class="rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900 flex items-center justify-between gap-4">
@@ -21,6 +21,6 @@
       Beginning to rehome "{vm.cluePreview}". Click a <em>clue list</em> target that is a chain head with an empty clue.
       Press Escape or click Cancel to abort.
     </div>
-    <button class="text-xs text-amber-800 underline" onclick={() => dispatchEscape()}>Cancel</button>
+    <button class="text-xs text-amber-800 underline" onclick={() => actions.escape()}>Cancel</button>
   </div>
 {/if}

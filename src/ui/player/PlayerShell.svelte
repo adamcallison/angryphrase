@@ -1,10 +1,5 @@
 <script lang="ts">
-  import type { PlayerShellVM } from '../bindings/viewmodels/playerVM';
-  import {
-    playerShellVM,
-    dispatchSelectCell, dispatchTypeLetter, dispatchBackspace,
-    dispatchMoveCursor, dispatchEscape,
-  } from '../bindings/playerStore.svelte';
+  import type { PlayerFacade, PlayerShellVM } from '../bindings/playerFacade';
   import PlayerGrid from './PlayerGrid.svelte';
   import ActiveClueBanner from './ActiveClueBanner.svelte';
   import PlayerCluePanel from './PlayerCluePanel.svelte';
@@ -14,26 +9,27 @@
   import TypingSurface from '../shared/TypingSurface.svelte';
   import type { TypingIntent } from '../shared/typingIntent';
 
-  // No props — PlayerShell owns the entire Player scene.
-  const vm: PlayerShellVM = $derived(playerShellVM());
+  let { playerFacade }: { playerFacade: PlayerFacade } = $props();
+
+  const vm: PlayerShellVM = $derived(playerFacade.playerShellVM());
 
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
-    dispatchSelectCell(row, col);
+    playerFacade.actions.grid.selectCell(row, col);
   }
 
   function onTypingIntent(intent: TypingIntent): void {
     switch (intent.kind) {
-      case 'type-letter': dispatchTypeLetter(intent.letter); return;
-      case 'backspace': dispatchBackspace(); return;
-      case 'move-cursor': dispatchMoveCursor(intent.direction, intent.sign); return;
-      case 'escape': dispatchEscape(); return;
+      case 'type-letter': playerFacade.actions.grid.typeLetter(intent.letter); return;
+      case 'backspace': playerFacade.actions.grid.backspace(); return;
+      case 'move-cursor': playerFacade.actions.grid.moveCursor(intent.direction, intent.sign); return;
+      case 'escape': playerFacade.actions.grid.escape(); return;
     }
   }
 </script>
 
-{#if vm.phase === 'import'}
-  <ImportScreen importError={vm.importError} />
+  {#if vm.phase === 'import'}
+  <ImportScreen importError={vm.importError} pick={playerFacade.pickFile} actions={playerFacade.actions.importScreen} />
 {:else}
   <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">
     <div class="flex items-center justify-between">
@@ -56,15 +52,15 @@
           <TypingSurface enabled={vm.phase === 'solving' && !vm.anagram.open} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
-        <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} />
+        <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
       </section>
 
       <!-- right column: clue panel -->
       <section>
-        <PlayerCluePanel vm={vm.cluePanel} />
+        <PlayerCluePanel vm={vm.cluePanel} actions={playerFacade.actions.cluePanel} />
       </section>
     </div>
   </div>
 {/if}
 
-<AnagramModal vm={vm.anagram} />
+<AnagramModal vm={vm.anagram} actions={playerFacade.actions.anagram} />

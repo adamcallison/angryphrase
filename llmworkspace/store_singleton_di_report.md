@@ -1,6 +1,6 @@
 # angryphrase — Architectural Report: Store Singletons & Dependency Reaching
 
-Status: problem statement, no fix attempted. Related: `code_smells.md` F9 (eager-init symptom of this broader pattern). AD refs: §4.4, §4.5, §9.3 (`ui/bindings/` module table).
+Status: problem statement, no fix attempted. Related: `code_smells_archive.md` F9 (eager-init symptom of this broader pattern). AD refs: §4.4, §4.5, §9.3 (`ui/bindings/` module table).
 
 ---
 
@@ -50,7 +50,7 @@ A component's dependency on the store is invisible from its `$props()` interface
 
 ### 4. Eager initialization at import time (F9)
 
-`appStore.svelte.ts:18` initializes `state` with a full 15×15 grid (`AppStateCtor.blank(GridSizeCtor.of(15), ...)`) + freshly-minted `PuzzleKey` (`PuzzleKeyCtor.generate(getPorts().rng)`) + `getPorts()` warm at module import — before `bootApp` is ever called. `deps` (line 19) similarly warms `getPorts().rng` at import. `bootApp` (line 22) then overwrites both with caller-supplied values. Two full-state constructions per production boot; one wasted. Side effects at module top-level also fire before test `beforeEach` can call `vi.useFakeTimers()` or `setPorts(fakes)`, creating a real-timer + real-ports leak at import. `_resetAppStateForTests` (line 126) exists as the band-aid for mid-test state swaps. See `code_smells.md` F9.
+`appStore.svelte.ts:18` initializes `state` with a full 15×15 grid (`AppStateCtor.blank(GridSizeCtor.of(15), ...)`) + freshly-minted `PuzzleKey` (`PuzzleKeyCtor.generate(getPorts().rng)`) + `getPorts()` warm at module import — before `bootApp` is ever called. `deps` (line 19) similarly warms `getPorts().rng` at import. `bootApp` (line 22) then overwrites both with caller-supplied values. Two full-state constructions per production boot; one wasted. Side effects at module top-level also fire before test `beforeEach` can call `vi.useFakeTimers()` or `setPorts(fakes)`, creating a real-timer + real-ports leak at import. `_resetAppStateForTests` (line 126) exists as the band-aid for mid-test state swaps. See `code_smells_archive.md` F9.
 
 ### 5. Global ports register
 
@@ -128,7 +128,7 @@ The parent shell wires each callback to `builderStore.dispatch*`. Leaves become 
 
 ## Scope
 
-This report is broader than `code_smells.md` F9. F9 = "side effects at module import" (the eager-init symptom). This report = "singleton stores + bare-import reaching as an architectural pattern." The DI fix for the latter also fixes F9; a narrow F9-only fix (null sentinel / lazy singleton) does not fix the reaching pattern — it leaves 15 bare-import sites and the singleton intact, merely deferring construction to `bootApp`.
+This report is broader than `code_smells_archive.md` F9. F9 = "side effects at module import" (the eager-init symptom). This report = "singleton stores + bare-import reaching as an architectural pattern." The DI fix for the latter also fixes F9; a narrow F9-only fix (null sentinel / lazy singleton) does not fix the reaching pattern — it leaves 15 bare-import sites and the singleton intact, merely deferring construction to `bootApp`.
 
 ## Open questions
 
@@ -137,3 +137,25 @@ This report is broader than `code_smells.md` F9. F9 = "side effects at module im
 3. **Autosave `$effect`** — `App.svelte` currently reads `getScheduler()` / `getBuilder()` / `getPlayer()` in two `$effect`s (F8 split). Under DI, these read from the `appStore` prop. Confirm the effect stays at `App.svelte` level (not pushed into a store), since it crosses both builder + player slices.
 4. **Callback explosion** — `BuilderToolbar` has ~10 dispatch actions. Passing 10 callbacks as props is verbose. Alternative: pass a single `actions: BuilderToolbarActions` object prop (typed bag of callbacks). Acceptable under DI as long as the bag is declared in `$props()`, not reached via import. Decision needed before dispatch.
 5. **AD amendment** — AD §4.4 / §4.5 / §9.3 describe the bindings layer in terms that tolerate the current singleton pattern ("the bindings layer runs a `$effect`..."). A DI refactor likely needs AD §9.3 file-tree + §4.4 prose amendments to describe the factory + prop-threading shape. Flag for human approval before touching the AD.
+
+## Decision (2026-09-07, human-approved)
+
+The fix is approved with the factory + prop-threading skeleton of this report, with two deviations from the report's "Principled fix" text, both recorded in AD §2.4:
+
+1. **Leaf contract = typed action bags, not per-action callbacks and not raw dispatch-as-prop.** Leaves declare `{ vm, actions }: { vm: SomeVM; actions: SomeActions }` (one `<Leaf>Actions` type per leaf, exported from the owning sub-store). Rationale: intents with branded fields (`select-cell`'s `Row`/`Col`, `type-letter`'s `Letter`, `change-grid-size`'s `GridSize`, `edit-title`/`edit-author`'s `Title`/`Author`) cannot be constructed in components — the H1 brand ban and §9.2's ui-side domain-function ban make leaf-side intent construction impossible, so branded construction + dispatch must stay in bindings and be exposed as narrow per-leaf bags. Resolves open question 4 (bag, not scatter-props). "Intents are data, not callbacks" (AD §2.2) is preserved at the dispatch seam; the leaf↔shell edge is intra-UI and carries VMs + action bags.
+2. **Ports folded into the factory** — `createAppStore(initial, deps, ports, scheduler)` with `AppPorts = { storage, download, filePick }` (finding 5's register dissolves with the stores; `rng` stays in `AppDeps`). The report's fix section was silent on ports; this closes the gap.
+
+Open questions resolved: (1) Header stays store-free; (2) TypingSurface unchanged (already presentational); (3) autosave `$effect`s stay in `App.svelte` reading the `appStore` prop; (4) action bags (above); (5) AD amended 2026-09-07 — §1.1 decision row, §2.1 Layers 2/3/5, §2.2, §2.3, new §2.4, §4.5, §5 intro, §9 tree, §9.2 (ui↔bindings value-import ban with `App.svelte` exception + type-only allowance, self-test fixtures), §10.2, §11.1. `FilePicker.svelte` additionally loses its `getPorts().filePick` call — it takes a `pick: () => Promise<string>` prop wired from `AppPorts.filePick` by the parent.
+
+Implementation is sequenced as transitional dispatches (compile-green at each step, shims stripped at the end): (1) `createAppStore` + composition rewiring; (2) sub-store factories + shell props; (3-5) leaf action-bag migration in tree batches (app/shared, builder, player); (6) shim/`ports.ts`/`bootApp`-era leftovers stripped, ESLint ui↔bindings rule + boundary fixtures wired, full `ci` green.
+
+## Naming amendment (2026-09-07, later same day)
+
+Post-refactor review: the four "sub-stores" own no state, no runes, no reactivity — they are per-instance adapters over the `AppStore` (typed dispatch narrowing + VM getters + action bags + `pickFile`). "Store" was a legacy name from the singleton era (finding 2's satellites) that overstated their role, and the `.svelte.ts` suffix was unearned. Renamed to **facades** (naming rule now binding in AD §2.1 Layer 2: "store" is reserved for state-owning modules — `AppStore` only):
+
+- `builderStore.svelte.ts` → `builderFacade.ts` — `createBuilderFacade(appStore): BuilderFacade`
+- `playerStore.svelte.ts` → `playerFacade.ts` — `createPlayerFacade(appStore): PlayerFacade`
+- `modalStore.svelte.ts` → `modalFacade.ts` — `createModalFacade(appStore): ModalFacade`
+- `toastStore.svelte.ts` → `toastFacade.ts` — `createToastFacade(appStore): ToastFacade`
+
+Shell props renamed `builderStore`/`playerStore` → `builderFacade`/`playerFacade`. Bag type names (`BuilderToolbarActions` etc.), `AppStore`, and `appStore.svelte.ts` (the sole rune file) unchanged. AD §1.1, §2.1 Layer 2 (+ naming rule), §2.4, §9 tree amended accordingly. The invariant is now self-documenting: 1 of 14 bindings files uses runes, and 1 of 14 is a store — the same file.

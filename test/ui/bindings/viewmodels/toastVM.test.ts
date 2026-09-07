@@ -16,14 +16,14 @@ function fixture(kind: Toast['kind'], message: string): Toast {
 }
 
 describe('deriveToastVM', () => {
-  it('deriveToastVM: projects id, kind, message; drops createdAt and ttlMs', () => {
+  it('deriveToastVM: projects id, kind, message, ttlMs; drops createdAt', () => {
     const toast: Toast = fixture('info', 'hello world');
     const vm = deriveToastVM(toast);
     expect(vm.id).toBe(toast.id);
     expect(vm.kind).toBe('info');
     expect(vm.message).toBe('hello world');
+    expect(vm.ttlMs).toBe(toast.ttlMs);
     expect(vm).not.toHaveProperty('createdAt');
-    expect(vm).not.toHaveProperty('ttlMs');
   });
 
   it('deriveToastVM: preserves branded ToastId (referential equality)', () => {

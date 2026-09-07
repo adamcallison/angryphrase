@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { CluePanelVM, ClueEntryVM } from '../bindings/viewmodels/cluePanelVM';
-  import { dispatchBuilder } from '../bindings/builderStore.svelte';
+  import type { BuilderCluePanelActions } from '../bindings/builderFacade';
   import { SvelteMap } from 'svelte/reactivity';
 
-  let { vm }: { vm: CluePanelVM } = $props();
+  let { vm, actions }: { vm: CluePanelVM; actions: BuilderCluePanelActions } = $props();
 
   let panelEl: HTMLElement | null = $state(null);
 
@@ -38,20 +38,20 @@
     const clue = !drafts.has(id)
       ? entry.displayClue
       : drafts.get(id) ?? entry.displayClue;
-    dispatchBuilder({ kind: 'edit-clue', wordKey: entry.wordKey, clue });
+    actions.editClue(entry.wordKey, clue);
     clearDraft(entry.wordKey);
   }
 
   function dispatchBeginJoin(entry: ClueEntryVM): void {
-    dispatchBuilder({ kind: 'begin-join', source: entry.wordKey });
+    actions.beginJoin(entry.wordKey);
   }
 
   function dispatchUnjoin(entry: ClueEntryVM): void {
-    dispatchBuilder({ kind: 'unjoin', source: entry.wordKey });
+    actions.unjoin(entry.wordKey);
   }
 
   function dispatchRowClick(entry: ClueEntryVM): void {
-    dispatchBuilder({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
+    actions.clickCluePanelWord(entry.wordKey);
   }
 
   function stopPropagation(event: Event): void {

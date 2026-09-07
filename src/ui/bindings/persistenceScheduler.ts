@@ -31,11 +31,7 @@ export function createPersistenceScheduler(
 
   function doSaveBuilder(state: BuilderState): void {
     const blob = serializeBuilderSnapshot(state);
-    try {
-      storage.saveBuilder(blob);
-    } catch (err) {
-      console.warn('persistenceScheduler: saveBuilder failed', err);
-    }
+    storage.saveBuilder(blob);
   }
 
   function doSavePlayer(state: PlayerState): void {
@@ -43,11 +39,7 @@ export function createPersistenceScheduler(
     const key = state.puzzle.key;
     const blob = serializePlayerProgress(state);
     if (blob === null) return;
-    try {
-      storage.savePlayerProgress(key, blob);
-    } catch (err) {
-      console.warn('persistenceScheduler: savePlayerProgress failed', err);
-    }
+    storage.savePlayerProgress(key, blob);
   }
 
   return {
@@ -82,11 +74,7 @@ export function createPersistenceScheduler(
         builderTimer = null;
       }
       pendingBuilderState = null;
-      try {
-        storage.clearBuilder();
-      } catch (err) {
-        console.warn('persistenceScheduler: clearBuilder failed', err);
-      }
+      storage.clearBuilder();
     },
 
     clearPlayer(key) {
@@ -95,11 +83,7 @@ export function createPersistenceScheduler(
         playerTimer = null;
       }
       pendingPlayerState = null;
-      try {
-        storage.clearPlayerProgress(key);
-      } catch (err) {
-        console.warn('persistenceScheduler: clearPlayerProgress failed', err);
-      }
+      storage.clearPlayerProgress(key);
     },
 
     flush() {

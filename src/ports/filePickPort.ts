@@ -36,28 +36,27 @@ export function createFilePickPort(): FilePickPort {
           }
         };
 
+        const settle = (value: string | null): void => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(value);
+        };
+
         const onChange = async () => {
           if (settled) return;
           const file = input.files && input.files[0];
           if (!file) {
-            settled = true;
-            cleanup();
-            resolve(null);
+            settle(null);
             return;
           }
 
           try {
             const text = await file.text();
-            if (settled) return;
-            settled = true;
-            cleanup();
-            resolve(text);
+            settle(text);
           } catch (err) {
-            if (settled) return;
-            settled = true;
-            cleanup();
             console.warn('filePickPort: failed to read file text:', err);
-            resolve(null);
+            settle(null);
           }
         };
 
@@ -66,11 +65,8 @@ export function createFilePickPort(): FilePickPort {
         try {
           input.click();
         } catch (err) {
-          if (settled) return;
-          settled = true;
-          cleanup();
           console.warn('filePickPort: click failed:', err);
-          resolve(null);
+          settle(null);
         }
       });
     },

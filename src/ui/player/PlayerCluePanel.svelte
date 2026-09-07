@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { CluePanelVM } from '../bindings/viewmodels/cluePanelVM';
   import type { WordKey } from '../../domain/word/WordKey';
-  import { dispatchPlayer } from '../bindings/playerStore.svelte';
+  import type { PlayerCluePanelActions } from '../bindings/playerFacade';
 
-  let { vm }: { vm: CluePanelVM } = $props();
+  let { vm, actions }: { vm: CluePanelVM; actions: PlayerCluePanelActions } = $props();
 
   let panelEl: HTMLElement | null = $state(null);
 
@@ -34,7 +34,7 @@
           bind:this={liRefs[canonicalId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
-            dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
+            actions.clickCluePanelWord(entry.wordKey);
           }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>
@@ -58,7 +58,7 @@
           bind:this={liRefs[canonicalId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
-            dispatchPlayer({ kind: 'click-clue-panel-word', wordKey: entry.wordKey });
+            actions.clickCluePanelWord(entry.wordKey);
           }}
         >
           <span class="font-bold text-gray-800">{Number(entry.number)}.</span>
