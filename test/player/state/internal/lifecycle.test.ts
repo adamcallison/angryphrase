@@ -4,6 +4,7 @@ import {
   handleConfirmResetPlayer,
   handleImportNewPuzzle,
   handleImportPuzzle,
+  handleReportImportReadFailure,
   handleRequestResetPlayer,
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
@@ -466,6 +467,20 @@ function cellPlayerLetter(state: SolvingState, row: number, col: number) {
 function cellIsBlack(state: SolvingState, row: number, col: number) {
   return GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).black;
 }
+
+describe('report-import-read-failure', () => {
+  it('report-import-read-failure → phase=import with lastImportError set + error toast event', () => {
+    const result = handleReportImportReadFailure();
+
+    expect(result.state).toEqual({
+      phase: 'import',
+      lastImportError: 'Could not read that file. Please try again.',
+    });
+    expect(result.events).toEqual([
+      { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
+    ]);
+  });
+});
 
 describe('handleImportNewPuzzle', () => {
   it('import-new-puzzle: from solving phase, returns to import screen (FR-78)', () => {

@@ -26,6 +26,7 @@ export type BuilderToolbarActions = {
   editTitle(title: string): void;
   editAuthor(author: string): void;
   requestImportPuzzle(fileContent: string): void;
+  importDroppedFile(file: File): void;
 };
 
 export type BuilderGridActions = {
@@ -106,6 +107,14 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     },
     requestImportPuzzle(fileContent: string) {
       dispatch({ kind: 'request-import-puzzle', fileContent });
+    },
+    async importDroppedFile(file: File) {
+      const text = await appStore.getPorts().filePick.readDroppedFile(file);
+      if (text === null) {
+        dispatch({ kind: 'report-import-read-failure' });
+        return;
+      }
+      dispatch({ kind: 'request-import-puzzle', fileContent: text });
     },
   };
 

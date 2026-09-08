@@ -29,6 +29,7 @@ const builderKindRecord = {
   'edit-author': null,
   'request-import-puzzle': null,
   'confirm-import-puzzle': null,
+  'report-import-read-failure': null,
   'export-incomplete': null,
   'export-complete': null,
   'request-reset-builder': null,
@@ -37,6 +38,7 @@ const builderKindRecord = {
 
 const playerKindRecord = {
   'import-puzzle': null,
+  'report-import-read-failure': null,
   'apply-loaded-progress': null,
   'import-new-puzzle': null,
   'select-cell': null,

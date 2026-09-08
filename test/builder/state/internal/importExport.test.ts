@@ -3,6 +3,7 @@ import {
   handleConfirmImportPuzzle,
   handleExportComplete,
   handleExportIncomplete,
+  handleReportImportReadFailure,
   handleRequestImportPuzzle,
 } from '../../../../src/builder/state/internal/importExport';
 import { BuilderState } from '../../../../src/builder/state/state';
@@ -523,5 +524,18 @@ describe('export-complete', () => {
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({ kind: 'download' });
+  });
+});
+
+describe('report-import-read-failure', () => {
+  it('emits an error toast event, state unchanged', () => {
+    const state = blankState();
+
+    const result = handleReportImportReadFailure(state);
+
+    expect(result.events).toEqual([
+      { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
+    ]);
+    expect(result.state).toBe(state);
   });
 });

@@ -3,22 +3,20 @@
     label,
     pick,
     onpick,
+    ondropfile,
   }: {
     label: string;
     pick: () => Promise<string | null>;
     onpick: (text: string) => void;
+    ondropfile: (file: File) => void;
   } = $props();
 
   let dragOver = $state(false);
 
   async function triggerPick(): Promise<void> {
-    try {
-      const text = await pick();
-      if (text === null) return;
-      onpick(text);
-    } catch (err) {
-      console.warn('FilePicker: pickFile failed', err);
-    }
+    const text = await pick();
+    if (text === null) return;
+    onpick(text);
   }
 
   function onDragOver(event: DragEvent): void {
@@ -33,17 +31,12 @@
     dragOver = false;
   }
 
-  async function onDrop(event: DragEvent): Promise<void> {
+  function onDrop(event: DragEvent): void {
     event.preventDefault();
     dragOver = false;
     const file = event.dataTransfer?.files?.[0];
     if (!file) return;
-    try {
-      const text = await file.text();
-      onpick(text);
-    } catch (err) {
-      console.warn('FilePicker: drop read failed', err);
-    }
+    ondropfile(file);
   }
 </script>
 

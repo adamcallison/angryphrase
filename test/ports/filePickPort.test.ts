@@ -128,4 +128,27 @@ describe('filePickPort', () => {
     expect(result).toBe('first');
     expect(document.body.contains(fakeInput)).toBe(false);
   });
+
+  it('filePickPort: readDroppedFile() resolves with the file text', async () => {
+    const port = createFilePickPort();
+    const file = new File(['dropped content'], 'puzzle.json', { type: 'application/json' });
+
+    const result = await port.readDroppedFile(file);
+
+    expect(result).toBe('dropped content');
+  });
+
+  it('filePickPort: readDroppedFile() resolves with null and warns once when file.text() rejects', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const port = createFilePickPort();
+    const badFile = {
+      text: () => Promise.reject(new Error('read error')),
+    } as unknown as File;
+
+    const result = await port.readDroppedFile(badFile);
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
+  });
 });

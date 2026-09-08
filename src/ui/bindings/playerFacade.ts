@@ -32,6 +32,7 @@ export type PlayerCluePanelActions = {
 
 export type PlayerImportScreenActions = {
   importPuzzle(fileContent: string): void;
+  importDroppedFile(file: File): void;
 };
 
 export type PlayerAnagramActions = {
@@ -106,6 +107,14 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
   const importScreen: PlayerImportScreenActions = {
     importPuzzle(fileContent: string) {
       dispatch({ kind: 'import-puzzle', fileContent });
+    },
+    async importDroppedFile(file: File) {
+      const text = await appStore.getPorts().filePick.readDroppedFile(file);
+      if (text === null) {
+        dispatch({ kind: 'report-import-read-failure' });
+        return;
+      }
+      dispatch({ kind: 'import-puzzle', fileContent: text });
     },
   };
 

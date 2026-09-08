@@ -15,4 +15,5 @@ export interface DownloadPort {
 
 export interface FilePickPort {
   pickFile(): Promise<string | null>;
+  readDroppedFile(file: File): Promise<string | null>; // drag-and-drop read; null = read failed (no cancel path for drops; impl warns once)
 }

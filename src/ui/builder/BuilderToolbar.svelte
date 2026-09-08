@@ -123,7 +123,7 @@
 
   <!-- Import / export / reset -->
   <div class="flex flex-wrap items-center gap-2">
-    <FilePicker label="Import" pick={pick} onpick={(text) => actions.requestImportPuzzle(text)} />
+    <FilePicker label="Import" pick={pick} onpick={(text) => actions.requestImportPuzzle(text)} ondropfile={(file) => actions.importDroppedFile(file)} />
     <button
       type="button"
       class="rounded bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-300"

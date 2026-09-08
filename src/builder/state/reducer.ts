@@ -26,6 +26,7 @@ import {
   handleConfirmImportPuzzle,
   handleExportComplete,
   handleExportIncomplete,
+  handleReportImportReadFailure,
   handleRequestImportPuzzle,
 } from './internal/importExport';
 import { handleConfirmResetBuilder, handleRequestResetBuilder } from './internal/lifecycle';
@@ -71,6 +72,9 @@ export function reduceBuilder(
 
     case 'confirm-import-puzzle':
       return handleConfirmImportPuzzle(state, intent);
+
+    case 'report-import-read-failure':
+      return handleReportImportReadFailure(state);
 
     case 'export-incomplete':
       return handleExportIncomplete(state);

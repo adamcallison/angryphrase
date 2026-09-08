@@ -8,6 +8,7 @@ import {
   handleConfirmResetPlayer,
   handleImportNewPuzzle,
   handleImportPuzzle,
+  handleReportImportReadFailure,
   handleRequestResetPlayer,
 } from './internal/lifecycle';
 import {
@@ -38,6 +39,9 @@ export function reducePlayer(
 
     case 'import-puzzle':
       return handleImportPuzzle(intent);
+
+    case 'report-import-read-failure':
+      return handleReportImportReadFailure();
 
     case 'apply-loaded-progress':
       return handleApplyLoadedProgress(state, intent);

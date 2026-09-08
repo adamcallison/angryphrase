@@ -66,7 +66,7 @@ describe('playerFacade.ts', () => {
   let playerFacade: PlayerFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '' } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '', readDroppedFile: async () => '' } };
   }
 
   beforeEach(() => {
@@ -313,7 +313,7 @@ describe('playerFacade.ts', () => {
   });
 
   it('playerFacade: pickFile delegates to appStore.getPorts().filePick', async () => {
-    const filePick = { pickFile: vi.fn(async () => 'known-file-content') };
+    const filePick = { pickFile: vi.fn(async () => 'known-file-content'), readDroppedFile: vi.fn(async () => '') };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
@@ -330,7 +330,7 @@ describe('playerFacade.ts', () => {
   });
 
   it('playerFacade: pickFile resolves null when the port resolves null (cancel is a silent pass-through, not a throw)', async () => {
-    const filePick = { pickFile: async () => null };
+    const filePick = { pickFile: async () => null, readDroppedFile: async () => '' };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
@@ -343,6 +343,49 @@ describe('playerFacade.ts', () => {
     const result = await playerWithPick.pickFile();
 
     expect(result).toBeNull();
+  });
+
+  it('playerFacade: importDroppedFile dispatches import-puzzle with the port-read text when readDroppedFile succeeds', async () => {
+    const file = new File([], 'puzzle.json');
+    const filePick = { pickFile: async () => '', readDroppedFile: async () => 'dropped text' };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const storeWithDrop = createAppStore(
+      makeBlankAppState(42),
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+      createPersistenceScheduler(inMemoryStorage),
+    );
+    const playerWithDrop = createPlayerFacade(storeWithDrop);
+    storeWithDrop.dispatch({ kind: 'navigate', route: 'play' });
+    const dispatchSpy = vi.spyOn(storeWithDrop, 'dispatch');
+
+    await playerWithDrop.actions.importScreen.importDroppedFile(file);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'import-puzzle', fileContent: 'dropped text' });
+  });
+
+  it('playerFacade: importDroppedFile dispatches report-import-read-failure when readDroppedFile returns null', async () => {
+    const file = new File([], 'puzzle.json');
+    const filePick = { pickFile: async () => '', readDroppedFile: async () => null };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const storeWithDrop = createAppStore(
+      makeBlankAppState(42),
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+      createPersistenceScheduler(inMemoryStorage),
+    );
+    const playerWithDrop = createPlayerFacade(storeWithDrop);
+    storeWithDrop.dispatch({ kind: 'navigate', route: 'play' });
+    const dispatchSpy = vi.spyOn(storeWithDrop, 'dispatch');
+
+    await playerWithDrop.actions.importScreen.importDroppedFile(file);
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-import-read-failure' });
+    expect(storeWithDrop.getToasts()).toHaveLength(1);
+    expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
+    expect(playerWithDrop.getPlayerState()).toEqual({ phase: 'import', lastImportError: 'Could not read that file. Please try again.' });
   });
 
   it('playerFacade: two createPlayerFacade instances over two appStores are independent', () => {

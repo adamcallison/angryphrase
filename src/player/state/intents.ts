@@ -8,6 +8,8 @@ import type { WordKey } from '../../domain/word/WordKey';
 export type PlayerIntent =
   // import (NOT guarded — Player import has no existing work to overwrite; progress is keyed and retained)
   | { kind: 'import-puzzle'; fileContent: string }            // FR-67; complete format only; on reject sets lastImportError and emits toast; on success emits `load-player-progress` event (bindings layer then dispatches apply-loaded-progress)
+  // dispatched by the Player import screen facade when FilePickPort.readDroppedFile returns null; sets lastImportError + emits error toast (kind shared with BuilderIntent)
+  | { kind: 'report-import-read-failure' }
   | { kind: 'apply-loaded-progress'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }  // dispatched by the bindings layer after observing `load-player-progress`; reducer applies FR-80 rules
   | { kind: 'import-new-puzzle' }                              // FR-78; returns to 'import' phase, retains autosaved progress in localStorage
   // solving — cell & cursor

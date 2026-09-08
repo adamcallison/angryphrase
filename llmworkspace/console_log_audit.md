@@ -15,8 +15,8 @@
 | 15, 20 | `src/ports/localStoragePort.ts:17, 39` — `loadBuilder` / `loadPlayerProgress` catch+warn+`null` | **Keep** | §3.7 never-throw contract, single warn site in adapter; absent ≡ failed both map to the same NFR-9 fallback, so no observer is needed |
 | 16, 17, 18, 21 | `src/ports/localStoragePort.ts:25, 32, 47, 54` — `saveBuilder` / `clearBuilder` / `savePlayerProgress` / `clearPlayerProgress` catch+warn+`void` | **Replace (P3)** — challenge to §3.7 | See "AD challenge 1" |
 | 19, 22–25 (partial) | `src/ports/filePickPort.ts` — lines 14, 25, 58, 68 | **Keep until P4 lands, then move to bindings** | §3.7 + AD line 780 ("impl warns once on genuine failure; cancel is silent"); on P4 the warns move to the bindings layer per the G7 Task A pattern |
-| 26 | `src/ui/shared/FilePicker.svelte:20` — `pickFile failed` catch | **Remove (P2)** | Dead code: §3.7 never-throw contract + AD §2.1 line 205 "Consumers add no redundant catch layers" — the port cannot throw, so this catch is unreachable |
-| 27 | `src/ui/shared/FilePicker.svelte:45` — drop read failed | **Replace with toast (P2)** | NFR-12 (line 270): user-facing errors "surfaced via the toast system (FR-92) rather than silently ignored or failing the console" |
+| 26 | `src/ui/shared/FilePicker.svelte:20` — `pickFile failed` catch | **Remove (P2)** | Dead code: §3.7 never-throw contract + AD §2.1 line 205 "Consumers add no redundant catch layers" — the port cannot throw, so this catch is unreachable. Removed by P2/F+B (component de-IO'd; §7 line 314 props row amended) |
+| 27 | `src/ui/shared/FilePicker.svelte:45` — drop read failed | **Replace with toast (P2)** | NFR-12 (line 270): user-facing errors "surfaced via the toast system (FR-92) rather than silently ignored or failing the console". P2/F+B path: port `readDroppedFile` + facade `importDroppedFile` action + per-experience `report-import-read-failure` intent → toast |
 
 (27 rows because the localStoragePort write sites are counted individually above; total distinct `console.warn` call sites in `src/` = 26.)
 
@@ -26,14 +26,23 @@ All corrupt-blob / NFR-9 sites (`persistenceCodec`, `main.ts`, `appStore:78,86`)
 
 ## Replace findings
 
-### P2 — `FilePicker.svelte`: dead catch + drop-read failure invisible to the user 🟠
+### P2 — `FilePicker.svelte`: dead catch + drop-read failure invisible to the user ✅ (landed 2026-09-08)
 
-Two defects in one file — the only component-level `console.warn` in the codebase (the drop path bypasses the port by design; see `filePickPort.ts:3-5`).
+Two defects in one file — the only component-level `console.warn` in the codebase (the drop path bypassed the port by design; see `filePickPort.ts:3-5`).
 
-1. **Line 19-21, remove.** `triggerPick` wraps `await pick()` in try/catch + `console.warn('FilePicker: pickFile failed', err)`. The port never throws (§3.7, AD line 205: "Consumers add no redundant catch layers"); this catch is unreachable and its warn site contradicts AD line 314 ("a `null` result from `pick` … `onpick` is not called and nothing is logged"). Fix: delete the try/catch, keep `if (text === null) return; onpick(text);`. No AD amendment needed — this is code drift from the AD as written.
-2. **Line 44-46, replace with a toast.** `onDrop` reads the dropped file with `await file.text()` directly; on rejection it only `console.warn`s and swallows. The user dropped a file and nothing visibly happens — exactly the NFR-12 "silently ignored or failing the console" case. Note the asymmetry: a *picked* file that parses to garbage gets a toast/banner downstream (Player `import-puzzle` reject path; Builder confirm-import path), but a file that cannot even be *read* gets nothing.
+**Design decision (2026-09-08, human sign-off): F+B.** The original proposal (AppIntent `report-import-read-failure` + required `onreaderror` prop on FilePicker) was superseded during plan review. An AppIntent raised from a leaf would have forced a cross-dialect dispatch through an experience facade (whose `dispatch` is deliberately narrowed, AD §2.1 line 183) — extending a soft spot with zero in-repo precedent for *experience* facades emitting AppIntents (modal/toast facades doing so is native dialect, not precedent). The landed design instead:
 
-   Proposed fix (G7 Task B pattern, precedent `report-download-failure`): new `AppIntent` variant `{ kind: 'report-import-read-failure' }` → `reduceApp` emits error toast ("Could not read that file. Please try again."); `FilePicker.svelte` gains a required `onreaderror: () => void` prop invoked in the catch; `ImportScreen.svelte` and `BuilderToolbar.svelte` wire it to a facade action that dispatches the intent. Requires AD amendment (§7 line 314 FilePicker props row; §4.1 `reduceApp` responsibilities; §1.3 `intents.ts` row).
+- **F — per-experience intents.** `{ kind: 'report-import-read-failure' }` (fieldless) joins **both** `BuilderIntent` and `PlayerIntent`. The shared kind string lands in `AMBIGUOUS_INTENT_KINDS` (auto-derived intersection) and routes by `state.route` — existing machinery, precedent `select-cell` / `type-letter`. Each reducer mirrors its existing parse-reject surfacing, so read failure surfaces exactly where parse failure already surfaces (NFR-12):
+  - Builder (`importExport.ts`): emits error `toast` event `'Could not read that file. Please try again.'`, state unchanged — identical shape to the parse-reject branch of `executeImport`.
+  - Player (`lifecycle.ts`): returns `{ phase: 'import', lastImportError }` + error `toast` event — identical shape to `handleImportPuzzle`'s reject branches (banner + toast).
+  - G7's AppIntent shape was not copied because G7's failure is observed *inside* the store's event loop (store-level fact → AppIntent home correct); this failure is observed in experience UI during the experience-owned import flow.
+- **B — the component stops doing IO.** The drop path's `await file.text()` moves behind the port: `FilePickPort.readDroppedFile(file: File): Promise<string | null>` (never-throw §3.7; a dropped file has no cancel path, so `null` is always genuine failure; impl warns once, same as `pickFile` today — warns move to bindings at P4). `FilePicker.svelte` becomes fully presentational: props `{ label, pick, onpick, ondropfile }`; drop handler extracts `files[0]` and calls `ondropfile(file)`; no try/catch, no `console.*`. The original `onreaderror` prop is gone — failure surfacing is fully store-mediated (P4 will not need it either; see P4 update).
+- **Facade actions** (native dialect, no narrowing bypass): `BuilderToolbarActions.importDroppedFile(file)` / `PlayerImportScreenActions.importDroppedFile(file)` — read via `readDroppedFile`; `null` → dispatch `report-import-read-failure`; text → dispatch `request-import-puzzle` / `import-puzzle`. Drop and pick converge on the same import intents.
+
+The two original findings stand unchanged in substance:
+
+1. **Line 19-21, remove.** `triggerPick` wraps `await pick()` in try/catch + `console.warn('FilePicker: pickFile failed', err)`. The port never throws (§3.7, AD line 205: "Consumers add no redundant catch layers"); this catch is unreachable and its warn site contradicts AD line 314 ("a `null` result from `pick` … `onpick` is not called and nothing is logged"). Under F+B the whole handler is `const text = await pick(); if (text === null) return; onpick(text);` — code drift from the AD as written, no AD amendment needed for this half.
+2. **Line 44-46, replace with a toast.** `onDrop` reads the dropped file with `await file.text()` directly; on rejection it only `console.warn`s and swallows. The user dropped a file and nothing visibly happens — exactly the NFR-12 "silently ignored or failing the console" case. Note the asymmetry this fixes: a *picked* file that parses to garbage gets a toast/banner downstream (Player `import-puzzle` reject path; Builder confirm-import path), but a file that cannot even be *read* got nothing.
 
 ### P3 — `StoragePort` write methods return `void`; autosave failure is invisible data loss 🟠
 
@@ -55,6 +64,8 @@ Proposed fix:
 - `FilePicker.svelte` `pick` prop widens to `() => Promise<PickResult>`; `'cancelled'` → silent return (current null behaviour); `'failed'` → invoke the new `onreaderror` prop from P2 (one error path for pick + drop).
 - Facades pass the widened `pickFile()` through (AD line 286 updated).
 
+**Update 2026-09-08 (after P2 F+B landed in design):** P4 no longer adds an `onreaderror` prop — it no longer exists. With the facade consuming drop reads (`importDroppedFile`), the natural continuation is: `pickFile()` widens to `PickResult`; the facade's `pickFile()` consumes `'failed'` itself (dispatch `report-import-read-failure`, return `null` to the leaf) so the leaf's silent-null behaviour covers cancel only; `readDroppedFile` re-baselines onto the same union (or keeps `string | null` — `null` can only mean failure there). Port warns still move to bindings as planned. Specify precisely when P4 is scheduled.
+
 Requires AD amendment: §3.5a `FilePickPort` signature + §3.7 line 764-765 + AD lines 286 & 314. **Fold open smell P1 (dialog-cancel promise leak, `code_smells.md`) into this same task** — it touches the same settle/cleanup logic in `filePickPort.ts`.
 
 ## AD challenges (per human's standing invitation)
@@ -66,7 +77,7 @@ The human has authorized challenging AD where it conflicts with good design. Two
 
 Not challenged: the §9 (line 1104) corrupt-blob warns (no pending user action; silent fallback is the correct behaviour, and a boot toast would be noise), and the G7 warn+toast pair at `appStore:51`.
 
-Per the escalation rule, no AD amendments have been made in this audit — P2/P3/P4 each name the sections to amend and await sign-off before any task is specified.
+Per the escalation rule, no AD amendments were made when this audit was written. **P2 sign-off received 2026-09-08 (F+B design); AD amendments landed the same day:** §1.3 module rows (`importExport.ts`, `lifecycle.ts`), §2.1 line 205 (never-throw consumer note — facade `importDroppedFile` consumes `readDroppedFile`'s null), §3.7 `FilePickPort` block (`readDroppedFile`), §4.3 `BuilderIntent` + §4.4 `PlayerIntent` unions (`report-import-read-failure` in both), §8.9 + §8.9a (read-failure cases), §7 FilePicker props row + `BuilderToolbar.svelte` / `ImportScreen.svelte` rows. P3/P4 still await sign-off; no amendments made for them.
 
 ## Nit (optional, no behaviour change)
 
@@ -75,6 +86,6 @@ Per the escalation rule, no AD amendments have been made in this audit — P2/P3
 ## Test impact (when P2/P3/P4 land)
 
 - Unchanged sites keep their asserting tests: `persistenceScheduler.test.ts:129`, `appStore.test.ts:294, 311`.
-- P2: new `reducer.test.ts` case for `report-import-read-failure` (G7 Task B test shape); `appStore.test.ts` failure-injection via a fake pick.
+- P2: `test/builder/state/internal/importExport.test.ts` new case — `report-import-read-failure` emits error toast event, state unchanged; `test/player/state/internal/lifecycle.test.ts` new case — returns import-phase state with `lastImportError` set + error toast event; `test/app/state/intentKinds.test.ts` — kind added to both `BUILDER_KINDS` / `PLAYER_KINDS` arrays (ambiguous-intersection test auto-covers it); `test/app/state/reducer.test.ts` new ambiguous-routing case — play route → Player, build route → Builder; `test/ports/filePickPort.test.ts` — `readDroppedFile` happy path + reject→null-with-single-warn; `test/ui/bindings/builderFacade.test.ts` + `playerFacade.test.ts` — `importDroppedFile` success/failure pairs (failure asserts exact toast message + state); AppPorts literals in the five bindings test files gain `readDroppedFile`. (The earlier draft's "`appStore.test.ts` failure-injection via a fake pick" was wrong — the pick path cannot fail pre-P4 and appStore is untouched by P2; corrected here.)
 - P3: `localStoragePort.test.ts` write-path tests flip from "does not throw" → "returns `Error`" (G7 Task A test shape); `InMemoryStoragePort` gains failure injection (mirror `StubDownloadPort.nextDownloadError`); `persistenceScheduler.test.ts` gains toast-once/re-arm cases.
 - P4: `filePickPort.test.ts` re-baselined to the `PickResult` union; P1 leak test added (cancel event → `settle(null)`).

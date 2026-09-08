@@ -1,8 +1,8 @@
 import type { FilePickPort } from '../domain/ports/ports';
 
-// Click-pick path only. Drag-and-drop file reading is handled by the
-// FilePicker.svelte component in Task 67; the FilePickPort interface's single
-// Promise-returning pickFile() cannot cleanly model event-driven drops.
+// Click-pick path only. Drag-and-drop EVENTS cannot drive a Promise API, so the
+// component extracts the File from the DragEvent and passes it to ondropfile;
+// the port performs the read. Pick path unchanged.
 export function createFilePickPort(): FilePickPort {
   return {
     pickFile(): Promise<string | null> {
@@ -68,6 +68,12 @@ export function createFilePickPort(): FilePickPort {
           console.warn('filePickPort: click failed:', err);
           settle(null);
         }
+      });
+    },
+    readDroppedFile(file: File): Promise<string | null> {
+      return file.text().catch((err) => {
+        console.warn('filePickPort: failed to read dropped file text:', err);
+        return null;
       });
     },
   };

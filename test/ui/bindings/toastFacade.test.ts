@@ -45,7 +45,7 @@ describe('toastFacade.ts', () => {
   let toastFacade: ToastFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '' } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '', readDroppedFile: async () => '' } };
   }
 
   beforeEach(() => {

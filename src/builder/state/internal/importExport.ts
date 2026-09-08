@@ -6,6 +6,8 @@ import { parsePuzzleV1, serializeComplete, serializeIncomplete, Filename } from 
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 import type { CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 
+const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
+
 function executeImport(state: BuilderState, fileContent: string): ReducerResult<BuilderState> {
   const result = parsePuzzleV1(fileContent);
   if (!result.ok) {
@@ -49,6 +51,10 @@ export function handleConfirmImportPuzzle(
   intent: Extract<BuilderIntent, { kind: 'confirm-import-puzzle' }>,
 ): ReducerResult<BuilderState> {
   return executeImport(state, intent.fileContent);
+}
+
+export function handleReportImportReadFailure(state: BuilderState): ReducerResult<BuilderState> {
+  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }]);
 }
 
 function violationMessage(v: CompletenessViolation): string {
