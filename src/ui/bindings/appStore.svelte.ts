@@ -15,7 +15,7 @@ import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
 import type { Rng } from '../../domain/rng/Rng';
 import type { EpochMs } from '../../domain/time/EpochMs';
-import type { PersistenceScheduler } from './persistenceScheduler';
+import { createPersistenceScheduler, type PersistenceScheduler } from './persistenceScheduler';
 import { parsePlayerProgress } from './persistenceCodec';
 
 export type AppDeps = { rng: Rng; now: () => EpochMs };
@@ -39,9 +39,67 @@ export function createAppStore(
   initial: AppState,
   deps: AppDeps,
   ports: AppPorts,
-  scheduler: PersistenceScheduler,
+  options?: { persistenceDebounceMs?: number; saveFailureRetoastMs?: number },
 ): AppStore {
   let state: AppState = $state(initial);
+  let activeQueue: (AppIntent | BuilderIntent | PlayerIntent)[] | null = null;
+  const retoastMs = options?.saveFailureRetoastMs ?? 60_000;
+  const builderLatch = { armed: false, toastAt: null as EpochMs | null };
+  const playerLatch = { armed: false, toastAt: null as EpochMs | null };
+
+  function handleWriteResult(slice: 'builder' | 'player', err: Error | null): void {
+    if (err === null) {
+      if (slice === 'builder') {
+        builderLatch.armed = false;
+        builderLatch.toastAt = null;
+      } else {
+        playerLatch.armed = false;
+        playerLatch.toastAt = null;
+      }
+      return;
+    }
+    const latch = slice === 'builder' ? builderLatch : playerLatch;
+    if (latch.armed && latch.toastAt !== null && deps.now() - latch.toastAt < retoastMs) {
+      return;
+    }
+    latch.armed = true;
+    latch.toastAt = deps.now();
+    if (slice === 'builder') {
+      console.warn('appStore: builder persistence write failed', err);
+      dispatch({ kind: 'report-builder-save-failure' });
+    } else {
+      console.warn('appStore: player persistence write failed', err);
+      dispatch({ kind: 'report-player-save-failure' });
+    }
+  }
+
+  function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
+    if (activeQueue !== null) {
+      activeQueue.push(intent);
+      return;
+    }
+    const d = deps;
+    let s: AppState = state;
+    activeQueue = [intent];
+    try {
+      while (activeQueue.length > 0) {
+        const next = activeQueue.shift();
+        if (next === undefined) break;
+        const result = reduceApp(s, next, d);
+        const folded = applyEventsToApp(result.state, result.events, d);
+        s = folded.state;
+        state = s;
+        for (const event of folded.leftoverEvents) {
+          const followup = performExternalEvent(event);
+          if (followup !== null) {
+            activeQueue.push(followup);
+          }
+        }
+      }
+    } finally {
+      activeQueue = null;
+    }
+  }
 
   function performExternalEvent(event: DomainEvent): AppIntent | BuilderIntent | PlayerIntent | null {
     switch (event.kind) {
@@ -94,6 +152,12 @@ export function createAppStore(
     return intent;
   }
 
+  const scheduler = createPersistenceScheduler(
+    ports.storage,
+    options?.persistenceDebounceMs ?? 400,
+    handleWriteResult,
+  );
+
   const store: AppStore = {
     getState() {
       return state;
@@ -122,25 +186,7 @@ export function createAppStore(
     getPorts(): AppPorts {
       return ports;
     },
-    dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
-      const d = deps;
-      let s: AppState = state;
-      const pending: (AppIntent | BuilderIntent | PlayerIntent)[] = [intent];
-      while (pending.length > 0) {
-        const next = pending.shift();
-        if (next === undefined) break;
-        const result = reduceApp(s, next, d);
-        const folded = applyEventsToApp(result.state, result.events, d);
-        s = folded.state;
-        state = s;
-        for (const event of folded.leftoverEvents) {
-          const followup = performExternalEvent(event);
-          if (followup !== null) {
-            pending.push(followup);
-          }
-        }
-      }
-    },
+    dispatch,
   };
 
   return store;

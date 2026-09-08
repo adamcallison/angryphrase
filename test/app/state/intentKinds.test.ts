@@ -88,8 +88,8 @@ describe('intentKinds', () => {
     }
   });
 
-  it('AppIntent kinds (navigate, cancel-modal, dismiss-toast, report-download-failure) are not in any of the four intent sets', () => {
-    for (const kind of ['navigate', 'cancel-modal', 'dismiss-toast', 'report-download-failure']) {
+  it('AppIntent kinds (navigate, cancel-modal, dismiss-toast, report-download-failure, report-builder-save-failure, report-player-save-failure) are not in any of the four intent sets', () => {
+    for (const kind of ['navigate', 'cancel-modal', 'dismiss-toast', 'report-download-failure', 'report-builder-save-failure', 'report-player-save-failure']) {
       expect(BUILDER_INTENT_KINDS.has(kind)).toBe(false);
       expect(PLAYER_INTENT_KINDS.has(kind)).toBe(false);
       expect(CONFIRMABLE_INTENT_KINDS.has(kind)).toBe(false);

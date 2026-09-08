@@ -95,14 +95,31 @@ describe('localStoragePort', () => {
     expect(port.loadPlayerProgress(KEY_A)).toBeNull();
   });
 
-  it('localStoragePort: saveBuilder does not throw when localStorage.setItem throws (graceful failure)', () => {
+  it('localStoragePort: saveBuilder returns an Error when localStorage.setItem throws (graceful failure)', () => {
     const port = createLocalStoragePort();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
-    expect(() => port.saveBuilder('snapshot-v1')).not.toThrow();
-    expect(warnSpy).toHaveBeenCalledOnce();
+    const result = port.saveBuilder('snapshot-v1');
+    expect(() => result).not.toThrow();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toBe('QuotaExceededError');
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+    setItemSpy.mockRestore();
+  });
+
+  it('localStoragePort: saveBuilder coerces a thrown non-Error value into an Error', () => {
+    const port = createLocalStoragePort();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw 'boom';
+    });
+    const result = port.saveBuilder('snapshot-v1');
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toBe('boom');
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
     setItemSpy.mockRestore();
   });
@@ -119,38 +136,47 @@ describe('localStoragePort', () => {
     getItemSpy.mockRestore();
   });
 
-  it('localStoragePort: savePlayerProgress does not throw when localStorage.setItem throws (graceful failure)', () => {
+  it('localStoragePort: savePlayerProgress returns an Error when localStorage.setItem throws (graceful failure)', () => {
     const port = createLocalStoragePort();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const setItemSpy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('QuotaExceededError');
     });
-    expect(() => port.savePlayerProgress(KEY_A, 'progress-v1')).not.toThrow();
-    expect(warnSpy).toHaveBeenCalledOnce();
+    const result = port.savePlayerProgress(KEY_A, 'progress-v1');
+    expect(() => result).not.toThrow();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toBe('QuotaExceededError');
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
     setItemSpy.mockRestore();
   });
 
-  it('localStoragePort: clearBuilder does not throw when localStorage.removeItem throws (graceful failure)', () => {
+  it('localStoragePort: clearBuilder returns an Error when localStorage.removeItem throws (graceful failure)', () => {
     const port = createLocalStoragePort();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
       throw new Error('SecurityError');
     });
-    expect(() => port.clearBuilder()).not.toThrow();
-    expect(warnSpy).toHaveBeenCalledOnce();
+    const result = port.clearBuilder();
+    expect(() => result).not.toThrow();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toBe('SecurityError');
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
     removeItemSpy.mockRestore();
   });
 
-  it('localStoragePort: clearPlayerProgress does not throw when localStorage.removeItem throws (graceful failure)', () => {
+  it('localStoragePort: clearPlayerProgress returns an Error when localStorage.removeItem throws (graceful failure)', () => {
     const port = createLocalStoragePort();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const removeItemSpy = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
       throw new Error('SecurityError');
     });
-    expect(() => port.clearPlayerProgress(KEY_A)).not.toThrow();
-    expect(warnSpy).toHaveBeenCalledOnce();
+    const result = port.clearPlayerProgress(KEY_A);
+    expect(() => result).not.toThrow();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toBe('SecurityError');
+    expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
     removeItemSpy.mockRestore();
   });

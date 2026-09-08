@@ -8,6 +8,9 @@ export class InMemoryStoragePort implements StoragePort {
   // For corruption tests: set this to make the next loadX throw.
   public throwOnNextLoad: boolean = false;
 
+  // For write-failure tests: set this to make the next write return the Error without mutating storage.
+  public nextWriteError: Error | null = null;
+
   loadBuilder(): string | null {
     if (this.throwOnNextLoad) {
       this.throwOnNextLoad = false;
@@ -16,12 +19,24 @@ export class InMemoryStoragePort implements StoragePort {
     return this.builderBlob;
   }
 
-  saveBuilder(blob: string): void {
+  saveBuilder(blob: string): Error | null {
+    if (this.nextWriteError !== null) {
+      const err = this.nextWriteError;
+      this.nextWriteError = null;
+      return err;
+    }
     this.builderBlob = blob;
+    return null;
   }
 
-  clearBuilder(): void {
+  clearBuilder(): Error | null {
+    if (this.nextWriteError !== null) {
+      const err = this.nextWriteError;
+      this.nextWriteError = null;
+      return err;
+    }
     this.builderBlob = null;
+    return null;
   }
 
   loadPlayerProgress(key: PuzzleKey): string | null {
@@ -32,12 +47,24 @@ export class InMemoryStoragePort implements StoragePort {
     return this.playerProgress.get(key) ?? null;
   }
 
-  savePlayerProgress(key: PuzzleKey, blob: string): void {
+  savePlayerProgress(key: PuzzleKey, blob: string): Error | null {
+    if (this.nextWriteError !== null) {
+      const err = this.nextWriteError;
+      this.nextWriteError = null;
+      return err;
+    }
     this.playerProgress.set(key, blob);
+    return null;
   }
 
-  clearPlayerProgress(key: PuzzleKey): void {
+  clearPlayerProgress(key: PuzzleKey): Error | null {
+    if (this.nextWriteError !== null) {
+      const err = this.nextWriteError;
+      this.nextWriteError = null;
+      return err;
+    }
     this.playerProgress.delete(key);
+    return null;
   }
 
   // Test helpers (not part of StoragePort):

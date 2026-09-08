@@ -22,6 +22,7 @@ export interface PersistenceScheduler {
 export function createPersistenceScheduler(
   storage: StoragePort,
   debounceMs: number = 400,
+  onWriteResult: (slice: 'builder' | 'player', err: Error | null) => void,
 ): PersistenceScheduler {
 
   let builderTimer: ReturnType<typeof setTimeout> | null = null;
@@ -31,7 +32,8 @@ export function createPersistenceScheduler(
 
   function doSaveBuilder(state: BuilderState): void {
     const blob = serializeBuilderSnapshot(state);
-    storage.saveBuilder(blob);
+    const err = storage.saveBuilder(blob);
+    onWriteResult('builder', err);
   }
 
   function doSavePlayer(state: PlayerState): void {
@@ -39,7 +41,8 @@ export function createPersistenceScheduler(
     const key = state.puzzle.key;
     const blob = serializePlayerProgress(state);
     if (blob === null) return;
-    storage.savePlayerProgress(key, blob);
+    const err = storage.savePlayerProgress(key, blob);
+    onWriteResult('player', err);
   }
 
   return {
@@ -74,7 +77,8 @@ export function createPersistenceScheduler(
         builderTimer = null;
       }
       pendingBuilderState = null;
-      storage.clearBuilder();
+      const err = storage.clearBuilder();
+      onWriteResult('builder', err);
     },
 
     clearPlayer(key) {
@@ -83,7 +87,8 @@ export function createPersistenceScheduler(
         playerTimer = null;
       }
       pendingPlayerState = null;
-      storage.clearPlayerProgress(key);
+      const err = storage.clearPlayerProgress(key);
+      onWriteResult('player', err);
     },
 
     flush() {

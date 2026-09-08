@@ -30,6 +30,10 @@ export function reduceApp(
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
     case 'report-download-failure':
       return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Download failed. Please try again.' }] };
+    case 'report-builder-save-failure':
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.' }] };
+    case 'report-player-save-failure':
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your solving progress is not being kept.' }] };
   }
 
   // Builder or Player intent: dispatch to the appropriate sub-reducer.

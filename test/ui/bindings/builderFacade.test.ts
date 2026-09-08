@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
-import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
@@ -78,7 +77,6 @@ describe('builderFacade.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     builderFacade = createBuilderFacade(store);
     store.dispatch({ kind: 'navigate', route: 'build' });
@@ -252,7 +250,6 @@ describe('builderFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const builderWithPick = createBuilderFacade(storeWithPick);
 
@@ -269,7 +266,6 @@ describe('builderFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const builderWithPick = createBuilderFacade(storeWithPick);
 
@@ -286,7 +282,6 @@ describe('builderFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const builderWithDrop = createBuilderFacade(storeWithDrop);
     const dispatchSpy = vi.spyOn(storeWithDrop, 'dispatch');
@@ -307,7 +302,6 @@ describe('builderFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const builderWithDrop = createBuilderFacade(storeWithDrop);
     storeWithDrop.dispatch({ kind: 'navigate', route: 'build' });
@@ -328,14 +322,12 @@ describe('builderFacade.ts', () => {
       makeBlankAppState(1),
       { rng: makeRng(1), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const a = createBuilderFacade(storeA);
     const storeB = createAppStore(
       makeBlankAppState(2),
       { rng: makeRng(2), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const b = createBuilderFacade(storeB);
 

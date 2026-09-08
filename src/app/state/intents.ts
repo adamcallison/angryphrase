@@ -4,4 +4,6 @@ export type AppIntent =
   | { kind: 'navigate'; route: 'landing' | 'build' | 'play' }
   | { kind: 'cancel-modal' }
   | { kind: 'dismiss-toast'; id: ToastId }
-  | { kind: 'report-download-failure' };
+  | { kind: 'report-download-failure' }
+  | { kind: 'report-builder-save-failure' }
+  | { kind: 'report-player-save-failure' };

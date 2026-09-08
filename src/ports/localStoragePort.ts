@@ -18,18 +18,20 @@ export function createLocalStoragePort(): StoragePort {
         return null;
       }
     },
-    saveBuilder(blob: string): void {
+    saveBuilder(blob: string): Error | null {
       try {
         localStorage.setItem(BUILDER_KEY, blob);
+        return null;
       } catch (err) {
-        console.warn('localStoragePort.saveBuilder failed:', err);
+        return err instanceof Error ? err : new Error(String(err));
       }
     },
-    clearBuilder(): void {
+    clearBuilder(): Error | null {
       try {
         localStorage.removeItem(BUILDER_KEY);
+        return null;
       } catch (err) {
-        console.warn('localStoragePort.clearBuilder failed:', err);
+        return err instanceof Error ? err : new Error(String(err));
       }
     },
     loadPlayerProgress(key: PuzzleKey): string | null {
@@ -40,18 +42,20 @@ export function createLocalStoragePort(): StoragePort {
         return null;
       }
     },
-    savePlayerProgress(key: PuzzleKey, blob: string): void {
+    savePlayerProgress(key: PuzzleKey, blob: string): Error | null {
       try {
         localStorage.setItem(PLAYER_PREFIX + String(key), blob);
+        return null;
       } catch (err) {
-        console.warn('localStoragePort.savePlayerProgress failed:', err);
+        return err instanceof Error ? err : new Error(String(err));
       }
     },
-    clearPlayerProgress(key: PuzzleKey): void {
+    clearPlayerProgress(key: PuzzleKey): Error | null {
       try {
         localStorage.removeItem(PLAYER_PREFIX + String(key));
+        return null;
       } catch (err) {
-        console.warn('localStoragePort.clearPlayerProgress failed:', err);
+        return err instanceof Error ? err : new Error(String(err));
       }
     },
   };

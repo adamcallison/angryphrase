@@ -32,4 +32,34 @@ describe('InMemoryStoragePort', () => {
     expect(storage.loadBuilder()).toBeNull();
     expect(storage.throwOnNextLoad).toBe(false);
   });
+
+  it('nextWriteError on saveBuilder returns the Error and leaves the builder blob unchanged, one-shot', () => {
+    const storage = new InMemoryStoragePort();
+    const err = new Error('save failed');
+    storage.nextWriteError = err;
+    expect(storage.saveBuilder('builder-state')).toBe(err);
+    expect(storage.getBuilderBlob()).toBeNull();
+    expect(storage.saveBuilder('builder-state')).toBeNull();
+    expect(storage.getBuilderBlob()).toBe('builder-state');
+  });
+
+  it('nextWriteError on clearBuilder returns the Error and preserves the builder blob', () => {
+    const storage = new InMemoryStoragePort();
+    storage.saveBuilder('builder-state');
+    const err = new Error('clear failed');
+    storage.nextWriteError = err;
+    expect(storage.clearBuilder()).toBe(err);
+    expect(storage.getBuilderBlob()).toBe('builder-state');
+  });
+
+  it('nextWriteError on savePlayerProgress returns the Error and leaves progress unchanged for that key', () => {
+    const storage = new InMemoryStoragePort();
+    const key = PuzzleKey.try('00000000-0000-4000-8000-000000000000')!;
+    const err = new Error('save failed');
+    storage.nextWriteError = err;
+    expect(storage.savePlayerProgress(key, 'progress-state')).toBe(err);
+    expect(storage.loadPlayerProgress(key)).toBeNull();
+    expect(storage.savePlayerProgress(key, 'progress-state')).toBeNull();
+    expect(storage.loadPlayerProgress(key)).toBe('progress-state');
+  });
 });

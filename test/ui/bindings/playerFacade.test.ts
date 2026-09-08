@@ -5,7 +5,6 @@ import { BuilderState } from '../../../src/builder/state/state';
 import { PlayerState } from '../../../src/player/state/state';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
 import { createPlayerFacade, type PlayerFacade } from '../../../src/ui/bindings/playerFacade';
-import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
@@ -80,7 +79,6 @@ describe('playerFacade.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     playerFacade = createPlayerFacade(store);
   });
@@ -121,7 +119,6 @@ describe('playerFacade.ts', () => {
       state,
       { rng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const freshPlayerFacade = createPlayerFacade(freshStore);
 
@@ -319,7 +316,6 @@ describe('playerFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const playerWithPick = createPlayerFacade(storeWithPick);
 
@@ -336,7 +332,6 @@ describe('playerFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const playerWithPick = createPlayerFacade(storeWithPick);
 
@@ -353,7 +348,6 @@ describe('playerFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const playerWithDrop = createPlayerFacade(storeWithDrop);
     storeWithDrop.dispatch({ kind: 'navigate', route: 'play' });
@@ -373,7 +367,6 @@ describe('playerFacade.ts', () => {
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     const playerWithDrop = createPlayerFacade(storeWithDrop);
     storeWithDrop.dispatch({ kind: 'navigate', route: 'play' });
@@ -393,14 +386,12 @@ describe('playerFacade.ts', () => {
       makeBlankAppState(1),
       { rng: makeRng(1), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const a = createPlayerFacade(storeA);
     const storeB = createAppStore(
       makeBlankAppState(2),
       { rng: makeRng(2), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const b = createPlayerFacade(storeB);
 

@@ -3,7 +3,6 @@ import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
 import { createToastFacade, type ToastFacade } from '../../../src/ui/bindings/toastFacade';
-import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
@@ -59,7 +58,6 @@ describe('toastFacade.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     toastFacade = createToastFacade(store);
   });
@@ -74,7 +72,6 @@ describe('toastFacade.ts', () => {
       { ...store.getState(), toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const freshToastFacade = createToastFacade(freshStore);
 
@@ -94,7 +91,6 @@ describe('toastFacade.ts', () => {
       { ...store.getState(), toasts: [first] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const firstToastFacade = createToastFacade(firstStore);
     expect(firstToastFacade.toastVMs()).toHaveLength(1);
@@ -105,7 +101,6 @@ describe('toastFacade.ts', () => {
       { ...firstStore.getState(), toasts: [first, second] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const secondToastFacade = createToastFacade(secondStore);
     const vms = secondToastFacade.toastVMs();
@@ -121,7 +116,6 @@ describe('toastFacade.ts', () => {
       { ...store.getState(), toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const freshToastFacade = createToastFacade(freshStore);
     expect(freshStore.getState().toasts).toHaveLength(1);
@@ -137,7 +131,6 @@ describe('toastFacade.ts', () => {
       { ...store.getState(), toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const freshToastFacade = createToastFacade(freshStore);
 
@@ -152,7 +145,6 @@ describe('toastFacade.ts', () => {
       makeBlankAppState(1),
       { rng: makeRng(1), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const a = createToastFacade(storeA);
     storeA.dispatch({ kind: 'request-import-puzzle', fileContent: 'not json' });
@@ -161,7 +153,6 @@ describe('toastFacade.ts', () => {
       makeBlankAppState(2),
       { rng: makeRng(2), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const b = createToastFacade(storeB);
     storeB.dispatch({ kind: 'request-import-puzzle', fileContent: 'also not json' });

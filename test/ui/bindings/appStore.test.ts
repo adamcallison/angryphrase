@@ -3,12 +3,10 @@ import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
 import type { BuilderIntent } from '../../../src/builder/state/intents';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
-import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { FakeClock } from '../../fakes/FakeClock';
-import { EpochMs } from '../../../src/domain/time/EpochMs';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
@@ -79,7 +77,6 @@ describe('appStore.svelte.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     store.dispatch({ kind: 'navigate', route: 'build' });
   });
@@ -94,7 +91,6 @@ describe('appStore.svelte.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      createPersistenceScheduler(inMemoryStorage),
     );
     expect(store.getState()).toBe(initial);
   });
@@ -325,20 +321,157 @@ describe('appStore.svelte.ts', () => {
     warnSpy.mockRestore();
   });
 
-  it('appStore: createAppStore replaces state and deps cleanly; subsequent dispatch uses new deps.rng', () => {
-    const newRng = makeRng(99);
-    const newState = makeBlankAppState(99);
-    const newScheduler = createPersistenceScheduler(inMemoryStorage);
-
+  it('appStore: createAppStore uses the provided initial state; the internally-constructed scheduler persists via the injected storage port', () => {
+    const initial = makeBlankAppState(42);
     const store = createAppStore(
-      newState,
-      { rng: newRng, now: () => EpochMs.of(1234) },
+      initial,
+      { rng: seededRng, now: () => fakeClock.now() },
       ports,
-      newScheduler,
     );
 
-    expect(store.getState()).toBe(newState);
-    expect(store.getScheduler()).toBe(newScheduler);
+    expect(store.getState()).toBe(initial);
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+    expect(inMemoryStorage.getBuilderBlob()).not.toBeNull();
+  });
+
+  it('appStore: first failed builder write arms the latch — one error toast (exact message) and one console.warn', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    inMemoryStorage.nextWriteError = new Error('quota');
+
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getToasts()[0]).toMatchObject({
+      kind: 'error',
+      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('appStore: builder persistence write failed', expect.any(Error));
+    warnSpy.mockRestore();
+  });
+
+  it('appStore: repeated failed builder writes within the re-toast cadence do not re-toast', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    inMemoryStorage.nextWriteError = new Error('quota');
+
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+    expect(store.getToasts()).toHaveLength(1);
+
+    inMemoryStorage.nextWriteError = new Error('quota again');
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
+  });
+
+  it('appStore: failed builder write ≥ 60 s after the last toast re-toasts (write-driven cadence)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    inMemoryStorage.nextWriteError = new Error('quota');
+
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    fakeClock.advance(60_000);
+    inMemoryStorage.nextWriteError = new Error('still quota');
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(2);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
+  it('appStore: a successful builder write re-arms the latch — the next failure toasts immediately (new episode, no cadence wait)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    inMemoryStorage.nextWriteError = new Error('quota');
+
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+    expect(store.getToasts()).toHaveLength(1);
+
+    inMemoryStorage.nextWriteError = null;
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+    expect(store.getToasts()).toHaveLength(1);
+
+    inMemoryStorage.nextWriteError = new Error('quota again');
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(2);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
+  it('appStore: player slice latch is independent — player failure toasts the player message; builder failure does not toast the player slice', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const puzzle = makeCompletePuzzle(7, 3);
+
+    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ kind: 'navigate', route: 'play' });
+
+    inMemoryStorage.nextWriteError = new Error('quota');
+    store.getScheduler().schedulePlayerSave(store.getPlayer());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getToasts()[0]).toMatchObject({
+      kind: 'error',
+      message: 'Saving failed — your solving progress is not being kept.',
+    });
+    expect(warnSpy).toHaveBeenCalledWith('appStore: player persistence write failed', expect.any(Error));
+
+    inMemoryStorage.nextWriteError = new Error('builder quota');
+    store.getScheduler().scheduleBuilderSave(store.getBuilder());
+    vi.advanceTimersByTime(400);
+
+    expect(store.getToasts()).toHaveLength(2);
+    expect(store.getToasts()[1]).toMatchObject({
+      kind: 'error',
+      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    });
+
+    warnSpy.mockRestore();
+  });
+
+  it('appStore: failed clearBuilder arms the builder latch (toast) and the re-entrant dispatch joins the active work-queue', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const puzzle = makeCompletePuzzle(7, 3);
+    store.dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ kind: 'switch-to-fill' });
+    store.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
+
+    inMemoryStorage.nextWriteError = new Error('clear fail');
+    store.getScheduler().clearBuilder();
+
+    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getToasts()[0]).toMatchObject({
+      kind: 'error',
+      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    fakeClock.advance(60_000);
+
+    inMemoryStorage.nextWriteError = new Error('reset clear fail');
+    const beforeKey = store.getBuilder().puzzle.key;
+    store.dispatch({ kind: 'request-reset-builder' });
+    store.dispatch({ kind: 'confirm-reset-builder' });
+
+    expect(store.getBuilder().puzzle.key).not.toBe(beforeKey);
+    expect(store.getToasts()).toHaveLength(2);
+    expect(store.getToasts()[1]).toMatchObject({
+      kind: 'error',
+      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    });
+
+    warnSpy.mockRestore();
   });
 
   it('appStore: getBuilder() / getPlayer() return the live state slices (referential checks after no dispatch)', () => {

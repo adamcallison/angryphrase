@@ -238,11 +238,13 @@ describe('persistenceScheduler.ts', () => {
     let storage: InMemoryStoragePort;
     let scheduler: PersistenceScheduler;
     let warnSpy: ReturnType<typeof vi.spyOn>;
+    let onWriteResult: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       vi.useFakeTimers();
       storage = new InMemoryStoragePort();
-      scheduler = createPersistenceScheduler(storage, 400);
+      onWriteResult = vi.fn();
+      scheduler = createPersistenceScheduler(storage, 400, onWriteResult);
       warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
@@ -337,6 +339,90 @@ describe('persistenceScheduler.ts', () => {
       expect(storage.getPlayerProgressMap().size).toBe(0);
       vi.advanceTimersByTime(400);
       expect(storage.getPlayerProgressMap().size).toBe(0);
+    });
+
+    it('createPersistenceScheduler: reports builder save success via onWriteResult', () => {
+      const state = makeBuilderState(20);
+      scheduler.scheduleBuilderSave(state);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('builder', null);
+    });
+
+    it('createPersistenceScheduler: reports player save success via onWriteResult', () => {
+      const state = makePlayerSolvingState(21);
+      scheduler.schedulePlayerSave(state);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('player', null);
+    });
+
+    it('createPersistenceScheduler: reports failed builder save via onWriteResult', () => {
+      const err = new Error('quota');
+      storage.nextWriteError = err;
+      const state = makeBuilderState(22);
+      scheduler.scheduleBuilderSave(state);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('builder', err);
+    });
+
+    it('createPersistenceScheduler: does not report when schedulePlayerSave is skipped for phase=import', () => {
+      const state = PlayerState.importScreen();
+      scheduler.schedulePlayerSave(state);
+      vi.advanceTimersByTime(500);
+      expect(onWriteResult).not.toHaveBeenCalled();
+    });
+
+    it('createPersistenceScheduler: reports clearBuilder success synchronously', () => {
+      scheduler.clearBuilder();
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('builder', null);
+    });
+
+    it('createPersistenceScheduler: reports failed clearPlayer synchronously', () => {
+      const key = PuzzleKey.try('cccccccc-cccc-4ccc-8ccc-cccccccccccc')!;
+      const err = new Error('clear failed');
+      storage.nextWriteError = err;
+      scheduler.clearPlayer(key);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('player', err);
+    });
+
+    it('createPersistenceScheduler: flush() reports once per actually-fired write', () => {
+      const builderState = makeBuilderState(23);
+      const playerState = makePlayerSolvingState(24);
+      scheduler.scheduleBuilderSave(builderState);
+      scheduler.schedulePlayerSave(playerState);
+      scheduler.flush();
+      expect(onWriteResult).toHaveBeenCalledTimes(2);
+      expect(onWriteResult).toHaveBeenNthCalledWith(1, 'builder', null);
+      expect(onWriteResult).toHaveBeenNthCalledWith(2, 'player', null);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(2);
+    });
+
+    it('createPersistenceScheduler: coalesced builder saves report exactly once', () => {
+      const state1 = makeBuilderState(25);
+      const state2 = makeBuilderState(26);
+      scheduler.scheduleBuilderSave(state1);
+      scheduler.scheduleBuilderSave(state2);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('builder', null);
+      expect(storage.getBuilderBlob()).not.toBeNull();
+      expect(JSON.parse(storage.getBuilderBlob() as string).puzzle.key).toBe(state2.puzzle.key);
+    });
+
+    it('createPersistenceScheduler: clearBuilder cancels pending builder save and reports only the clear', () => {
+      const state = makeBuilderState(27);
+      scheduler.scheduleBuilderSave(state);
+      vi.advanceTimersByTime(200);
+      scheduler.clearBuilder();
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
+      expect(onWriteResult).toHaveBeenCalledWith('builder', null);
+      vi.advanceTimersByTime(400);
+      expect(onWriteResult).toHaveBeenCalledTimes(1);
     });
   });
 });

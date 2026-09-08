@@ -3,7 +3,6 @@ import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
 import { createModalFacade, type ModalFacade } from '../../../src/ui/bindings/modalFacade';
-import { createPersistenceScheduler } from '../../../src/ui/bindings/persistenceScheduler';
 import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
@@ -55,7 +54,6 @@ describe('modalFacade.ts', () => {
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     modalFacade = createModalFacade(store);
     store.dispatch({ kind: 'navigate', route: 'build' });
@@ -129,7 +127,6 @@ describe('modalFacade.ts', () => {
       { ...store.getState(), modal },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const freshModalFacade = createModalFacade(freshStore);
 
@@ -152,7 +149,6 @@ describe('modalFacade.ts', () => {
       makeBlankAppState(1),
       { rng: makeRng(1), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const a = createModalFacade(storeA);
     triggerModal(storeA);
@@ -161,7 +157,6 @@ describe('modalFacade.ts', () => {
       makeBlankAppState(2),
       { rng: makeRng(2), now: () => fakeClock.now() },
       makePorts(),
-      createPersistenceScheduler(inMemoryStorage),
     );
     const b = createModalFacade(storeB);
     triggerModal(storeB);

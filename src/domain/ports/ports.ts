@@ -2,11 +2,11 @@ import type { PuzzleKey } from '../puzzle/PuzzleKey';
 
 export interface StoragePort {
   loadBuilder(): string | null;
-  saveBuilder(blob: string): void;
-  clearBuilder(): void;
+  saveBuilder(blob: string): Error | null;            // null = success; Error = write failed (silent; appStore warns/toasts)
+  clearBuilder(): Error | null;                       // null = success; Error = write failed (silent; appStore warns/toasts)
   loadPlayerProgress(key: PuzzleKey): string | null;
-  savePlayerProgress(key: PuzzleKey, blob: string): void;
-  clearPlayerProgress(key: PuzzleKey): void;
+  savePlayerProgress(key: PuzzleKey, blob: string): Error | null;  // null = success; Error = write failed (silent; appStore warns/toasts)
+  clearPlayerProgress(key: PuzzleKey): Error | null;  // null = success; Error = write failed (silent; appStore warns/toasts)
 }
 
 export interface DownloadPort {

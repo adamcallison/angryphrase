@@ -14,7 +14,6 @@ import { downloadPort } from './ports/downloadPort';
 import { filePickPort } from './ports/filePickPort';
 import { rngPort } from './ports/rngPort';
 import { parseBuilderSnapshot } from './ui/bindings/persistenceCodec';
-import { createPersistenceScheduler } from './ui/bindings/persistenceScheduler';
 import { AppState } from './app/state/state';
 import { PlayerState } from './player/state/state';
 import type { BuilderState } from './builder/state/state';
@@ -24,7 +23,6 @@ import { EpochMs } from './domain/time/EpochMs';
 
 const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort };
 const deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) };
-const scheduler = createPersistenceScheduler(ports.storage);
 
 /**
  * Build the initial AppState per FR-65 / FR-64 / C6 / NFR-9:
@@ -83,7 +81,7 @@ function loadInitialAppState(): AppState {
 }
 
 const initial = loadInitialAppState();
-const store = createAppStore(initial, deps, ports, scheduler);
+const store = createAppStore(initial, deps, ports);
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
 const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });

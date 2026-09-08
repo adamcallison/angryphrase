@@ -74,6 +74,32 @@ describe('reduceApp', () => {
     });
   });
 
+  it('reduceApp: report-builder-save-failure emits an error toast event, state unchanged', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const result = reduceApp(state, { kind: 'report-builder-save-failure' }, deps);
+    expect(result.state).toBe(state);
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    });
+  });
+
+  it('reduceApp: report-player-save-failure emits an error toast event, state unchanged', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const result = reduceApp(state, { kind: 'report-player-save-failure' }, deps);
+    expect(result.state).toBe(state);
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      message: 'Saving failed — your solving progress is not being kept.',
+    });
+  });
+
   it('switch-to-fill (a BuilderIntent) dispatches to reduceBuilder and folds result', () => {
     const state = makeState();
     const deps = makeDeps();
