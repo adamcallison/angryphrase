@@ -11,6 +11,7 @@ import { Col } from '../../../domain/grid/Col';
 
 const INCOMPLETE_REJECT_MSG = 'Only complete puzzle files can be loaded into the Player.';
 const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
+const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
 
 export function handleImportPuzzle(
   intent: Extract<PlayerIntent, { kind: 'import-puzzle' }>,
@@ -91,6 +92,13 @@ export function handleReportImportReadFailure(): ReducerResult<PlayerState> {
   return Result.withEvents(
     { phase: 'import', lastImportError: IMPORT_READ_FAILURE_MSG },
     [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }],
+  );
+}
+
+export function handleReportPickFailure(): ReducerResult<PlayerState> {
+  return Result.withEvents(
+    { phase: 'import', lastImportError: PICK_FAILURE_MSG },
+    [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }],
   );
 }
 

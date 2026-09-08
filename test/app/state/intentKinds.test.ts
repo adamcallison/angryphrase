@@ -30,6 +30,7 @@ const BUILDER_KINDS = [
   'request-import-puzzle',
   'confirm-import-puzzle',
   'report-import-read-failure',
+  'report-pick-failure',
   'export-incomplete',
   'export-complete',
   'request-reset-builder',
@@ -39,6 +40,7 @@ const BUILDER_KINDS = [
 const PLAYER_KINDS = [
   'import-puzzle',
   'report-import-read-failure',
+  'report-pick-failure',
   'apply-loaded-progress',
   'import-new-puzzle',
   'select-cell',

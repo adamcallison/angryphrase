@@ -7,6 +7,7 @@ import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 import type { CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 
 const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
+const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
 
 function executeImport(state: BuilderState, fileContent: string): ReducerResult<BuilderState> {
   const result = parsePuzzleV1(fileContent);
@@ -55,6 +56,10 @@ export function handleConfirmImportPuzzle(
 
 export function handleReportImportReadFailure(state: BuilderState): ReducerResult<BuilderState> {
   return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }]);
+}
+
+export function handleReportPickFailure(state: BuilderState): ReducerResult<BuilderState> {
+  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }]);
 }
 
 function violationMessage(v: CompletenessViolation): string {

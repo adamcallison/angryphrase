@@ -109,12 +109,13 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
       dispatch({ kind: 'import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
-      const text = await appStore.getPorts().filePick.readDroppedFile(file);
-      if (text === null) {
-        dispatch({ kind: 'report-import-read-failure' });
+      const result = await appStore.getPorts().filePick.readDroppedFile(file);
+      if (result.kind === 'read') {
+        dispatch({ kind: 'import-puzzle', fileContent: result.text });
         return;
       }
-      dispatch({ kind: 'import-puzzle', fileContent: text });
+      console.warn('playerFacade: failed to read dropped file:', result.error);
+      dispatch({ kind: 'report-import-read-failure' });
     },
   };
 
@@ -139,7 +140,12 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
       return appStore.getPlayer();
     },
     async pickFile() {
-      return appStore.getPorts().filePick.pickFile();
+      const result = await appStore.getPorts().filePick.pickFile();
+      if (result.kind === 'picked') return result.text;
+      if (result.kind === 'cancelled') return null;
+      console.warn('playerFacade: pickFile failed:', result.error);
+      dispatch({ kind: 'report-pick-failure' });
+      return null;
     },
     actions: { toolbar, grid, cluePanel, importScreen, anagram },
   };

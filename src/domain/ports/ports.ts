@@ -13,7 +13,16 @@ export interface DownloadPort {
   download(filename: string, content: string): Error | null; // null = success; Error = failure
 }
 
+export type PickResult =
+  | { kind: 'picked'; text: string }
+  | { kind: 'cancelled' }
+  | { kind: 'failed'; error: Error };
+
+export type DroppedFileResult =
+  | { kind: 'read'; text: string }
+  | { kind: 'failed'; error: Error };
+
 export interface FilePickPort {
-  pickFile(): Promise<string | null>;
-  readDroppedFile(file: File): Promise<string | null>; // drag-and-drop read; null = read failed (no cancel path for drops; impl warns once)
+  pickFile(): Promise<PickResult>;
+  readDroppedFile(file: File): Promise<DroppedFileResult>; // drag-and-drop read; re-baselined P4 onto a 2-way union — a drop has no cancel path
 }

@@ -144,7 +144,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | `builder/state/internal/fillMode.ts` | Fill-mode intents (letter typing, markers, clue edits, metadata, cursor rules) |
 | `builder/state/internal/joinSubMode.ts` | Join sub-mode intents (FR-34..FR-38) |
 | `builder/state/internal/reattachSubMode.ts` | Reattach sub-mode intents (FR-41..FR-44) |
-| `builder/state/internal/importExport.ts` | `request-import-puzzle`, `confirm-import-puzzle`, `report-import-read-failure`, `export-incomplete`, `export-complete` intents |
+| `builder/state/internal/importExport.ts` | `request-import-puzzle`, `confirm-import-puzzle`, `report-import-read-failure`, `report-pick-failure` (P4), `export-incomplete`, `export-complete` intents |
 | `builder/state/internal/lifecycle.ts` | `request-reset-builder`, `confirm-reset-builder` intents |
 | `builder/state/internal/reconcileWords.ts` | Pure reconciliation algorithm (FR-45..FR-48); returns `{ words, displacedClues, events }` where `events` are shortening/lengthening toast requests |
 
@@ -161,7 +161,7 @@ Owns the reducer functions and the `Intent` discriminated unions for each experi
 | Module | Owns |
 |---|---|
 | `player/state/internal/solving.ts` | Solving intents (type, backspace, arrows, click, check, clear-errors) |
-| `player/state/internal/lifecycle.ts` | `request-reset-player`, `confirm-reset-player`, `import-new-puzzle`, `import-puzzle`, `report-import-read-failure`, `apply-loaded-progress` intents |
+| `player/state/internal/lifecycle.ts` | `request-reset-player`, `confirm-reset-player`, `import-new-puzzle`, `import-puzzle`, `report-import-read-failure`, `report-pick-failure` (P4), `apply-loaded-progress` intents |
 | `player/state/internal/anagram.ts` | Anagram modal intents (FR-81..FR-89) including auto-close on selection change |
 
 **`app/state/` — public root files (`app/state/` has no `internal/` subfolder; all five files are the published API):**
@@ -202,7 +202,7 @@ Receives view-models and typed action bags as `$props()`; action functions are w
 | `ui/bindings/` | (covered above) |
 
 **Layer 4 — `ports/` (side-effect implementations).**
-Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests. **Statelessness rule (binding):** port implementations hold no instance state — every method is self-contained over per-call locals; all DOM/global work (`document.createElement`, `localStorage`, `URL.createObjectURL`) happens per call, never at construction. The module-level `export const xPort = createXPort()` instances are the production defaults `main.ts` threads into `createAppStore` — permitted precisely because construction is trivial and nothing mutates the instance (a stateless shared service is a benign singleton, unlike the store singletons removed by §2.4; a port that ever gains internal state must become a per-call factory). Only `main.ts` may import port implementation modules; tests inject fakes via the `AppPorts` factory argument. **Never-throw contract (binding, §3.7):** `StoragePort`/`FilePickPort` methods never throw. **Reads** return a benign value (`null`) and warn once at the single warn site in the adapter — absent ≡ failed collapses to the same NFR-9 fallback, so no observer is needed. **Writes** (P3) return `Error | null` silently (null = success; non-`Error` throws coerced) — the warn moves to the bindings layer (appStore), which has dispatch context; the port adapter is no longer a warn site for writes. Consumers add no redundant catch layers: `persistenceScheduler` calls storage methods bare (checking returns, not catching), and facades pass `pickFile()`'s `null` through untouched for the leaf to treat as a silent no-op. The facade's `importDroppedFile(file)` action (P2/F+B) consumes `readDroppedFile`'s `null` itself and dispatches `report-import-read-failure`.
+Implements `domain/ports` interfaces. Each is a small adapter over a browser API; each is replaceable with an in-memory fake for tests. **Statelessness rule (binding):** port implementations hold no instance state — every method is self-contained over per-call locals; all DOM/global work (`document.createElement`, `localStorage`, `URL.createObjectURL`) happens per call, never at construction. The module-level `export const xPort = createXPort()` instances are the production defaults `main.ts` threads into `createAppStore` — permitted precisely because construction is trivial and nothing mutates the instance (a stateless shared service is a benign singleton, unlike the store singletons removed by §2.4; a port that ever gains internal state must become a per-call factory). Only `main.ts` may import port implementation modules; tests inject fakes via the `AppPorts` factory argument. **Never-throw contract (binding, §3.7):** `StoragePort`/`FilePickPort` methods never throw; non-`Error` throws are coerced to `Error` at the port boundary. **Storage reads** return a benign value (`null`) and warn once at the single warn site in the adapter — absent ≡ failed collapses to the same NFR-9 fallback, so no observer is needed. **Storage writes** (P3) return `Error | null` silently (null = success; non-`Error` throws coerced) — the warn moves to the bindings layer (appStore), which has dispatch context; the port adapter is no longer a warn site for writes. **`FilePickPort`** (P4) returns discriminated unions carrying `Error` (`PickResult` / `DroppedFileResult`) and is fully silent — cancel ≢ failure, so failure travels as data and the facades (the observers) warn once and dispatch the failure intents (toast); `filePickPort.ts` is no longer a warn site at all. Consumers add no redundant catch layers: `persistenceScheduler` calls storage methods bare (checking returns, not catching), and facades consume `pickFile()`'s `'picked'`/`'cancelled'`/`'failed'` variants themselves — the leaf's `pick` prop still receives `Promise<string | null>`, where `null` now covers cancel only (genuine pick failures were already warned + toasted by the facade before the `null` return). The facade's `importDroppedFile(file)` action (P2/F+B) consumes `readDroppedFile`'s `{ kind: 'failed' }` itself, warns once, and dispatches `report-import-read-failure`.
 
 | Module | Implements | Wraps |
 |---|---|---|
@@ -283,7 +283,7 @@ export type BuilderFacade = {
   dispatch(intent: BuilderIntent): void;      // delegates to appStore.dispatch (typed narrowing)
   builderShellVM(): BuilderShellVM;           // reactive pass-through — reactivity flows from appStore's cell; call inside $derived / $effect
   getBuilderState(): BuilderState;
-  pickFile(): Promise<string | null>;         // pass-through of appStore.getPorts().filePick.pickFile() — null (cancel or failed pick) flows to the FilePicker `pick` prop, which treats it as a silent no-op (item 5); genuine failures warn once inside the port (never-throw contract, §3.7)
+  pickFile(): Promise<string | null>;         // P4 — consumes the port's PickResult: 'picked' → returns the text; 'cancelled' → returns null (silent); 'failed' → warns once + dispatches report-pick-failure (error toast), then returns null. The FilePicker `pick` prop keeps Promise<string | null>; its null now covers cancel only — genuine failures were surfaced by the facade before the null return (item 5)
   actions: {                                   // per-leaf action bags — see below
     toolbar: BuilderToolbarActions;
     grid: BuilderGridActions;
@@ -311,7 +311,7 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade;
 
    One `<Leaf>Actions` type per leaf that needs actions, exported from the owning facade module (type-only import at the leaf). Bag functions are implemented inside the facade factory: each constructs the typed intent — branded fields via the domain constructors (`Row.of`, `Col.of`, `Letter.try`, `GridSize.of`, `Title.try`, `Author.try`), which only bindings may call (§9.2 + H1 brand ban make leaf-side intent construction impossible for any intent with branded fields) — and dispatches it. Fieldless intents (`{ kind: 'export-incomplete' }`) are wrapped as zero-arg bag functions for uniformity.
 4. **Intent-data principle preserved:** intents remain data at the dispatch seam (§2.2). Leaves emit semantic actions because branded intent fields cannot be constructed outside bindings; the leaf↔shell edge is intra-UI and carries VMs + action bags, both declared in `$props()`.
-5. Shared leaves: `Modal.svelte` takes `{ vm: ModalVM; confirmIntent: ConfirmableIntent | null; actions: ModalActions }` (`ModalActions = { confirm(): void; cancel(): void }`); `ToastHost.svelte` takes `{ vms: ToastVM[]; actions: ToastHostActions }` (`ToastHostActions = { dismiss(id: ToastId): void }` — the id is a VM-provided branded value passed through, not constructed); `Landing.svelte` takes `{ actions: LandingActions }` (`{ build(): void; play(): void }`); `FilePicker.svelte` takes `{ label: string; pick: () => Promise<string | null>; onpick: (text: string) => void; ondropfile: (file: File) => void }` — the component is fully presentational (P2/F+B): it performs no IO and holds no catch layers. The `pick` call is wired from `AppPorts.filePick` by the parent, never imported by the component; a `null` result from `pick` (cancel or failed pick) is a silent no-op — `onpick` is not called and nothing is logged (cancel is not an error; the port already warned once if the pick genuinely failed). On drop, the component extracts `event.dataTransfer.files[0]` and passes it to `ondropfile`; the owning leaf wires `ondropfile` to its action bag's `importDroppedFile(file)`, which reads the file via `FilePickPort.readDroppedFile` and dispatches either the import intent (text read) or `report-import-read-failure` (null) — so a dropped-but-unreadable file surfaces as a toast (NFR-12) instead of dying in a component-level catch. `Header.svelte` stays store-free (static). `TypingSurface.svelte` keeps its existing `enabled` + `onDispatch: (intent: TypingIntent) => void` props (already presentational). `VersionStamp.svelte` takes no props — it renders the build-time-injected globals `__APP_COMMIT_HASH__` / `__APP_BUILD_TIME__` (Vite `define` from an inline `gitInfo()` in `vite.config.ts`, ambient-declared in `src/vite-env.d.ts`) as a fixed bottom-right `pointer-events-none` footer inside `App.svelte`'s root div after `<Modal />`; imports nothing (staleness detector, not cache-buster — `version_stamp_plan.md`, implemented 2026-09-07).
+5. Shared leaves: `Modal.svelte` takes `{ vm: ModalVM; confirmIntent: ConfirmableIntent | null; actions: ModalActions }` (`ModalActions = { confirm(): void; cancel(): void }`); `ToastHost.svelte` takes `{ vms: ToastVM[]; actions: ToastHostActions }` (`ToastHostActions = { dismiss(id: ToastId): void }` — the id is a VM-provided branded value passed through, not constructed); `Landing.svelte` takes `{ actions: LandingActions }` (`{ build(): void; play(): void }`); `FilePicker.svelte` takes `{ label: string; pick: () => Promise<string | null>; onpick: (text: string) => void; ondropfile: (file: File) => void }` — the component is fully presentational (P2/F+B): it performs no IO and holds no catch layers. The `pick` call is wired from `AppPorts.filePick` by the parent, never imported by the component; a `null` result from `pick` is a silent no-op — `onpick` is not called, and under P4 `null` reaches the leaf only for cancel: the facade consumed the port's `PickResult` upstream (on `'failed'` it warned once + dispatched `report-pick-failure` — error toast — before returning `null`; on `'picked'` it returned the text). On drop, the component extracts `event.dataTransfer.files[0]` and passes it to `ondropfile`; the owning leaf wires `ondropfile` to its action bag's `importDroppedFile(file)`, which reads the file via `FilePickPort.readDroppedFile` and dispatches either the import intent (`{ kind: 'read' }`) or `report-import-read-failure` (`{ kind: 'failed' }` — the facade warns once + the intent surfaces the error toast, NFR-12) instead of dying in a component-level catch. `Header.svelte` stays store-free (static). `TypingSurface.svelte` keeps its existing `enabled` + `onDispatch: (intent: TypingIntent) => void` props (already presentational). `VersionStamp.svelte` takes no props — it renders the build-time-injected globals `__APP_COMMIT_HASH__` / `__APP_BUILD_TIME__` (Vite `define` from an inline `gitInfo()` in `vite.config.ts`, ambient-declared in `src/vite-env.d.ts`) as a fixed bottom-right `pointer-events-none` footer inside `App.svelte`'s root div after `<Modal />`; imports nothing (staleness detector, not cache-buster — `version_stamp_plan.md`, implemented 2026-09-07).
 6. **No `setContext` / `getContext`** — context is a runtime back-channel with the same hidden-dependency problem as bare imports (report, "What this eliminates").
 7. **Autosave `$effect`s stay in `App.svelte`**, reading `appStore.getScheduler()` / `getBuilder()` / `getPlayer()` (§4.5) — they cross both slices, so they live at the composition root, not inside a facade.
 8. **Tests construct independent stores per test**: `createAppStore(initial, { rng: SeededRng, now: FakeClock }, { storage: InMemoryStoragePort, download: StubDownloadPort, filePick: stub })` — the scheduler is constructed inside the store (P3/W1); inject write failures via `InMemoryStoragePort.nextWriteError` (one-shot, mirrors `StubDownloadPort.nextDownloadError`) and assert surfacing through `store.getToasts()`. No shared singleton, no state reset helper, no port-register swapping, no import-order sensitivity. Facade tests call `createBuilderFacade(store)` / etc. on a fresh `AppStore`. Multi-instance mounting (dual-pane, parallel test apps, isolated subtree previews) works because no module-level state exists anywhere in the chain.
@@ -761,11 +761,19 @@ export const CompletenessCheck: {
 
 ```ts
 // Port interfaces only — implementations live in ports/.
-// Never-throw contract (binding): StoragePort and FilePickPort methods never throw.
-// READS return a benign value and warn once at the single warn site in the adapter —
-// absent ≡ failed collapses to the same NFR-9 fallback, so no observer is needed.
-// WRITES (P3) return Error | null silently (null = success; non-Error throws coerced);
-// the warn moves to the bindings layer (appStore), which has dispatch context.
+// Never-throw contract (binding): StoragePort and FilePickPort methods never throw;
+// non-Error throws are coerced to Error at the port boundary (G7 Task A idiom).
+// Principle (P3/P4): a port failure that needs an observer travels AS DATA and the
+// adapter stays silent — the bindings layer (the observer, with dispatch context)
+// warns and toasts. A port read whose absence and failure collapse to the same
+// fallback (storage loads: absent ≡ failed → NFR-9 fresh-start) needs no observer,
+// so it returns a benign null and the adapter warns once at its single warn site.
+//   - StoragePort loads: benign null + single adapter warn (no observer needed).
+//   - StoragePort writes (P3): Error | null, silent adapter; appStore warns/toasts.
+//   - FilePickPort (P4): discriminated unions carrying Error, silent adapter;
+//     facades warn once + dispatch the failure intent (toast) on genuine failure;
+//     'cancelled' is fully silent — cancel ≢ failure, so they are distinguishable
+//     and demand different handling (NFR-12 reachable for pick failures).
 // Consumers (scheduler, facades, leaves) rely on this contract and add no redundant
 // catch layers — callers check returns, they do not catch.
 export interface StoragePort {
@@ -779,10 +787,26 @@ export interface StoragePort {
 export interface DownloadPort {
   download(filename: string, content: string): Error | null;  // null = success; Error = failure (G7 — bindings layer surfaces as toast)
 }
+export type PickResult =
+  | { kind: 'picked'; text: string }                     // P4 — file picked and read; text flows to the import intents
+  | { kind: 'cancelled' }                                // user dismissed the dialog; fully silent (no warn, no toast)
+  | { kind: 'failed'; error: Error };                    // dialog failed to open or the read failed; silent in the
+                                                         //   adapter (non-Error coerced) — the facade warns once +
+                                                         //   dispatches report-pick-failure (error toast)
+export type DroppedFileResult =
+  | { kind: 'read'; text: string }                       // P4 — dropped file read (re-baselined from string|null so
+                                                         //   the facade's warn carries the Error; a drop has no cancel
+                                                         //   path, so no 'cancelled' variant — illegal states
+                                                         //   unrepresentable, §0 Principle 3)
+  | { kind: 'failed'; error: Error };                    // read failed; silent adapter — facade warns once +
+                                                         //   dispatches report-import-read-failure (error toast)
 export interface FilePickPort {
-  pickFile(): Promise<string | null>;                 // file text, or null if cancelled/failed (impl warns once on genuine failure; cancel is silent)
-  readDroppedFile(file: File): Promise<string | null>; // P2/F+B — drag-and-drop read; file text, or null if the read failed
-                                                       //   (impl warns once; a dropped file has no cancel path, so null is always a genuine failure)
+  pickFile(): Promise<PickResult>;                       // P4 — the old string|null conflated cancel with failure;
+                                                         //   impl listens to both `change` and `cancel` ({ once: true }
+                                                         //   each — the settle guard makes double-fire benign), so
+                                                         //   browsers that never fire `change` on cancel no longer leak
+                                                         //   a pending promise + hidden input (P1)
+  readDroppedFile(file: File): Promise<DroppedFileResult>; // P2/F+B, re-baselined onto a 2-way union at P4
 }
 
 // domain/rng/Rng.ts — NOT a port. Rng is a deps-injection abstraction (a determinism
@@ -991,10 +1015,15 @@ export type BuilderIntent =
   | { kind: 'confirm-import-puzzle'; fileContent: string }     // dispatched by Modal Confirm; executes unconditionally;
                                                                //   on success → mode=fill, cursor=null
   | { kind: 'report-import-read-failure' }                     // P2 — dispatched by the Builder toolbar's importDroppedFile facade
-                                                               //   action when FilePickPort.readDroppedFile returned null; emits an
-                                                               //   error `toast` event, state unchanged. Kind string shared with
-                                                               //   PlayerIntent → routes via AMBIGUOUS_INTENT_KINDS by state.route
-                                                               //   (like select-cell / type-letter)
+                                                                //   action when FilePickPort.readDroppedFile returned { kind: 'failed' };
+                                                                //   emits an error `toast` event, state unchanged. Kind string shared with
+                                                                //   PlayerIntent → routes via AMBIGUOUS_INTENT_KINDS by state.route
+                                                                //   (like select-cell / type-letter)
+  | { kind: 'report-pick-failure' }                            // P4 — dispatched by the Builder toolbar's pickFile facade action
+                                                                //   when FilePickPort.pickFile returned { kind: 'failed' } (dialog failed
+                                                                //   to open or the picked file could not be read); emits an error
+                                                                //   `toast` event, state unchanged. Kind string shared with
+                                                                //   PlayerIntent → routes via AMBIGUOUS_INTENT_KINDS by state.route
   | { kind: 'export-incomplete' }                             // always available; emits `download` event
   | { kind: 'export-complete' }                                // reducer runs CompletenessCheck;
                                                               //   on success emits `download`; on failure emits `toast` events with errors
@@ -1065,10 +1094,16 @@ export type PlayerIntent =
   // import (NOT guarded — Player import has no existing work to overwrite; progress is keyed and retained)
   | { kind: 'import-puzzle'; fileContent: string }            // FR-67; complete format only; on reject sets lastImportError and emits toast; on success emits `load-player-progress` event (bindings layer then dispatches apply-loaded-progress)
   | { kind: 'report-import-read-failure' }                   // P2 — dispatched by the Player import screen's importDroppedFile
-                                                             //   facade action when FilePickPort.readDroppedFile returned null;
-                                                             //   sets lastImportError and emits an error `toast` event (same
-                                                             //   surfaces as the parse-reject path). Kind string shared with
-                                                             //   BuilderIntent → routes via AMBIGUOUS_INTENT_KINDS by state.route
+                                                              //   facade action when FilePickPort.readDroppedFile returned
+                                                              //   { kind: 'failed' }; sets lastImportError and emits an error
+                                                              //   `toast` event (same surfaces as the parse-reject path). Kind
+                                                              //   string shared with BuilderIntent → routes via
+                                                              //   AMBIGUOUS_INTENT_KINDS by state.route
+  | { kind: 'report-pick-failure' }                          // P4 — dispatched by the Player import screen's pickFile facade
+                                                              //   action when FilePickPort.pickFile returned { kind: 'failed' };
+                                                              //   sets lastImportError and emits an error `toast` event (same
+                                                              //   surfaces as the parse-reject path). Kind string shared with
+                                                              //   BuilderIntent → routes via AMBIGUOUS_INTENT_KINDS by state.route
   | { kind: 'apply-loaded-progress'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }  // dispatched by the bindings layer after observing `load-player-progress`; reducer applies FR-80 rules
   | { kind: 'import-new-puzzle' }                              // FR-78; returns to 'import' phase, retains autosaved progress in localStorage
   // solving — cell & cursor
@@ -1383,7 +1418,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | Component | Props (VM) | Emits intents | Notes |
 |---|---|---|---|
 | `BuilderShell.svelte` | `BuilderShellVM` | (composes children) | Lays out toolbar + grid + clue panel + displaced panel; renders `JoinReattachBanner` when sub-mode active. Layout per CON-4: grid+controls left, clues right. |
-| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker — pick path), `report-import-read-failure` (via FilePicker — drop-read failure path, P2), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). The matching `confirm-*` intents are dispatched by `Modal.svelte`, not by this toolbar. Marker flag → `CellMarker` field key via `Record<CellMarkerFlag, keyof CellMarker>` map (compile-safe exhaustiveness — adding a flag variant breaks the build). |
+| `BuilderToolbar.svelte` | `BuilderToolbarVM` | `switch-to-fill`, `request-switch-to-design`, `change-grid-size`, `toggle-marker`, `request-import-puzzle` (via FilePicker — pick path), `report-import-read-failure` (via FilePicker — drop-read failure path, P2), `report-pick-failure` (via FilePicker — pick failure path, P4), `export-incomplete`, `export-complete`, `request-reset-builder`, `edit-title`, `edit-author` | Shows Design/Fill toggle (FR-16); grid-size control (FR-22, C3 numeric input clamp-on-blur); markers toolbar (FR-26) disabled when no cell; Export Incomplete always available; Export Complete enabled iff `canExportComplete` (FR-63). The matching `confirm-*` intents are dispatched by `Modal.svelte`, not by this toolbar. Marker flag → `CellMarker` field key via `Record<CellMarkerFlag, keyof CellMarker>` map (compile-safe exhaustiveness — adding a flag variant breaks the build). |
 | `GridSizeControl.svelte` | min/max/value/disabled | `change-grid-size` | `<input type="number" min=2 max=25 step=1>`; clamps on blur. Disabled+explanatory text when grid not blank. |
 | `BuilderGrid.svelte` | `GridVM` + cell-selected flag | `select-cell`, `toggle-design-cell` (in design mode), `click-grid-word` | Renders the grid; in Design mode clicks toggle; in Fill mode clicks select. Markers render as bars/hyphens per separators. Number rendered corner. Uses `TypingSurface` for input. |
 | `BuilderCluePanel.svelte` | `CluePanelVM` | `click-clue-panel-word`, `begin-join`, `unjoin`, `edit-clue` | Single owner of the `<aside>` scroll container, all `<li>` refs (`bind:this` keyed by `canonicalId`), the scroll-into-view `$effect` (driven by `vm.highlightedWordKey` — no DOM id, no `getElementById`, no cross-component DOM; G8 closed), `isInJoinMode` derived, the per-row `drafts` store (`SvelteMap<string, string>` from `svelte/reactivity` — reactive Map; G3 closed; keyed by `canonicalId` = `${row}_${col}_${direction}` so Across/Down never collide), and all per-row dispatch helpers. The per-row `<li>` body is deduplicated via a Svelte 5 `{#snippet clueRow(entry)}` rendered in both the Across `<ul>` and the Down `<ul>` (replaces the B3 `ClueSection.svelte` component extraction — see snippet guidance below). Sections Across/Down sorted by number (FR-32). Chain heads have an editable text input (FR-31); non-heads show "See N Direction" reference, no input. Per-clue "Link next" / "Unlink" controls (FR-38) when relevant. Scrolls the highlighted clue into view (FR-32) via manual delta on `panelEl` (preserved exactly — not native `scrollIntoView`, which would scroll all ancestors). |
@@ -1397,7 +1432,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | Component | Props (VM) | Emits intents | Notes |
 |---|---|---|---|
 | `PlayerShell.svelte` | `PlayerShellVM` | (composes children) | Switches between ImportScreen and solving layout per `phase`. Solving layout: top-banner, grid, bottom-banner (FR-71), clue panel side, toolbar. Drives `TypingSurface.enabled = (phase === 'solving') && !anagramModalOpen` so the hidden input is disabled (blurred, `inert`) while the Anagram Helper modal is open — the modal's own textbox then retains focus while typing instead of the surface stealing it on every `anagram-input` dispatch. |
-| `ImportScreen.svelte` | `importError` | `import-puzzle` (via FilePicker — pick path), `report-import-read-failure` (via FilePicker — drop-read failure path, P2) | Drag-and-drop or file picker (FR-67). On reject shows `importError`. |
+| `ImportScreen.svelte` | `importError` | `import-puzzle` (via FilePicker — pick path), `report-import-read-failure` (via FilePicker — drop-read failure path, P2), `report-pick-failure` (via FilePicker — pick failure path, P4) | Drag-and-drop or file picker (FR-67). On reject shows `importError`. |
 | `PlayerGrid.svelte` | `GridVM` | `select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-grid-word` | Same grid component shape as Builder; check result paints incorrect/correct cells. |
 | `ActiveClueBanner.svelte` | `ActiveClueBannerVM` | (none) | Rendered twice: above and below grid (FR-71). Always reserves space (FR-71). |
 | `PlayerCluePanel.svelte` | `PlayerCluePanelVM` | `click-clue-panel-word` | Same shape as Builder but no edit inputs; just display + navigation (FR-73). Owns `<li>` refs via `bind:this` keyed by `canonicalId`; scroll-into-view `$effect` driven by `vm.highlightedWordKey` (G9 — no DOM id, no `getElementById`). |
@@ -1412,7 +1447,7 @@ Fine spacing and typography choices are left to the implementer; the colour conv
 | `ToastHost.svelte` | `ToastVM[]` | `dismiss-toast` (id) | Stacked top-right; bottom-center on mobile via Tailwind responsive. Click dismisses; auto-dismiss via the component's own timeout over `ToastVM.ttlMs` (C2 default 3500 ms; under §2.4 the `vms` prop carries `ttlMs` so the leaf can schedule). Per-toast diff scheduling (G5 closed): a persistent `Map<ToastId, timer>` keyed by id; each toast gets exactly one timer scheduled when it first appears, timers for dismissed toasts are cleared — sibling mutations no longer reset unrelated timers (deadline ≈ `createdAt + ttlMs`). `onDestroy` clears all on unmount; `$effect` has no cleanup-return. |
 | `Toast.svelte` | `ToastVM` | `dismiss-toast` | Single toast row. |
 | `TypingSurface.svelte` | `enabled: boolean; cursor: Cursor` | key/IME events → `type-letter`, `backspace`, `move-cursor`, `escape` | The single hidden `<input>` (FR-93, G3). Owned nowhere else. Focus is state-driven: the existing `$effect` reads `enabled` and `cursor` and re-focuses the input when `enabled` is true and the `cursor` ref changes (i.e. whenever `select-cell` / `click-clue-panel-word` reducers produce a new cursor). No DOM id, no imperative cross-component focus calls, no Svelte context (G1/G2 — closed). `Cursor` type-imported from `domain/grid/Cursor` (AD §2.3 permits UI→domain type imports; precedent `gridVM.ts`). Normalizes mobile composition/input/Unidentified key events. Never visually obtrusive. Emits `TypingIntent` values (B6 — type owned by `ui/shared/typingIntent.ts`, imported type-only here + by both shells). Accepted behaviour change: Builder clue-panel click during `join`/`reattach` subMode no longer refocuses the surface (those reducers mutate `subMode` but not `cursor`); user stays oriented and clicks a cell/clue to refocus, which now works via state. `PlayerShell` additionally drives `enabled` to `false` while the Anagram Helper modal is open (see `PlayerShell.svelte` row) so the modal's textbox retains focus; `BuilderShell` does not (no anagram modal in the Builder — FR-81 is Player-only). |
-| `FilePicker.svelte` | accept label | `pick-file` (callback with text) | Wraps `<input type="file">` + drag-and-drop; returns file text to caller. |
+| `FilePicker.svelte` | `label: string; pick: () => Promise<string | null>; onpick: (text: string) => void; ondropfile: (file: File) => void` | none directly — pick/drop outcomes flow through the parent's facade actions | Fully presentational (P2/F+B): no IO, no catch layers, no `console.*`. `pick` is the facade's `pickFile`, which consumes the port's `PickResult` (P4) and returns text-or-`null` (`null` = cancel only; failures were already warned + toasted by the facade). On drop, extracts `files[0]` → `ondropfile`. |
 
 ### 7.5 Layout (top-level)
 
@@ -1558,7 +1593,9 @@ export const Anagram: {
 3. If `fileType !== 'complete'`: set `lastImportError = "Only complete puzzle files can be loaded into the Player."` (FR-67). Emit a `toast` event. Return.
 4. Otherwise: set `phase = 'solving'`, `puzzle = p`, `cursor = null`, `checkResult = null`, `anagram = null`, `lastImportError = null`. Emit a `{ kind: 'load-player-progress'; key: p.key }` event. (The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)` — if present, parses the progress blob — and dispatches `{ kind: 'apply-loaded-progress'; playerLetters; savedGridSize }`. The Player reducer for `apply-loaded-progress` runs the application rules: only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters for now-black cells — FR-80.)
 
-**`report-import-read-failure`** (P2/F+B): dispatched by the Player import screen's `importDroppedFile(file)` facade action when `FilePickPort.readDroppedFile(file)` returns `null` (the dropped file could not be read). The reducer returns `{ phase: 'import', lastImportError: 'Could not read that file. Please try again.' }` and emits an error `toast` event with the same message — the same two surfaces as the parse-reject path, so a dropped-but-unreadable file is surfaced identically to a dropped-but-invalid one (NFR-12). Like `import-puzzle`, the handler takes no `state` argument (the import screen is the only mount point, so `phase` is already `'import'`).
+**`report-import-read-failure`** (P2/F+B): dispatched by the Player import screen's `importDroppedFile(file)` facade action when `FilePickPort.readDroppedFile(file)` returns `{ kind: 'failed', error }` (the dropped file could not be read; the facade warns once with the error, the port is silent). The reducer returns `{ phase: 'import', lastImportError: 'Could not read that file. Please try again.' }` and emits an error `toast` event with the same message — the same two surfaces as the parse-reject path, so a dropped-but-unreadable file is surfaced identically to a dropped-but-invalid one (NFR-12). Like `import-puzzle`, the handler takes no `state` argument (the import screen is the only mount point, so `phase` is already `'import'`).
+
+**`report-pick-failure`** (P4): dispatched by the Player import screen's `pickFile()` facade action when `FilePickPort.pickFile()` returns `{ kind: 'failed', error }` (the dialog failed to open or the picked file could not be read; the facade warns once with the error, the port is silent). The reducer returns `{ phase: 'import', lastImportError: 'Could not open or read that file. Please try again.' }` and emits an error `toast` event with the same message — the same two surfaces as the parse-reject path (NFR-12). Like `import-puzzle`, the handler takes no `state` argument (the import screen is the only mount point).
 
 ### 8.9a Builder import (`builder/state/importExport.ts` — `request-import-puzzle` / `confirm-import-puzzle`)
 
@@ -1574,7 +1611,9 @@ The Builder accepts both incomplete and complete files (FR-57). On the unguarded
    - `cursor = null`
 4. Return the new `BuilderState`. No `download`/`clear-storage`/`load-progress` events are emitted (import is purely an in-memory state replacement; autosave will fire via the bindings layer's state observation).
 
-**`report-import-read-failure`** (P2/F+B): dispatched by the Builder toolbar's `importDroppedFile(file)` facade action when `FilePickPort.readDroppedFile(file)` returns `null`. The reducer emits an error `toast` event (`'Could not read that file. Please try again.'`) and leaves `BuilderState` unchanged — the same surface as the parse-reject path (NFR-12).
+**`report-import-read-failure`** (P2/F+B): dispatched by the Builder toolbar's `importDroppedFile(file)` facade action when `FilePickPort.readDroppedFile(file)` returns `{ kind: 'failed', error }` (the facade warns once with the error; the port is silent). The reducer emits an error `toast` event (`'Could not read that file. Please try again.'`) and leaves `BuilderState` unchanged — the same surface as the parse-reject path (NFR-12).
+
+**`report-pick-failure`** (P4): dispatched by the Builder toolbar's `pickFile()` facade action when `FilePickPort.pickFile()` returns `{ kind: 'failed', error }`. The reducer emits an error `toast` event (`'Could not open or read that file. Please try again.'`) and leaves `BuilderState` unchanged — the same surface as the parse-reject path (NFR-12).
 
 ---
 

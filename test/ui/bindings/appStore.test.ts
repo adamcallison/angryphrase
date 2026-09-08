@@ -61,7 +61,7 @@ describe('appStore.svelte.ts', () => {
   let store: AppStore;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '', readDroppedFile: async () => '' } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) } };
   }
 
   beforeEach(() => {

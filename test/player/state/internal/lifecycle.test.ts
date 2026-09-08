@@ -5,6 +5,7 @@ import {
   handleImportNewPuzzle,
   handleImportPuzzle,
   handleReportImportReadFailure,
+  handleReportPickFailure,
   handleRequestResetPlayer,
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
@@ -478,6 +479,20 @@ describe('report-import-read-failure', () => {
     });
     expect(result.events).toEqual([
       { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
+    ]);
+  });
+});
+
+describe('report-pick-failure', () => {
+  it('report-pick-failure → phase=import with lastImportError set + error toast event', () => {
+    const result = handleReportPickFailure();
+
+    expect(result.state).toEqual({
+      phase: 'import',
+      lastImportError: 'Could not open or read that file. Please try again.',
+    });
+    expect(result.events).toEqual([
+      { kind: 'toast', toastKind: 'error', message: 'Could not open or read that file. Please try again.' },
     ]);
   });
 });

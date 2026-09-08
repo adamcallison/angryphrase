@@ -109,12 +109,13 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       dispatch({ kind: 'request-import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
-      const text = await appStore.getPorts().filePick.readDroppedFile(file);
-      if (text === null) {
-        dispatch({ kind: 'report-import-read-failure' });
+      const result = await appStore.getPorts().filePick.readDroppedFile(file);
+      if (result.kind === 'read') {
+        dispatch({ kind: 'request-import-puzzle', fileContent: result.text });
         return;
       }
-      dispatch({ kind: 'request-import-puzzle', fileContent: text });
+      console.warn('builderFacade: failed to read dropped file:', result.error);
+      dispatch({ kind: 'report-import-read-failure' });
     },
   };
 
@@ -180,7 +181,12 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       return appStore.getBuilder();
     },
     async pickFile() {
-      return appStore.getPorts().filePick.pickFile();
+      const result = await appStore.getPorts().filePick.pickFile();
+      if (result.kind === 'picked') return result.text;
+      if (result.kind === 'cancelled') return null;
+      console.warn('builderFacade: pickFile failed:', result.error);
+      dispatch({ kind: 'report-pick-failure' });
+      return null;
     },
     actions: { toolbar, grid, cluePanel, displacedClues, banner },
   };

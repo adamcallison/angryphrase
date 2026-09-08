@@ -42,8 +42,10 @@ export type BuilderIntent =
   // import / export
   | { kind: 'request-import-puzzle'; fileContent: string }
   | { kind: 'confirm-import-puzzle'; fileContent: string }
-  // dispatched by the Builder toolbar facade when FilePickPort.readDroppedFile returns null; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
+  // dispatched by the Builder toolbar facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
   | { kind: 'report-import-read-failure' }
+  // dispatched by the Builder toolbar facade when FilePickPort.pickFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
+  | { kind: 'report-pick-failure' }
   | { kind: 'export-incomplete' }
   | { kind: 'export-complete' }
   // lifecycle

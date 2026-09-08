@@ -4,6 +4,7 @@ import {
   handleExportComplete,
   handleExportIncomplete,
   handleReportImportReadFailure,
+  handleReportPickFailure,
   handleRequestImportPuzzle,
 } from '../../../../src/builder/state/internal/importExport';
 import { BuilderState } from '../../../../src/builder/state/state';
@@ -535,6 +536,19 @@ describe('report-import-read-failure', () => {
 
     expect(result.events).toEqual([
       { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
+    ]);
+    expect(result.state).toBe(state);
+  });
+});
+
+describe('report-pick-failure', () => {
+  it('emits an error toast event with exact copy, state unchanged', () => {
+    const state = blankState();
+
+    const result = handleReportPickFailure(state);
+
+    expect(result.events).toEqual([
+      { kind: 'toast', toastKind: 'error', message: 'Could not open or read that file. Please try again.' },
     ]);
     expect(result.state).toBe(state);
   });

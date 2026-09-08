@@ -27,6 +27,7 @@ import {
   handleExportComplete,
   handleExportIncomplete,
   handleReportImportReadFailure,
+  handleReportPickFailure,
   handleRequestImportPuzzle,
 } from './internal/importExport';
 import { handleConfirmResetBuilder, handleRequestResetBuilder } from './internal/lifecycle';
@@ -75,6 +76,9 @@ export function reduceBuilder(
 
     case 'report-import-read-failure':
       return handleReportImportReadFailure(state);
+
+    case 'report-pick-failure':
+      return handleReportPickFailure(state);
 
     case 'export-incomplete':
       return handleExportIncomplete(state);

@@ -33,7 +33,7 @@ describe('modalFacade.ts', () => {
   let modalFacade: ModalFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '', readDroppedFile: async () => '' } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) } };
   }
 
   function populateDesignSwitchModal(): void {

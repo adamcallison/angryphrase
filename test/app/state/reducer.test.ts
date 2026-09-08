@@ -359,4 +359,29 @@ describe('reduceApp', () => {
       message: 'Could not read that file. Please try again.',
     });
   });
+
+  it('reduceApp: ambiguous kind (report-pick-failure) routes to Player on play route and Builder on build route', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
+    const playState = { ...state, route: 'play' as const, player: PlayerState.loaded(puzzle) };
+    const playResult = reduceApp(playState, { kind: 'report-pick-failure' }, deps);
+    expect(playResult.state.player.phase).toBe('import');
+    if (playResult.state.player.phase !== 'import') throw new Error('expected import');
+    expect(playResult.state.player.lastImportError).toBe('Could not open or read that file. Please try again.');
+    expect(playResult.state.toasts).toHaveLength(1);
+    expect(playResult.state.toasts[0]).toMatchObject({
+      kind: 'error',
+      message: 'Could not open or read that file. Please try again.',
+    });
+
+    const buildState = { ...state, route: 'build' as const };
+    const buildResult = reduceApp(buildState, { kind: 'report-pick-failure' }, deps);
+    expect(buildResult.state.builder).toBe(state.builder);
+    expect(buildResult.state.toasts).toHaveLength(1);
+    expect(buildResult.state.toasts[0]).toMatchObject({
+      kind: 'error',
+      message: 'Could not open or read that file. Please try again.',
+    });
+  });
 });

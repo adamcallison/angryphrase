@@ -63,7 +63,7 @@ describe('builderFacade.ts', () => {
   let builderFacade: BuilderFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => '', readDroppedFile: async () => '' } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) } };
   }
 
   beforeEach(() => {
@@ -243,40 +243,73 @@ describe('builderFacade.ts', () => {
     });
   });
 
-  it('builderFacade: pickFile delegates to appStore.getPorts().filePick', async () => {
-    const filePick = { pickFile: vi.fn(async () => 'known-file-content'), readDroppedFile: vi.fn(async () => '') };
+  it('builderFacade: pickFile returns text and dispatches nothing when port returns picked', async () => {
+    const filePick = { pickFile: vi.fn(async () => ({ kind: 'picked' as const, text: 'known-file-content' })), readDroppedFile: vi.fn(async () => ({ kind: 'read' as const, text: '' })) };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
     );
+    storeWithPick.dispatch({ kind: 'navigate', route: 'build' });
     const builderWithPick = createBuilderFacade(storeWithPick);
+    const dispatchSpy = vi.spyOn(storeWithPick, 'dispatch');
 
     const result = await builderWithPick.pickFile();
 
     expect(filePick.pickFile).toHaveBeenCalledTimes(1);
     expect(result).toBe('known-file-content');
+    expect(dispatchSpy).not.toHaveBeenCalled();
   });
 
-  it('builderFacade: pickFile resolves null when the port resolves null (cancel is a silent pass-through, not a throw)', async () => {
-    const filePick = { pickFile: async () => null, readDroppedFile: async () => '' };
+  it('builderFacade: pickFile returns null and dispatches nothing when port returns cancelled', async () => {
+    const filePick = { pickFile: async () => ({ kind: 'cancelled' as const }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
     );
+    storeWithPick.dispatch({ kind: 'navigate', route: 'build' });
     const builderWithPick = createBuilderFacade(storeWithPick);
+    const dispatchSpy = vi.spyOn(storeWithPick, 'dispatch');
 
     const result = await builderWithPick.pickFile();
 
     expect(result).toBeNull();
+    expect(dispatchSpy).not.toHaveBeenCalled();
+  });
+
+  it('builderFacade: pickFile returns null, warns once, dispatches report-pick-failure, and surfaces error toast when port returns failed', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const filePick = { pickFile: async () => ({ kind: 'failed' as const, error: new Error('pick failed') }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const storeWithPick = createAppStore(
+      makeBlankAppState(42),
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+    storeWithPick.dispatch({ kind: 'navigate', route: 'build' });
+    const builderWithPick = createBuilderFacade(storeWithPick);
+    const dispatchSpy = vi.spyOn(storeWithPick, 'dispatch');
+    const builderBefore = builderWithPick.getBuilderState();
+
+    const result = await builderWithPick.pickFile();
+
+    expect(result).toBeNull();
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-pick-failure' });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('builderFacade: pickFile failed:', new Error('pick failed'));
+    expect(storeWithPick.getToasts()).toHaveLength(1);
+    expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not open or read that file. Please try again.' });
+    expect(builderWithPick.getBuilderState()).toBe(builderBefore);
+    warnSpy.mockRestore();
   });
 
   it('builderFacade: importDroppedFile dispatches request-import-puzzle with the port-read text when readDroppedFile succeeds', async () => {
     const file = new File([], 'puzzle.json');
-    const filePick = { pickFile: async () => '', readDroppedFile: async () => 'dropped text' };
+    const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'read' as const, text: 'dropped text' }) };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
@@ -294,9 +327,10 @@ describe('builderFacade.ts', () => {
     expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'request-import-puzzle', fileContent: 'dropped text' });
   });
 
-  it('builderFacade: importDroppedFile dispatches report-import-read-failure when readDroppedFile returns null', async () => {
+  it('builderFacade: importDroppedFile dispatches report-import-read-failure, warns once, and leaves state otherwise unchanged when readDroppedFile returns failed', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const file = new File([], 'puzzle.json');
-    const filePick = { pickFile: async () => '', readDroppedFile: async () => null };
+    const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'failed' as const, error: new Error('read error') }) };
     const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
@@ -312,9 +346,12 @@ describe('builderFacade.ts', () => {
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
     expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-import-read-failure' });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('builderFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
     expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
     expect(builderWithDrop.getBuilderState()).toBe(builderBefore);
+    warnSpy.mockRestore();
   });
 
   it('builderFacade: two createBuilderFacade instances over two appStores are independent', () => {
