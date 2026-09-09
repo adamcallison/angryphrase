@@ -9,7 +9,7 @@ import {
   handleRequestResetPlayer,
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
-import { parsePuzzleV1 } from '../../../../src/domain/format/v1';
+import { parsePuzzle } from '../../../../src/domain/format/v1';
 import { GridOps } from '../../../../src/domain/grid/GridOps';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
@@ -66,7 +66,7 @@ function makeCompleteFixture(): string {
 }
 
 function parsedPuzzle() {
-  const result = parsePuzzleV1(makeCompleteFixture());
+  const result = parsePuzzle(makeCompleteFixture());
   expect(result.ok).toBe(true);
   if (!result.ok) throw new Error('fixture parse failed');
   return result.puzzle;
@@ -112,7 +112,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: parse failure → state is phase=import with lastImportError set to joined messages', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{\"version\":2}' });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{\"version\":3}' });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');

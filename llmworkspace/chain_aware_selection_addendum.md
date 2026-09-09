@@ -38,6 +38,13 @@ last cell of one member and the first cell of the next): **no separator tile / n
 for now. Within-word separators still derive from cell markers as today. (Future: optional explicit
 separator at word ends — deferred.)
 
+> **Superseded 2026-09-09** (`llmworkspace/flexible_multiword_separator.md`): the deferred word-end
+> separator is now specified and scheduled. The inter-member separator emitted by
+> `buildChainModel` is no longer hardcoded `'none'` — it is derived from the source member's
+> last-cell chain-boundary marker (space / hyphen / none; AD §3.3, §8.8). Within-word separators
+> are unchanged. The `'none'`-per-boundary and "separators between members are none" test cases
+> listed in §10 below are replaced by the marker-driven cases in the feature plan §5.
+
 **FR-83** — input filtered/clamped to **total chain length** (sum of member `length`s).
 
 **FR-84** — fixed/non-fixed determination runs over the whole chain tile row; fixed positions are

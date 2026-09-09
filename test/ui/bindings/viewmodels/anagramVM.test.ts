@@ -332,18 +332,41 @@ describe('deriveAnagramModalVM', () => {
     expect(result.tiles.map((t) => t.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
-  it('deriveAnagramModalVM: separators between members are none', () => {
-    let grid = grid4x4();
-    grid = setMarker(grid, 0, 1, 'space-right');
-    grid = setMarker(grid, 0, 2, 'hyphen-bottom');
+  it('deriveAnagramModalVM: boundary separator between members follows the last-cell marker', () => {
     const head = word3AcrossHead();
     const tail = word4DownTail();
     const modal = makeAnagramModal('', null, head.key);
-    const result = deriveAnagramModalVM({
+
+    let spaceBoundaryGrid = grid4x4();
+    spaceBoundaryGrid = setMarker(spaceBoundaryGrid, 0, 1, 'space-right');
+    spaceBoundaryGrid = setMarker(spaceBoundaryGrid, 0, 2, 'space-right');
+    spaceBoundaryGrid = setMarker(spaceBoundaryGrid, 0, 2, 'hyphen-bottom');
+    const spaceResult = deriveAnagramModalVM({
       anagramModal: modal,
-      grid,
+      grid: spaceBoundaryGrid,
       words: [head, tail],
     });
-    expect(result.separators).toEqual(['none', 'space', 'none', 'hyphen', 'none', 'none']);
+    expect(spaceResult.separators).toEqual(['none', 'space', 'space', 'hyphen', 'none', 'none']);
+
+    let hyphenBoundaryGrid = grid4x4();
+    hyphenBoundaryGrid = setMarker(hyphenBoundaryGrid, 0, 1, 'space-right');
+    hyphenBoundaryGrid = setMarker(hyphenBoundaryGrid, 0, 2, 'hyphen-right');
+    hyphenBoundaryGrid = setMarker(hyphenBoundaryGrid, 0, 2, 'space-bottom');
+    const hyphenResult = deriveAnagramModalVM({
+      anagramModal: modal,
+      grid: hyphenBoundaryGrid,
+      words: [head, tail],
+    });
+    expect(hyphenResult.separators).toEqual(['none', 'space', 'hyphen', 'space', 'none', 'none']);
+
+    let noneBoundaryGrid = grid4x4();
+    noneBoundaryGrid = setMarker(noneBoundaryGrid, 0, 1, 'space-right');
+    noneBoundaryGrid = setMarker(noneBoundaryGrid, 0, 2, 'hyphen-bottom');
+    const noneResult = deriveAnagramModalVM({
+      anagramModal: modal,
+      grid: noneBoundaryGrid,
+      words: [head, tail],
+    });
+    expect(noneResult.separators).toEqual(['none', 'space', 'none', 'hyphen', 'none', 'none']);
   });
 });

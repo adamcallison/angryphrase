@@ -2,10 +2,55 @@ import type { BuilderState } from '../state';
 import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
+import type { Word } from '../../../domain/word/Word';
 import { Result } from '../../../domain/notifications/Event';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordKey } from '../../../domain/word/WordKey';
 import { DisplacedClue } from '../../../domain/builder/DisplacedClue';
+import { Direction } from '../../../domain/word/Direction';
+import { GridOps } from '../../../domain/grid/GridOps';
+import { Cell } from '../../../domain/grid/Cell';
+import type { CellMarker } from '../../../domain/grid/CellMarker';
+import type { Grid } from '../../../domain/grid/Grid';
+import type { Row } from '../../../domain/grid/Row';
+import type { Col } from '../../../domain/grid/Col';
+
+function sourceLastCell(source: Word): { row: Row; col: Col } {
+  return Direction.advance(
+    { row: source.key.startRow, col: source.key.startCol },
+    source.key.direction,
+    Number(source.length) - 1,
+  );
+}
+
+function isBoundaryPairEmpty(marker: CellMarker, direction: Direction): boolean {
+  return direction === 'across'
+    ? !marker.spaceRight && !marker.hyphenRight
+    : !marker.spaceBottom && !marker.hyphenBottom;
+}
+
+function materializeJoinMarker(grid: Grid, source: Word): Grid {
+  const { row, col } = sourceLastCell(source);
+  const cell = GridOps.cellAt(grid, row, col);
+  if (!Cell.isWhite(cell)) return grid;
+  if (!isBoundaryPairEmpty(cell.marker, source.key.direction)) return grid;
+  const newMarker =
+    source.key.direction === 'across'
+      ? { ...cell.marker, spaceRight: true, hyphenRight: false }
+      : { ...cell.marker, spaceBottom: true, hyphenBottom: false };
+  return GridOps.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
+}
+
+function clearBoundaryMarker(grid: Grid, source: Word): Grid {
+  const { row, col } = sourceLastCell(source);
+  const cell = GridOps.cellAt(grid, row, col);
+  if (!Cell.isWhite(cell)) return grid;
+  const newMarker =
+    source.key.direction === 'across'
+      ? { ...cell.marker, spaceRight: false, hyphenRight: false }
+      : { ...cell.marker, spaceBottom: false, hyphenBottom: false };
+  return GridOps.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
+}
 
 export function handleBeginJoin(
   state: BuilderState,
@@ -54,10 +99,11 @@ export function handleUnjoin(
     if (WordKey.equals(w.key, downstreamKey)) return { ...w, clue: '' };
     return w;
   });
+  const newGrid = clearBoundaryMarker(state.puzzle.grid, source);
 
   return Result.ok({
     ...state,
-    puzzle: Puzzle.withWords(state.puzzle, newWords),
+    puzzle: Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords),
   });
 }
 
@@ -109,10 +155,11 @@ export function resolveJoin(
     if (WordKey.equals(w.key, targetKey)) return { ...w, clue: '' };
     return w;
   });
+  const newGrid = materializeJoinMarker(state.puzzle.grid, source);
 
   return Result.ok({
     ...state,
-    puzzle: Puzzle.withWords(state.puzzle, newWords),
+    puzzle: Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords),
     displacedClues: newDisplacedClues,
     subMode: { kind: 'none' },
   });

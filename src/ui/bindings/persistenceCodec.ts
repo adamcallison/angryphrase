@@ -1,4 +1,4 @@
-import { serializeIncomplete, parsePuzzleV1 } from '../../domain/format/v1';
+import { serializeIncomplete, parsePuzzle } from '../../domain/format/v1';
 import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
 import { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
@@ -48,9 +48,9 @@ export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
       return null;
     }
 
-    // Re-serialize the embedded puzzle back to a string and feed to parsePuzzleV1.
+    // Re-serialize the embedded puzzle back to a string and feed to parsePuzzle.
     const puzzleJSON = JSON.stringify((snap as { puzzle: unknown }).puzzle);
-    const result = parsePuzzleV1(puzzleJSON);
+    const result = parsePuzzle(puzzleJSON);
     if (!result.ok || result.fileType !== 'incomplete') {
       console.warn('parseBuilderSnapshot: embedded puzzle failed to parse', result);
       return null;

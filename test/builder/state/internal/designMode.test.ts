@@ -70,6 +70,17 @@ function designState(size: GridSize, blackCells: [number, number][], words: Word
   };
 }
 
+function withRightFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
+  const marker = GridOps.cellAt(grid, Row.of(row), Col.of(col)).marker;
+  const nextMarker =
+    flag === 'space'
+      ? { ...marker, spaceRight: true, hyphenRight: false }
+      : flag === 'hyphen'
+        ? { ...marker, spaceRight: false, hyphenRight: true }
+        : { ...marker, spaceRight: false, hyphenRight: false };
+  return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(GridOps.cellAt(grid, Row.of(row), Col.of(col)), nextMarker));
+}
+
 describe('toggle-design-cell', () => {
   it('white cell becomes black', () => {
     const state = blankState();
@@ -205,6 +216,28 @@ describe('toggle-design-cell', () => {
     expect(finalCell.black).toBe(false);
     expect(finalCell.answerLetter).toBeNull();
     expect(finalCell.marker).toEqual(CellMarker.EMPTY);
+  });
+
+  it('toggle-design-cell threads reconciled boundary markers into the puzzle grid', () => {
+    const size = GridSize.of(7);
+    const bKey = key(0, 5, 'across');
+    const baseGrid = gridWithBlacks(GridOps.blank(size), [
+      [0, 3],
+      [0, 4],
+    ]);
+    const markedGrid = withRightFlag(baseGrid, 0, 2, 'hyphen');
+    const state = designState(size, [], [
+      word(0, 0, 'across', 1, 3, 'A clue', bKey),
+      word(0, 5, 'across', 2, 2, 'B clue', null),
+    ]);
+    const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, markedGrid) };
+
+    const result = handleToggleDesignCell(before, { kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(2) }, rng);
+
+    const reconciled = result.state.puzzle.grid;
+    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(2)).black).toBe(true);
+    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.spaceRight).toBe(true);
+    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.hyphenRight).toBe(false);
   });
 });
 

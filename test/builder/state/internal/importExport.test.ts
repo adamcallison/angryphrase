@@ -101,7 +101,7 @@ function validCompleteJson() {
 
 function invalidJson() {
   return JSON.stringify({
-    version: 2,
+    version: 3,
     type: 'incomplete',
     key: VALID_UUID,
     gridSize: 2,

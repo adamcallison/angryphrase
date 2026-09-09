@@ -10,7 +10,7 @@ import { Cell } from '../grid/Cell';
 import type { CellMarker } from '../grid/CellMarker';
 import { WordKey } from '../word/WordKey';
 import { WordLength } from '../word/WordLength';
-import type { Direction } from '../word/Direction';
+import { Direction } from '../word/Direction';
 import type { DerivedWord } from '../word/DerivedWord';
 import type { Word } from '../word/Word';
 import { WordDerivation } from '../word/WordDerivation';
@@ -538,7 +538,39 @@ function validateDisplacedClues(
   return ok ? result : null;
 }
 
-export const parsePuzzleV1 = (
+function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
+  const updates: { row: Row; col: Col; cell: Cell }[] = [];
+
+  for (const w of words) {
+    if (w.nextWord === null) continue;
+
+    const end = Direction.advance(
+      { row: w.key.startRow, col: w.key.startCol },
+      w.key.direction,
+      Number(w.length) - 1,
+    );
+    const cell = GridOps.cellAt(grid, end.row, end.col);
+    if (!Cell.isWhite(cell)) continue;
+
+    const marker = cell.marker;
+    const empty =
+      w.key.direction === 'across'
+        ? !marker.spaceRight && !marker.hyphenRight
+        : !marker.spaceBottom && !marker.hyphenBottom;
+
+    if (empty) {
+      const newMarker =
+        w.key.direction === 'across'
+          ? { ...marker, spaceRight: true }
+          : { ...marker, spaceBottom: true };
+      updates.push({ row: end.row, col: end.col, cell: Cell.setMarker(cell, newMarker) });
+    }
+  }
+
+  return GridOps.updateCells(grid, updates);
+}
+
+export const parsePuzzle = (
   json: string,
 ):
   | { ok: true; puzzle: Puzzle; fileType: PuzzleFileType; displacedClues: DisplacedClue[] }
@@ -559,7 +591,7 @@ export const parsePuzzleV1 = (
 
   validateTopLevelExtras(parsed, failures);
 
-  if (parsed.version !== 1) {
+  if (parsed.version !== 1 && parsed.version !== 2) {
     failures.push({ message: 'Unknown or missing version.' });
   }
 
@@ -608,7 +640,7 @@ export const parsePuzzleV1 = (
     return { ok: false, failures };
   }
 
-  const grid = buildDomainGrid(cells, gridSize);
+  let grid = buildDomainGrid(cells, gridSize);
   const derivedWords = WordDerivation.derive(grid);
 
   if (!crossCheckWords(parsedWords, derivedWords, failures)) {
@@ -627,6 +659,10 @@ export const parsePuzzleV1 = (
 
   if (failures.length > 0) {
     return { ok: false, failures };
+  }
+
+  if (parsed.version === 1) {
+    grid = normalizeV1ChainBoundaries(grid, numberedWords);
   }
 
   const puzzle: Puzzle = {
@@ -689,7 +725,7 @@ function buildSerializedOutput(
   }));
 
   return {
-    version: 1,
+    version: 2,
     type,
     key: p.key,
     gridSize: size,

@@ -34,7 +34,7 @@ These four principles are binding constraints on the implementation. Every other
 | **Vitest, pure-logic tests** (from D2) | Unit tests cover all pure domain logic. No DOM/component test harness required by spec; visual + mobile keyboard behaviour verified manually (RISK-4). |
 | **View-models in / Intents out** (from E2) | Components receive plain typed view-models produced in `ui/bindings`. Components emit typed intents. The bindings layer owns the runes store, dispatch, debounced persistence, and view-model derivation. Components contain no business logic and no domain-function calls. |
 | **DI store instance + experience facades + action-bag prop contract** (from `store_singleton_di_report.md`, amended 2026-09-07) | The bindings layer exposes one real store — `createAppStore`, never a module-level singleton, nothing runs at import time — plus four **experience facades** (`createBuilderFacade`, `createPlayerFacade`, `createModalFacade`, `createToastFacade`): per-instance adapters over the `AppStore` that own no state, provide typed dispatch narrowing, VM getters, per-leaf action bags, and `pickFile`. `main.ts` composes the `AppStore` (ports folded in as `AppPorts`) and injects it as a prop; `App.svelte` constructs the facades and passes them as props to the shells; leaves receive view-models + typed **action bags** — never a store, never a facade, never a bindings import. Fixes the report's findings 1-5 (singleton state, satellite sub-stores, bare-import reaching, eager init at import (F9), global ports register); enables multi-instance mounting and per-test store construction. See §2.4. |
-| **`puzzles/` directory** | Canonical v1 sample puzzle files (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). Neither the app nor the test suite references the directory; the files exist purely as a record of the format. The strict parser's rejection of an unknown `letter` field (FR-95) is documented at §3.7 and §6.3; no migration script is shipped — the samples are already canonical. |
+| **`puzzles/` directory** | Canonical sample puzzle files (`version: 2` since 2026-09-09 — reserialized with the format-v2 change; `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). Neither the app nor the test suite references the directory; the files exist purely as a record of the format. The strict parser's rejection of an unknown `letter` field (FR-95) is documented at §3.7 and §6.3; no migration script is shipped — v1 files remain readable (normalized per §3.7), so re-reserializing the samples was cosmetic, not required. Puzzle6's one chain had its implicit space boundary materialized during reserialization (see §3.7). |
 | **Injected RNG for anagram scramble** (from D1) | `scramble(word, input, rng)` takes an `Rng` interface; production wires `Math.random`; tests inject a seeded RNG. |
 | **No cursor persistence across reload** (from C6) | Builder state autosaves everything *except* the cursor. On reload, cursor is `null`. Less code, matches your preference. |
 | **Strict non-head clue rejection** (from C5) | A complete-file import with a non-empty `clue` field on a non-head chain word is invalid (clear error, no silent normalization). |
@@ -47,6 +47,7 @@ These four principles are binding constraints on the implementation. Every other
 | **Displaced clues live on `BuilderState`, not `Puzzle`** (from S1) | FR-59 calls displaced clues "a Builder-only concept." Removed from `Puzzle` entirely; the serialization adapter (`serializeIncomplete`) takes `(puzzle, displacedClues)` as separate args. Makes the conceptual boundary in the spec literal in the code. |
 | **Check result in PlayerState** (from G5) | `checkResult: CheckResult \| null`. Any grid/cursor-changing intent clears it. Pure and testable. |
 | **Single hidden typing surface** (from G3) | One `TypingSurface.svelte` component owns the hidden `<input>` and normalizes key/IME events into intents. Mobile specifics isolated. |
+| **Chain-join separators as boundary cell markers + format v2** (from `flexible_multiword_separator.md`, 2026-09-09) | The separator between a linked word and its successor is the direction-scoped `CellMarker` pair on the source's **last cell** (FR-28 extension) — one source of truth shared with within-word separators; existing marker toggles and grid rendering serve the feature unchanged. Empty pair = no separator; the default space is **materialized at join** (FR-36), never an implicit derivation default. Marker lifecycle is bound to the link: cleared on unjoin (FR-37) and on link-severing/word destruction in reconciliation (§8.5). Because an empty pair is ambiguous between "legacy implicit space" (pre-feature chains) and the new explicit "no separator", the file format gains **version 2** — identical schema, `version: 1 \| 2` accepted, v1 parse normalizes empty boundaries to space (FR-99 class), v2 preserves them, serializers write 2 (§3.7, §6). Full plan: `llmworkspace/flexible_multiword_separator.md`. |
 
 ### 1.2 Architectural layer diagram (textual)
 
@@ -372,7 +373,7 @@ export function uuidv4(rng: Rng): string;   // pure: 16 bytes via rng.nextInt(25
 export type DisplacedClueId = string & { __brand: 'DisplacedClueId' };   // UUID v4 string (§6.1, §6.3 step 11)
 export const DisplacedClueId: {
   generate(rng: Rng): DisplacedClueId;   // delegates to uuidv4(rng); called from reconcileWords/designMode with deps.rng
-  try(s: string): DisplacedClueId | null;   // validates UUID v4 lowercase regex; used by parsePuzzleV1 validateDisplacedClues (§6.3 step 11)
+  try(s: string): DisplacedClueId | null;   // validates UUID v4 lowercase regex; used by parsePuzzle validateDisplacedClues (§6.3 step 11)
   equals(a: DisplacedClueId, b: DisplacedClueId): boolean;   // brand-safe value equality; used by builder reattach/delete-displaced-clue reducers
 };
 
@@ -562,6 +563,7 @@ export const Numbering: {
 - `length >= 2` — enforced at the type level by the `WordLength` branded range-checked constructor (H4); illegal values are unconstructable.
 - `startRow`/`startCol` point to a white cell; the `length` cells in `direction` from there are all white and form a maximal run (no white cell continues the run beyond either end).
 - `nextWord`, if present, points to a `WordKey` that exists in the same `WordMap` (validated at parse time, reconciled at every grid change in Design mode — FR-47).
+- **Chain-boundary marker (2026-09-09):** for a word `W` with `nextWord != null`, the separator between `W` and its successor is the direction-scoped marker pair on `W`'s **last cell** (across → `spaceRight`/`hyphenRight`; down → `spaceBottom`/`hyphenBottom`) — FR-28. The pair is never both-true (existing `CellMarker` invariant). No requirement that one be set: an empty pair is the legal "no separator" state (length runs merge across the boundary). The pair is written at link-set mutations only — materialized to space at join if empty (FR-36), cleared on unjoin (FR-37) and on link severing in reconciliation (§8.5) — and read continuously by the pure derivations (`LengthPattern`, `gridVM`, `Anagram.buildChainModel`). Parse normalizes empty v1 boundaries to space (§3.7).
 - No self-reference. No cycles. No branching (no `WordKey` pointed to by more than one `nextWord`). Enforced by `ChainValidation`.
 
 ### 3.4 Chains (`domain/chain/`)
@@ -609,8 +611,8 @@ export const ChainCells: {
 };
 ```
 
-**Behaviour — `LengthPattern.forWord` (FR-91, full):**
-- If `w.nextWord != null`: for each member `m` in `chain.membersOf(words, w.key)` (the suffix of the chain from `w` onward), compute `m`'s **separator-aware sub-pattern** using the single-word cell-iteration rule in the next bullet (a member's own markers split its runs; the member's own `nextWord` is **not** consulted, so there is no recursion into the chain branch). Join the member sub-patterns with `", "` (comma + space). Example: chain `5, 9, 7` whose tail has a `spaceRight` after its 2nd cell renders `5, 9, 2, 5`.
+**Behaviour — `LengthPattern.forWord` (FR-91, full; chain branch amended 2026-09-09):**
+- If `w.nextWord != null`: walk `chain.membersOf(words, w.key)` (the suffix of the chain from `w` onward) in order as a **virtual single word** — one flat cell sequence with a run counter shared across the whole sequence. Within each member, the single-word cell-iteration rule in the next bullet applies over that member's own cells (a member's own markers split its runs; the member's own `nextWord` is **not** consulted, so there is no recursion into the chain branch). **Between** member `i` (non-last) and member `i+1`, the chain-boundary marker (§3.3) on member `i`'s last cell decides: space → emit the accumulated run + `", "`; hyphen → emit run + `"-"`; empty pair → the run continues across the boundary (no emission). The final run is emitted at the tail's last cell. Examples (member lengths 5, 9, 7, no internal markers): space boundaries → `5, 9, 7` (display-identical to the pre-2026-09-09 hardcoded `", "` join); hyphen boundaries → `5-9-7`; empty boundaries → `21`; space boundaries where the middle member has an internal hyphen after its 2nd cell → `5, 2-7, 7`.
 - Else: split `w`'s cells into runs using the cell markers in `direction`. Between cells `i` and `i+1` of the word: a `spaceRight`/`spaceBottom` marker (whichever matches `direction`) inserts a `", "` separator; a `hyphenRight`/`hyphenBottom` inserts `"-"`. Otherwise the run extends. Each contiguous run contributes its length. Single run with no markers → just `String(w.length)`.
 
 **Behaviour — `LengthPattern.forActiveClueBanner` (C4 deviation):**
@@ -822,21 +824,26 @@ export interface Rng {
 ```
 
 ```ts
-// domain/format/v1.ts  — parse + validate per FR-94..FR-99 (C5 strict)
+// domain/format/v1.ts  — parse + validate per FR-94..FR-99 (C5 strict); hosts the v1/v2 schema
+// family (identical schema; only the empty-chain-boundary interpretation differs — 2026-09-09)
 export type PuzzleFileType = 'incomplete' | 'complete';
 
 export type ParseFailure = {
   message: string;                                    // single human-readable error string (FR-99)
 };
 
+// Renamed from parsePuzzleV1 on 2026-09-09: it parses BOTH accepted versions (1 and 2) and
+// dispatches on the file's `version` field (§12.2). Anything else is rejected (FR-94).
 // Returns either a valid Puzzle + (if incomplete) its displaced clues, or a list of failures.
 // `fileType` lets the Player reducer reject incomplete files (FR-67) without inspecting displacedClues.
-export const parsePuzzleV1(json: string):
+export const parsePuzzle(json: string):
   | { ok: true; puzzle: Puzzle; fileType: PuzzleFileType; displacedClues: DisplacedClue[] }   // displacedClues: [] for complete
   | { ok: false; failures: ParseFailure[] };
 
 // Serialize — to be used by Builder export only, in the bindings layer.
 // Displaced clues are passed separately because they live on BuilderState, not on Puzzle.
+// Both serializers write `version: 2` (2026-09-09): v2 preserves an empty chain-boundary pair
+// as "no separator" through round trips; v1 is write-legacy, never written by the app.
 export const serializeIncomplete(p: Puzzle, displacedClues: DisplacedClue[]): string;
 export const serializeComplete(p: Puzzle): string;    // never includes displacedClues (FR-59)
 
@@ -848,7 +855,8 @@ export const Filename: {
 ```
 
 **Parse/validation rules (FR-98 + C5):**
-- Top-level `version === 1` and `type ∈ {'incomplete', 'complete'}` (FR-94).
+- Top-level `version ∈ {1, 2}` and `type ∈ {'incomplete', 'complete'}` (FR-94; amended 2026-09-09 — previously `version === 1` only). The schemas are identical; strictness is unchanged.
+- **Chain-boundary normalization (version 1 files only, 2026-09-09):** after chain validation succeeds, for every word with `nextWord != null` whose last-cell direction pair (per the word's direction) is empty, set the space flag — materializing the pre-feature implicit default so v1 files display exactly as before the feature (FR-99 normalization class, same as missing marker booleans defaulting to `false`). Version 2 files are **not** normalized: an empty boundary pair means "no separator" and round-trips. The application writes version 2 only.
 - `gridSize` integer, 2 ≤ n ≤ 25.
 - `grid` is a 2D array of `gridSize` × `gridSize`; each cell is `{ black, puzzleLetter, spaceRight, spaceBottom, hyphenRight, hyphenBottom }`. Missing marker booleans default to `false` (FR-99). `puzzleLetter` is `null` or single A–Z.
 - `puzzleLetter` is the only accepted answer-letter field name (FR-95). A field named `letter` is *not* a fallback; the parser rejects files that use `letter` as an unknown extra field (strict).
@@ -858,7 +866,7 @@ export const Filename: {
 - On success, `word.number` is minted by `Numbering.assign` from the grid (FR-98a — the v1 format carries no `number` field; a word object carrying `number` is a validation failure), and `word.length` is cross-checked against the grid-derived value (a mismatch is a validation failure).
 - `playerLetter` is never present in JSON; `null` is implied at runtime (FR-99).
 
-**Sample puzzle files — `puzzles/*.json`:** canonical v1 format (`version: 1`, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). They are *not* fixtures; the app and the test suite never read them. The directory exists purely as a record of the format. No migration script is shipped — the files are already canonical.
+**Sample puzzle files — `puzzles/*.json`:** canonical format (`version: 2` since 2026-09-09, `type: 'complete'`, `puzzleLetter` field, UUID-v4 `key`). They are *not* fixtures; the app and the test suite never read them. The directory exists purely as a record of the format. No migration script is shipped — v1 files remain readable via the §3.7 normalization. One sample (puzzle6) contains a chain; its previously-implicit space boundary was materialized (`spaceBottom` set on the source's last cell) during the v2 reserialization, exactly as the app would produce when re-importing the old v1 file — so sample displays are unchanged.
 
 ---
 
@@ -1002,7 +1010,8 @@ export type BuilderIntent =
   | { kind: 'begin-join'; source: WordKey }                   // FR-34
   | { kind: 'click-clue-panel-word'; wordKey: WordKey }        // polysemous — see below
   | { kind: 'click-grid-word'; wordKey: WordKey }             // polysemous (alternative entry point) — see below
-  | { kind: 'unjoin'; source: WordKey }                       // FR-37
+  | { kind: 'unjoin'; source: WordKey }                       // FR-37; clears source's nextWord AND its
+                                                               //   chain-boundary marker pair (2026-09-09)
   | { kind: 'escape' }                                         // FR-15; cancels join/reattach sub-mode
   // displaced clues
   | { kind: 'begin-reattach'; displacedClueId: DisplacedClueId }// FR-41
@@ -1044,7 +1053,7 @@ The `rng` needed for `PuzzleKey.generate(rng)` in `confirm-reset-builder` is `de
 
 **`request-switch-to-design` guard:** if `BuilderState.isBlank(state)` is true, the reducer simply executes the switch (sets `mode = 'design'`, clears sub-mode and cursor). If `state.isBlank` is false, the reducer returns state unchanged and emits `{ kind: 'modal-request'; modal: { kind: 'confirm-design-switch' }; confirmIntent: { kind: 'confirm-switch-to-design' } }`. `reduceApp` folds that event into `AppState.modal` and `AppState.pendingConfirmIntent`. The bindings layer's `Modal.svelte` Confirm button dispatches `state.pendingConfirmIntent` (i.e. `{ kind: 'confirm-switch-to-design' }`), which re-enters `reduceBuilder` and executes unconditionally. **No `force` flag; no recursive guard re-fire.**
 
-**`request-import-puzzle { fileContent }` guard & `confirm-import-puzzle { fileContent }` action:** see §8.9a for the full algorithm. Summary: the Builder accepts both incomplete and complete files (FR-57). On success, replace `BuilderState` with a fresh one carrying the imported `Puzzle`, its `DisplacedClue[]` (taken from `parsePuzzleV1`'s `displacedClues` field — populated for incomplete, `[]` for complete), set `mode = 'fill'` and `cursor = null`. On failure, emit a `toast` event with the parse error and leave state unchanged. The `request-*` form checks `BuilderState.isBlank`: if blank, executes the import directly; if not blank, emits `modal-request { confirmIntent: { kind: 'confirm-import-puzzle'; fileContent } }`. The `confirm-*` form executes the import unconditionally.
+**`request-import-puzzle { fileContent }` guard & `confirm-import-puzzle { fileContent }` action:** see §8.9a for the full algorithm. Summary: the Builder accepts both incomplete and complete files (FR-57). On success, replace `BuilderState` with a fresh one carrying the imported `Puzzle`, its `DisplacedClue[]` (taken from `parsePuzzle`'s `displacedClues` field — populated for incomplete, `[]` for complete), set `mode = 'fill'` and `cursor = null`. On failure, emit a `toast` event with the parse error and leave state unchanged. The `request-*` form checks `BuilderState.isBlank`: if blank, executes the import directly; if not blank, emits `modal-request { confirmIntent: { kind: 'confirm-import-puzzle'; fileContent } }`. The `confirm-*` form executes the import unconditionally.
 
 **`request-reset-builder` guard:** if `state.isBlank` is true, reducer executes reset directly (clears puzzle, generates a fresh `PuzzleKey` via `PuzzleKey.generate(deps.rng)`, emits `{ kind: 'clear-builder-storage' }`). If not blank, emits `modal-request` with `confirmIntent: { kind: 'confirm-reset-builder' }`.
 
@@ -1133,7 +1142,7 @@ export type PlayerIntent =
 
 **`anagram-scramble`:** `reducePlayer` calls `Anagram.scramble(entries, input, deps.rng)` directly and writes the result into `PlayerState.anagram.scrambledArrangement`. No `anagram-scramble` event is needed; the reducer has `deps.rng`, and the scrambled state is Player state, not AppState. Stores `scrambled.map(e => e.letter)` (entries-aligned, nulls preserved — not filtered).
 
-**`import-puzzle`:** reducer calls `parsePuzzleV1(fileContent)`.
+**`import-puzzle`:** reducer calls `parsePuzzle(fileContent)`.
 - On `!ok`: set state to `{ phase: 'import'; lastImportError: failures.map(f => f.message).join('\n') }` and emit a `toast` event with the same.
 - On ok but `fileType !== 'complete'`: set `lastImportError` to "Only complete puzzle files can be loaded into the Player." and emit a toast.
 - On success (`fileType === 'complete'`): the reducer sets `phase: 'solving'` with the loaded `Puzzle`, `cursor: null`, `checkResult: null`, `anagram: null`, and emits a `{ kind: 'load-player-progress'; key: puzzle.key }` event. The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)`, parses the saved progress blob (if present), and dispatches a new `PlayerIntent: { kind: 'apply-loaded-progress'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }`. The Player reducer for `apply-loaded-progress` handles the application rules (FR-80): only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters targeting now-black cells.
@@ -1343,15 +1352,15 @@ The ESLint `no-restricted-imports` rule blocks `domain/`, `state/`, `ports/` imp
 
 ---
 
-## 6. JSON Format Reference (v1, the only supported format)
+## 6. JSON Format Reference (v1/v2 schema family; the app writes v2)
 
-Authoritative for both serialization and parsing. All field names are exact. Strict parser (extra fields rejected).
+Authoritative for both serialization and parsing. All field names are exact. Strict parser (extra fields rejected). Versions 1 and 2 share this schema identically; they differ only in the interpretation of an empty chain-boundary marker pair on a linked word's last cell (v1 → normalized to space at parse, §3.7; v2 → "no separator", preserved). The app **writes** `"version": 2` (2026-09-09; see `llmworkspace/flexible_multiword_separator.md`).
 
 ### 6.1 Incomplete file (Builder's "Export Incomplete"; can be re-imported into Builder)
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "type": "incomplete",
   "key": "<UUID v4>",
   "gridSize": 15,
@@ -1380,7 +1389,7 @@ Same as §6.1 with these differences:
 
 ### 6.3 Validation checklist (FR-98 + C5)
 
-1. `version === 1` else reject (FR-94).
+1. `version ∈ {1, 2}` else reject (FR-94; amended 2026-09-09). For version 1 files only, after all validation passes, empty chain-boundary marker pairs on linked words' last cells are normalized to space markers (§3.7; FR-99). Version 2 files are parsed as-is.
 2. `type ∈ {'incomplete', 'complete'}` else reject (FR-94).
 3. `key` parses as `PuzzleKey` (UUID v4).
 4. `gridSize` is an integer in `[2, 25]`.
@@ -1503,19 +1512,19 @@ Implementation: build a map `target → sources[]` for branch detection; build a
 
 ### 8.4 Length pattern (`LengthPattern.forWord`)
 
-Full FR-91 algorithm (unit-tested even though the banner UI uses a restricted variant — §3.4, C4):
-1. If `w.nextWord != null`: collect `chainMembersFrom(words, w.key)`. For each member, compute its **separator-aware sub-pattern** by running the step-2 cell-iteration on that member's own cells (a member's own `nextWord` is **not** consulted — this prevents re-entering the chain branch and any recursion). Join the member sub-patterns with `", "` (comma + space). Return.
+Full FR-91 algorithm (unit-tested even though the banner UI uses a restricted variant — §3.4, C4; chain branch amended 2026-09-09):
+1. If `w.nextWord != null`: collect `chainMembersFrom(words, w.key)` and walk the members in order as a **virtual single word** — one flat cell sequence, one run counter shared across the whole sequence. For each member: run the step-2 cell-iteration over that member's own cells (a member's own `nextWord` is **not** consulted — this prevents re-entering the chain branch and any recursion). Between member `i` (non-last) and member `i+1`, read the chain-boundary marker (§3.3) on member `i`'s last cell, in member `i`'s direction: space → push the accumulated run + `", "` and reset; hyphen → push run + `"-"` and reset; empty pair → the run continues (no emission — the boundary pair joins the two cells into one run, i.e. the run counter increments exactly as a no-marker adjacent pair does). Emit the final run after the tail's last cell. Return. (`singleWordPattern` remains the step-2 engine for the no-`nextWord` branch; the chain branch shares its per-cell rule but not its output buffer — runs must not close at member ends unless the boundary marker says so.)
 2. Else (no nextWord): walk the word's cells. Maintain a running run-length counter and an output buffer. For each pair of adjacent cells (i, i+1) in the word:
    - Determine the separator in `direction`: for `across`, look at cell `i`'s `marker.spaceRight` / `hyphenRight`; for `down`, `marker.spaceBottom` / `hyphenBottom`.
    - If neither is set, increment the current run-length counter.
    - If `space…` set: push the current run-length to the buffer, then push `", "` separator marker.
    - If `hyphen…` set: push the current run-length, push `"-"` separator marker.
    - After the loop, push the final accumulated run-length.
-3. Render run lengths and separators in order: e.g., `["4", ", ", "4"]` → `"4, 4"`. Note the literal spec uses `", "` (comma + space) between space-separated runs and `"-"` between hyphen-separated runs (FR-91). Mixed example: `2, 2-3`.
+3. Render run lengths and separators in order: e.g., `["4", ", ", "4"]` → `"4, 4"`. Note the literal spec uses `", "` (comma + space) between space-separated runs and `"-"` between hyphen-separated runs (FR-91). Mixed example: `2, 2-3`; chain example with empty boundaries: members 5, 9, 7 → `21`.
 
 ### 8.5 Reconciliation (`builder/state/internal/reconcileWords.ts` — `reconcileWords`)
 
-Input: `grid: Grid` (the post-toggle grid, needed for `Numbering.assign`), previous `Word[]` (with numbers, clues, nextWord links), new derived `DerivedWord[]` (no numbers — straight from `WordDerivation.derive`), the previous `DisplacedClue[]`, and a `rng: Rng` (used to mint fresh `DisplacedClueId`s for any clue text displaced by destroyed words). Output: `{ words: Word[], displacedClues: DisplacedClue[], events: DomainEvent[] }`. `events` contains `toast` events for shortened/lengthened notifications (FR-45). The `toggle-design-cell` reducer case calls `reconcileWords` (passing `state.puzzle.grid`, `state.puzzle.words`, `WordDerivation.derive(grid)`, `state.displacedClues`, `deps.rng`), sets `puzzle.words` and `displacedClues` on the resulting `BuilderState`, and returns the events alongside. Implements FR-45..FR-48.
+Input: `grid: Grid` (the post-toggle grid, needed for `Numbering.assign` and the boundary-marker rule), previous `Word[]` (with numbers, clues, nextWord links), new derived `DerivedWord[]` (no numbers — straight from `WordDerivation.derive`), the previous `DisplacedClue[]`, and a `rng: Rng` (used to mint fresh `DisplacedClueId`s for any clue text displaced by destroyed words). Output: `{ grid: Grid, words: Word[], displacedClues: DisplacedClue[], events: DomainEvent[] }` — the returned `grid` carries the applied chain-boundary marker rule (step 6, added 2026-09-09; previously the grid passed through untouched and was not returned). `events` contains `toast` events for shortened/lengthened notifications (FR-45). The `toggle-design-cell` reducer case calls `reconcileWords` (passing `state.puzzle.grid`, `state.puzzle.words`, `WordDerivation.derive(grid)`, `state.displacedClues`, `deps.rng`), sets `puzzle.grid` to the **returned** grid, `puzzle.words` and `displacedClues` on the resulting `BuilderState`, and returns the events alongside. Implements FR-45..FR-48.
 
 1. Compute the set of **surviving words** (same `WordKey` in both old and new lists).
 2. For each surviving word: retain its clue and `nextWord` from the old word onto the corresponding new `DerivedWord`. If `length` changed, record a `{ wordKey, direction, change: 'shortened' | 'lengthened' }` entry (the new `number` is not yet known — `Numbering.assign` runs in step 7; the toast is emitted after step 7 with the new number).
@@ -1524,9 +1533,14 @@ Input: `grid: Grid` (the post-toggle grid, needed for `Numbering.assign`), previ
    - For each surviving word whose `nextWord` points to a destroyed word, clear that `nextWord`.
    - For each destroyed word `d`, traverse its chain forward (via `nextWord`) over surviving downstream words (i.e., words that *were* displaying a "See …" reference attributable to `d`'s chain) and clear each such downstream word's clue (set to empty). Note: chain traversal must stop at any cleared/destroyed word to avoid spurious walks.
 5. **Newly-appearing words** (in new, not in old): `clue: ''`, `nextWord: null` (FR-48). For surviving words, the retained `clue`/`nextWord` from step 2 stays.
-6. Run `Numbering.assign(grid, derivedWords)` to produce the final `Word[]` with numbers.
-7. Run `ChainValidation.validate` on the resulting `Word[]` as a safety net; if it reports any violation (branches/dangling/cycle/self-reference — e.g., a destroyed word was a non-head and its head survived), the cleanup in step 4 should have prevented these, so a violation indicates an algorithm bug, not a user-facing condition. Therefore any violation **throws** `Error('reconcileWords: post-reconciliation invariant violated: <describe>')` where `<describe>` is the violation rendered via the `describeViolation` helper. (Chain structure is independent of `number`, so running validation after numbering is observability-equivalent to running it before; the order was swapped from the original draft so the validator can operate on `Word[]`, matching `ChainValidation.validate`'s existing signature without a wider refactor of `Chain`/`WordMap` to be generic.) Throw, not toast, because surfacing an invariant violation as a user-facing `Internal:` toast misrepresents an illegal state as a recoverable condition (§0 Principle 3); the same function already throws on its other "unreachable" path at the `survivingByCanonical` lookup.
-8. For each `{ wordKey, direction, change }` recorded in step 2, look up the word's new `number` from the step-6 result and emit a `toast` event: `"Word N Direction was shortened."` or `"Word N Direction was lengthened."` (FR-45). Return `{ words, displacedClues, events }`.
+6. **Chain-boundary marker rule** (added 2026-09-09; operates on the grid — this is why the function returns one). For each OLD word `O` with `nextWord != null` (i.e. each word whose last cell carried a boundary marker):
+   - `oldEnd` = `O`'s last cell; `kind` = the direction pair at `oldEnd` in the NEW grid if that cell is still white, else `'space'` (the cell was destroyed ⇒ the marker information is lost ⇒ the feature default applies).
+   - If `O` was **destroyed**: clear the pair at `oldEnd` (if the cell is white; a black cell's marker is already empty by the `Cell` invariant).
+   - If `O` **survives** as `N` (same key): clear the pair at `oldEnd` (if white); if `N`'s reconciled `nextWord != null` (link retained), set `N`'s NEW last-cell pair to `kind` (space → set space flag + clear hyphen flag; hyphen → set hyphen flag + clear space flag; none → both false, i.e. just the clear); if the link was **severed** (target destroyed, step 4), leave the new pair empty.
+   - A length-unchanged linked word degenerates to read-clear-set-same — a no-op that preserves the user's space/hyphen/none choice. Markers on standalone (unlinked) words' cells are user data and are **never touched** by this rule. Direction-scoped pairs make across/down words sharing a cell independent; two same-direction words cannot share a last cell (maximal runs are disjoint per direction).
+7. Run `Numbering.assign(grid, derivedWords)` to produce the final `Word[]` with numbers.
+8. Run `ChainValidation.validate` on the resulting `Word[]` as a safety net; if it reports any violation (branches/dangling/cycle/self-reference — e.g., a destroyed word was a non-head and its head survived), the cleanup in step 4 should have prevented these, so a violation indicates an algorithm bug, not a user-facing condition. Therefore any violation **throws** `Error('reconcileWords: post-reconciliation invariant violated: <describe>')` where `<describe>` is the violation rendered via the `describeViolation` helper. (Chain structure is independent of `number`, so running validation after numbering is observability-equivalent to running it before; the order was swapped from the original draft so the validator can operate on `Word[]`, matching `ChainValidation.validate`'s existing signature without a wider refactor of `Chain`/`WordMap` to be generic.) Throw, not toast, because surfacing an invariant violation as a user-facing `Internal:` toast misrepresents an illegal state as a recoverable condition (§0 Principle 3); the same function already throws on its other "unreachable" path at the `survivingByCanonical` lookup.
+9. For each `{ wordKey, direction, change }` recorded in step 2, look up the word's new `number` from the step-7 result and emit a `toast` event: `"Word N Direction was shortened."` or `"Word N Direction was lengthened."` (FR-45). Return `{ grid, words, displacedClues, events }`.
 
 **Edge cases the test suite MUST cover (RISK-1):**
 - Destroyed head of a chain surviving only in part (head destroyed, mid survives with downstream).
@@ -1535,6 +1549,7 @@ Input: `grid: Grid` (the post-toggle grid, needed for `Numbering.assign`), previ
 - Destroyed head whose nextWord target survives (becomes a head, retains nothing from its destroyed predecessor).
 - Word shortened/lengthened at the same key (clue + nextWord preserved).
 - Multiple destroyed words in the same chain.
+- Boundary-marker cases (added 2026-09-09): unchanged linked word keeps its marker (space, hyphen, and none each); lengthened linked word moves the marker to the new last cell and clears the old cell; end-shortened linked word defaults its boundary to space when the old end cell is destroyed; split linked word moves the marker and clears the surviving old end cell; severed link (target destroyed) clears the source's boundary marker; destroyed linked word clears its old end-cell marker; standalone words' markers untouched.
 
 ### 8.6 Join (FR-34..FR-38)
 
@@ -1542,7 +1557,7 @@ Reducer case for `click-clue-panel-word`/`click-grid-word` when `subMode = join 
 
 1. Target = `wordKey`.
 2. **Validity (FR-35):** source ≠ target; `source.nextWord` must be `null`; target must not be pointed to by any other word; both exist. If any fail, emit a Toast with the specific reason and leave sub-mode active.
-3. On success: set `source.nextWord = target`. If target had a non-empty clue, displace it (create a `DisplacedClue`, append to the list); the target's `clue` is set to empty (FR-36, FR-31). Reset sub-mode to `none`.
+3. On success: set `source.nextWord = target`. If target had a non-empty clue, displace it (create a `DisplacedClue`, append to the list); the target's `clue` is set to empty (FR-36, FR-31). **Chain-boundary marker (2026-09-09):** materialize the default space on the source's last cell in the source's direction — if the direction pair there is empty, set the space flag (mutual exclusion respected); a pre-existing space or hyphen flag is respected, not overwritten. The boundary cell is derived (`Direction.advance(source.key.start, source.key.direction, source.length - 1)`) — the intent carries no cell coordinates. Reset sub-mode to `none`.
 4. Source clicked again cancels (FR-34).
 5. Escape cancels.
 
@@ -1568,12 +1583,14 @@ export type AnagramEntry =
   | { position: Position; fixed: false; letter: Letter | null };
 export const Anagram: {
   buildWordModel(grid: Grid, word: Word): { entries: AnagramEntry[]; separators: CellSeparator[] }; // FR-82
-  buildChainModel(grid: Grid, members: Word[]): { entries: AnagramEntry[]; separators: CellSeparator[] }; // FR-82 chain variant
+  buildChainModel(grid: Grid, members: Word[]): { entries: AnagramEntry[]; separators: CellSeparator[] }; // FR-82 chain variant; inter-member separator = the source member's last-cell boundary marker (2026-09-09 — replaces the addendum's hardcoded 'none'; see §3.3 and chain_aware_selection_addendum.md supersession note)
   validateInput(word: Word, entries: AnagramEntry[], input: string): { ok: true } | { ok: false; reason: string }; // FR-85
   validateChainInput(totalLength: number, entries: AnagramEntry[], input: string): { ok: true } | { ok: false; reason: string }; // FR-85 chain variant
   scramble(entries: AnagramEntry[], input: string, rng: Rng): AnagramEntry[]; // FR-86
 };
 ```
+
+**`buildChainModel` inter-member separators (2026-09-09):** the separator emitted between member `i` and member `i+1` is derived from member `i`'s last-cell direction pair by the same reading rule as `LengthPattern`'s chain boundary (§3.4/§8.4): space → `'space'`, hyphen → `'hyphen'`, empty → `'none'`. Within-member separators still derive from the members' own cell markers as before. `AnagramModal.svelte` already renders all three `CellSeparator` values between tiles — no UI change.
 
 **`validateInput` (FR-85):**
 - `input` is uppercased A–Z (filtered) and clamped to `word.length` (FR-83).
@@ -1588,7 +1605,7 @@ export const Anagram: {
 
 ### 8.9 Player import (`player/state/lifecycle.ts` — `import-puzzle`)
 
-1. Call `parsePuzzleV1(fileContent)`.
+1. Call `parsePuzzle(fileContent)`.
 2. If `!ok`: set `phase = 'import'`, `lastImportError = failures.map(f => f.message).join('\n')` (FR-99, NFR-10). Emit a `toast` event. Return.
 3. If `fileType !== 'complete'`: set `lastImportError = "Only complete puzzle files can be loaded into the Player."` (FR-67). Emit a `toast` event. Return.
 4. Otherwise: set `phase = 'solving'`, `puzzle = p`, `cursor = null`, `checkResult = null`, `anagram = null`, `lastImportError = null`. Emit a `{ kind: 'load-player-progress'; key: p.key }` event. (The bindings layer observes this event, calls `storagePort.loadPlayerProgress(key)` — if present, parses the progress blob — and dispatches `{ kind: 'apply-loaded-progress'; playerLetters; savedGridSize }`. The Player reducer for `apply-loaded-progress` runs the application rules: only if `savedGridSize === puzzle.gridSize`, only on white cells, dropped letters for now-black cells — FR-80.)
@@ -1601,7 +1618,7 @@ export const Anagram: {
 
 The Builder accepts both incomplete and complete files (FR-57). On the unguarded path (blank Builder state) the `request-*` body executes directly; on the guarded path the bindings layer dispatches `confirm-*` after the user confirms the modal. Both paths share the body below.
 
-1. Call `parsePuzzleV1(fileContent)`.
+1. Call `parsePuzzle(fileContent)`.
 2. If `!ok`: emit a `toast` event with `failures.map(f => f.message).join('\n')`. Leave `BuilderState` unchanged (FR-99, NFR-10). Return.
 3. (Both `fileType` values are acceptable; the Builder does not reject complete files like Player does.) Build a fresh `BuilderState`:
    - `puzzle = result.puzzle`
@@ -1805,10 +1822,10 @@ Per NFR-4/NFR-5, every pure domain function and every reducer case is unit-teste
 - `WordSelection.findContainingWord` for: across hit, down hit, direction mismatch, cursor outside run, empty word list, cursor at last cell of run, cursor one past run end (B1).
 - `ChainCells.cellsOfWord` for: across run, down run, direction drives r/c offset. `ChainCells.cellsOfChain` for: null cursor → empty; single word with no chain; two-member chain union; cursor on non-head returns whole chain; empty words list (B2).
 - `ChainValidation.validate` for each violation kind.
-- `LengthPattern.forWord` for: standalone no markers; space separators; hyphen separators; mixed; chain suffixes (full FR-91).
+- `LengthPattern.forWord` for: standalone no markers; space separators; hyphen separators; mixed; chain suffixes with space / hyphen / empty boundaries and mixed internal + boundary markers (full FR-91, amended 2026-09-09).
 - `LengthPattern.forActiveClueBanner` returns `null` for non-heads (C4).
 - `CompletenessCheck.check` for each violation kind, plus the displaced-clue-ignored case (FR-63).
-- `parsePuzzleV1` happy paths for incomplete and complete; rejection paths for every §6.3 rule including the strict `letter`-field rejection, the strict C5 non-head-with-non-empty-clue rejection, and unbalanced grid.
+- `parsePuzzle` happy paths for incomplete and complete (both versions 1 and 2); rejection paths for every §6.3 rule including the strict `letter`-field rejection, the strict C5 non-head-with-non-empty-clue rejection, unbalanced grid, unknown version, and the v1-only boundary normalization (space materialized on empty pairs; v2 empty pairs preserved).
 - `reconcileWords` — the full RISK-1 edge-case suite enumerated in §8.5. At minimum 12 cases. Each test injects a `SeededRng` so the minted `DisplacedClueId`s are deterministic.
 - Every `BuilderIntent` and every `PlayerIntent`: at least one happy-path test and one guard-rejection test (e.g., `request-switch-to-design` when not blank produces a `modal-request` event, not a transition). Tests pass `deps = { rng: SeededRng, now: FakeClock }`.
 - `Anagram.scramble` with a seeded RNG and a deterministic assertion.
@@ -1889,7 +1906,7 @@ Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `S
 ### 12.1 Extension points intentionally designed into the code
 
 - **Persistence layer.** All persistence goes through `StoragePort` / `DownloadPort` / `FilePickPort`. Adding IndexedDB or cloud sync later means adding a new port implementation; nothing else changes.
-- **Format versioning.** `parsePuzzleV1` is named with a version. Adding a v2 means adding `parsePuzzleV2` parallel to v1 and a dispatcher based on the file's `version` field.
+- **Format versioning.** Realized 2026-09-09: version 2 shipped (identical schema; only the empty-chain-boundary interpretation differs, §3.7/§6). Lighter than the originally anticipated parallel `parsePuzzleV2`: because no field changed, a single parser (`parsePuzzle`, renamed from `parsePuzzleV1`) dispatches on the `version` field and applies the v1 boundary normalization conditionally — no schema duplication. A future v3 that *does* change fields should take the parallel-parser shape.
 - **Anagram RNG.** Already an injected port; a "show deterministic scramble" feature is a one-line wiring change.
 - **Routing.** `AppState.route` is an enum. Adding shareable URLs later means swapping it for a hash router; nothing in reducers cares.
 - **New Builder sub-modes.** `BuilderSubMode` is a discriminated union; new variants slot in with their own reducer case files (mirroring `joinSubMode.ts` / `reattachSubMode.ts`).
@@ -1898,7 +1915,7 @@ Tests inject an `AppConfig` with `InMemoryStoragePort`, `StubDownloadPort`, a `S
 ### 12.2 Anticipated future requirements (not in scope, but designed-not-to-block)
 
 - **Undo/redo** (currently out of scope, §8). The pure-reducer + intent dispatch model is trivially amenable to an undo stack: store recent `(state, intent)` pairs and reuse the reducers in reverse isn't possible (reducers aren't reversible), but storing past `BuilderState`/`PlayerState` snapshots and popping on undo is. The strict immutability (A2) makes snapshots cheap via structural sharing.
-- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `puzzles/*.json` files already show the canonical v1 format; `domain/format/parsePuzzleV1` is the only entry.
+- **Sample puzzle bundling.** Currently out of scope, but if/when added, the `puzzles/*.json` files already show the canonical format (version 2 since 2026-09-09); `domain/format/parsePuzzle` is the only entry.
 - **Plugin for foreign puzzle formats** (`.puz`, `.xd`, `.jpz`). Out of scope (§8) and explicitly unsupported, but if added, it would be a sibling to `domain/format/` producing the same `Puzzle` type.
 
 ### 12.3 Things that would change under scale

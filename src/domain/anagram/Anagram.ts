@@ -126,7 +126,32 @@ export const Anagram: {
       }
 
       if (i < members.length - 1) {
-        separators.push('none');
+        const member = members[i];
+        if (member === undefined) throw new Error('Anagram.buildChainModel: members[i] undefined');
+        const lastCoord = Direction.advance(
+          { row: member.key.startRow, col: member.key.startCol },
+          member.key.direction,
+          Number(member.length) - 1
+        );
+        const lastCell = GridOps.cellAt(grid, lastCoord.row, lastCoord.col);
+        const marker = lastCell.marker;
+        if (member.key.direction === 'across') {
+          if (marker.spaceRight) {
+            separators.push('space');
+          } else if (marker.hyphenRight) {
+            separators.push('hyphen');
+          } else {
+            separators.push('none');
+          }
+        } else {
+          if (marker.spaceBottom) {
+            separators.push('space');
+          } else if (marker.hyphenBottom) {
+            separators.push('hyphen');
+          } else {
+            separators.push('none');
+          }
+        }
       }
     }
 

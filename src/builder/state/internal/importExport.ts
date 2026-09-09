@@ -2,7 +2,7 @@ import type { BuilderIntent } from '../intents';
 import { BuilderState } from '../state';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { parsePuzzleV1, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1';
+import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 import type { CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 
@@ -10,7 +10,7 @@ const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
 const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
 
 function executeImport(state: BuilderState, fileContent: string): ReducerResult<BuilderState> {
-  const result = parsePuzzleV1(fileContent);
+  const result = parsePuzzle(fileContent);
   if (!result.ok) {
     const message = result.failures.map((f) => f.message).join('\n');
     return Result.withEvents(state, [

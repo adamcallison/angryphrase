@@ -2,7 +2,7 @@ import { PlayerState } from '../state';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { parsePuzzleV1 } from '../../../domain/format/v1';
+import { parsePuzzle } from '../../../domain/format/v1';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
@@ -16,7 +16,7 @@ const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
 export function handleImportPuzzle(
   intent: Extract<PlayerIntent, { kind: 'import-puzzle' }>,
 ): ReducerResult<PlayerState> {
-  const result = parsePuzzleV1(intent.fileContent);
+  const result = parsePuzzle(intent.fileContent);
   if (!result.ok) {
     const message = result.failures.map((f) => f.message).join('\n');
     return Result.withEvents(

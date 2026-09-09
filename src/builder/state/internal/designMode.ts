@@ -27,10 +27,9 @@ export function handleToggleDesignCell(
   const currentCell = GridOps.cellAt(state.puzzle.grid, intent.row, intent.col);
   const newCell = currentCell.black ? Cell.white() : Cell.black();
   const newGrid = GridOps.setCell(state.puzzle.grid, intent.row, intent.col, newCell);
-  const puzzleWithNewGrid = Puzzle.withGrid(state.puzzle, newGrid);
 
   const newDerived = WordDerivation.derive(newGrid);
-  const { words, displacedClues, events } = reconcileWords(
+  const { grid: reconciledGrid, words, displacedClues, events } = reconcileWords(
     newGrid,
     state.puzzle.words,
     newDerived,
@@ -38,7 +37,7 @@ export function handleToggleDesignCell(
     rng,
   );
 
-  const newPuzzle = Puzzle.withWords(puzzleWithNewGrid, words);
+  const newPuzzle = Puzzle.withWords(Puzzle.withGrid(state.puzzle, reconciledGrid), words);
 
   return Result.withEvents(
     {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  parsePuzzleV1,
+  parsePuzzle,
   serializeIncomplete,
   serializeComplete,
   Filename,
@@ -137,10 +137,95 @@ function buildPuzzle(
   return p;
 }
 
-describe('parsePuzzleV1', () => {
+function makeChainFixture(
+  version: 1 | 2,
+  boundary: 'empty' | 'hyphen' = 'empty',
+  direction: 'across' | 'down' = 'across',
+) {
+  const marker: Partial<CellJson> =
+    boundary === 'hyphen'
+      ? direction === 'across'
+        ? { hyphenRight: true }
+        : { hyphenBottom: true }
+      : {};
+
+  if (direction === 'across') {
+    const size = 6;
+    const grid: CellJson[][] = [];
+    for (let r = 0; r < size; r++) {
+      const row: CellJson[] = [];
+      for (let c = 0; c < size; c++) {
+        row.push(makeCell(true));
+      }
+      grid.push(row);
+    }
+    for (let c = 0; c < 3; c++) {
+      grid[0]![c] = makeCell(false);
+    }
+    grid[0]![3] = makeCell(true);
+    for (let c = 4; c < 6; c++) {
+      grid[0]![c] = makeCell(false);
+    }
+    if (boundary === 'hyphen') {
+      grid[0]![2] = { ...grid[0]![2]!, ...marker };
+    }
+
+    return {
+      version,
+      type: 'incomplete' as const,
+      key: VALID_UUID,
+      gridSize: size,
+      title: 'Title',
+      author: 'Author',
+      grid,
+      words: [
+        makeWord(0, 0, 'across', 3, '', { startRow: 0, startCol: 4, direction: 'across' }),
+        makeWord(0, 4, 'across', 2, ''),
+      ],
+      displacedClues: [],
+    };
+  }
+
+  const size = 5;
+  const grid: CellJson[][] = [];
+  for (let r = 0; r < size; r++) {
+    const row: CellJson[] = [];
+    for (let c = 0; c < size; c++) {
+      row.push(makeCell(true));
+    }
+    grid.push(row);
+  }
+  for (let r = 0; r < 2; r++) {
+    grid[r]![0] = makeCell(false);
+  }
+  grid[2]![0] = makeCell(true);
+  for (let r = 3; r < 5; r++) {
+    grid[r]![0] = makeCell(false);
+  }
+  if (boundary === 'hyphen') {
+    grid[1]![0] = { ...grid[1]![0]!, ...marker };
+  }
+
+  return {
+    version,
+    type: 'incomplete' as const,
+    key: VALID_UUID,
+    gridSize: size,
+    title: 'Title',
+    author: 'Author',
+    grid,
+    words: [
+      makeWord(0, 0, 'down', 2, '', { startRow: 3, startCol: 0, direction: 'down' }),
+      makeWord(3, 0, 'down', 2, ''),
+    ],
+    displacedClues: [],
+  };
+}
+
+describe('parsePuzzle', () => {
   it('parses a minimal valid incomplete file with ok: true', () => {
     const input = JSON.stringify(makeValidIncomplete());
-    const result = parsePuzzleV1(input);
+    const result = parsePuzzle(input);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -152,7 +237,7 @@ describe('parsePuzzleV1', () => {
 
   it('parses a minimal valid complete file with ok: true and empty displacedClues', () => {
     const input = JSON.stringify(makeValidComplete());
-    const result = parsePuzzleV1(input);
+    const result = parsePuzzle(input);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -162,10 +247,10 @@ describe('parsePuzzleV1', () => {
     expect(result.puzzle.words[0]!.clue).toBe('Head clue');
   });
 
-  it('rejects version != 1', () => {
+  it('parsePuzzle rejects unknown version 3', () => {
     const data = makeValidIncomplete();
-    data.version = 2;
-    const result = parsePuzzleV1(JSON.stringify(data));
+    data.version = 3;
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -175,7 +260,7 @@ describe('parsePuzzleV1', () => {
   it('rejects unknown type', () => {
     const data = makeValidIncomplete();
     (data as { type: string }).type = 'legacy';
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -185,7 +270,7 @@ describe('parsePuzzleV1', () => {
   it('rejects invalid (non-UUID) key', () => {
     const data = makeValidIncomplete();
     data.key = 'not-a-uuid';
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -195,7 +280,7 @@ describe('parsePuzzleV1', () => {
   it('rejects gridSize out of range', () => {
     const data = makeValidIncomplete();
     data.gridSize = 26;
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -205,7 +290,7 @@ describe('parsePuzzleV1', () => {
   });
 
   it('rejects malformed JSON', () => {
-    const result = parsePuzzleV1('{not json');
+    const result = parsePuzzle('{not json');
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -215,7 +300,7 @@ describe('parsePuzzleV1', () => {
   it('rejects grid with wrong row count', () => {
     const data = makeValidIncomplete();
     data.grid = [data.grid[0]!];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
   });
@@ -223,7 +308,7 @@ describe('parsePuzzleV1', () => {
   it('rejects grid with wrong column count in a row', () => {
     const data = makeValidIncomplete();
     data.grid = [[data.grid[0]![0]!], [data.grid[1]![0]!]];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
   });
@@ -231,7 +316,7 @@ describe('parsePuzzleV1', () => {
   it('rejects a cell with unknown field "letter" (strict)', () => {
     const data = makeValidIncomplete();
     data.grid[0]![0] = { ...data.grid[0]![0]!, letter: 'A' };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -243,7 +328,7 @@ describe('parsePuzzleV1', () => {
   it('rejects a cell with unknown extra field (strict)', () => {
     const data = makeValidIncomplete();
     data.grid[0]![0] = { ...data.grid[0]![0]!, extra: true };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -255,7 +340,7 @@ describe('parsePuzzleV1', () => {
   it('rejects complete file with null puzzleLetter on a white cell', () => {
     const data = makeValidComplete();
     data.grid[0]![0] = makeCell(false, null);
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -278,7 +363,7 @@ describe('parsePuzzleV1', () => {
       makeWord(0, 0, 'across', 2, 'Head clue', { startRow: 0, startCol: 3, direction: 'across' }),
       makeWord(0, 3, 'across', 2, 'Bad clue'),
     ];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -290,7 +375,7 @@ describe('parsePuzzleV1', () => {
   it('rejects complete file with empty clue on a chain head', () => {
     const data = makeValidComplete();
     data.words[0] = { ...data.words[0]!, clue: '   ' };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -313,7 +398,7 @@ describe('parsePuzzleV1', () => {
       makeWord(0, 0, 'across', 2, '', { startRow: 0, startCol: 3, direction: 'across' }),
       makeWord(0, 3, 'across', 2, 'non-head clue'),
     ];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(true);
   });
@@ -321,7 +406,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word with unknown field (strict)', () => {
     const data = makeValidIncomplete();
     (data.words[0] as { unknown?: boolean }).unknown = true;
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -333,7 +418,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word with length < 2', () => {
     const data = makeValidIncomplete();
     data.words[0] = { ...data.words[0]!, length: 1 };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -343,7 +428,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word with dangling nextWord reference', () => {
     const data = makeValidIncomplete();
     data.words[0] = { ...data.words[0]!, nextWord: { startRow: 1, startCol: 0, direction: 'across' } };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -355,7 +440,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word list whose start positions do not match grid-derived words', () => {
     const data = makeValidIncomplete();
     data.words[0] = makeWord(1, 0, 'across', 2, '');
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -367,7 +452,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word whose length differs from the grid-derived length', () => {
     const data = makeValidIncomplete();
     data.words[0] = { ...data.words[0]!, length: 99 };
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -377,7 +462,7 @@ describe('parsePuzzleV1', () => {
   it('rejects word carrying a number field (DRN5 — number dropped from v1 format, strict)', () => {
     const data = makeValidIncomplete();
     (data.words[0] as Record<string, unknown>).number = 42;
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -398,7 +483,7 @@ describe('parsePuzzleV1', () => {
       makeWord(0, 0, 'across', 2, '', { startRow: 0, startCol: 3, direction: 'across' }),
       makeWord(0, 3, 'across', 2, '', { startRow: 0, startCol: 0, direction: 'across' }),
     ];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -420,7 +505,7 @@ describe('parsePuzzleV1', () => {
       makeWord(0, 3, 'across', 2, '', null),
       makeWord(2, 0, 'across', 2, '', { startRow: 0, startCol: 3, direction: 'across' }),
     ];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -433,7 +518,7 @@ describe('parsePuzzleV1', () => {
       { id: UUID_A, clue: 'First', direction: 'across' },
       { id: UUID_A, clue: 'Second', direction: 'down' },
     ];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -445,7 +530,7 @@ describe('parsePuzzleV1', () => {
   it('rejects displacedClues with malformed entry (missing direction)', () => {
     const data = makeValidIncomplete();
     data.displacedClues = [{ id: UUID_A, clue: 'Clue' }] as typeof data.displacedClues;
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -455,7 +540,7 @@ describe('parsePuzzleV1', () => {
   it('rejects displacedClues with a non-UUID id', () => {
     const data = makeValidIncomplete();
     data.displacedClues = [{ id: 'not-a-uuid', clue: 'Clue', direction: 'across' }];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -467,7 +552,7 @@ describe('parsePuzzleV1', () => {
   it('rejects displacedClues with an id that is raw 32-hex (legacy non-UUID format)', () => {
     const data = makeValidIncomplete();
     data.displacedClues = [{ id: 'ab'.repeat(16), clue: 'Clue', direction: 'across' }];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -479,7 +564,7 @@ describe('parsePuzzleV1', () => {
   it('rejects complete file that includes displacedClues', () => {
     const data = makeValidComplete() as Record<string, unknown>;
     data.displacedClues = [{ id: UUID_A, clue: 'Clue', direction: 'across' }];
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -491,13 +576,68 @@ describe('parsePuzzleV1', () => {
   it('rejects top-level extra field (strict)', () => {
     const data = makeValidIncomplete() as Record<string, unknown>;
     data.extra = 'surprise';
-    const result = parsePuzzleV1(JSON.stringify(data));
+    const result = parsePuzzle(JSON.stringify(data));
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.failures.map((f) => f.message)).toContain(
       'Unknown top-level field "extra".',
     );
+  });
+
+  it('parsePuzzle accepts version 2 files', () => {
+    const data = makeValidIncomplete();
+    data.version = 2;
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.fileType).toBe('incomplete');
+    expect(result.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
+  });
+
+  it('v1 chain with unmarked boundary is normalized to a space marker', () => {
+    const data = makeChainFixture(1, 'empty', 'across');
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    expect(cell.marker.spaceRight).toBe(true);
+    expect(cell.marker.hyphenRight).toBe(false);
+  });
+
+  it('v1 chain with unmarked down-word boundary normalizes the bottom pair', () => {
+    const data = makeChainFixture(1, 'empty', 'down');
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const cell = GridOps.cellAt(result.puzzle.grid, Row.of(1), Col.of(0));
+    expect(cell.marker.spaceBottom).toBe(true);
+    expect(cell.marker.hyphenBottom).toBe(false);
+  });
+
+  it('v1 chain with hyphen boundary marker is preserved', () => {
+    const data = makeChainFixture(1, 'hyphen', 'across');
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    expect(cell.marker.hyphenRight).toBe(true);
+    expect(cell.marker.spaceRight).toBe(false);
+  });
+
+  it('v2 chain with unmarked boundary is preserved as no separator', () => {
+    const data = makeChainFixture(2, 'empty', 'across');
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.hyphenRight).toBe(false);
   });
 });
 
@@ -506,7 +646,7 @@ describe('serializeIncomplete', () => {
     const p = buildPuzzle('incomplete', [null, null], '');
     const displaced = [{ id: UUID_A, clue: 'Displaced clue', direction: 'across' as Direction }] as DisplacedClue[];
     const json = serializeIncomplete(p, displaced);
-    const result = parsePuzzleV1(json);
+    const result = parsePuzzle(json);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -515,7 +655,7 @@ describe('serializeIncomplete', () => {
     expect(result.displacedClues[0]!.clue).toBe('Displaced clue');
   });
 
-  it('round-trip: serializeIncomplete then parsePuzzleV1 returns the same Puzzle key, gridSize, and displacedClue texts', () => {
+  it('round-trip: serializeIncomplete then parsePuzzle returns the same Puzzle key, gridSize, and displacedClue texts', () => {
     const key = makeKey();
     const size = GridSize.of(2);
     let p = Puzzle.blank(size, key);
@@ -540,13 +680,35 @@ describe('serializeIncomplete', () => {
       { id: UUID_B, clue: 'Second displaced', direction: 'down' as Direction },
     ] as DisplacedClue[];
     const json = serializeIncomplete(p, displaced);
-    const result = parsePuzzleV1(json);
+    const result = parsePuzzle(json);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.puzzle.key).toBe(key);
     expect(result.puzzle.gridSize).toBe(size);
     expect(result.displacedClues.map((d) => d.clue)).toEqual(['First displaced', 'Second displaced']);
+  });
+
+  it('serializeIncomplete writes version 2', () => {
+    const p = buildPuzzle('incomplete', [null, null], '');
+    const json = serializeIncomplete(p, []);
+
+    expect(JSON.parse(json).version).toBe(2);
+  });
+
+  it('round trip: v2 no-separator boundary survives serialize → parse', () => {
+    const parsed = parsePuzzle(JSON.stringify(makeChainFixture(2, 'empty', 'across')));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const json = serializeIncomplete(parsed.puzzle, parsed.displacedClues);
+    const roundTrip = parsePuzzle(json);
+    expect(roundTrip.ok).toBe(true);
+    if (!roundTrip.ok) return;
+
+    const cell = GridOps.cellAt(roundTrip.puzzle.grid, Row.of(0), Col.of(2));
+    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.hyphenRight).toBe(false);
   });
 });
 
@@ -558,14 +720,14 @@ describe('serializeComplete', () => {
 
     expect(parsed.type).toBe('complete');
     expect(parsed).not.toHaveProperty('displacedClues');
-    const result = parsePuzzleV1(json);
+    const result = parsePuzzle(json);
     expect(result.ok).toBe(true);
   });
 
-  it('round-trip: serializeComplete then parsePuzzleV1 returns the same Puzzle key, grid letters, and clues', () => {
+  it('round-trip: serializeComplete then parsePuzzle returns the same Puzzle key, grid letters, and clues', () => {
     const p = buildPuzzle('complete', ['C', 'D'], 'Round clue');
     const json = serializeComplete(p);
-    const result = parsePuzzleV1(json);
+    const result = parsePuzzle(json);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;

@@ -8,10 +8,11 @@ import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { GridOps } from '../../../../src/domain/grid/GridOps';
 import { Cell } from '../../../../src/domain/grid/Cell';
+import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { SeededRng } from '../../../fakes/SeededRng';
-import type { Direction } from '../../../../src/domain/word/Direction';
+import { Direction } from '../../../../src/domain/word/Direction';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
@@ -486,5 +487,97 @@ describe('resolveJoin', () => {
     const otherAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     expect(otherAfter).toEqual(otherBefore);
     expect(result.state.displacedClues).toContain(displaced);
+  });
+});
+
+function withMarkerAt(
+  state: BuilderState,
+  row: number,
+  col: number,
+  flag: import('../../../../src/domain/grid/CellMarkerFlag').CellMarkerFlag,
+): BuilderState {
+  const cell = GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col));
+  const newCell = Cell.setMarker(cell, CellMarker.toggle(cell.marker, flag));
+  const newGrid = GridOps.setCell(state.puzzle.grid, Row.of(row), Col.of(col), newCell);
+  return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) };
+}
+
+describe('join boundary markers (FR-36)', () => {
+  it('join materializes default space marker on source last cell (across)', () => {
+    const state = makeStateWithWords(4, []);
+    const source = state.puzzle.words[0]!.key;
+    const target = state.puzzle.words[1]!.key;
+
+    const result = resolveJoin(state, source, target, rng);
+
+    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    expect(cell.marker.spaceRight).toBe(true);
+    expect(cell.marker.hyphenRight).toBe(false);
+  });
+
+  it('join materializes default space marker on source last cell (down → spaceBottom)', () => {
+    const state = makeStateWithWords(4, []);
+    const downWords = state.puzzle.words.filter(w => w.key.direction === 'down');
+    const source = downWords[0]!.key;
+    const target = downWords[1]!.key;
+    const lastCell = Direction.advance(
+      { row: source.startRow, col: source.startCol },
+      source.direction,
+      Number(downWords[0]!.length) - 1,
+    );
+
+    const result = resolveJoin(state, source, target, rng);
+
+    const cell = GridOps.cellAt(result.state.puzzle.grid, lastCell.row, lastCell.col);
+    expect(cell.marker.spaceBottom).toBe(true);
+    expect(cell.marker.hyphenBottom).toBe(false);
+  });
+
+  it('join respects a pre-existing hyphen marker on source last cell', () => {
+    let state = makeStateWithWords(4, []);
+    const source = state.puzzle.words[0]!.key;
+    const target = state.puzzle.words[1]!.key;
+    state = withMarkerAt(state, 0, 3, 'hyphen-right');
+
+    const result = resolveJoin(state, source, target, rng);
+
+    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    expect(cell.marker.hyphenRight).toBe(true);
+    expect(cell.marker.spaceRight).toBe(false);
+  });
+});
+
+describe('unjoin boundary markers (FR-37)', () => {
+  it('unjoin clears the boundary marker pair on source last cell', () => {
+    let state = withChain(makeStateWithWords(4, []), 0, 1);
+    state = withMarkerAt(state, 0, 3, 'space-right');
+    const source = state.puzzle.words[0]!.key;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent);
+
+    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.hyphenRight).toBe(false);
+    const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
+    expect(sourceAfter!.nextWord).toBeNull();
+  });
+
+  it('unjoin leaves the other direction\'s markers and other cells\' markers untouched', () => {
+    let state = withChain(makeStateWithWords(4, []), 0, 1);
+    state = withMarkerAt(state, 0, 3, 'space-right');
+    state = withMarkerAt(state, 0, 3, 'space-bottom');
+    state = withMarkerAt(state, 2, 2, 'hyphen-right');
+    const source = state.puzzle.words[0]!.key;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent);
+
+    const sourceLast = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    expect(sourceLast.marker.spaceRight).toBe(false);
+    expect(sourceLast.marker.hyphenRight).toBe(false);
+    expect(sourceLast.marker.spaceBottom).toBe(true);
+    const other = GridOps.cellAt(result.state.puzzle.grid, Row.of(2), Col.of(2));
+    expect(other.marker.hyphenRight).toBe(true);
   });
 });

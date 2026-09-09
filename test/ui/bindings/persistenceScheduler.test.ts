@@ -133,7 +133,7 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parseBuilderSnapshot: returns null when embedded puzzle fails parsePuzzleV1', () => {
+    it('parseBuilderSnapshot: returns null when embedded puzzle fails parsePuzzle', () => {
       const json = JSON.stringify({ version: 1, kind: 'builder-snapshot', puzzle: { version: 1, type: 'incomplete', key: 'not-a-uuid', gridSize: 5, title: '', author: '', grid: [], words: [], displacedClues: [] }, mode: 'design' });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parseBuilderSnapshot(json)).toBeNull();

@@ -318,8 +318,45 @@ describe('Anagram', () => {
     expect(model.separators).toHaveLength(6);
   });
 
-  it('buildChainModel inserts none separator at each word boundary', () => {
+  it('buildChainModel derives a space boundary separator from the member\'s last-cell marker', () => {
+    let grid = blankGrid(5);
+    grid = setMarkerFlag(grid, 0, 2, 'space-right');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toEqual(['none', 'none', 'space', 'none', 'none', 'none']);
+  });
+
+  it('buildChainModel derives a hyphen boundary separator from the member\'s last-cell marker', () => {
+    let grid = blankGrid(5);
+    grid = setMarkerFlag(grid, 0, 2, 'hyphen-right');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toEqual(['none', 'none', 'hyphen', 'none', 'none', 'none']);
+  });
+
+  it('buildChainModel renders a none boundary separator when the pair is empty', () => {
     const grid = blankGrid(5);
+
     const member1 = buildWord({
       length: 3,
       key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
@@ -332,6 +369,24 @@ describe('Anagram', () => {
     const model = Anagram.buildChainModel(grid, [member1, member2]);
 
     expect(model.separators).toEqual(['none', 'none', 'none', 'none', 'none', 'none']);
+  });
+
+  it('buildChainModel boundary on a down-word member reads the bottom pair', () => {
+    let grid = blankGrid(5);
+    grid = setMarkerFlag(grid, 2, 0, 'space-bottom');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'down' },
+    });
+    const member2 = buildWord({
+      length: 4,
+      key: { startRow: Row.of(3), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2]);
+
+    expect(model.separators).toEqual(['none', 'none', 'space', 'none', 'none', 'none']);
   });
 
   it('buildChainModel keeps within-word separator markers from each member', () => {
