@@ -1,0 +1,4950 @@
+{
+ "version": 2,
+ "type": "complete",
+ "key": "e240883d-d06a-4874-9a11-53be9a53d256",
+ "gridSize": 23,
+ "title": "Guardian cryptic crossword bank holiday special",
+ "author": "Maskarade",
+ "grid": [
+  [
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "K",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "V",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "G",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "V",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "P",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Z",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "K",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "F",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "K",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "V",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "V",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "G",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "J",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "K",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "V",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "K",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "P",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "G",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "J",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "G",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "D",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "B",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "J",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "P",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "J",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "G",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "N",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "I",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "C",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ],
+  [
+   {
+    "black": false,
+    "puzzleLetter": "W",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "A",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "H",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "O",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "T",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "R",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "M",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "U",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "L",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "Y",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": true,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "E",
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": false,
+    "puzzleLetter": "S",
+    "spaceRight": true,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   },
+   {
+    "black": true,
+    "puzzleLetter": null,
+    "spaceRight": false,
+    "spaceBottom": false,
+    "hyphenRight": false,
+    "hyphenBottom": false
+   }
+  ]
+ ],
+ "words": [
+  {
+   "startRow": 0,
+   "startCol": 1,
+   "direction": "across",
+   "length": 7,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 2,
+   "direction": "down",
+   "length": 6,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 4,
+   "direction": "down",
+   "length": 9,
+   "clue": "Unconscious by a heavy blow, one not from around here (9)",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 6,
+   "direction": "down",
+   "length": 5,
+   "clue": "Finished last in sprint – that’s clear (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 9,
+   "direction": "across",
+   "length": 4,
+   "clue": "Red Sea coho (4; 6)",
+   "nextWord": {
+    "startRow": 17,
+    "startCol": 20,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 0,
+   "startCol": 10,
+   "direction": "down",
+   "length": 10,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 12,
+   "direction": "down",
+   "length": 3,
+   "clue": "Dvorak’s son-in-law at market place (3)",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 14,
+   "direction": "across",
+   "length": 9,
+   "clue": "Clear arguments (9; 5)",
+   "nextWord": {
+    "startRow": 8,
+    "startCol": 18,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 0,
+   "startCol": 14,
+   "direction": "down",
+   "length": 4,
+   "clue": "Went away with the French paper (4)",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 18,
+   "direction": "down",
+   "length": 7,
+   "clue": "One blasphemes without adult responses (7)",
+   "nextWord": null
+  },
+  {
+   "startRow": 0,
+   "startCol": 20,
+   "direction": "down",
+   "length": 6,
+   "clue": "",
+   "nextWord": {
+    "startRow": 1,
+    "startCol": 0,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 0,
+   "startCol": 22,
+   "direction": "down",
+   "length": 6,
+   "clue": "Helping to remove beer from account (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 1,
+   "startCol": 0,
+   "direction": "down",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 1,
+   "startCol": 8,
+   "direction": "down",
+   "length": 6,
+   "clue": "Enriched pear (6; 6)",
+   "nextWord": {
+    "startRow": 12,
+    "startCol": 6,
+    "direction": "across"
+   }
+  },
+  {
+   "startRow": 2,
+   "startCol": 0,
+   "direction": "across",
+   "length": 5,
+   "clue": "Composer’s catalogue suggested (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 2,
+   "startCol": 6,
+   "direction": "across",
+   "length": 5,
+   "clue": "Merman provided discreet help, to some extent (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 2,
+   "startCol": 12,
+   "direction": "across",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 2,
+   "startCol": 16,
+   "direction": "down",
+   "length": 6,
+   "clue": "Old discourse, priest forgotten to be cultivated (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 2,
+   "startCol": 18,
+   "direction": "across",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 4,
+   "startCol": 0,
+   "direction": "across",
+   "length": 9,
+   "clue": "Ted, Vera and co., bemused, piled it on (9)",
+   "nextWord": null
+  },
+  {
+   "startRow": 4,
+   "startCol": 10,
+   "direction": "across",
+   "length": 4,
+   "clue": "Stand up in shower (4)",
+   "nextWord": null
+  },
+  {
+   "startRow": 4,
+   "startCol": 12,
+   "direction": "down",
+   "length": 8,
+   "clue": "Don Juan at sea in nets (8; 4,6)",
+   "nextWord": {
+    "startRow": 19,
+    "startCol": 8,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 4,
+   "startCol": 15,
+   "direction": "across",
+   "length": 8,
+   "clue": "Begorra! Verger won logo! (8; 6,6) [In print this entry continues via 10 to 55; 10 is also part of 24 Across.]",
+   "nextWord": null
+  },
+  {
+   "startRow": 5,
+   "startCol": 14,
+   "direction": "down",
+   "length": 10,
+   "clue": "Draw on bent wheel-chair (3,7; 1,1,8)",
+   "nextWord": {
+    "startRow": 0,
+    "startCol": 10,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 6,
+   "startCol": 3,
+   "direction": "across",
+   "length": 8,
+   "clue": "Maid googled ‘bee eater’ (4,4; 6,5)",
+   "nextWord": {
+    "startRow": 0,
+    "startCol": 20,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 6,
+   "startCol": 6,
+   "direction": "down",
+   "length": 8,
+   "clue": "One’s interrupting this compiler twice about Allegro composition (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 6,
+   "startCol": 12,
+   "direction": "across",
+   "length": 8,
+   "clue": "Heart of philistine turned for one who denies all (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 7,
+   "startCol": 0,
+   "direction": "down",
+   "length": 9,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 7,
+   "startCol": 22,
+   "direction": "down",
+   "length": 9,
+   "clue": "Manchester kid’s ID (4,5; 7)",
+   "nextWord": {
+    "startRow": 8,
+    "startCol": 20,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 8,
+   "startCol": 0,
+   "direction": "across",
+   "length": 7,
+   "clue": "Bone’s bad smell certain to return (7)",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 2,
+   "direction": "down",
+   "length": 7,
+   "clue": "Fictional detective depressed, carried by horse (7)",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 8,
+   "direction": "across",
+   "length": 8,
+   "clue": "Reconsider, without working around critics (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 8,
+   "direction": "down",
+   "length": 10,
+   "clue": "About to include Republican leader amid vernacular reference to his opponents (10)",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 17,
+   "direction": "across",
+   "length": 6,
+   "clue": "Outstanding helper somehow became sloth (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 18,
+   "direction": "down",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 8,
+   "startCol": 20,
+   "direction": "down",
+   "length": 7,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 9,
+   "startCol": 16,
+   "direction": "down",
+   "length": 8,
+   "clue": "Travel to West Crawley (8; 6,5)",
+   "nextWord": {
+    "startRow": 17,
+    "startCol": 2,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 10,
+   "startCol": 0,
+   "direction": "across",
+   "length": 3,
+   "clue": "My small book or two (3)",
+   "nextWord": null
+  },
+  {
+   "startRow": 10,
+   "startCol": 4,
+   "direction": "across",
+   "length": 6,
+   "clue": "If thematic, name in full would appear twice pocketing Scandinavian cultivated currency (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 10,
+   "startCol": 4,
+   "direction": "down",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 10,
+   "startCol": 11,
+   "direction": "across",
+   "length": 6,
+   "clue": "Look at oval bin (6; 7)",
+   "nextWord": {
+    "startRow": 0,
+    "startCol": 1,
+    "direction": "across"
+   }
+  },
+  {
+   "startRow": 10,
+   "startCol": 18,
+   "direction": "across",
+   "length": 5,
+   "clue": "Just over half the mixture is sprayed with tear gas (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 11,
+   "startCol": 10,
+   "direction": "down",
+   "length": 8,
+   "clue": "Convertible used lane that’s not yet open (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 12,
+   "startCol": 0,
+   "direction": "across",
+   "length": 5,
+   "clue": "Blackwood, bridge player, rather gaunt (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 12,
+   "startCol": 6,
+   "direction": "across",
+   "length": 6,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 12,
+   "startCol": 13,
+   "direction": "across",
+   "length": 6,
+   "clue": "Nun and mariner live next to ship (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 12,
+   "startCol": 20,
+   "direction": "across",
+   "length": 3,
+   "clue": "Priest met Old Vic’s central characters (3)",
+   "nextWord": null
+  },
+  {
+   "startRow": 13,
+   "startCol": 12,
+   "direction": "down",
+   "length": 10,
+   "clue": "Tell BT – ‘Help rajah’ (3,3,4; 5)",
+   "nextWord": {
+    "startRow": 20,
+    "startCol": 6,
+    "direction": "across"
+   }
+  },
+  {
+   "startRow": 14,
+   "startCol": 0,
+   "direction": "across",
+   "length": 6,
+   "clue": "Fixed time around rugged ridges (6)",
+   "nextWord": null
+  },
+  {
+   "startRow": 14,
+   "startCol": 7,
+   "direction": "across",
+   "length": 8,
+   "clue": "Hotel was re-designed for David Letterman’s programme (4,4)",
+   "nextWord": null
+  },
+  {
+   "startRow": 14,
+   "startCol": 16,
+   "direction": "across",
+   "length": 7,
+   "clue": "Use place mats (2,5; 5) [In print this entry continues to 33 Down, which is also part of 8 Across.]",
+   "nextWord": null
+  },
+  {
+   "startRow": 14,
+   "startCol": 18,
+   "direction": "down",
+   "length": 9,
+   "clue": "Ninety dark sheep can (9; 9)",
+   "nextWord": {
+    "startRow": 7,
+    "startCol": 0,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 15,
+   "startCol": 6,
+   "direction": "down",
+   "length": 6,
+   "clue": "Instigate prison rising (4,2)",
+   "nextWord": null
+  },
+  {
+   "startRow": 16,
+   "startCol": 3,
+   "direction": "across",
+   "length": 8,
+   "clue": "Faith! Take Karl (3,5; 5)",
+   "nextWord": {
+    "startRow": 2,
+    "startCol": 12,
+    "direction": "across"
+   }
+  },
+  {
+   "startRow": 16,
+   "startCol": 4,
+   "direction": "down",
+   "length": 7,
+   "clue": "Engraver, stop on courtyard (7)",
+   "nextWord": null
+  },
+  {
+   "startRow": 16,
+   "startCol": 12,
+   "direction": "across",
+   "length": 8,
+   "clue": "Picking fruit and cereal grain and serving gin (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 16,
+   "startCol": 14,
+   "direction": "down",
+   "length": 6,
+   "clue": "Rectory blast or two (3,3; 6,5) [In print this entry continues to 56 and 18, which are also part of 35 Down.]",
+   "nextWord": null
+  },
+  {
+   "startRow": 17,
+   "startCol": 0,
+   "direction": "down",
+   "length": 6,
+   "clue": "[In print the tail of 22 Across’s chain; see 22 Across.]",
+   "nextWord": null
+  },
+  {
+   "startRow": 17,
+   "startCol": 2,
+   "direction": "down",
+   "length": 6,
+   "clue": "",
+   "nextWord": {
+    "startRow": 2,
+    "startCol": 18,
+    "direction": "across"
+   }
+  },
+  {
+   "startRow": 17,
+   "startCol": 20,
+   "direction": "down",
+   "length": 6,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 17,
+   "startCol": 22,
+   "direction": "down",
+   "length": 5,
+   "clue": "",
+   "nextWord": {
+    "startRow": 10,
+    "startCol": 4,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 18,
+   "startCol": 0,
+   "direction": "across",
+   "length": 8,
+   "clue": "Park officer entered old yard with indoor fruit trees (8)",
+   "nextWord": null
+  },
+  {
+   "startRow": 18,
+   "startCol": 9,
+   "direction": "across",
+   "length": 4,
+   "clue": "Figure one has only half a buck (4)",
+   "nextWord": null
+  },
+  {
+   "startRow": 18,
+   "startCol": 14,
+   "direction": "across",
+   "length": 9,
+   "clue": "Olympic venue with watering hole about to entertain billionaire (9)",
+   "nextWord": null
+  },
+  {
+   "startRow": 18,
+   "startCol": 16,
+   "direction": "down",
+   "length": 5,
+   "clue": "State hair product for star (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 19,
+   "startCol": 8,
+   "direction": "down",
+   "length": 4,
+   "clue": "",
+   "nextWord": {
+    "startRow": 0,
+    "startCol": 2,
+    "direction": "down"
+   }
+  },
+  {
+   "startRow": 20,
+   "startCol": 0,
+   "direction": "across",
+   "length": 5,
+   "clue": "It turns round and round and round!(5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 20,
+   "startCol": 6,
+   "direction": "across",
+   "length": 5,
+   "clue": "",
+   "nextWord": null
+  },
+  {
+   "startRow": 20,
+   "startCol": 10,
+   "direction": "down",
+   "length": 3,
+   "clue": "Regular haunt that’s in the garden (3)",
+   "nextWord": null
+  },
+  {
+   "startRow": 20,
+   "startCol": 12,
+   "direction": "across",
+   "length": 5,
+   "clue": "To start with, just explain our new grand Korean concept of an unspoken emotonal bond (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 20,
+   "startCol": 18,
+   "direction": "across",
+   "length": 5,
+   "clue": "Hymnodist from mid-Tyrone – a legend (5)",
+   "nextWord": null
+  },
+  {
+   "startRow": 22,
+   "startCol": 0,
+   "direction": "across",
+   "length": 9,
+   "clue": "Audibly question the location of domestic store (9)",
+   "nextWord": null
+  },
+  {
+   "startRow": 22,
+   "startCol": 10,
+   "direction": "across",
+   "length": 4,
+   "clue": "Some semester mainly (4)",
+   "nextWord": null
+  },
+  {
+   "startRow": 22,
+   "startCol": 15,
+   "direction": "across",
+   "length": 7,
+   "clue": "July mess ceases – joy! (7; 5,5)",
+   "nextWord": {
+    "startRow": 17,
+    "startCol": 22,
+    "direction": "down"
+   }
+  }
+ ]
+}
