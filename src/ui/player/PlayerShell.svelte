@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { PlayerFacade, PlayerShellVM } from '../bindings/playerFacade';
-  import PlayerGrid from './PlayerGrid.svelte';
+  import Grid from '../shared/Grid.svelte';
   import ActiveClueBanner from './ActiveClueBanner.svelte';
   import PlayerCluePanel from './PlayerCluePanel.svelte';
   import PlayerToolbar from './PlayerToolbar.svelte';
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
-  import type { TypingIntent } from '../shared/typingIntent';
+  import { applyTypingIntent } from '../shared/typingIntent';
 
   let { playerFacade }: { playerFacade: PlayerFacade } = $props();
 
@@ -18,14 +18,6 @@
     playerFacade.actions.grid.selectCell(row, col);
   }
 
-  function onTypingIntent(intent: TypingIntent): void {
-    switch (intent.kind) {
-      case 'type-letter': playerFacade.actions.grid.typeLetter(intent.letter); return;
-      case 'backspace': playerFacade.actions.grid.backspace(); return;
-      case 'move-cursor': playerFacade.actions.grid.moveCursor(intent.direction, intent.sign); return;
-      case 'escape': playerFacade.actions.grid.escape(); return;
-    }
-  }
 </script>
 
   {#if vm.phase === 'import'}
@@ -48,8 +40,8 @@
       <section class="flex flex-col gap-3 flex-1 min-w-0">
         <ActiveClueBanner vm={vm.topBanner} />
         <div class="relative overflow-x-auto">
-          <PlayerGrid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.phase === 'solving' && !vm.anagram.open} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
+          <Grid vm={vm.grid} onCellClick={onCellClick} />
+          <TypingSurface enabled={vm.phase === 'solving' && !vm.anagram.open} cursor={vm.grid.cursor} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />

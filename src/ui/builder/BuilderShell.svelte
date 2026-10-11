@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { BuilderFacade, BuilderShellVM } from '../bindings/builderFacade';
   import BuilderToolbar from './BuilderToolbar.svelte';
-  import BuilderGrid from './BuilderGrid.svelte';
+  import Grid from '../shared/Grid.svelte';
   import BuilderCluePanel from './BuilderCluePanel.svelte';
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
-  import type { TypingIntent } from '../shared/typingIntent';
+  import { applyTypingIntent } from '../shared/typingIntent';
 
   let { builderFacade }: { builderFacade: BuilderFacade } = $props();
 
@@ -22,22 +22,6 @@
     }
   }
 
-  function onTypingIntent(intent: TypingIntent): void {
-    switch (intent.kind) {
-      case 'type-letter':
-        builderFacade.actions.grid.typeLetter(intent.letter);
-        return;
-      case 'backspace':
-        builderFacade.actions.grid.backspace();
-        return;
-      case 'move-cursor':
-        builderFacade.actions.grid.moveCursor(intent.direction, intent.sign);
-        return;
-      case 'escape':
-        builderFacade.actions.grid.escape();
-        return;
-    }
-  }
 </script>
 
 <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">
@@ -51,8 +35,8 @@
     <!-- left column: grid + displaced clues panel -->
     <section class="flex flex-col gap-4">
       <div class="relative overflow-x-auto">
-        <BuilderGrid vm={vm.grid} mode={builderFacade.getBuilderState().mode} onCellClick={onCellClick} />
-        <TypingSurface enabled={builderFacade.getBuilderState().mode === 'fill'} cursor={vm.grid.cursor} onDispatch={onTypingIntent} />
+        <Grid vm={vm.grid} allCellsClickable={builderFacade.getBuilderState().mode === 'design'} onCellClick={onCellClick} />
+        <TypingSurface enabled={builderFacade.getBuilderState().mode === 'fill'} cursor={vm.grid.cursor} onDispatch={(intent) => applyTypingIntent(intent, builderFacade.actions.grid)} />
       </div>
       <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
     </section>

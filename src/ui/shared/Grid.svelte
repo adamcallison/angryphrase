@@ -4,9 +4,11 @@
   let {
     vm,
     onCellClick,
+    allCellsClickable = false,
   }: {
     vm: GridVM;
     onCellClick: (row: number, col: number) => void;
+    allCellsClickable?: boolean;
   } = $props();
 
   function cellColor(hilite: CellHilite): string {
@@ -27,8 +29,8 @@
       <!-- svelte-ignore a11y_click_events_have_key_events -->
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
-        class="relative border-b border-r border-gray-300 {cell.black ? 'bg-black' : cellColor(cell.hilite)} {cell.selectable ? 'cursor-pointer' : ''}"
-        onclick={() => cell.selectable && onCellClick(Number(cell.row), Number(cell.col))}>
+        class="relative border-b border-r border-gray-300 {cell.black ? 'bg-black' : cellColor(cell.hilite)} {allCellsClickable || cell.selectable ? 'cursor-pointer' : ''}"
+        onclick={() => (allCellsClickable || cell.selectable) && onCellClick(Number(cell.row), Number(cell.col))}>
         {#if cell.number !== null}
           <span class="absolute left-0 top-0 px-0.5 text-[calc(30cqi/var(--grid-size))] leading-none text-gray-700">{Number(cell.number)}</span>
         {/if}

@@ -252,7 +252,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clicking already-selected cell that is in only one word → cursor unchanged, but checkResult cleared (§908)', () => {
+  it('select-cell: clicking already-selected cell that is in only one word → state unchanged, checkResult preserved (§908)', () => {
     let state = solvingState(5, [
       [1, 2],
       [3, 2],
@@ -263,12 +263,8 @@ describe('handleSelectCell', () => {
 
     const result = handleSelectCell(state, intent);
 
-    expect(assertSolving(result.state).cursor).toEqual({
-      row: Row.of(2),
-      col: Col.of(2),
-      direction: 'across',
-    });
-    expect(assertSolving(result.state).checkResult).toBe(null);
+    expect(result.state).toBe(state);
+    expect(assertSolving(result.state).checkResult).toEqual(state.checkResult);
     expect(result.events).toEqual([]);
   });
 
@@ -1037,30 +1033,24 @@ describe('handleBackspace', () => {
     });
   });
 
-  it('backspace: when current cell empty and previous is at grid start, stays and nothing deleted (FR-13)', () => {
-    const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
+  it('backspace: when current cell empty and previous is at grid start, state unchanged, checkResult preserved (FR-13)', () => {
+    let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
+    state = withCheckResult(state);
     const result = handleBackspace(state);
 
-    expect(assertSolving(result.state).cursor).toEqual({
-      row: Row.of(0),
-      col: Col.of(0),
-      direction: 'across',
-    });
-    expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
-    expect(result.state).toEqual(state);
+    expect(result.state).toBe(state);
+    expect(assertSolving(result.state).checkResult).toEqual(state.checkResult);
+    expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty and previous is black, stays and nothing deleted (FR-13)', () => {
-    const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 2, direction: 'across' });
+  it('backspace: when current cell empty and previous is black, state unchanged, checkResult preserved (FR-13)', () => {
+    let state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 2, direction: 'across' });
+    state = withCheckResult(state);
     const result = handleBackspace(state);
 
-    expect(assertSolving(result.state).cursor).toEqual({
-      row: Row.of(0),
-      col: Col.of(2),
-      direction: 'across',
-    });
-    expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(2)).playerLetter).toBe(null);
-    expect(result.state).toEqual(state);
+    expect(result.state).toBe(state);
+    expect(assertSolving(result.state).checkResult).toEqual(state.checkResult);
+    expect(result.events).toEqual([]);
   });
 
   it('backspace: direction "down" retreats -1 row', () => {

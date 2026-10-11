@@ -2,7 +2,6 @@ import type { PlayerState, AnagramModalState, CheckClassification, CheckResult }
 import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import type { Direction } from '../../../domain/word/Direction';
 import { Result } from '../../../domain/notifications/Event';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Row } from '../../../domain/grid/Row';
@@ -12,48 +11,14 @@ import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
-import type { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { Letter } from '../../../domain/letter/Letter';
+import { GridInteraction, type LetterSlot } from '../../../domain/grid/GridInteraction';
 
-const DELTA: Record<Direction, { dr: number; dc: number }> = {
-  across: { dr: 0, dc: 1 },
-  down: { dr: 1, dc: 0 },
+const PLAYER_SLOT: LetterSlot = {
+  read: (c) => c.playerLetter,
+  set: Cell.setPlayerLetter,
 };
-
-function partOfAcross(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, 0, -1) || hasWhiteNeighbour(g, row, col, 0, 1);
-}
-
-function partOfDown(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, -1, 0) || hasWhiteNeighbour(g, row, col, 1, 0);
-}
-
-function hasWhiteNeighbour(
-  g: Grid,
-  row: Row,
-  col: Col,
-  dr: number,
-  dc: number,
-): boolean {
-  const r = Number(row) + dr;
-  const c = Number(col) + dc;
-  if (r < 0 || c < 0) {
-    return false;
-  }
-
-  const neighbourRow = Row.try(r);
-  const neighbourCol = Col.try(c);
-  if (
-    neighbourRow === null ||
-    neighbourCol === null ||
-    !GridOps.withinBounds(g, neighbourRow, neighbourCol)
-  ) {
-    return false;
-  }
-
-  return Cell.isWhite(GridOps.cellAt(g, neighbourRow, neighbourCol));
-}
 
 function anagramAfterCursorChange(
   anagram: AnagramModalState | null,
@@ -78,50 +43,13 @@ export function handleSelectCell(
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  if (!GridOps.withinBounds(g, intent.row, intent.col)) {
-    return Result.ok(state);
-  }
-
-  if (!GridOps.isSelectable(g, intent.row, intent.col)) {
-    return Result.ok(state);
-  }
-
-  const inAcross = partOfAcross(g, intent.row, intent.col);
-  const inDown = partOfDown(g, intent.row, intent.col);
-
-  const current = state.cursor;
-  const sameCell =
-    current !== null &&
-    Number(current.row) === Number(intent.row) &&
-    Number(current.col) === Number(intent.col);
-
-  let direction: Direction;
-  if (sameCell) {
-    if (current === null)
-      return Result.ok({
-        ...state,
-        checkResult: null,
-      }); // unreachable: sameCell implies current !== null
-    if (inAcross && inDown) {
-      direction = current.direction === 'across' ? 'down' : 'across';
-    } else {
-      return Result.ok({
-        ...state,
-        checkResult: null,
-      });
-    }
-  } else {
-    direction = inAcross && inDown ? 'across' : inAcross ? 'across' : 'down';
-  }
-
-  const newCursor: Cursor = { row: intent.row, col: intent.col, direction };
-  const newAnagram = anagramAfterCursorChange(state.anagram, state.puzzle, newCursor);
+  const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
+  if (cursor === null) return Result.ok(state);
   return Result.ok({
     ...state,
-    cursor: newCursor,
+    cursor,
     checkResult: null,
-    anagram: newAnagram,
+    anagram: anagramAfterCursorChange(state.anagram, state.puzzle, cursor),
   });
 }
 
@@ -129,35 +57,17 @@ export function handleMoveCursor(
   state: PlayerState,
   intent: Extract<PlayerIntent, { kind: 'move-cursor' }>,
 ): ReducerResult<PlayerState> {
-  if (state.phase !== 'solving' || state.cursor === null) {
+  if (state.phase !== 'solving') {
     return Result.ok(state);
   }
 
-  const { dr, dc } = DELTA[intent.direction];
-  const signedDr = dr * intent.sign;
-  const signedDc = dc * intent.sign;
-  const newRow = Row.try(Number(state.cursor.row) + signedDr);
-  const newCol = Col.try(Number(state.cursor.col) + signedDc);
-
-  const g = state.puzzle.grid;
-  let newCursor: Cursor;
-  if (
-    newRow !== null &&
-    newCol !== null &&
-    GridOps.withinBounds(g, newRow, newCol) &&
-    GridOps.isSelectable(g, newRow, newCol)
-  ) {
-    newCursor = { row: newRow, col: newCol, direction: intent.direction };
-  } else {
-    newCursor = { ...state.cursor, direction: intent.direction };
-  }
-
-  const newAnagram = anagramAfterCursorChange(state.anagram, state.puzzle, newCursor);
+  const cursor = GridInteraction.move(state.puzzle.grid, state.cursor, intent.direction, intent.sign);
+  if (cursor === null) return Result.ok(state);
   return Result.ok({
     ...state,
-    cursor: newCursor,
+    cursor,
     checkResult: null,
-    anagram: newAnagram,
+    anagram: anagramAfterCursorChange(state.anagram, state.puzzle, cursor),
   });
 }
 
@@ -196,34 +106,21 @@ export function handleTypeLetter(
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  const c = GridOps.cellAt(g, state.cursor.row, state.cursor.col);
-  if (c.black) {
-    return Result.ok(state);
-  }
+  const out = GridInteraction.typeLetter(
+    state.puzzle.grid,
+    state.cursor,
+    intent.letter,
+    PLAYER_SLOT,
+  );
+  if (out === null) return Result.ok(state);
 
-  const newCell = Cell.setPlayerLetter(c, intent.letter);
-  const newGrid = GridOps.setCell(g, state.cursor.row, state.cursor.col, newCell);
-  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
-
-  const { dr, dc } = DELTA[state.cursor.direction];
-  const nextRow = Row.of(Number(state.cursor.row) + dr);
-  const nextCol = Col.of(Number(state.cursor.col) + dc);
-  let newCursor: Cursor = state.cursor;
-  if (
-    GridOps.withinBounds(newGrid, nextRow, nextCol) &&
-    GridOps.isSelectable(newGrid, nextRow, nextCol)
-  ) {
-    newCursor = { row: nextRow, col: nextCol, direction: state.cursor.direction };
-  }
-
-  const newAnagram = anagramAfterCursorChange(state.anagram, newPuzzle, newCursor);
+  const newPuzzle = Puzzle.withGrid(state.puzzle, out.grid);
   return Result.ok({
     ...state,
     puzzle: newPuzzle,
-    cursor: newCursor,
+    cursor: out.cursor,
     checkResult: null,
-    anagram: newAnagram,
+    anagram: anagramAfterCursorChange(state.anagram, newPuzzle, out.cursor),
   });
 }
 
@@ -232,51 +129,16 @@ export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> 
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  const c = GridOps.cellAt(g, state.cursor.row, state.cursor.col);
-  if (c.black) {
-    return Result.ok(state);
-  }
+  const out = GridInteraction.backspace(state.puzzle.grid, state.cursor, PLAYER_SLOT);
+  if (out === null) return Result.ok(state);
 
-  if (c.playerLetter !== null) {
-    const newPuzzle = Puzzle.withGrid(
-      state.puzzle,
-      GridOps.setCell(g, state.cursor.row, state.cursor.col, Cell.setPlayerLetter(c, null)),
-    );
-    return Result.ok({
-      ...state,
-      puzzle: newPuzzle,
-      checkResult: null,
-    });
-  }
-
-  const { dr, dc } = DELTA[state.cursor.direction];
-  const prevRow = Row.try(Number(state.cursor.row) - dr);
-  const prevCol = Col.try(Number(state.cursor.col) - dc);
-
-  if (prevRow === null || prevCol === null || !GridOps.withinBounds(g, prevRow, prevCol)) {
-    return Result.ok({ ...state, checkResult: null });
-  }
-
-  const prevCell = GridOps.cellAt(g, prevRow, prevCol);
-  if (!GridOps.isSelectable(g, prevRow, prevCol)) {
-    return Result.ok({ ...state, checkResult: null });
-  }
-
-  const newGrid = GridOps.setCell(g, prevRow, prevCol, Cell.setPlayerLetter(prevCell, null));
-  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
-  const newCursor: Cursor = {
-    row: prevRow,
-    col: prevCol,
-    direction: state.cursor.direction,
-  };
-  const newAnagram = anagramAfterCursorChange(state.anagram, newPuzzle, newCursor);
+  const newPuzzle = Puzzle.withGrid(state.puzzle, out.grid);
   return Result.ok({
     ...state,
     puzzle: newPuzzle,
-    cursor: newCursor,
+    cursor: out.cursor,
     checkResult: null,
-    anagram: newAnagram,
+    anagram: anagramAfterCursorChange(state.anagram, newPuzzle, out.cursor),
   });
 }
 

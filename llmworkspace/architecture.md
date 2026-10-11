@@ -75,7 +75,7 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker`, `CellMarkerFlag`, `CellSeparator` (derived render separator: `'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridOps` (typed accessors — raw indexing happens nowhere else), `CellIndex` |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker`, `CellMarkerFlag`, `CellSeparator` (derived render separator: `'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridOps` (typed accessors — raw indexing happens nowhere else), `GridInteraction` (the shared cursor/typing transitions used by both experiences — `select`/`move`/`typeLetter`/`backspace` over `(grid, cursor)` with an injected `LetterSlot` policy for the answer-vs-player field — plus the shared intent payload variants, see §3 Layer 1), `CellIndex` |
 | `domain/word/` | `Word`, `WordKey` (`{startRow, startCol, direction}`), `WordLength` (≥2), `Direction` + helpers, `DerivedWord` (pre-numbering shape), `WordDerivation` (grid scan → `DerivedWord[]`), `Numbering` (assigns word numbers), `WordMap` (canonical-string-keyed O(1) lookup), `WordSelection` (`findContainingWord`) |
 | `domain/letter/` | `Letter` brand + `try`/`from`/`equals` (case-folds, validates A–Z) |
 | `domain/chain/` | `Chain` traversal, `ChainValidation` (cycle/branch/dangling/self-reference), `ChainViolation`, `DisplayClue`, `LengthPattern`, `ChainCells` (cell-coord sets shared by builder/player VMs) |
@@ -97,13 +97,13 @@ Each module publishes its API at the folder root (`state.ts`, `intents.ts`, `red
 Module boundary rules (ESLint-enforced):
 
 - `app/state` is a client of the other two: it imports their **root files only** (value and type), never their `internal/` files.
-- `builder/state` and `player/state` do **not** import each other at all — no path resolving into the sibling `state/` tree is allowed. Shared concepts (e.g. `Cursor`) live in `domain/`.
+- `builder/state` and `player/state` do **not** import each other at all — no path resolving into the sibling `state/` tree is allowed. Shared concepts (e.g. `Cursor`, `GridInteraction` and its shared intent payload variants `GridInteractionIntent`) live in `domain/`. Both `intents.ts` files define their unions using the shared payload variants for the six shared kinds (`select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-clue-panel-word`); the kind strings and the routing model are unchanged.
 - Neither imports `app/state` (no cycles).
 - Tests import from `internal/` freely; the rule constrains only cross-module imports within `src/`.
 
-`builder/state/internal/` contains `designMode.ts` (design-mode intents + reconciliation orchestration), `fillMode.ts` (typing, markers, clue edits, metadata, cursor rules), `joinSubMode.ts`, `reattachSubMode.ts`, `importExport.ts`, `lifecycle.ts` (reset), `reconcileWords.ts` (the reconciliation algorithm).
+`builder/state/internal/` contains `designMode.ts` (design-mode intents + reconciliation orchestration), `fillMode.ts` (thin policy adapters over `GridInteraction` for the typing/cursor intents — gating on `mode`, the `answerLetter` slot — plus markers, clue edits, metadata), `joinSubMode.ts`, `reattachSubMode.ts`, `importExport.ts`, `lifecycle.ts` (reset), `reconcileWords.ts` (the reconciliation algorithm).
 
-`player/state/internal/` contains `solving.ts` (type/backspace/arrows/click/check/clear-errors), `lifecycle.ts` (import flows, reset, apply-loaded-progress), `anagram.ts`.
+`player/state/internal/` contains `solving.ts` (thin policy adapters over `GridInteraction` — gating on `phase`, the `playerLetter` slot, the check-clear and anagram re-eval rules — plus check, clear-errors), `lifecycle.ts` (import flows, reset, apply-loaded-progress), `anagram.ts`.
 
 ### Layer 2 — `src/ui/bindings/` (the seam; the only Svelte-aware logic module)
 
@@ -113,6 +113,7 @@ The only module that imports from all other layers plus Svelte. Everything here 
 |---|---|
 | `appStore.svelte.ts` | `createAppStore(initial, deps, ports, options?)` + `AppStore`/`AppDeps`/`AppPorts`/`LandingActions` types. Sole `$state` cell (factory-closure scope). Dispatch work-queue, event fold, external-event performance, save-failure latches. Only rune-using file in the layer. |
 | `builderFacade.ts` / `playerFacade.ts` | `createBuilderFacade(appStore)` / `createPlayerFacade(appStore)` — typed dispatch narrowing, VM getters, `pickFile`, per-leaf action bags (`BuilderToolbarActions`, `BuilderGridActions`, `BuilderCluePanelActions`, `DisplacedCluesPanelActions`, `BuilderBannerActions`; player equivalents incl. `PlayerImportScreenActions`, `PlayerAnagramActions`). Own no state; plain `.ts`. |
+| `gridActions.ts` / `filePickActions.ts` | Shared facade action factories, consumed by both facades: `createGridActions(dispatch)` builds the five grid-interaction bag methods (`selectCell`, `typeLetter`, `backspace`, `moveCursor`, `escape`) from plain args via the domain constructors; `createFilePickActions(appStore, dispatchFailures, onRead)` builds `pickFile` + `importDroppedFile` (the port-consumption policy: `'picked'` → `onRead(text)`, `'cancelled'` → silent `null`, `'failed'` → warn once + failure intent). |
 | `modalFacade.ts` / `toastFacade.ts` | `createModalFacade` / `createToastFacade` — modal/toast VM getters + `ModalActions` / `ToastHostActions`. Own no state. |
 | `persistenceCodec.ts` | Pure encode/decode of the two `localStorage` blob shapes (§8). |
 | `persistenceScheduler.ts` | `createPersistenceScheduler(storage, debounceMs, onWriteResult)` — mechanical debounce/serialize/coalesce/cancel-on-clear/flush. Holds no failure policy (the latches live in the appStore). |
@@ -290,7 +291,7 @@ Four user actions are guarded: switch-to-design, Builder import, Builder reset, 
 
 ### Player specifics
 
-- **Check clear-on-change:** every intent that mutates the grid, cursor, or puzzle sets `checkResult = null` first. The check result drives the toolbar message/colour and the `clear-errors` action (`incorrectCells`), never per-cell grid colouring.
+- **Check clear-on-change:** an interaction that changes the grid or cursor sets `checkResult = null`; a no-op interaction (out-of-bounds or unselectable click, same-cell re-click with no direction toggle, blocked move, backspace with nothing to clear) leaves state untouched. Implemented once in the `solving.ts` adapters over `GridInteraction` outcomes — a `null` outcome means state unchanged, a non-null outcome means grid and/or cursor changed. The check result drives the toolbar message/colour and the `clear-errors` action (`incorrectCells`), never per-cell grid colouring.
 - **Anagram helper:** `open-anagram-helper` requires a cursor on a word and records `openedForWord`; when the selected word changes away from it, the modal auto-closes. `anagram-scramble` calls `Anagram.scramble(entries, input, deps.rng)` directly (Fisher–Yates over the non-fixed letters after fixed letters claim from the input pool) and stores the entries-aligned result. No grid write-back.
 - **Import flow:** `import-puzzle` accepts complete files only; rejects set `lastImportError` (rendered inline on the import screen) and emit a toast. Success sets the solving phase and emits `load-player-progress { key }`; the appStore loads the saved progress blob and dispatches `apply-loaded-progress`, whose reducer applies the letters only if `savedGridSize` matches, only on white cells.
 - **Builder import** (`request/confirm-import-puzzle`) accepts both incomplete and complete files; success replaces `BuilderState` (imported puzzle + displaced clues, auto-switched `mode = 'fill'`, `cursor = null`); failure toasts the parse errors and changes nothing. `export-incomplete` emits a `download` event unconditionally; `export-complete` runs `CompletenessCheck` first and toasts violations instead of downloading. Filenames come from `Filename.incomplete/complete(key)`.
@@ -364,7 +365,6 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 | `BuilderShell` | `BuilderFacade` prop | composes children; layout: grid+controls left, clues right |
 | `BuilderToolbar` | `BuilderToolbarVM` + actions | mode toggle, grid-size control, marker toggles (gated on cell selection), Export Incomplete / Export Complete, Reset, Import (via FilePicker), title/author edits |
 | `GridSizeControl` | min/max/value/disabled | `change-grid-size`; numeric input, clamps on blur; disabled when not blank |
-| `BuilderGrid` | `GridVM` | `select-cell`, design-mode `toggle-design-cell`, `click-grid-word`; uses `TypingSurface` |
 | `BuilderCluePanel` | `CluePanelVM` + actions | clue edits (heads only — non-heads show "See N Direction"), Link next / Unlink, `click-clue-panel-word`, `begin-join`, `unjoin`; scrolls the highlighted clue into view via manual delta on the panel element (not native `scrollIntoView`) |
 | `DisplacedCluesPanel` | `DisplacedCluesPanelVM` + actions | `begin-reattach`, `delete-displaced-clue`; always rendered, empty state |
 | `JoinReattachBanner` | `BuilderSubModeBannerVM` + actions | `escape`; instructional banner during sub-modes |
@@ -375,7 +375,6 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 |---|---|---|
 | `PlayerShell` | `PlayerFacade` prop | switches ImportScreen ↔ solving layout; disables the typing surface while the anagram modal is open so the modal's textbox keeps focus |
 | `ImportScreen` | import error + actions | puzzle import (via FilePicker); shows `importError` on reject |
-| `PlayerGrid` | `GridVM` + actions | `select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-grid-word` |
 | `ActiveClueBanner` | `ActiveClueBannerVM` | none; rendered above and below the grid |
 | `PlayerCluePanel` | `PlayerCluePanelVM` + actions | `click-clue-panel-word`; display + navigation only; scroll-into-view like the Builder panel |
 | `PlayerToolbar` | `PlayerToolbarVM` + actions | `check`, `clear-errors`, `request-reset-player`, `import-new-puzzle`, `open-anagram-helper` |
@@ -387,8 +386,10 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 |---|---|
 | `Modal` | Backdrop, Confirm/Cancel, Escape cancels; Confirm dispatches the pending confirm intent. No focus trap (a11y out of scope). |
 | `ToastHost` / `Toast` | Stacked top-right (bottom-center on mobile); click or timeout dismisses. Per-toast timer `Map<ToastId, timer>` — sibling mutations never reset unrelated timers. |
-| `TypingSurface` | The single hidden `<input>`. Props `enabled` + `cursor`; a state-driven `$effect` refocuses on cursor change. Normalizes mobile composition/IME/Unidentified keys into `TypingIntent` values (`ui/shared/typingIntent.ts`). |
+| `Grid` | The crossword grid leaf shared by Builder and Player (replaces the former twin `BuilderGrid`/`PlayerGrid`). Props `GridVM` + `onCellClick(row, col)` + `allCellsClickable` (true in Builder design mode; omitted/false otherwise). |
+| `TypingSurface` | The single hidden `<input>`. Props `enabled` + `cursor`; a state-driven `$effect` refocuses on cursor change. Normalizes mobile composition/IME/Unidentified keys into `TypingIntent` values, applied to a grid action bag via `applyTypingIntent` (`ui/shared/typingIntent.ts`). |
 | `FilePicker` | Fully presentational file-pick/drop surface (§6 prop shape); all IO and failure handling live in the facades. |
+| `typingIntent.ts` / `clueScroll.ts` | Plain shared helpers: `TypingIntent` + `applyTypingIntent(intent, actions)` mapping a `TypingIntent` onto any grid action bag (structural type); `canonicalWordKeyId(wordKey)` + `scrollRowIntoView(panelEl, liRefs, id)` — the scroll-into-view logic shared by both clue panels. |
 | `VersionStamp` | Footer rendering the build-time-injected `__APP_COMMIT_HASH__` / `__APP_BUILD_TIME__` globals (Vite `define` from an inline `gitInfo()` in `vite.config.ts`; ambient-declared in `src/vite-env.d.ts`). No props, no imports. |
 
 ### Top-level layout
@@ -397,7 +398,7 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 
 ## 12. Testing & CI
 
-**Unit tests (Vitest, pure-logic only).** One test file per source module under `test/` mirroring `src/` layout. Coverage includes: all `GridOps` accessors; word derivation/numbering across grid shapes; `WordSelection` and `ChainCells` cases; every `ChainViolation` kind; `LengthPattern` (standalone, space/hyphen/mixed, chain suffixes with all three boundary kinds); `parsePuzzle` happy paths (both versions) and every rejection rule (incl. strict `letter`-field and non-head-clue rejections, and the v1-only boundary normalization); the exhaustive `reconcileWords` edge-case suite; every Builder/Player intent kind with happy-path and guard-rejection tests (`deps = { rng: SeededRng, now: FakeClock }`); `Anagram.scramble` with seeded RNG; the app-level modal confirm/cancel and toast folds. There is no component/DOM test harness; visual and mobile-keyboard behaviour are on the manual checklist (iOS Safari / Android Chrome typing, visual conventions, banner rendering, toast placement).
+**Unit tests (Vitest, pure-logic only).** One test file per source module under `test/` mirroring `src/` layout. Coverage includes: all `GridOps` accessors; the `GridInteraction` transitions (select/move/type/backspace, no-op outcomes, both letter slots); word derivation/numbering across grid shapes; `WordSelection` and `ChainCells` cases; every `ChainViolation` kind; `LengthPattern` (standalone, space/hyphen/mixed, chain suffixes with all three boundary kinds); `parsePuzzle` happy paths (both versions) and every rejection rule (incl. strict `letter`-field and non-head-clue rejections, and the v1-only boundary normalization); the exhaustive `reconcileWords` edge-case suite; every Builder/Player intent kind with happy-path and guard-rejection tests (`deps = { rng: SeededRng, now: FakeClock }`); `Anagram.scramble` with seeded RNG; the app-level modal confirm/cancel and toast folds. There is no component/DOM test harness; visual and mobile-keyboard behaviour are on the manual checklist (iOS Safari / Android Chrome typing, visual conventions, banner rendering, toast placement).
 
 **Fakes (`test/fakes/`).** `InMemoryStoragePort` (with one-shot `nextWriteError`), `SeededRng` (Mulberry32), `FakeClock` (manually advanced, returns `EpochMs`), `StubDownloadPort` (records calls) — each paired with a co-located unit test.
 
@@ -425,8 +426,8 @@ angryphrase/
 │  vitest.config.ts, tailwind.config.ts, postcss.config.js, .nvmrc
 ├─ src/
 │  ├─ main.ts, app.css, vite-env.d.ts
-│  ├─ domain/         grid/ word/ letter/ chain/ anagram/ puzzle/
-│  │                  builder/ uuid/ time/ notifications/ format/
+│  ├─ domain/         grid/ (incl. GridInteraction) word/ letter/ chain/ anagram/
+│  │                  puzzle/ builder/ uuid/ time/ notifications/ format/
 │  │                  rng/ ports/  brand.ts            (§3 Layer 0)
 │  ├─ builder/state/  state.ts intents.ts reducer.ts + internal/
 │  │                  (designMode, fillMode, joinSubMode, reattachSubMode,
@@ -436,15 +437,16 @@ angryphrase/
 │  ├─ app/state/      state.ts intents.ts reducer.ts effects.ts intentKinds.ts
 │  ├─ ui/
 │  │  ├─ app/         App, Landing, Header
-│  │  ├─ builder/     BuilderShell, BuilderToolbar, GridSizeControl, BuilderGrid,
+│  │  ├─ builder/     BuilderShell, BuilderToolbar, GridSizeControl,
 │  │  │               BuilderCluePanel, DisplacedCluesPanel, JoinReattachBanner
-│  │  ├─ player/      PlayerShell, ImportScreen, PlayerGrid, PlayerCluePanel,
+│  │  ├─ player/      PlayerShell, ImportScreen, PlayerCluePanel,
 │  │  │               ActiveClueBanner, PlayerToolbar, AnagramModal
 │  │  ├─ shared/      Modal, ToastHost, Toast, TypingSurface, FilePicker,
-│  │  │               VersionStamp, typingIntent.ts
+│  │  │               VersionStamp, Grid, typingIntent.ts, clueScroll.ts
 │  │  └─ bindings/    appStore.svelte.ts, builderFacade.ts, playerFacade.ts,
 │  │                  modalFacade.ts, toastFacade.ts, persistenceCodec.ts,
-│  │                  persistenceScheduler.ts, viewmodels/ (§3 Layer 2)
+│  │                  persistenceScheduler.ts, gridActions.ts,
+│  │                  filePickActions.ts, viewmodels/ (§3 Layer 2)
 │  └─ ports/          localStoragePort, downloadPort, filePickPort, rngPort
 ├─ test/              domain/ builder/state/ player/state/ app/state/
 │                     ui/bindings/ fakes/ boundary/imports.test.ts

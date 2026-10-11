@@ -6,12 +6,13 @@ import type { AppStore } from './appStore.svelte';
 import { Row } from '../../domain/grid/Row';
 import { Col } from '../../domain/grid/Col';
 import { GridSize } from '../../domain/grid/GridSize';
-import { Letter } from '../../domain/letter/Letter';
 import { Title } from '../../domain/puzzle/Title';
 import { Author } from '../../domain/puzzle/Author';
 import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
 import type { WordKey } from '../../domain/word/WordKey';
 import type { DisplacedClueId } from '../../domain/builder/DisplacedClueId';
+import { createGridActions } from './gridActions';
+import { createFilePickActions } from './filePickActions';
 
 export type { BuilderShellVM };
 
@@ -73,6 +74,13 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     appStore.dispatch(intent);
   }
 
+  const filePick = createFilePickActions(
+    appStore,
+    'builderFacade',
+    dispatch,
+    (text) => dispatch({ kind: 'request-import-puzzle', fileContent: text }),
+  );
+
   const toolbar: BuilderToolbarActions = {
     switchToFill() {
       dispatch({ kind: 'switch-to-fill' });
@@ -109,36 +117,14 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       dispatch({ kind: 'request-import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
-      const result = await appStore.getPorts().filePick.readDroppedFile(file);
-      if (result.kind === 'read') {
-        dispatch({ kind: 'request-import-puzzle', fileContent: result.text });
-        return;
-      }
-      console.warn('builderFacade: failed to read dropped file:', result.error);
-      dispatch({ kind: 'report-import-read-failure' });
+      await filePick.importDroppedFile(file);
     },
   };
 
   const grid: BuilderGridActions = {
-    selectCell(row: number, col: number) {
-      dispatch({ kind: 'select-cell', row: Row.of(row), col: Col.of(col) });
-    },
+    ...createGridActions(dispatch),
     toggleDesignCell(row: number, col: number) {
       dispatch({ kind: 'toggle-design-cell', row: Row.of(row), col: Col.of(col) });
-    },
-    typeLetter(letter: string) {
-      const l = Letter.try(letter);
-      if (l === null) return;
-      dispatch({ kind: 'type-letter', letter: l });
-    },
-    backspace() {
-      dispatch({ kind: 'backspace' });
-    },
-    moveCursor(direction: 'across' | 'down', sign: -1 | 1) {
-      dispatch({ kind: 'move-cursor', direction, sign });
-    },
-    escape() {
-      dispatch({ kind: 'escape' });
     },
   };
 
@@ -181,12 +167,7 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       return appStore.getBuilder();
     },
     async pickFile() {
-      const result = await appStore.getPorts().filePick.pickFile();
-      if (result.kind === 'picked') return result.text;
-      if (result.kind === 'cancelled') return null;
-      console.warn('builderFacade: pickFile failed:', result.error);
-      dispatch({ kind: 'report-pick-failure' });
-      return null;
+      return filePick.pickFile();
     },
     actions: { toolbar, grid, cluePanel, displacedClues, banner },
   };

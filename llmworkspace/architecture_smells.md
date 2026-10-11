@@ -57,6 +57,8 @@ The reason this is architectural rather than incidental: the boundary rule creat
 
 Consequence quantified: one new keyboard interaction (e.g. tab-to-next-word) touches `typingIntent.ts`, both shells' switches, both facades' grid bags, both `intents.ts`, both `reducer.ts`, both internal handler files — seven files, twice over, plus one test file per state module. A change to cursor semantics (e.g. skip-black-cell behaviour) must be replicated exactly or the two experiences silently diverge.
 
+**Status (2026-10-11): addressed** — resolution in `architecture_smell_resolutions.md`.
+
 ---
 
 ## 2. "Complete puzzle" is defined twice, and the export gate is weaker than the import gate
@@ -92,6 +94,8 @@ Three specific fragilities:
 - **Failure-reporting has two architectures for one concept.** Port-operation failures become intents — but `report-download-failure` is an `AppIntent` handled directly by `reduceApp` (`reducer.ts:31-32`), while `report-pick-failure` / `report-import-read-failure` exist *in both* experience unions and round-trip through sub-reducers to emit near-identical toasts (`importExport.ts:57-63`, `player/.../lifecycle.ts:91-103`). No criterion decides which layer a failure report belongs to; the split is the direct cause of the duplicated facade policy in #1.
 
 This smell and #1 share a root (per-experience taxonomies for shared concepts) but are distinct mechanisms: #1 is duplicated *behaviour*, #3 is the *identity and routing* model that duplication forced into existence.
+
+**Note (2026-10-11, from the #1 fix):** deduplicating the twin failure-message constants (`IMPORT_READ_FAILURE_MSG` / `PICK_FAILURE_MSG`, the #1 table's last row) was proposed and deliberately deferred to this smell — the constants are a leaf symptom of the `report-*` twin architecture described above, so fixing them here should ride along with the routing/identity decision, not precede it.
 
 ---
 

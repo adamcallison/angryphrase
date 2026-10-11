@@ -2,10 +2,6 @@ import type { BuilderState } from '../state';
 import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
-import type { Direction } from '../../../domain/word/Direction';
-import { Row } from '../../../domain/grid/Row';
-import { Col } from '../../../domain/grid/Col';
-import type { Grid } from '../../../domain/grid/Grid';
 import { Result } from '../../../domain/notifications/Event';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
@@ -14,12 +10,13 @@ import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
 import { Chain } from '../../../domain/chain/Chain';
+import { GridInteraction, type LetterSlot } from '../../../domain/grid/GridInteraction';
 import { resolveJoin } from './joinSubMode';
 import { resolveReattach } from './reattachSubMode';
 
-const DELTA: Record<Direction, { dr: number; dc: number }> = {
-  across: { dr: 0, dc: 1 },
-  down: { dr: 1, dc: 0 },
+const ANSWER_SLOT: LetterSlot = {
+  read: (c) => c.answerLetter,
+  set: Cell.setAnswerLetter,
 };
 
 export function handleSelectCell(
@@ -30,40 +27,8 @@ export function handleSelectCell(
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  if (!GridOps.withinBounds(g, intent.row, intent.col)) {
-    return Result.ok(state);
-  }
-
-  if (!GridOps.isSelectable(g, intent.row, intent.col)) {
-    return Result.ok(state);
-  }
-
-  const inAcross = partOfAcross(g, intent.row, intent.col);
-  const inDown = partOfDown(g, intent.row, intent.col);
-
-  const current = state.cursor;
-  const sameCell =
-    current !== null &&
-    Number(current.row) === Number(intent.row) &&
-    Number(current.col) === Number(intent.col);
-
-  let direction: Direction;
-  if (sameCell) {
-    if (current === null) return Result.ok(state); // unreachable: sameCell implies current !== null
-    if (inAcross && inDown) {
-      direction = current.direction === 'across' ? 'down' : 'across';
-    } else {
-      return Result.ok(state);
-    }
-  } else {
-    direction = inAcross && inDown ? 'across' : inAcross ? 'across' : 'down';
-  }
-
-  return Result.ok({
-    ...state,
-    cursor: { row: intent.row, col: intent.col, direction },
-  });
+  const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
+  return cursor === null ? Result.ok(state) : Result.ok({ ...state, cursor });
 }
 
 export function handleMoveCursor(
@@ -74,105 +39,51 @@ export function handleMoveCursor(
     return Result.ok(state);
   }
 
-  const cursor = state.cursor;
-  if (cursor === null) {
-    return Result.ok(state);
-  }
-
-  const { dr, dc } = DELTA[intent.direction];
-  const signedDr = dr * intent.sign;
-  const signedDc = dc * intent.sign;
-  const newRow = Row.try(Number(cursor.row) + signedDr);
-  const newCol = Col.try(Number(cursor.col) + signedDc);
-
-  const g = state.puzzle.grid;
-  if (
-    newRow !== null &&
-    newCol !== null &&
-    GridOps.withinBounds(g, newRow, newCol) &&
-    GridOps.isSelectable(g, newRow, newCol)
-  ) {
-    return Result.ok({
-      ...state,
-      cursor: { row: newRow, col: newCol, direction: intent.direction },
-    });
-  }
-
-  return Result.ok({
-    ...state,
-    cursor: { ...cursor, direction: intent.direction },
-  });
+  const cursor = GridInteraction.move(
+    state.puzzle.grid,
+    state.cursor,
+    intent.direction,
+    intent.sign,
+  );
+  return cursor === null ? Result.ok(state) : Result.ok({ ...state, cursor });
 }
 
 export function handleTypeLetter(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'type-letter' }>,
 ): ReducerResult<BuilderState> {
-  if (state.mode !== 'fill' || state.cursor === null) {
+  if (state.mode !== 'fill') {
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  const c = GridOps.cellAt(g, state.cursor.row, state.cursor.col);
-  if (c.black) {
-    return Result.ok(state);
-  }
-
-  const newCell = Cell.setAnswerLetter(c, intent.letter);
-  const newGrid = GridOps.setCell(g, state.cursor.row, state.cursor.col, newCell);
-  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
-
-  const { dr, dc } = DELTA[state.cursor.direction];
-  const nextRow = Row.of(Number(state.cursor.row) + dr);
-  const nextCol = Col.of(Number(state.cursor.col) + dc);
-  let cursor = state.cursor;
-  if (GridOps.withinBounds(newGrid, nextRow, nextCol) && GridOps.isSelectable(newGrid, nextRow, nextCol)) {
-    cursor = { row: nextRow, col: nextCol, direction: state.cursor.direction };
-  }
-
-  return Result.ok({ ...state, puzzle: newPuzzle, cursor });
+  const out = GridInteraction.typeLetter(
+    state.puzzle.grid,
+    state.cursor,
+    intent.letter,
+    ANSWER_SLOT,
+  );
+  return out === null
+    ? Result.ok(state)
+    : Result.ok({
+        ...state,
+        puzzle: Puzzle.withGrid(state.puzzle, out.grid),
+        cursor: out.cursor,
+      });
 }
 
-export function handleBackspace(
-  state: BuilderState,
-): ReducerResult<BuilderState> {
-  if (state.mode !== 'fill' || state.cursor === null) {
+export function handleBackspace(state: BuilderState): ReducerResult<BuilderState> {
+  if (state.mode !== 'fill') {
     return Result.ok(state);
   }
 
-  const g = state.puzzle.grid;
-  const c = GridOps.cellAt(g, state.cursor.row, state.cursor.col);
-  if (c.black) {
-    return Result.ok(state);
-  }
-
-  if (c.answerLetter !== null) {
-    const newPuzzle = Puzzle.withGrid(
-      state.puzzle,
-      GridOps.setCell(g, state.cursor.row, state.cursor.col, Cell.setAnswerLetter(c, null)),
-    );
-    return Result.ok({ ...state, puzzle: newPuzzle, cursor: state.cursor });
-  }
-
-  const { dr, dc } = DELTA[state.cursor.direction];
-  const prevRow = Row.try(Number(state.cursor.row) - dr);
-  const prevCol = Col.try(Number(state.cursor.col) - dc);
-
-  if (prevRow === null || prevCol === null || !GridOps.withinBounds(g, prevRow, prevCol)) {
-    return Result.ok(state);
-  }
-  const prevCell = GridOps.cellAt(g, prevRow, prevCol);
-  if (!GridOps.isSelectable(g, prevRow, prevCol)) {
-    return Result.ok(state);
-  }
-
-  const newGrid = GridOps.setCell(g, prevRow, prevCol, Cell.setAnswerLetter(prevCell, null));
-  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
-  return Result.ok({
-    ...state,
-    puzzle: newPuzzle,
-    cursor: { row: prevRow, col: prevCol, direction: state.cursor.direction },
-  });
+  const out = GridInteraction.backspace(state.puzzle.grid, state.cursor, ANSWER_SLOT);
+  return out === null
+    ? Result.ok(state)
+    : Result.ok({
+        ...state,
+        puzzle: Puzzle.withGrid(state.puzzle, out.grid),
+        cursor: out.cursor,
+      });
 }
 
 export function handleToggleMarker(
@@ -195,40 +106,6 @@ export function handleToggleMarker(
   const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
 
   return Result.ok({ ...state, puzzle: newPuzzle });
-}
-
-function partOfAcross(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, 0, -1) || hasWhiteNeighbour(g, row, col, 0, 1);
-}
-
-function partOfDown(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, -1, 0) || hasWhiteNeighbour(g, row, col, 1, 0);
-}
-
-function hasWhiteNeighbour(
-  g: Grid,
-  row: Row,
-  col: Col,
-  dr: number,
-  dc: number,
-): boolean {
-  const r = Number(row) + dr;
-  const c = Number(col) + dc;
-  if (r < 0 || c < 0) {
-    return false;
-  }
-
-  const neighbourRow = Row.try(r);
-  const neighbourCol = Col.try(c);
-  if (
-    neighbourRow === null ||
-    neighbourCol === null ||
-    !GridOps.withinBounds(g, neighbourRow, neighbourCol)
-  ) {
-    return false;
-  }
-
-  return Cell.isWhite(GridOps.cellAt(g, neighbourRow, neighbourCol));
 }
 
 export function handleEditClue(

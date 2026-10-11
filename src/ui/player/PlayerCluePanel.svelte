@@ -1,25 +1,18 @@
 <script lang="ts">
   import type { CluePanelVM } from '../bindings/viewmodels/cluePanelVM';
-  import type { WordKey } from '../../domain/word/WordKey';
   import type { PlayerCluePanelActions } from '../bindings/playerFacade';
+  import { canonicalWordKeyId, scrollRowIntoView } from '../shared/clueScroll';
 
   let { vm, actions }: { vm: CluePanelVM; actions: PlayerCluePanelActions } = $props();
 
   let panelEl: HTMLElement | null = $state(null);
-
-  function canonicalId(k: WordKey): string {
-    return `${k.startRow}_${k.startCol}_${k.direction}`;
-  }
 
   let liRefs: Record<string, HTMLElement> = $state({});
 
   $effect(() => {
     const key = vm.highlightedWordKey;
     if (key === null) return;
-    const el = liRefs[canonicalId(key)];
-    if (panelEl !== null && el !== undefined) {
-      panelEl.scrollTop += el.getBoundingClientRect().top - panelEl.getBoundingClientRect().top;
-    }
+    scrollRowIntoView(panelEl, liRefs, canonicalWordKeyId(key));
   });
 </script>
 
@@ -31,7 +24,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
-          bind:this={liRefs[canonicalId(entry.wordKey)]}
+          bind:this={liRefs[canonicalWordKeyId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             actions.clickCluePanelWord(entry.wordKey);
@@ -55,7 +48,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
-          bind:this={liRefs[canonicalId(entry.wordKey)]}
+          bind:this={liRefs[canonicalWordKeyId(entry.wordKey)]}
           class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
           onclick={() => {
             actions.clickCluePanelWord(entry.wordKey);

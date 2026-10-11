@@ -3,10 +3,9 @@ import type { PlayerState } from '../../player/state/state';
 import { derivePlayerShellVM } from './viewmodels/playerVM';
 import type { PlayerShellVM } from './viewmodels/playerVM';
 import type { AppStore } from './appStore.svelte';
-import { Row } from '../../domain/grid/Row';
-import { Col } from '../../domain/grid/Col';
-import { Letter } from '../../domain/letter/Letter';
 import type { WordKey } from '../../domain/word/WordKey';
+import { createGridActions } from './gridActions';
+import { createFilePickActions } from './filePickActions';
 
 export type { PlayerShellVM };
 
@@ -60,6 +59,13 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     appStore.dispatch(intent);
   }
 
+  const filePick = createFilePickActions(
+    appStore,
+    'playerFacade',
+    dispatch,
+    (text) => dispatch({ kind: 'import-puzzle', fileContent: text }),
+  );
+
   const toolbar: PlayerToolbarActions = {
     check() {
       dispatch({ kind: 'check' });
@@ -78,25 +84,7 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     },
   };
 
-  const grid: PlayerGridActions = {
-    selectCell(row: number, col: number) {
-      dispatch({ kind: 'select-cell', row: Row.of(row), col: Col.of(col) });
-    },
-    typeLetter(letter: string) {
-      const l = Letter.try(letter);
-      if (l === null) return;
-      dispatch({ kind: 'type-letter', letter: l });
-    },
-    backspace() {
-      dispatch({ kind: 'backspace' });
-    },
-    moveCursor(direction: 'across' | 'down', sign: -1 | 1) {
-      dispatch({ kind: 'move-cursor', direction, sign });
-    },
-    escape() {
-      dispatch({ kind: 'escape' });
-    },
-  };
+  const grid: PlayerGridActions = createGridActions(dispatch);
 
   const cluePanel: PlayerCluePanelActions = {
     clickCluePanelWord(wordKey: WordKey) {
@@ -109,13 +97,7 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
       dispatch({ kind: 'import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
-      const result = await appStore.getPorts().filePick.readDroppedFile(file);
-      if (result.kind === 'read') {
-        dispatch({ kind: 'import-puzzle', fileContent: result.text });
-        return;
-      }
-      console.warn('playerFacade: failed to read dropped file:', result.error);
-      dispatch({ kind: 'report-import-read-failure' });
+      await filePick.importDroppedFile(file);
     },
   };
 
@@ -140,12 +122,7 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
       return appStore.getPlayer();
     },
     async pickFile() {
-      const result = await appStore.getPorts().filePick.pickFile();
-      if (result.kind === 'picked') return result.text;
-      if (result.kind === 'cancelled') return null;
-      console.warn('playerFacade: pickFile failed:', result.error);
-      dispatch({ kind: 'report-pick-failure' });
-      return null;
+      return filePick.pickFile();
     },
     actions: { toolbar, grid, cluePanel, importScreen, anagram },
   };

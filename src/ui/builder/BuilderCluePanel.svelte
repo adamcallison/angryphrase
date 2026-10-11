@@ -2,6 +2,7 @@
   import type { CluePanelVM, ClueEntryVM } from '../bindings/viewmodels/cluePanelVM';
   import type { BuilderCluePanelActions } from '../bindings/builderFacade';
   import { SvelteMap } from 'svelte/reactivity';
+  import { canonicalWordKeyId, scrollRowIntoView } from '../shared/clueScroll';
 
   let { vm, actions }: { vm: CluePanelVM; actions: BuilderCluePanelActions } = $props();
 
@@ -14,27 +15,23 @@
 
   const drafts = new SvelteMap<string, string>();
 
-  function canonicalId(wordKey: ClueEntryVM['wordKey']): string {
-    return `${wordKey.startRow}_${wordKey.startCol}_${wordKey.direction}`;
-  }
-
   function valueFor(wordKey: ClueEntryVM['wordKey'], displayClue: string): string {
-    const id = canonicalId(wordKey);
+    const id = canonicalWordKeyId(wordKey);
     if (!drafts.has(id)) return displayClue;
     const draft = drafts.get(id);
     return draft === undefined ? displayClue : draft;
   }
 
   function setDraft(wordKey: ClueEntryVM['wordKey'], value: string): void {
-    drafts.set(canonicalId(wordKey), value);
+    drafts.set(canonicalWordKeyId(wordKey), value);
   }
 
   function clearDraft(wordKey: ClueEntryVM['wordKey']): void {
-    drafts.delete(canonicalId(wordKey));
+    drafts.delete(canonicalWordKeyId(wordKey));
   }
 
   function dispatchEditClue(entry: ClueEntryVM): void {
-    const id = canonicalId(entry.wordKey);
+    const id = canonicalWordKeyId(entry.wordKey);
     const clue = !drafts.has(id)
       ? entry.displayClue
       : drafts.get(id) ?? entry.displayClue;
@@ -63,10 +60,7 @@
   $effect(() => {
     const key = vm.highlightedWordKey;
     if (key === null) return;
-    const el = liRefs[canonicalId(key)];
-    if (panelEl !== null && el !== undefined) {
-      panelEl.scrollTop += el.getBoundingClientRect().top - panelEl.getBoundingClientRect().top;
-    }
+    scrollRowIntoView(panelEl, liRefs, canonicalWordKeyId(key));
   });
 </script>
 
@@ -74,7 +68,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <li
-    bind:this={liRefs[canonicalId(entry.wordKey)]}
+    bind:this={liRefs[canonicalWordKeyId(entry.wordKey)]}
     class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected
       ? 'bg-yellow-100'
       : ''} {entry.isLinkableFromJoinSource ? 'ring-2 ring-blue-400' : ''}"
@@ -131,7 +125,7 @@
   <section>
     <h2 class="text-sm font-semibold text-gray-700">Across</h2>
     <ul class="flex flex-col gap-1">
-      {#each vm.across as entry (canonicalId(entry.wordKey))}
+      {#each vm.across as entry (canonicalWordKeyId(entry.wordKey))}
         {@render clueRow(entry)}
       {/each}
     </ul>
@@ -139,7 +133,7 @@
   <section>
     <h2 class="text-sm font-semibold text-gray-700">Down</h2>
     <ul class="flex flex-col gap-1">
-      {#each vm.down as entry (canonicalId(entry.wordKey))}
+      {#each vm.down as entry (canonicalWordKeyId(entry.wordKey))}
         {@render clueRow(entry)}
       {/each}
     </ul>
