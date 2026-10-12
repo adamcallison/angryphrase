@@ -2,7 +2,12 @@ import { BuilderState } from '../../../builder/state/state';
 import type { BuilderMode } from '../../../builder/state/state';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { CellMarker } from '../../../domain/grid/CellMarker';
-import { CompletenessCheck, type CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
+import {
+  CompletenessCheck,
+  type CompletenessViolation,
+  type CompletenessViolationKind,
+  type CompletenessViolationCounts,
+} from '../../../domain/puzzle/CompletenessCheck';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import type { Direction } from '../../../domain/word/Direction';
@@ -11,6 +16,23 @@ import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { deriveGridVM, type GridVM } from './gridVM';
 import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
+
+const VIOLATION_LABELS: Record<CompletenessViolationKind, { singular: string; plural: string }> = {
+  'missing-answer-letter': { singular: 'missing answer letter', plural: 'missing answer letters' },
+  'missing-clue': { singular: 'missing clue', plural: 'missing clues' },
+  'non-head-clue': { singular: 'non-head word with stray clue text', plural: 'non-head words with stray clue text' },
+};
+
+function violationSummaryFromCounts(counts: CompletenessViolationCounts): Array<{ count: number; label: string }> {
+  const out: Array<{ count: number; label: string }> = [];
+  for (const kind of Object.keys(counts) as CompletenessViolationKind[]) {
+    const count = counts[kind];
+    if (count === 0) continue;
+    const noun = count === 1 ? VIOLATION_LABELS[kind].singular : VIOLATION_LABELS[kind].plural;
+    out.push({ count, label: `${count} ${noun}` });
+  }
+  return out;
+}
 
 export type BuilderToolbarVM = {
   mode: BuilderMode;
@@ -23,7 +45,8 @@ export type BuilderToolbarVM = {
   markerFlags: CellMarker;
   canExportComplete: boolean;
   exportCompleteViolations: CompletenessViolation[];
-  exportCompleteMessages: string[];
+  exportCompleteCounts: CompletenessViolationCounts;
+  violationSummary: Array<{ count: number; label: string }>;
 };
 
 export type DisplacedClueEntryVM = {
@@ -59,6 +82,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     ? GridOps.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
     : CellMarker.EMPTY;
   const exportCompleteViolations = CompletenessCheck.check(state.puzzle);
+  const exportCompleteCounts = CompletenessCheck.groupByKind(exportCompleteViolations);
+  const violationSummary = violationSummaryFromCounts(exportCompleteCounts);
   return {
     mode: state.mode,
     canSwitchToDesignWithoutConfirm: isBlank,
@@ -70,7 +95,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     markerFlags,
     canExportComplete: exportCompleteViolations.length === 0,
     exportCompleteViolations,
-    exportCompleteMessages: exportCompleteViolations.map((v) => CompletenessCheck.message(v)),
+    exportCompleteCounts,
+    violationSummary,
   };
 }
 

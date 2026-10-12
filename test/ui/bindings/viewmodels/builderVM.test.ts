@@ -118,6 +118,11 @@ describe('deriveBuilderToolbarVM', () => {
     expect(vm.canSwitchToDesignWithoutConfirm).toBe(true);
     expect(vm.canChangeGridSize).toBe(true);
     expect(vm.canExportComplete).toBe(false);
+    expect(vm.exportCompleteCounts).toEqual({
+      'missing-answer-letter': 25,
+      'missing-clue': 10,
+      'non-head-clue': 0,
+    });
   });
 
   it('deriveBuilderToolbarVM: state with answer letters, blank=false — canChangeGridSize=false, canSwitchToDesignWithoutConfirm=false', () => {
@@ -182,7 +187,7 @@ describe('deriveBuilderToolbarVM', () => {
     expect(vm.exportCompleteViolations.length).toBeGreaterThan(0);
   });
 
-  it('toolbar VM maps export-complete violations to user-facing messages', () => {
+  it('toolbar VM maps export-complete violations to a grouped summary', () => {
     let state = makeBlankState(2);
     state = stateWithAnswerLetter(state, 0, 0, 'A');
     state = stateWithAnswerLetter(state, 0, 1, 'B');
@@ -192,11 +197,15 @@ describe('deriveBuilderToolbarVM', () => {
       makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: '' }),
     ]);
     const vm = deriveBuilderToolbarVM(state);
-    expect(vm.exportCompleteMessages).toEqual(['Missing clue for word 1 across.']);
-    expect(vm.exportCompleteMessages).toEqual(vm.exportCompleteViolations.map((v) => CompletenessCheck.message(v)));
+    expect(vm.violationSummary).toEqual([{ count: 1, label: '1 missing clue' }]);
+    expect(vm.exportCompleteCounts).toEqual({
+      'missing-answer-letter': 0,
+      'missing-clue': 1,
+      'non-head-clue': 0,
+    });
   });
 
-  it('toolbar VM includes the non-head-clue message when a non-head word carries a clue', () => {
+  it('toolbar VM includes the non-head-clue summary when a non-head word carries a clue', () => {
     let state = makeBlankState(2);
     state = stateWithAnswerLetter(state, 0, 0, 'A');
     state = stateWithAnswerLetter(state, 0, 1, 'B');
@@ -221,11 +230,18 @@ describe('deriveBuilderToolbarVM', () => {
     });
     state = stateWithWords(state, [head, tail]);
     const vm = deriveBuilderToolbarVM(state);
-    expect(vm.exportCompleteMessages).toContain('Word 2 across is a non-head chain word with a non-empty clue.');
-    expect(vm.exportCompleteMessages).toEqual(vm.exportCompleteViolations.map((v) => CompletenessCheck.message(v)));
+    expect(vm.violationSummary).toContainEqual({
+      count: 1,
+      label: '1 non-head word with stray clue text',
+    });
+    expect(vm.exportCompleteCounts).toEqual({
+      'missing-answer-letter': 0,
+      'missing-clue': 0,
+      'non-head-clue': 1,
+    });
   });
 
-  it('toolbar VM exportCompleteMessages is empty when the puzzle is complete', () => {
+  it('toolbar VM violationSummary is empty when the puzzle is complete', () => {
     let state = makeBlankState(2);
     state = stateWithAnswerLetter(state, 0, 0, 'A');
     state = stateWithAnswerLetter(state, 0, 1, 'B');
@@ -236,7 +252,12 @@ describe('deriveBuilderToolbarVM', () => {
     ]);
     const vm = deriveBuilderToolbarVM(state);
     expect(vm.canExportComplete).toBe(true);
-    expect(vm.exportCompleteMessages).toEqual([]);
+    expect(vm.violationSummary).toEqual([]);
+    expect(vm.exportCompleteCounts).toEqual({
+      'missing-answer-letter': 0,
+      'missing-clue': 0,
+      'non-head-clue': 0,
+    });
   });
 });
 

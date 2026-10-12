@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
-import { CompletenessCheck } from '../../../src/domain/puzzle/CompletenessCheck';
+import { CompletenessCheck, type CompletenessViolation } from '../../../src/domain/puzzle/CompletenessCheck';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { GridOps } from '../../../src/domain/grid/GridOps';
@@ -277,5 +277,58 @@ describe('CompletenessCheck', () => {
         direction: 'across',
       }),
     ).toBe('Word 3 across is a non-head chain word with a non-empty clue.');
+  });
+
+  describe('groupByKind', () => {
+    it('empty input returns zero for every kind', () => {
+      expect(CompletenessCheck.groupByKind([])).toStrictEqual({
+        'missing-answer-letter': 0,
+        'missing-clue': 0,
+        'non-head-clue': 0,
+      });
+    });
+
+    it('counts each kind correctly', () => {
+      const violations: CompletenessViolation[] = [
+        { kind: 'missing-answer-letter', row: Row.of(0), col: Col.of(0) },
+        { kind: 'missing-answer-letter', row: Row.of(0), col: Col.of(1) },
+        { kind: 'missing-answer-letter', row: Row.of(1), col: Col.of(0) },
+        { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
+        { kind: 'missing-clue', wordNumber: WordNumber.of(2), direction: 'down' },
+        { kind: 'non-head-clue', wordNumber: WordNumber.of(3), direction: 'across' },
+      ];
+
+      expect(CompletenessCheck.groupByKind(violations)).toStrictEqual({
+        'missing-answer-letter': 3,
+        'missing-clue': 2,
+        'non-head-clue': 1,
+      });
+    });
+
+    it('counts sum to input length', () => {
+      const violations: CompletenessViolation[] = [
+        { kind: 'missing-answer-letter', row: Row.of(0), col: Col.of(0) },
+        { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
+        { kind: 'non-head-clue', wordNumber: WordNumber.of(2), direction: 'down' },
+        { kind: 'missing-answer-letter', row: Row.of(2), col: Col.of(2) },
+        { kind: 'missing-clue', wordNumber: WordNumber.of(3), direction: 'across' },
+      ];
+      const counts = CompletenessCheck.groupByKind(violations);
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+      expect(total).toBe(violations.length);
+    });
+
+    it('returns the same shape for any input', () => {
+      const empty = CompletenessCheck.groupByKind([]);
+      const mixedViolations: CompletenessViolation[] = [
+        { kind: 'missing-answer-letter', row: Row.of(0), col: Col.of(0) },
+        { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
+        { kind: 'non-head-clue', wordNumber: WordNumber.of(2), direction: 'down' },
+      ];
+      const mixed = CompletenessCheck.groupByKind(mixedViolations);
+
+      expect(Object.keys(empty).sort()).toStrictEqual(Object.keys(mixed).sort());
+    });
   });
 });

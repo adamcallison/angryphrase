@@ -155,6 +155,14 @@ No new source modules; no intent, event, or port changes; `v1.test.ts` untouched
 
 A future rule of "what a complete puzzle is" lands in `CompletenessCheck` once; the export gate, the toolbar display, and the parser's complete-file validation all inherit it (the parser adds only a message mapping). The round-trip suite fails CI if either gate drifts. Displaced clues remain deliberately outside the gate; their omission is now user-visible and their rationale is recorded here rather than only in the archived requirements. The smell-#2-adjacent leftover is none; the next ranked smell is #3 (intent identity/routing), which also owns the deferred `report-*` twin constants from #1.
 
+### Post-resolution correction (2026-10-12)
+
+The original §2 fix made `BuilderToolbarVM.exportCompleteMessages` a `string[]`, mapping each `CompletenessViolation` to its single-violation message via `CompletenessCheck.message`, and `BuilderToolbar.svelte` rendered one `<p>` per message. On an empty 25×25 grid this produced roughly 550 lines of red text — noise, not signal.
+
+The correction replaces that list with grouped counts. `CompletenessCheck.groupByKind(violations): CompletenessViolationCounts` returns `Readonly<Record<CompletenessViolationKind, number>>` with one key per kind and zero for absent kinds. `BuilderToolbarVM` now derives one summary line per non-zero kind (for example, "500 missing answer letters", "50 missing clues", "1 non-head word with stray clue text"). `exportCompleteMessages: string[]` is removed; `exportCompleteViolations: CompletenessViolation[]` is kept because `canExportComplete` still depends on its length.
+
+No domain semantics changed: the export gate and parser validation are unchanged. This is presentation-only. The design was discussed as part of the smell #3 follow-up work.
+
 ---
 
 ## 3. Intent identity is not unique — collision is absorbed by runtime route-dispatch machinery — resolved 2026-10-12

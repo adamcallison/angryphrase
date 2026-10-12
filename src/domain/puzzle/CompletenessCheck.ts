@@ -13,11 +13,15 @@ export type CompletenessViolation =
   | { kind: 'missing-clue'; wordNumber: WordNumber; direction: Direction }
   | { kind: 'non-head-clue'; wordNumber: WordNumber; direction: Direction };
 
+export type CompletenessViolationKind = CompletenessViolation['kind'];
+export type CompletenessViolationCounts = Readonly<Record<CompletenessViolationKind, number>>;
+
 export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[];
   isComplete(p: Puzzle): boolean;
   clueViolations(words: Word[]): CompletenessViolation[];
   message(v: CompletenessViolation): string;
+  groupByKind(violations: CompletenessViolation[]): CompletenessViolationCounts;
 } = {
   check(p: Puzzle): CompletenessViolation[] {
     const violations: CompletenessViolation[] = [];
@@ -77,5 +81,17 @@ export const CompletenessCheck: {
       case 'non-head-clue':
         return `Word ${Number(v.wordNumber)} ${v.direction} is a non-head chain word with a non-empty clue.`;
     }
+  },
+
+  groupByKind(violations: CompletenessViolation[]): CompletenessViolationCounts {
+    const counts: Record<CompletenessViolationKind, number> = {
+      'missing-answer-letter': 0,
+      'missing-clue': 0,
+      'non-head-clue': 0,
+    };
+    for (const v of violations) {
+      counts[v.kind]++;
+    }
+    return counts;
   },
 };

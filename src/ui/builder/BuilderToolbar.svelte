@@ -141,10 +141,10 @@
     >
       Export Complete
     </button>
-    {#if vm.exportCompleteMessages.length > 0}
+    {#if vm.violationSummary.length > 0}
       <div class="flex flex-col gap-1">
-        {#each vm.exportCompleteMessages as message}
-          <p class="text-sm text-red-600">{message}</p>
+        {#each vm.violationSummary as item}
+          <p class="text-sm text-red-600">{item.label}</p>
         {/each}
       </div>
     {/if}
