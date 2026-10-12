@@ -1,10 +1,15 @@
 import { describe, it, expect } from 'vitest';
+import type { BuilderIntent } from '../../../src/builder/state/intents';
+import type { PlayerIntent } from '../../../src/player/state/intents';
 import {
   BUILDER_INTENT_KINDS,
   PLAYER_INTENT_KINDS,
   CONFIRMABLE_INTENT_KINDS,
-  AMBIGUOUS_INTENT_KINDS,
 } from '../../../src/app/state/intentKinds';
+
+type AssertTarget<T, Expected extends 'builder' | 'player'> = T extends { target: Expected } ? true : false;
+type _BuilderTargetCheck = AssertTarget<BuilderIntent, 'builder'> extends true ? true : never;
+type _PlayerTargetCheck = AssertTarget<PlayerIntent, 'player'> extends true ? true : never;
 
 const BUILDER_KINDS = [
   'switch-to-fill',
@@ -79,9 +84,14 @@ describe('intentKinds', () => {
     expect([...CONFIRMABLE_INTENT_KINDS].sort()).toEqual([...CONFIRMABLE_KINDS].sort());
   });
 
-  it('AMBIGUOUS_INTENT_KINDS equals the intersection of Builder and Player kinds', () => {
-    const expected = BUILDER_KINDS.filter(k => PLAYER_KINDS.includes(k)).sort();
-    expect([...AMBIGUOUS_INTENT_KINDS].sort()).toEqual(expected);
+  it('every BuilderIntent variant carries target: "builder"', () => {
+    const assertion: _BuilderTargetCheck = true;
+    expect(assertion).toBe(true);
+  });
+
+  it('every PlayerIntent variant carries target: "player"', () => {
+    const assertion: _PlayerTargetCheck = true;
+    expect(assertion).toBe(true);
   });
 
   it('every ConfirmableIntent kind is a Builder or Player kind', () => {
@@ -95,7 +105,6 @@ describe('intentKinds', () => {
       expect(BUILDER_INTENT_KINDS.has(kind)).toBe(false);
       expect(PLAYER_INTENT_KINDS.has(kind)).toBe(false);
       expect(CONFIRMABLE_INTENT_KINDS.has(kind)).toBe(false);
-      expect(AMBIGUOUS_INTENT_KINDS.has(kind)).toBe(false);
     }
   });
 });

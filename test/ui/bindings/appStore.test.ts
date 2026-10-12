@@ -111,7 +111,7 @@ describe('appStore.svelte.ts', () => {
     expect(beforeGrid.length).toBe(15);
     expect(beforeGrid[0]!.length).toBe(15);
 
-    const intent: BuilderIntent = { kind: 'change-grid-size', size: GridSize.of(10) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'change-grid-size', size: GridSize.of(10) };
     store.dispatch(intent);
 
     const afterGrid = store.getBuilder().puzzle.grid;
@@ -123,7 +123,7 @@ describe('appStore.svelte.ts', () => {
     const puzzle = makeCompletePuzzle(7, 3);
     const fileContent = serializeComplete(puzzle);
 
-    store.dispatch({ kind: 'import-puzzle', fileContent });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent });
 
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
@@ -134,7 +134,7 @@ describe('appStore.svelte.ts', () => {
   it('appStore: a builder reducer that emits a toast event folds via applyEventsToApp — getToasts() grows by one; toast id from ToastId.generate', () => {
     expect(store.getToasts()).toHaveLength(0);
 
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: 'not valid json' });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'not valid json' });
 
     const toasts = store.getToasts();
     expect(toasts).toHaveLength(1);
@@ -144,22 +144,22 @@ describe('appStore.svelte.ts', () => {
   });
 
   it('appStore: a builder request-* guard emits modal-request event → getModal() populated and getPendingConfirmIntent() populated', () => {
-    store.dispatch({ kind: 'switch-to-fill' });
-    store.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-    store.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
-    store.dispatch({ kind: 'request-switch-to-design' });
+    store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
 
     expect(store.getModal()).not.toBeNull();
     expect(store.getModal()?.kind).toBe('confirm-design-switch');
-    expect(store.getPendingConfirmIntent()).toEqual({ kind: 'confirm-switch-to-design' });
+    expect(store.getPendingConfirmIntent()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
   });
 
   it('appStore: dispatch cancel-modal clears getModal() and getPendingConfirmIntent()', () => {
-    store.dispatch({ kind: 'switch-to-fill' });
-    store.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-    store.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
-    store.dispatch({ kind: 'request-switch-to-design' });
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
+    store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
 
     expect(store.getModal()).not.toBeNull();
 
@@ -170,7 +170,7 @@ describe('appStore.svelte.ts', () => {
   });
 
   it('appStore: dispatch dismiss-toast removes the toast by id', () => {
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: 'not valid json' });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'not valid json' });
     const toast = store.getToasts()[0]!;
 
     store.dispatch({ kind: 'dismiss-toast', id: toast.id });
@@ -180,9 +180,9 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: download event triggers ports.download.download(filename, content) — use StubDownloadPort assertion', () => {
     const puzzle = makeCompletePuzzle(11, 3);
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
 
-    store.dispatch({ kind: 'export-complete' });
+    store.dispatch({ target: 'builder', kind: 'export-complete' });
 
     expect(stubDownload.getDownloadCount()).toBe(1);
     const last = stubDownload.getLastDownload();
@@ -193,10 +193,10 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: download failure surfaces an error toast (StubDownloadPort injected to return Error)', () => {
     const puzzle = makeCompletePuzzle(11, 3);
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
 
     stubDownload.nextDownloadError = new Error('boom');
-    store.dispatch({ kind: 'export-complete' });
+    store.dispatch({ target: 'builder', kind: 'export-complete' });
 
     expect(stubDownload.getDownloadCount()).toBe(1);
     const toasts = store.getToasts();
@@ -207,11 +207,11 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: clear-builder-storage event calls scheduler.clearBuilder() — verify storage cleared (no pending save fires later)', () => {
     const puzzle = makeCompletePuzzle(13, 3);
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
 
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
 
-    store.dispatch({ kind: 'confirm-reset-builder' });
+    store.dispatch({ target: 'builder', kind: 'confirm-reset-builder' });
 
     expect(store.getBuilder().puzzle.gridSize).toBe(puzzle.gridSize);
 
@@ -221,7 +221,7 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: clear-player-storage event calls scheduler.clearPlayer(key) — verify storage cleared for that key', () => {
     const puzzle = makeCompletePuzzle(17, 3);
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
 
     inMemoryStorage.savePlayerProgress(puzzle.key, JSON.stringify({
       version: 1,
@@ -233,7 +233,7 @@ describe('appStore.svelte.ts', () => {
 
     store.getScheduler().schedulePlayerSave(store.getPlayer());
 
-    store.dispatch({ kind: 'confirm-reset-player' });
+    store.dispatch({ target: 'player', kind: 'confirm-reset-player' });
 
     vi.advanceTimersByTime(1000);
     expect(inMemoryStorage.getPlayerProgressMap().has(String(puzzle.key))).toBe(false);
@@ -255,7 +255,7 @@ describe('appStore.svelte.ts', () => {
       playerLetters: playerLetters.map((row) => row.map((l) => (l === null ? null : String(l)))),
     }));
 
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
 
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
@@ -271,15 +271,15 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: load-player-progress with null blob → no apply-loaded-progress dispatched (state unchanged)', () => {
     const puzzle = makeCompletePuzzle(23, 3);
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
 
     const before = store.getPlayer();
     expect(before.phase).toBe('solving');
     if (before.phase !== 'solving') throw new Error('unreachable');
     expect(GridOps.cellAt(before.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
 
-    store.dispatch({ kind: 'import-new-puzzle' });
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-new-puzzle' });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
 
     const after = store.getPlayer();
     expect(after.phase).toBe('solving');
@@ -293,7 +293,7 @@ describe('appStore.svelte.ts', () => {
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
 
     expect(warnSpy).toHaveBeenCalled();
     const player = store.getPlayer();
@@ -310,7 +310,7 @@ describe('appStore.svelte.ts', () => {
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    expect(() => store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) })).not.toThrow();
+    expect(() => store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) })).not.toThrow();
 
     expect(warnSpy).toHaveBeenCalled();
     const player = store.getPlayer();
@@ -412,7 +412,7 @@ describe('appStore.svelte.ts', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const puzzle = makeCompletePuzzle(7, 3);
 
-    store.dispatch({ kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
     store.dispatch({ kind: 'navigate', route: 'play' });
 
     inMemoryStorage.nextWriteError = new Error('quota');
@@ -442,10 +442,10 @@ describe('appStore.svelte.ts', () => {
   it('appStore: failed clearBuilder arms the builder latch (toast) and the re-entrant dispatch joins the active work-queue', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const puzzle = makeCompletePuzzle(7, 3);
-    store.dispatch({ kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
-    store.dispatch({ kind: 'switch-to-fill' });
-    store.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-    store.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
+    store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
     inMemoryStorage.nextWriteError = new Error('clear fail');
     store.getScheduler().clearBuilder();
@@ -461,8 +461,8 @@ describe('appStore.svelte.ts', () => {
 
     inMemoryStorage.nextWriteError = new Error('reset clear fail');
     const beforeKey = store.getBuilder().puzzle.key;
-    store.dispatch({ kind: 'request-reset-builder' });
-    store.dispatch({ kind: 'confirm-reset-builder' });
+    store.dispatch({ target: 'builder', kind: 'request-reset-builder' });
+    store.dispatch({ target: 'builder', kind: 'confirm-reset-builder' });
 
     expect(store.getBuilder().puzzle.key).not.toBe(beforeKey);
     expect(store.getToasts()).toHaveLength(2);

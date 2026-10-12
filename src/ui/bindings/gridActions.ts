@@ -3,6 +3,8 @@ import { Row } from '../../domain/grid/Row';
 import { Col } from '../../domain/grid/Col';
 import { Letter } from '../../domain/letter/Letter';
 
+type TargetedGridIntent = { target: 'builder' | 'player' } & GridInteractionIntent;
+
 export type GridActions = {
   selectCell(row: number, col: number): void;
   typeLetter(letter: string): void;
@@ -11,24 +13,27 @@ export type GridActions = {
   escape(): void;
 };
 
-export function createGridActions(dispatch: (intent: GridInteractionIntent) => void): GridActions {
+export function createGridActions(
+  target: 'builder' | 'player',
+  dispatch: (intent: TargetedGridIntent) => void,
+): GridActions {
   return {
     selectCell(row: number, col: number) {
-      dispatch({ kind: 'select-cell', row: Row.of(row), col: Col.of(col) });
+      dispatch({ target, kind: 'select-cell', row: Row.of(row), col: Col.of(col) });
     },
     typeLetter(letter: string) {
       const l = Letter.try(letter);
       if (l === null) return;
-      dispatch({ kind: 'type-letter', letter: l });
+      dispatch({ target, kind: 'type-letter', letter: l });
     },
     backspace() {
-      dispatch({ kind: 'backspace' });
+      dispatch({ target, kind: 'backspace' });
     },
     moveCursor(direction: 'across' | 'down', sign: -1 | 1) {
-      dispatch({ kind: 'move-cursor', direction, sign });
+      dispatch({ target, kind: 'move-cursor', direction, sign });
     },
     escape() {
-      dispatch({ kind: 'escape' });
+      dispatch({ target, kind: 'escape' });
     },
   };
 }

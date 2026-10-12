@@ -22,7 +22,7 @@ export function handleRequestResetBuilder(
     {
       kind: 'modal-request',
       modal: { kind: 'confirm-reset-builder' },
-      confirmIntent: { kind: 'confirm-reset-builder' },
+      confirmIntent: { target: 'builder', kind: 'confirm-reset-builder' },
     },
   ]);
 }

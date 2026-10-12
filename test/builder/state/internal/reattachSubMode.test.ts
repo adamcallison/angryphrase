@@ -64,7 +64,7 @@ describe('handleBeginReattach', () => {
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue.id };
 
     const result = handleBeginReattach(state, intent);
 
@@ -77,8 +77,7 @@ describe('handleBeginReattach', () => {
       blankState('fill'),
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
-    const intent: BuilderIntent = {
-      kind: 'begin-reattach',
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach',
       displacedClueId: DisplacedClueId.generate(rng),
     };
 
@@ -94,7 +93,7 @@ describe('handleBeginReattach', () => {
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue.id };
 
     const result = handleBeginReattach(state, intent);
 
@@ -112,7 +111,7 @@ describe('handleBeginReattach', () => {
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue.id };
 
     const result = handleBeginReattach(state, intent);
 
@@ -126,7 +125,7 @@ describe('handleBeginReattach', () => {
       { row: Row.of(2), col: Col.of(3), direction: 'across' },
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue.id };
 
     const result = handleBeginReattach(state, intent);
 
@@ -141,7 +140,7 @@ describe('handleBeginReattach', () => {
       withDisplacedClues(blankState('fill'), [clue1, clue2]),
       { kind: 'reattach', displacedClueId: clue1.id },
     );
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue2.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue2.id };
 
     const result = handleBeginReattach(state, intent);
 
@@ -156,8 +155,7 @@ describe('handleDeleteDisplacedClue', () => {
       blankState('fill'),
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
-    const intent: BuilderIntent = {
-      kind: 'delete-displaced-clue',
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue',
       id: DisplacedClueId.generate(rng),
     };
 
@@ -173,7 +171,7 @@ describe('handleDeleteDisplacedClue', () => {
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -185,7 +183,7 @@ describe('handleDeleteDisplacedClue', () => {
     const clue1 = DisplacedClue.create(rng, 'first', 'across');
     const clue2 = DisplacedClue.create(rng, 'second', 'down');
     const state = withDisplacedClues(blankState('fill'), [clue1, clue2]);
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue1.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue1.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -198,7 +196,7 @@ describe('handleDeleteDisplacedClue', () => {
       [DisplacedClue.create(rng, 'clue', 'across')],
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -212,7 +210,7 @@ describe('handleDeleteDisplacedClue', () => {
       withDisplacedClues(blankState('fill'), [clue]),
       { kind: 'reattach', displacedClueId: clue.id },
     );
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -228,7 +226,7 @@ describe('handleDeleteDisplacedClue', () => {
       withDisplacedClues(blankState('fill'), [clue1, clue2]),
       { kind: 'reattach', displacedClueId: clue1.id },
     );
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue2.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue2.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -239,7 +237,7 @@ describe('handleDeleteDisplacedClue', () => {
   it('delete-displaced-clue: works in design mode (DisplacedCluesPanel is always rendered)', () => {
     const clue = DisplacedClue.create(rng, 'clue', 'across');
     const state = withDisplacedClues(blankState('design'), [clue]);
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -256,7 +254,7 @@ describe('handleDeleteDisplacedClue', () => {
         source: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
       },
     );
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -273,7 +271,7 @@ describe('handleDeleteDisplacedClue', () => {
       { row: Row.of(1), col: Col.of(2), direction: 'down' },
     );
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 
@@ -283,7 +281,7 @@ describe('handleDeleteDisplacedClue', () => {
   it('delete-displaced-clue: empty displaced list after deleting the only entry', () => {
     const clue = DisplacedClue.create(rng, 'clue', 'across');
     const state = withDisplacedClues(blankState('fill'), [clue]);
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = handleDeleteDisplacedClue(state, intent);
 

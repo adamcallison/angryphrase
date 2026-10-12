@@ -196,7 +196,7 @@ describe('request-import-puzzle', () => {
   it('when blank, executes import directly', () => {
     const state = blankState();
     const json = validIncompleteJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -211,7 +211,7 @@ describe('request-import-puzzle', () => {
   it('when blank, accepts a complete file too (FR-57)', () => {
     const state = blankState();
     const json = validCompleteJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -225,7 +225,7 @@ describe('request-import-puzzle', () => {
   it('blank + invalid json → emits toast with parsed failures, state unchanged', () => {
     const state = blankState();
     const json = invalidJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -240,7 +240,7 @@ describe('request-import-puzzle', () => {
 
   it('blank + malformed JSON (non-JSON text) → toast with "File is not valid JSON."', () => {
     const state = blankState();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: '{not json' };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: '{not json' };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -256,7 +256,7 @@ describe('request-import-puzzle', () => {
   it('when NOT blank, emits modal-request with confirm-import-puzzle + fileContent', () => {
     const state = nonBlankState();
     const json = validIncompleteJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -265,7 +265,7 @@ describe('request-import-puzzle', () => {
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-import-puzzle' },
-        confirmIntent: { kind: 'confirm-import-puzzle', fileContent: json },
+        confirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json },
       },
     ]);
   });
@@ -273,7 +273,7 @@ describe('request-import-puzzle', () => {
   it('when NOT blank but invalid json → still emits modal-request (guard fires before parse)', () => {
     const state = nonBlankState();
     const json = invalidJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -282,7 +282,7 @@ describe('request-import-puzzle', () => {
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-import-puzzle' },
-        confirmIntent: { kind: 'confirm-import-puzzle', fileContent: json },
+        confirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json },
       },
     ]);
   });
@@ -290,7 +290,7 @@ describe('request-import-puzzle', () => {
   it('imported puzzle.key preserved verbatim from file', () => {
     const state = blankState();
     const json = validIncompleteJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -300,7 +300,7 @@ describe('request-import-puzzle', () => {
   it('emits no "download" / "clear-storage" / "load-progress" events (FR-99 / §8.9a step 4)', () => {
     const state = blankState();
     const json = validIncompleteJson();
-    const intent = { kind: 'request-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
 
     const result = handleRequestImportPuzzle(state, intent);
 
@@ -315,7 +315,7 @@ describe('confirm-import-puzzle', () => {
   it('unconditionally executes the import (no blank guard)', () => {
     const state = nonBlankState();
     const json = validIncompleteJson();
-    const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'confirm-import-puzzle' as const, fileContent: json };
 
     const result = handleConfirmImportPuzzle(state, intent);
 
@@ -330,7 +330,7 @@ describe('confirm-import-puzzle', () => {
   it('with invalid json emits toast (executes but parse fails)', () => {
     const state = nonBlankState();
     const json = invalidJson();
-    const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'confirm-import-puzzle' as const, fileContent: json };
 
     const result = handleConfirmImportPuzzle(state, intent);
 
@@ -346,7 +346,7 @@ describe('confirm-import-puzzle', () => {
   it('imports a complete file (FR-57) — displacedClues = []', () => {
     const state = nonBlankState();
     const json = validCompleteJson();
-    const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'confirm-import-puzzle' as const, fileContent: json };
 
     const result = handleConfirmImportPuzzle(state, intent);
 
@@ -361,7 +361,7 @@ describe('confirm-import-puzzle', () => {
       displacedClues: [DisplacedClue.create(rng, 'Existing clue', 'across')],
     };
     const json = validIncompleteJson();
-    const intent = { kind: 'confirm-import-puzzle' as const, fileContent: json };
+    const intent = { target: 'builder' as const, kind: 'confirm-import-puzzle' as const, fileContent: json };
 
     const result = handleConfirmImportPuzzle(state, intent);
 

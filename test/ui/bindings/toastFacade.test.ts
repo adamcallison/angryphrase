@@ -147,7 +147,7 @@ describe('toastFacade.ts', () => {
       makePorts(),
     );
     const a = createToastFacade(storeA);
-    storeA.dispatch({ kind: 'request-import-puzzle', fileContent: 'not json' });
+    storeA.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'not json' });
 
     const storeB = createAppStore(
       makeBlankAppState(2),
@@ -155,7 +155,7 @@ describe('toastFacade.ts', () => {
       makePorts(),
     );
     const b = createToastFacade(storeB);
-    storeB.dispatch({ kind: 'request-import-puzzle', fileContent: 'also not json' });
+    storeB.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'also not json' });
 
     const aId = a.toastVMs()[0]!.id;
     a.actions.dismiss(aId);

@@ -17,43 +17,43 @@ import type { Author } from '../../domain/puzzle/Author';
 
 export type BuilderIntent =
   // mode
-  | { kind: 'switch-to-fill' }
-  | { kind: 'request-switch-to-design' }
-  | { kind: 'confirm-switch-to-design' }
+  | { target: 'builder'; kind: 'switch-to-fill' }
+  | { target: 'builder'; kind: 'request-switch-to-design' }
+  | { target: 'builder'; kind: 'confirm-switch-to-design' }
   // design
-  | { kind: 'toggle-design-cell'; row: Row; col: Col }
-  | { kind: 'change-grid-size'; size: GridSize }
+  | { target: 'builder'; kind: 'toggle-design-cell'; row: Row; col: Col }
+  | { target: 'builder'; kind: 'change-grid-size'; size: GridSize }
   // fill — cell selection & cursor
-  | SelectCellIntent
-  | MoveCursorIntent
+  | ({ target: 'builder' } & SelectCellIntent)
+  | ({ target: 'builder' } & MoveCursorIntent)
   // fill — typing
-  | TypeLetterIntent
-  | BackspaceIntent
+  | ({ target: 'builder' } & TypeLetterIntent)
+  | ({ target: 'builder' } & BackspaceIntent)
   // fill — markers
-  | { kind: 'toggle-marker'; flag: CellMarkerFlag }
+  | { target: 'builder'; kind: 'toggle-marker'; flag: CellMarkerFlag }
   // fill — clues
-  | { kind: 'edit-clue'; wordKey: WordKey; clue: string }
+  | { target: 'builder'; kind: 'edit-clue'; wordKey: WordKey; clue: string }
   // fill — chains
-  | { kind: 'begin-join'; source: WordKey }
-  | ClickCluePanelWordIntent
-  | { kind: 'click-grid-word'; wordKey: WordKey }
-  | { kind: 'unjoin'; source: WordKey }
-  | EscapeIntent
+  | { target: 'builder'; kind: 'begin-join'; source: WordKey }
+  | ({ target: 'builder' } & ClickCluePanelWordIntent)
+  | { target: 'builder'; kind: 'click-grid-word'; wordKey: WordKey }
+  | { target: 'builder'; kind: 'unjoin'; source: WordKey }
+  | ({ target: 'builder' } & EscapeIntent)
   // displaced clues
-  | { kind: 'begin-reattach'; displacedClueId: DisplacedClueId }
-  | { kind: 'delete-displaced-clue'; id: DisplacedClueId }
+  | { target: 'builder'; kind: 'begin-reattach'; displacedClueId: DisplacedClueId }
+  | { target: 'builder'; kind: 'delete-displaced-clue'; id: DisplacedClueId }
   // metadata
-  | { kind: 'edit-title'; title: Title }
-  | { kind: 'edit-author'; author: Author }
+  | { target: 'builder'; kind: 'edit-title'; title: Title }
+  | { target: 'builder'; kind: 'edit-author'; author: Author }
   // import / export
-  | { kind: 'request-import-puzzle'; fileContent: string }
-  | { kind: 'confirm-import-puzzle'; fileContent: string }
+  | { target: 'builder'; kind: 'request-import-puzzle'; fileContent: string }
+  | { target: 'builder'; kind: 'confirm-import-puzzle'; fileContent: string }
   // dispatched by the Builder toolbar facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
-  | { kind: 'report-import-read-failure' }
+  | { target: 'builder'; kind: 'report-import-read-failure' }
   // dispatched by the Builder toolbar facade when FilePickPort.pickFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
-  | { kind: 'report-pick-failure' }
-  | { kind: 'export-incomplete' }
-  | { kind: 'export-complete' }
+  | { target: 'builder'; kind: 'report-pick-failure' }
+  | { target: 'builder'; kind: 'export-incomplete' }
+  | { target: 'builder'; kind: 'export-complete' }
   // lifecycle
-  | { kind: 'request-reset-builder' }
-  | { kind: 'confirm-reset-builder' };
+  | { target: 'builder'; kind: 'request-reset-builder' }
+  | { target: 'builder'; kind: 'confirm-reset-builder' };

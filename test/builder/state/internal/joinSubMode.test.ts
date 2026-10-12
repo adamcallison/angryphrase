@@ -81,7 +81,7 @@ describe('handleBeginJoin', () => {
   it('begin-join: no-op in design mode', () => {
     const state = makeStateWithWords(5, [], 'design');
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(state, intent);
 
@@ -96,7 +96,7 @@ describe('handleBeginJoin', () => {
       startCol: Col.of(999),
       direction: 'across',
     };
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(state, intent);
 
@@ -107,7 +107,7 @@ describe('handleBeginJoin', () => {
   it('begin-join: no-op when source already has nextWord link (defensive)', () => {
     const state = withChain(makeStateWithWords(5, []), 0, 1);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(state, intent);
 
@@ -118,7 +118,7 @@ describe('handleBeginJoin', () => {
   it('begin-join: enters join sub-mode with source set (FR-34)', () => {
     const state = makeStateWithWords(5, []);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(state, intent);
 
@@ -137,7 +137,7 @@ describe('handleBeginJoin', () => {
         displacedClueId: DisplacedClueId.generate(rng),
       },
     };
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(stateWithReattach, intent);
 
@@ -151,7 +151,7 @@ describe('handleBeginJoin', () => {
       cursor: { row: Row.of(2), col: Col.of(3), direction: 'across' as const },
     };
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'begin-join', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
 
     const result = handleBeginJoin(state, intent);
 
@@ -164,7 +164,7 @@ describe('handleUnjoin', () => {
   it('unjoin: no-op in design mode', () => {
     const state = withClues(withChain(makeStateWithWords(4, [], 'design'), 0, 1), [[1, 'Downstream']]);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -179,7 +179,7 @@ describe('handleUnjoin', () => {
       startCol: Col.of(999),
       direction: 'across',
     };
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -190,7 +190,7 @@ describe('handleUnjoin', () => {
   it('unjoin: no-op when source.nextWord is null (defensive)', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -201,7 +201,7 @@ describe('handleUnjoin', () => {
   it('unjoin: clears source.nextWord link (FR-37)', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -214,7 +214,7 @@ describe('handleUnjoin', () => {
     const state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -234,7 +234,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[1]!.key;
     const downstreamBefore = state.puzzle.words[1]!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -257,7 +257,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const bKey = state.puzzle.words[1]!.key;
     const cKey = state.puzzle.words[2]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -277,7 +277,7 @@ describe('handleUnjoin', () => {
     const state = { ...base, puzzle: Puzzle.withWords(base.puzzle, chainedWords) };
     const source = state.puzzle.words[0]!.key;
     const cKey = state.puzzle.words[2]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -291,7 +291,7 @@ describe('handleUnjoin', () => {
       [1, 'Downstream clue'],
     ]);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -307,7 +307,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const otherKey = state.puzzle.words[2]!.key;
     const otherBefore = state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -319,7 +319,7 @@ describe('handleUnjoin', () => {
     const state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -333,7 +333,7 @@ describe('handleUnjoin', () => {
     state = withMarkerAt(state, 0, 3, 'space-right');
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -349,7 +349,7 @@ describe('handleUnjoin', () => {
   it('unjoin with empty downstream clue adds no displaced entry (behaviour unchanged)', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -361,7 +361,7 @@ describe('handleUnjoin', () => {
     const base = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
     const state = { ...base, displacedClues: [existing] };
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -607,7 +607,7 @@ describe('unjoin boundary markers (FR-37)', () => {
     let state = withChain(makeStateWithWords(4, []), 0, 1);
     state = withMarkerAt(state, 0, 3, 'space-right');
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 
@@ -624,7 +624,7 @@ describe('unjoin boundary markers (FR-37)', () => {
     state = withMarkerAt(state, 0, 3, 'space-bottom');
     state = withMarkerAt(state, 2, 2, 'hyphen-right');
     const source = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = handleUnjoin(state, intent, rng);
 

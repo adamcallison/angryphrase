@@ -91,7 +91,7 @@ export function handleRequestSwitchToDesign(
     {
       kind: 'modal-request',
       modal: { kind: 'confirm-design-switch' },
-      confirmIntent: { kind: 'confirm-switch-to-design' },
+      confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' },
     },
   ]);
 }

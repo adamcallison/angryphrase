@@ -1,3 +1,4 @@
+import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 import type { PlayerState } from '../../player/state/state';
 import { derivePlayerShellVM } from './viewmodels/playerVM';
@@ -55,46 +56,47 @@ export type PlayerFacade = {
 };
 
 export function createPlayerFacade(appStore: AppStore): PlayerFacade {
-  function dispatch(intent: PlayerIntent): void {
+  function dispatch(intent: BuilderIntent | PlayerIntent): void {
     appStore.dispatch(intent);
   }
 
   const filePick = createFilePickActions(
     appStore,
     'playerFacade',
+    'player',
     dispatch,
-    (text) => dispatch({ kind: 'import-puzzle', fileContent: text }),
+    (text) => dispatch({ kind: 'import-puzzle', target: 'player', fileContent: text }),
   );
 
   const toolbar: PlayerToolbarActions = {
     check() {
-      dispatch({ kind: 'check' });
+      dispatch({ kind: 'check', target: 'player' });
     },
     clearErrors() {
-      dispatch({ kind: 'clear-errors' });
+      dispatch({ kind: 'clear-errors', target: 'player' });
     },
     requestResetPlayer() {
-      dispatch({ kind: 'request-reset-player' });
+      dispatch({ kind: 'request-reset-player', target: 'player' });
     },
     importNewPuzzle() {
-      dispatch({ kind: 'import-new-puzzle' });
+      dispatch({ kind: 'import-new-puzzle', target: 'player' });
     },
     openAnagramHelper() {
-      dispatch({ kind: 'open-anagram-helper' });
+      dispatch({ kind: 'open-anagram-helper', target: 'player' });
     },
   };
 
-  const grid: PlayerGridActions = createGridActions(dispatch);
+  const grid: PlayerGridActions = createGridActions('player', dispatch);
 
   const cluePanel: PlayerCluePanelActions = {
     clickCluePanelWord(wordKey: WordKey) {
-      dispatch({ kind: 'click-clue-panel-word', wordKey });
+      dispatch({ kind: 'click-clue-panel-word', target: 'player', wordKey });
     },
   };
 
   const importScreen: PlayerImportScreenActions = {
     importPuzzle(fileContent: string) {
-      dispatch({ kind: 'import-puzzle', fileContent });
+      dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
     },
     async importDroppedFile(file: File) {
       await filePick.importDroppedFile(file);
@@ -103,13 +105,13 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
 
   const anagram: PlayerAnagramActions = {
     input(input: string) {
-      dispatch({ kind: 'anagram-input', input });
+      dispatch({ kind: 'anagram-input', target: 'player', input });
     },
     scramble() {
-      dispatch({ kind: 'anagram-scramble' });
+      dispatch({ kind: 'anagram-scramble', target: 'player' });
     },
     close() {
-      dispatch({ kind: 'close-anagram-helper' });
+      dispatch({ kind: 'close-anagram-helper', target: 'player' });
     },
   };
 

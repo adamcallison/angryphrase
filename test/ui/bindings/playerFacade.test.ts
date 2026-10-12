@@ -133,7 +133,7 @@ describe('playerFacade.ts', () => {
     const puzzle = makeCompletePuzzle(2, 3);
     const fileContent = serializeComplete(puzzle);
 
-    playerFacade.dispatch({ kind: 'import-puzzle', fileContent });
+    playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
 
     const vm = playerFacade.playerShellVM();
 
@@ -144,10 +144,10 @@ describe('playerFacade.ts', () => {
   it('playerFacade: dispatchPlayer select-cell intent (during solving) sets state.player.cursor', () => {
     const puzzle = makeCompletePuzzle(3, 3);
     const fileContent = serializeComplete(puzzle);
-    playerFacade.dispatch({ kind: 'import-puzzle', fileContent });
+    playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
     store.dispatch({ kind: 'navigate', route: 'play' });
 
-    playerFacade.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    playerFacade.dispatch({ kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) });
 
     const player = playerFacade.getPlayerState();
     expect(player.phase).toBe('solving');
@@ -160,9 +160,9 @@ describe('playerFacade.ts', () => {
   it('playerFacade: dispatchPlayer then playerShellVM() reflects new state', () => {
     const puzzle = makeCompletePuzzle(4, 3);
     const fileContent = serializeComplete(puzzle);
-    playerFacade.dispatch({ kind: 'import-puzzle', fileContent });
+    playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
     store.dispatch({ kind: 'navigate', route: 'play' });
-    playerFacade.dispatch({ kind: 'select-cell', row: Row.of(1), col: Col.of(1) });
+    playerFacade.dispatch({ kind: 'select-cell', target: 'player', row: Row.of(1), col: Col.of(1) });
 
     const vm = playerFacade.playerShellVM();
 
@@ -178,7 +178,7 @@ describe('playerFacade.ts', () => {
 
     const puzzle = makeCompletePuzzle(5, 3);
     const fileContent = serializeComplete(puzzle);
-    playerFacade.dispatch({ kind: 'import-puzzle', fileContent });
+    playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
 
     const after = playerFacade.getPlayerState();
     expect(after.phase).toBe('solving');
@@ -363,7 +363,7 @@ describe('playerFacade.ts', () => {
 
     expect(result).toBeNull();
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-pick-failure' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-pick-failure', target: 'player' });
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
@@ -388,7 +388,7 @@ describe('playerFacade.ts', () => {
     await playerWithDrop.actions.importScreen.importDroppedFile(file);
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'import-puzzle', fileContent: 'dropped text' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'import-puzzle', target: 'player', fileContent: 'dropped text' });
   });
 
   it('playerFacade: importDroppedFile dispatches report-import-read-failure, warns once, and leaves state otherwise unchanged when readDroppedFile returns failed', async () => {
@@ -408,7 +408,7 @@ describe('playerFacade.ts', () => {
     await playerWithDrop.actions.importScreen.importDroppedFile(file);
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-import-read-failure' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-import-read-failure', target: 'player' });
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);

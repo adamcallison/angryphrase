@@ -5,10 +5,12 @@ import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
 
+type TargetedGridIntent = { target: 'builder' | 'player' } & GridInteractionIntent;
+
 describe('gridActions.ts', () => {
-  function makeActions(): { actions: GridActions; dispatched: GridInteractionIntent[] } {
-    const dispatched: GridInteractionIntent[] = [];
-    const actions = createGridActions((intent) => dispatched.push(intent));
+  function makeActions(): { actions: GridActions; dispatched: TargetedGridIntent[] } {
+    const dispatched: TargetedGridIntent[] = [];
+    const actions = createGridActions('builder', (intent) => dispatched.push(intent));
     return { actions, dispatched };
   }
 
@@ -17,7 +19,7 @@ describe('gridActions.ts', () => {
 
     actions.selectCell(2, 3);
 
-    expect(dispatched).toEqual([{ kind: 'select-cell', row: Row.of(2), col: Col.of(3) }]);
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(3) }]);
   });
 
   it('typeLetter dispatches type-letter with branded letter for valid input', () => {
@@ -25,7 +27,7 @@ describe('gridActions.ts', () => {
 
     actions.typeLetter('Z');
 
-    expect(dispatched).toEqual([{ kind: 'type-letter', letter: Letter.try('Z')! }]);
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'type-letter', letter: Letter.try('Z')! }]);
   });
 
   it('typeLetter silently drops invalid input', () => {
@@ -41,7 +43,7 @@ describe('gridActions.ts', () => {
 
     actions.backspace();
 
-    expect(dispatched).toEqual([{ kind: 'backspace' }]);
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'backspace' }]);
   });
 
   it('moveCursor dispatches move-cursor with direction and sign', () => {
@@ -49,7 +51,7 @@ describe('gridActions.ts', () => {
 
     actions.moveCursor('down', -1);
 
-    expect(dispatched).toEqual([{ kind: 'move-cursor', direction: 'down', sign: -1 }]);
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'move-cursor', direction: 'down', sign: -1 }]);
   });
 
   it('escape dispatches escape', () => {
@@ -57,6 +59,6 @@ describe('gridActions.ts', () => {
 
     actions.escape();
 
-    expect(dispatched).toEqual([{ kind: 'escape' }]);
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'escape' }]);
   });
 });

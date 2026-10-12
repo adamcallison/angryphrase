@@ -109,11 +109,12 @@ export function handleRequestResetPlayer(
     return Result.ok(state);
   }
 
+  const confirmIntent: PlayerIntent = { kind: 'confirm-reset-player', target: 'player' };
   return Result.withEvents(state, [
     {
       kind: 'modal-request',
       modal: { kind: 'confirm-reset-player' },
-      confirmIntent: { kind: 'confirm-reset-player' },
+      confirmIntent,
     },
   ]);
 }

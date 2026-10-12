@@ -1,4 +1,5 @@
 import type { BuilderIntent } from '../../builder/state/intents';
+import type { PlayerIntent } from '../../player/state/intents';
 import type { BuilderState } from '../../builder/state/state';
 import { deriveBuilderShellVM } from './viewmodels/builderVM';
 import type { BuilderShellVM } from './viewmodels/builderVM';
@@ -70,51 +71,52 @@ export type BuilderFacade = {
 };
 
 export function createBuilderFacade(appStore: AppStore): BuilderFacade {
-  function dispatch(intent: BuilderIntent): void {
+  function dispatch(intent: BuilderIntent | PlayerIntent): void {
     appStore.dispatch(intent);
   }
 
   const filePick = createFilePickActions(
     appStore,
     'builderFacade',
+    'builder',
     dispatch,
-    (text) => dispatch({ kind: 'request-import-puzzle', fileContent: text }),
+    (text) => dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: text }),
   );
 
   const toolbar: BuilderToolbarActions = {
     switchToFill() {
-      dispatch({ kind: 'switch-to-fill' });
+      dispatch({ target: 'builder', kind: 'switch-to-fill' });
     },
     requestSwitchToDesign() {
-      dispatch({ kind: 'request-switch-to-design' });
+      dispatch({ target: 'builder', kind: 'request-switch-to-design' });
     },
     changeGridSize(size: number) {
-      dispatch({ kind: 'change-grid-size', size: GridSize.of(size) });
+      dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(size) });
     },
     toggleMarker(flag: CellMarkerFlag) {
-      dispatch({ kind: 'toggle-marker', flag });
+      dispatch({ target: 'builder', kind: 'toggle-marker', flag });
     },
     exportIncomplete() {
-      dispatch({ kind: 'export-incomplete' });
+      dispatch({ target: 'builder', kind: 'export-incomplete' });
     },
     exportComplete() {
-      dispatch({ kind: 'export-complete' });
+      dispatch({ target: 'builder', kind: 'export-complete' });
     },
     requestResetBuilder() {
-      dispatch({ kind: 'request-reset-builder' });
+      dispatch({ target: 'builder', kind: 'request-reset-builder' });
     },
     editTitle(title: string) {
       const t = Title.try(title);
       if (t === null) return;
-      dispatch({ kind: 'edit-title', title: t });
+      dispatch({ target: 'builder', kind: 'edit-title', title: t });
     },
     editAuthor(author: string) {
       const a = Author.try(author);
       if (a === null) return;
-      dispatch({ kind: 'edit-author', author: a });
+      dispatch({ target: 'builder', kind: 'edit-author', author: a });
     },
     requestImportPuzzle(fileContent: string) {
-      dispatch({ kind: 'request-import-puzzle', fileContent });
+      dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
       await filePick.importDroppedFile(file);
@@ -122,39 +124,39 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
   };
 
   const grid: BuilderGridActions = {
-    ...createGridActions(dispatch),
+    ...createGridActions('builder', dispatch),
     toggleDesignCell(row: number, col: number) {
-      dispatch({ kind: 'toggle-design-cell', row: Row.of(row), col: Col.of(col) });
+      dispatch({ target: 'builder', kind: 'toggle-design-cell', row: Row.of(row), col: Col.of(col) });
     },
   };
 
   const cluePanel: BuilderCluePanelActions = {
     editClue(wordKey: WordKey, clue: string) {
-      dispatch({ kind: 'edit-clue', wordKey, clue });
+      dispatch({ target: 'builder', kind: 'edit-clue', wordKey, clue });
     },
     beginJoin(source: WordKey) {
-      dispatch({ kind: 'begin-join', source });
+      dispatch({ target: 'builder', kind: 'begin-join', source });
     },
     unjoin(source: WordKey) {
-      dispatch({ kind: 'unjoin', source });
+      dispatch({ target: 'builder', kind: 'unjoin', source });
     },
     clickCluePanelWord(wordKey: WordKey) {
-      dispatch({ kind: 'click-clue-panel-word', wordKey });
+      dispatch({ target: 'builder', kind: 'click-clue-panel-word', wordKey });
     },
   };
 
   const displacedClues: DisplacedCluesPanelActions = {
     beginReattach(displacedClueId: DisplacedClueId) {
-      dispatch({ kind: 'begin-reattach', displacedClueId });
+      dispatch({ target: 'builder', kind: 'begin-reattach', displacedClueId });
     },
     deleteDisplacedClue(id: DisplacedClueId) {
-      dispatch({ kind: 'delete-displaced-clue', id });
+      dispatch({ target: 'builder', kind: 'delete-displaced-clue', id });
     },
   };
 
   const banner: BuilderBannerActions = {
     escape() {
-      dispatch({ kind: 'escape' });
+      dispatch({ target: 'builder', kind: 'escape' });
     },
   };
 

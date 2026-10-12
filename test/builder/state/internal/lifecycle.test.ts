@@ -84,7 +84,7 @@ describe('request-reset-builder', () => {
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-reset-builder' },
-        confirmIntent: { kind: 'confirm-reset-builder' },
+        confirmIntent: { target: 'builder', kind: 'confirm-reset-builder' },
       },
     ]);
   });
@@ -106,7 +106,7 @@ describe('request-reset-builder', () => {
     expect(result.events[0]).toEqual({
       kind: 'modal-request',
       modal: { kind: 'confirm-reset-builder' },
-      confirmIntent: { kind: 'confirm-reset-builder' },
+      confirmIntent: { target: 'builder', kind: 'confirm-reset-builder' },
     });
   });
 });

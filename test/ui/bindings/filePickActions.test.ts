@@ -7,6 +7,8 @@ import {
 import type { AppStore } from '../../../src/ui/bindings/appStore.svelte';
 import type { PickResult, DroppedFileResult } from '../../../src/domain/ports/ports';
 
+type TargetedFilePickIntent = { target: 'builder' | 'player' } & FilePickFailureIntent;
+
 describe('filePickActions.ts', () => {
   function makeStore(filePick: {
     pickFile: () => Promise<PickResult>;
@@ -28,14 +30,15 @@ describe('filePickActions.ts', () => {
 
   function makeActions(appStore: AppStore): {
     actions: FilePickActions;
-    failures: FilePickFailureIntent[];
+    failures: TargetedFilePickIntent[];
     read: string[];
   } {
-    const failures: FilePickFailureIntent[] = [];
+    const failures: TargetedFilePickIntent[] = [];
     const read: string[] = [];
     const actions = createFilePickActions(
       appStore,
       'testFacade',
+      'builder',
       (intent) => failures.push(intent),
       (text) => read.push(text),
     );
@@ -79,7 +82,7 @@ describe('filePickActions.ts', () => {
     const result = await actions.pickFile();
 
     expect(result).toBeNull();
-    expect(failures).toEqual([{ kind: 'report-pick-failure' }]);
+    expect(failures).toEqual([{ target: 'builder', kind: 'report-pick-failure' }]);
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('testFacade: pickFile failed:', error);
     warnSpy.mockRestore();
@@ -113,7 +116,7 @@ describe('filePickActions.ts', () => {
     await actions.importDroppedFile(file);
 
     expect(read).toEqual([]);
-    expect(failures).toEqual([{ kind: 'report-import-read-failure' }]);
+    expect(failures).toEqual([{ target: 'builder', kind: 'report-import-read-failure' }]);
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('testFacade: failed to read dropped file:', error);
     warnSpy.mockRestore();

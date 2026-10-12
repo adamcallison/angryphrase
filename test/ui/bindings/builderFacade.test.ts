@@ -106,25 +106,25 @@ describe('builderFacade.ts', () => {
   });
 
   it('builderFacade: dispatchBuilder change-grid-size intent mutates state.builder.puzzle.gridSize', () => {
-    builderFacade.dispatch({ kind: 'change-grid-size', size: GridSize.of(12) });
+    builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
 
     expect(builderFacade.getBuilderState().puzzle.gridSize).toBe(GridSize.of(12));
     expect(builderFacade.builderShellVM().toolbar.gridSizeInput).toBe(12);
   });
 
   it('builderFacade: dispatchBuilder select-cell intent mutates state.builder.cursor', () => {
-    builderFacade.dispatch({ kind: 'switch-to-fill' });
-    builderFacade.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    builderFacade.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
 
     expect(builderFacade.getBuilderState().cursor).not.toBeNull();
     expect(builderFacade.builderShellVM().grid.cursor).not.toBeNull();
   });
 
   it('builderFacade: dispatchBuilder then builderShellVM() reflects the new state ladder', () => {
-    builderFacade.dispatch({ kind: 'change-grid-size', size: GridSize.of(12) });
-    builderFacade.dispatch({ kind: 'switch-to-fill' });
-    builderFacade.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-    builderFacade.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
+    builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
+    builderFacade.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    builderFacade.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
     const vm = builderFacade.builderShellVM();
     expect(vm.toolbar.gridSizeInput).toBe(12);
@@ -137,7 +137,7 @@ describe('builderFacade.ts', () => {
     const before = builderFacade.getBuilderState();
     expect(before.puzzle.gridSize).toBe(GridSize.of(15));
 
-    builderFacade.dispatch({ kind: 'change-grid-size', size: GridSize.of(12) });
+    builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
 
     const after = builderFacade.getBuilderState();
     expect(after.puzzle.gridSize).toBe(GridSize.of(12));
@@ -298,7 +298,7 @@ describe('builderFacade.ts', () => {
 
     expect(result).toBeNull();
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-pick-failure' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ target: 'builder', kind: 'report-pick-failure' });
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
@@ -324,7 +324,7 @@ describe('builderFacade.ts', () => {
     await builderWithDrop.actions.toolbar.importDroppedFile(file);
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'request-import-puzzle', fileContent: 'dropped text' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'dropped text' });
   });
 
   it('builderFacade: importDroppedFile dispatches report-import-read-failure, warns once, and leaves state otherwise unchanged when readDroppedFile returns failed', async () => {
@@ -345,7 +345,7 @@ describe('builderFacade.ts', () => {
     await builderWithDrop.actions.toolbar.importDroppedFile(file);
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-import-read-failure' });
+    expect(dispatchSpy).toHaveBeenCalledWith({ target: 'builder', kind: 'report-import-read-failure' });
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
@@ -368,7 +368,7 @@ describe('builderFacade.ts', () => {
     );
     const b = createBuilderFacade(storeB);
 
-    a.dispatch({ kind: 'change-grid-size', size: GridSize.of(12) });
+    a.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
 
     expect(b.getBuilderState().puzzle.gridSize).toBe(GridSize.of(15));
   });

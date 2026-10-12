@@ -37,10 +37,10 @@ describe('modalFacade.ts', () => {
   }
 
   function populateDesignSwitchModal(): void {
-    store.dispatch({ kind: 'switch-to-fill' });
-    store.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-    store.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
-    store.dispatch({ kind: 'request-switch-to-design' });
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
+    store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
   }
 
   beforeEach(() => {
@@ -84,13 +84,13 @@ describe('modalFacade.ts', () => {
 
     populateDesignSwitchModal();
 
-    expect(modalFacade.getPendingConfirm()).toEqual({ kind: 'confirm-switch-to-design' });
+    expect(modalFacade.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
   });
 
   it('modalFacade: confirmModal() with pending confirm intent dispatches the corresponding confirm-* intent; verify modal cleared after', () => {
     populateDesignSwitchModal();
     expect(store.getState().modal).not.toBeNull();
-    expect(modalFacade.getPendingConfirm()).toEqual({ kind: 'confirm-switch-to-design' });
+    expect(modalFacade.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
 
     modalFacade.actions.confirm();
 
@@ -139,10 +139,10 @@ describe('modalFacade.ts', () => {
   it('modalFacade: two createModalFacade instances over two appStores are independent', () => {
     function triggerModal(target: AppStore): void {
       target.dispatch({ kind: 'navigate', route: 'build' });
-      target.dispatch({ kind: 'switch-to-fill' });
-      target.dispatch({ kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
-      target.dispatch({ kind: 'type-letter', letter: Letter.try('A')! });
-      target.dispatch({ kind: 'request-switch-to-design' });
+      target.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+      target.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+      target.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
+      target.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
     }
 
     const storeA = createAppStore(
@@ -165,6 +165,6 @@ describe('modalFacade.ts', () => {
 
     expect(a.modalVM()).toBeNull();
     expect(b.modalVM()).not.toBeNull();
-    expect(b.getPendingConfirm()).toEqual({ kind: 'confirm-switch-to-design' });
+    expect(b.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
   });
 });

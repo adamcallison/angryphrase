@@ -80,7 +80,7 @@ describe('reduceBuilder', () => {
 
   it('switch-to-fill sets mode=fill, subMode=none, cursor=null', () => {
     const state = blank();
-    const result = reduceBuilder(state, { kind: 'switch-to-fill' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'switch-to-fill' }, deps);
 
     expect(result.state.mode).toBe('fill');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -95,7 +95,7 @@ describe('reduceBuilder', () => {
         source: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' as const },
       },
     };
-    const result = reduceBuilder(state, { kind: 'escape' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'escape' }, deps);
 
     expect(result.state.subMode).toEqual({ kind: 'none' });
     expect(result.state.mode).toBe(state.mode);
@@ -105,7 +105,7 @@ describe('reduceBuilder', () => {
   it('edit-title updates puzzle.title via Puzzle.withMetadata', () => {
     const state = blank();
     const title = Title.try('New Title');
-    const result = reduceBuilder(state, { kind: 'edit-title', title }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'edit-title', title }, deps);
 
     expect(result.state.puzzle.title).toBe(title);
     expect(result.state.puzzle.author).toBe(state.puzzle.author);
@@ -114,15 +114,14 @@ describe('reduceBuilder', () => {
   it('edit-author updates puzzle.author via Puzzle.withMetadata', () => {
     const state = blank();
     const author = Author.try('New Author');
-    const result = reduceBuilder(state, { kind: 'edit-author', author }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'edit-author', author }, deps);
 
     expect(result.state.puzzle.author).toBe(author);
     expect(result.state.puzzle.title).toBe(state.puzzle.title);
   });
 
   it('toggle-design-cell is delegated to designMode and toggles a white cell to black', () => {
-    const intent: BuilderIntent = {
-      kind: 'toggle-design-cell',
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-design-cell',
       row: Row.of(0),
       col: Col.of(0),
     };
@@ -134,7 +133,7 @@ describe('reduceBuilder', () => {
 
   it('change-grid-size is delegated to designMode and resizes blank puzzle', () => {
     const state = blank();
-    const intent: BuilderIntent = { kind: 'change-grid-size', size: GridSize.of(20) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'change-grid-size', size: GridSize.of(20) };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -150,7 +149,7 @@ describe('reduceBuilder', () => {
   });
 
   it('returns ReducerResult shape (state + events: [])', () => {
-    const result = reduceBuilder(blank(), { kind: 'switch-to-fill' }, deps);
+    const result = reduceBuilder(blank(), { target: 'builder', kind: 'switch-to-fill' }, deps);
 
     expect(result.state).toBeDefined();
     expect(result.events).toEqual([]);
@@ -164,7 +163,7 @@ describe('reduceBuilder', () => {
       cursor: { row: Row.of(1), col: Col.of(2), direction: 'down' as const },
     };
 
-    const result = reduceBuilder(state, { kind: 'request-switch-to-design' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-switch-to-design' }, deps);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.cursor).toBeNull();
@@ -178,14 +177,14 @@ describe('reduceBuilder', () => {
     const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = reduceBuilder(state, { kind: 'request-switch-to-design' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-switch-to-design' }, deps);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-design-switch' },
-        confirmIntent: { kind: 'confirm-switch-to-design' },
+        confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' },
       },
     ]);
   });
@@ -202,7 +201,7 @@ describe('reduceBuilder', () => {
       cursor: { row: Row.of(1), col: Col.of(2), direction: 'down' as const },
     };
 
-    const result = reduceBuilder(state, { kind: 'confirm-switch-to-design' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'confirm-switch-to-design' }, deps);
 
     expect(result.state.mode).toBe('design');
     expect(result.state.subMode).toEqual({ kind: 'none' });
@@ -217,7 +216,7 @@ describe('reduceBuilder', () => {
       [3, 2],
     ]);
 
-    const result = reduceBuilder(state, { kind: 'select-cell', row: Row.of(2), col: Col.of(2) }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) }, deps);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -230,7 +229,7 @@ describe('reduceBuilder', () => {
   it('move-cursor is delegated to fillMode', () => {
     const state = fillState([], { row: 2, col: 2, direction: 'down' });
 
-    const result = reduceBuilder(state, { kind: 'move-cursor', direction: 'across', sign: 1 }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 }, deps);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),
@@ -243,7 +242,7 @@ describe('reduceBuilder', () => {
   it('type-letter is delegated to fillMode: overwrites answerLetter and advances', () => {
     const state = fillState([], { row: 0, col: 0, direction: 'across' });
 
-    const result = reduceBuilder(state, { kind: 'type-letter', letter: Letter.try('A')! }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! }, deps);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
@@ -266,7 +265,7 @@ describe('reduceBuilder', () => {
     );
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = reduceBuilder(state, { kind: 'backspace' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'backspace' }, deps);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
@@ -280,7 +279,7 @@ describe('reduceBuilder', () => {
   it('toggle-marker is delegated to fillMode', () => {
     const state = fillState([], { row: 0, col: 0, direction: 'across' });
 
-    const result = reduceBuilder(state, { kind: 'toggle-marker', flag: 'space-right' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'toggle-marker', flag: 'space-right' }, deps);
 
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
       true,
@@ -292,7 +291,7 @@ describe('reduceBuilder', () => {
   it('edit-clue is delegated to fillMode: updates head word clue', () => {
     const state = fillStateWithWords([]);
     const wordKey = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'New clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'New clue' };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -305,7 +304,7 @@ describe('reduceBuilder', () => {
   it('begin-join is delegated to joinSubMode', () => {
     const state = fillStateWithWords([]);
     const wordKey = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'begin-join', source: wordKey };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source: wordKey };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -320,7 +319,7 @@ describe('reduceBuilder', () => {
       displacedClues: [DisplacedClue.create(deps.rng, 'clue', 'across')],
     };
     const clue = state.displacedClues[0]!;
-    const intent: BuilderIntent = { kind: 'begin-reattach', displacedClueId: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'begin-reattach', displacedClueId: clue.id };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -335,7 +334,7 @@ describe('reduceBuilder', () => {
       displacedClues: [clue],
       subMode: { kind: 'reattach' as const, displacedClueId: clue.id },
     };
-    const intent: BuilderIntent = { kind: 'delete-displaced-clue', id: clue.id };
+    const intent: BuilderIntent = { target: 'builder', kind: 'delete-displaced-clue', id: clue.id };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -354,7 +353,7 @@ describe('reduceBuilder', () => {
     const state = { ...base, puzzle: Puzzle.withWords(base.puzzle, words) };
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
-    const intent: BuilderIntent = { kind: 'unjoin', source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -368,7 +367,7 @@ describe('reduceBuilder', () => {
   it('click-clue-panel-word is delegated: navigates cursor in no-sub-mode state', () => {
     const state = fillStateWithWords([]);
     const wordKey = state.puzzle.words[1]!.key;
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -388,8 +387,7 @@ describe('reduceBuilder', () => {
         source: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' as const },
       },
     };
-    const intent: BuilderIntent = {
-      kind: 'click-grid-word',
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-grid-word',
       wordKey: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
     };
 
@@ -407,7 +405,7 @@ describe('reduceBuilder', () => {
       subMode: { kind: 'reattach' as const, displacedClueId: clue.id },
     };
     const target = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey: target };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey: target };
 
     const result = reduceBuilder(state, intent, deps);
 
@@ -469,7 +467,7 @@ describe('reduceBuilder', () => {
     const state = blank();
     const json = validImportJson();
 
-    const result = reduceBuilder(state, { kind: 'request-import-puzzle', fileContent: json }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-import-puzzle', fileContent: json }, deps);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(IMPORT_UUID));
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(2));
@@ -485,14 +483,14 @@ describe('reduceBuilder', () => {
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
     const json = validImportJson();
 
-    const result = reduceBuilder(state, { kind: 'request-import-puzzle', fileContent: json }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-import-puzzle', fileContent: json }, deps);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-import-puzzle' },
-        confirmIntent: { kind: 'confirm-import-puzzle', fileContent: json },
+        confirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json },
       },
     ]);
   });
@@ -504,7 +502,7 @@ describe('reduceBuilder', () => {
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
     const json = validImportJson();
 
-    const result = reduceBuilder(state, { kind: 'confirm-import-puzzle', fileContent: json }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json }, deps);
 
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(IMPORT_UUID));
     expect(result.state.puzzle.gridSize).toBe(GridSize.of(2));
@@ -515,7 +513,7 @@ describe('reduceBuilder', () => {
 
   it('export-incomplete is delegated: emits download event with serialized content', () => {
     const state = blank();
-    const result = reduceBuilder(state, { kind: 'export-incomplete' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'export-incomplete' }, deps);
 
     expect(result.events.length).toBe(1);
     expect(result.events[0]!.kind).toBe('download');
@@ -523,7 +521,7 @@ describe('reduceBuilder', () => {
 
   it('export-complete is delegated: when puzzle is complete, emits download', () => {
     const state = completePuzzleState();
-    const result = reduceBuilder(state, { kind: 'export-complete' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'export-complete' }, deps);
 
     expect(result.events.length).toBe(1);
     expect(result.events[0]!.kind).toBe('download');
@@ -531,7 +529,7 @@ describe('reduceBuilder', () => {
 
   it('export-complete is delegated: when puzzle is incomplete, emits toast events with each violation', () => {
     const state = fillStateWithWords([]);
-    const result = reduceBuilder(state, { kind: 'export-complete' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'export-complete' }, deps);
 
     expect(result.events.length).toBeGreaterThan(1);
     expect(result.events.every((e) => e.kind === 'toast' && e.toastKind === 'error')).toBe(true);
@@ -542,7 +540,7 @@ describe('reduceBuilder', () => {
     const state = blank();
     const originalKey = state.puzzle.key;
 
-    const result = reduceBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-reset-builder' }, deps);
 
     expect(result.state.puzzle.gridSize).toBe(GridSize.DEFAULT);
     expect(result.state.puzzle.grid.length).toBe(Number(GridSize.DEFAULT));
@@ -555,14 +553,14 @@ describe('reduceBuilder', () => {
     const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = reduceBuilder(state, { kind: 'request-reset-builder' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'request-reset-builder' }, deps);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-reset-builder' },
-        confirmIntent: { kind: 'confirm-reset-builder' },
+        confirmIntent: { target: 'builder', kind: 'confirm-reset-builder' },
       },
     ]);
   });
@@ -572,7 +570,7 @@ describe('reduceBuilder', () => {
     const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
-    const result = reduceBuilder(state, { kind: 'confirm-reset-builder' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'confirm-reset-builder' }, deps);
 
     expect(result.state.puzzle.gridSize).toBe(GridSize.DEFAULT);
     expect(result.state.mode).toBe('design');

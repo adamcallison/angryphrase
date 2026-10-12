@@ -226,7 +226,7 @@ describe('handleOpenAnagramHelper', () => {
 describe('handleAnagramInput', () => {
   it('anagram-input: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'ABC' };
     const result = handleAnagramInput(state, intent);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -234,7 +234,7 @@ describe('handleAnagramInput', () => {
 
   it('anagram-input: no-op when anagram is null', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'ABC' };
     const result = handleAnagramInput(state, intent);
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -244,7 +244,7 @@ describe('handleAnagramInput', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABC' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'ABC' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABC');
@@ -254,7 +254,7 @@ describe('handleAnagramInput', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABCDEFGHIJ' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'ABCDEFGHIJ' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toHaveLength(5);
@@ -265,7 +265,7 @@ describe('handleAnagramInput', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'abc' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'abc' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABC');
@@ -275,7 +275,7 @@ describe('handleAnagramInput', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'a1b!c@d#e' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'a1b!c@d#e' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABCDE');
@@ -291,7 +291,7 @@ describe('handleAnagramInput', () => {
       Letter.try('D')!,
       Letter.try('E')!,
     ]);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'XYZ' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'XYZ' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('XYZ');
@@ -308,7 +308,7 @@ describe('handleAnagramInput', () => {
       Letter.try('D')!,
       Letter.try('E')!,
     ]);
-    const intent: PlayerIntent = { kind: 'anagram-input', input: '' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: '' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('');
@@ -318,7 +318,7 @@ describe('handleAnagramInput', () => {
   it('anagram-input: clamps input to total chain length', () => {
     const { state: base, headKey } = makeTwoWordChainState();
     const state = withAnagram(base, headKey, 'ABCDEFG');
-    const intent: PlayerIntent = { kind: 'anagram-input', input: 'ABCDEFG' };
+    const intent: PlayerIntent = { kind: 'anagram-input', target: 'player', input: 'ABCDEFG' };
     const result = handleAnagramInput(state, intent);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABCDEF');

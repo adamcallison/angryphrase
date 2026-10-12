@@ -47,11 +47,11 @@ describe('applyEventsToApp', () => {
     const event: DomainEvent = {
       kind: 'modal-request',
       modal: { kind: 'confirm-design-switch' },
-      confirmIntent: { kind: 'confirm-switch-to-design' },
+      confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' },
     };
     const result = applyEventsToApp(state, [event], deps);
     expect(result.state.modal).toEqual({ kind: 'confirm-design-switch' });
-    expect(result.state.pendingConfirmIntent).toEqual({ kind: 'confirm-switch-to-design' });
+    expect(result.state.pendingConfirmIntent).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
     expect(result.leftoverEvents).toEqual([]);
   });
 

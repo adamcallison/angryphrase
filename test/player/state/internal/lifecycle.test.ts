@@ -74,7 +74,7 @@ function parsedPuzzle() {
 
 describe('handleImportPuzzle', () => {
   it('import-puzzle: valid complete file → solving phase + load-player-progress event', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     expect(result.events).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: valid complete file → checkResult null, anagram null, cursor null', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -92,7 +92,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: valid complete file → puzzle.key preserved from file', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -100,7 +100,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: parse failure → toast with joined failure messages, phase import', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: 'not json' });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: 'not json' });
 
     expect(result.state.phase).toBe('import');
     expect(result.events).toHaveLength(1);
@@ -112,7 +112,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: parse failure → state is phase=import with lastImportError set to joined messages', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{\"version\":3}' });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: '{\"version\":3}' });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -125,7 +125,7 @@ describe('handleImportPuzzle', () => {
   });
 
   it('import-puzzle: malformed JSON → toast with "File is not valid JSON."', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: '{ invalid' });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: '{ invalid' });
 
     expect(result.events[0]).toEqual({
       kind: 'toast',
@@ -159,7 +159,7 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: incomplete });
 
     expect(result.events[0]).toEqual({
       kind: 'toast',
@@ -193,7 +193,7 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: incomplete });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
@@ -227,13 +227,13 @@ describe('handleImportPuzzle', () => {
       displacedClues: [],
     });
 
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: incomplete });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: incomplete });
 
     expect(result.state.phase).toBe('import');
   });
 
   it('import-puzzle: success emits exactly one event (load-player-progress), no toast', () => {
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() });
 
     expect(result.events).toHaveLength(1);
     expect(result.events[0]!.kind).toBe('load-player-progress');
@@ -241,7 +241,7 @@ describe('handleImportPuzzle', () => {
 
   it('import-puzzle: from a solving-phase state, success REPLACES state (does not merge)', () => {
     const previous = PlayerState.loaded(parsedPuzzle());
-    const result = handleImportPuzzle({ kind: 'import-puzzle', fileContent: makeCompleteFixture() });
+    const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() });
 
     expect(result.state.phase).toBe('solving');
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -265,7 +265,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[Letter.try('A')]],
         savedGridSize: GridSize.of(2),
       },
@@ -280,7 +280,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [
           [Letter.try('X'), Letter.try('Y')],
           [Letter.try('Z'), Letter.try('W')],
@@ -300,7 +300,7 @@ describe('handleApplyLoadedProgress', () => {
     const withLetter = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[Letter.try('X'), null]],
         savedGridSize: GridSize.of(2),
       },
@@ -310,7 +310,7 @@ describe('handleApplyLoadedProgress', () => {
     const cleared = handleApplyLoadedProgress(
       withLetter.state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[null, null]],
         savedGridSize: GridSize.of(2),
       },
@@ -326,7 +326,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[Letter.try('X'), Letter.try('Y')]],
         savedGridSize: GridSize.of(13),
       },
@@ -341,7 +341,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [
           [Letter.try('X'), Letter.try('Y')],
           [Letter.try('Z'), Letter.try('W')],
@@ -363,7 +363,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[Letter.try('X')]],
         savedGridSize: GridSize.of(2),
       },
@@ -378,7 +378,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [
           [Letter.try('A'), Letter.try('B'), Letter.try('C')],
           [Letter.try('D'), Letter.try('E'), Letter.try('F')],
@@ -397,7 +397,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [
           [null, null],
           [null, null],
@@ -414,7 +414,7 @@ describe('handleApplyLoadedProgress', () => {
     const result = handleApplyLoadedProgress(
       state,
       {
-        kind: 'apply-loaded-progress',
+        kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [[Letter.try('X'), Letter.try('Y')]],
         savedGridSize: GridSize.of(2),
       },
@@ -544,7 +544,7 @@ describe('handleRequestResetPlayer', () => {
       {
         kind: 'modal-request',
         modal: { kind: 'confirm-reset-player' },
-        confirmIntent: { kind: 'confirm-reset-player' },
+        confirmIntent: { kind: 'confirm-reset-player', target: 'player' },
       },
     ]);
   });
@@ -571,7 +571,7 @@ describe('handleRequestResetPlayer', () => {
     expect(result.events[0]).toEqual({
       kind: 'modal-request',
       modal: { kind: 'confirm-reset-player' },
-      confirmIntent: { kind: 'confirm-reset-player' },
+      confirmIntent: { kind: 'confirm-reset-player', target: 'player' },
     });
   });
 
@@ -586,7 +586,7 @@ describe('handleRequestResetPlayer', () => {
     expect(result.events[0]).toEqual({
       kind: 'modal-request',
       modal: { kind: 'confirm-reset-player' },
-      confirmIntent: { kind: 'confirm-reset-player' },
+      confirmIntent: { kind: 'confirm-reset-player', target: 'player' },
     });
   });
 });

@@ -41,7 +41,7 @@ export function handleRequestImportPuzzle(
     {
       kind: 'modal-request',
       modal: { kind: 'confirm-import-puzzle' },
-      confirmIntent: { kind: 'confirm-import-puzzle', fileContent: intent.fileContent },
+      confirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: intent.fileContent },
     },
   ]);
 }

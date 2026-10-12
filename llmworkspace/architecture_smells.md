@@ -99,6 +99,8 @@ This smell and #1 share a root (per-experience taxonomies for shared concepts) b
 
 **Note (2026-10-11, from the #1 fix):** deduplicating the twin failure-message constants (`IMPORT_READ_FAILURE_MSG` / `PICK_FAILURE_MSG`, the #1 table's last row) was proposed and deliberately deferred to this smell — the constants are a leaf symptom of the `report-*` twin architecture described above, so fixing them here should ride along with the routing/identity decision, not precede it.
 
+**Status (2026-10-12): addressed** — resolution in `architecture_smell_resolutions.md`.
+
 ---
 
 ## 4. Chain-boundary marker semantics are scattered across six sites with no owner

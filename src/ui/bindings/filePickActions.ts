@@ -1,5 +1,7 @@
 import type { AppStore } from './appStore.svelte';
 
+type TargetedFilePickIntent = { target: 'builder' | 'player' } & FilePickFailureIntent;
+
 export type FilePickFailureIntent =
   | { kind: 'report-import-read-failure' }
   | { kind: 'report-pick-failure' };
@@ -12,7 +14,8 @@ export type FilePickActions = {
 export function createFilePickActions(
   appStore: AppStore,
   label: string,
-  dispatchFailure: (intent: FilePickFailureIntent) => void,
+  target: 'builder' | 'player',
+  dispatchFailure: (intent: TargetedFilePickIntent) => void,
   onRead: (fileContent: string) => void,
 ): FilePickActions {
   return {
@@ -21,7 +24,7 @@ export function createFilePickActions(
       if (result.kind === 'picked') return result.text;
       if (result.kind === 'cancelled') return null;
       console.warn(`${label}: pickFile failed:`, result.error);
-      dispatchFailure({ kind: 'report-pick-failure' });
+      dispatchFailure({ target, kind: 'report-pick-failure' });
       return null;
     },
     async importDroppedFile(file: File) {
@@ -31,7 +34,7 @@ export function createFilePickActions(
         return;
       }
       console.warn(`${label}: failed to read dropped file:`, result.error);
-      dispatchFailure({ kind: 'report-import-read-failure' });
+      dispatchFailure({ target, kind: 'report-import-read-failure' });
     },
   };
 }

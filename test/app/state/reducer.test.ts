@@ -36,7 +36,7 @@ describe('reduceApp', () => {
     const state = {
       ...makeState(),
       modal: { kind: 'confirm-reset-builder' as const },
-      pendingConfirmIntent: { kind: 'confirm-reset-builder' as const },
+      pendingConfirmIntent: { target: 'builder', kind: 'confirm-reset-builder' } as const,
     };
     const deps = makeDeps();
     const result = reduceApp(state, { kind: 'cancel-modal' }, deps);
@@ -103,7 +103,7 @@ describe('reduceApp', () => {
   it('switch-to-fill (a BuilderIntent) dispatches to reduceBuilder and folds result', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { kind: 'switch-to-fill' }, deps);
+    const result = reduceApp(state, { target: 'builder', kind: 'switch-to-fill' }, deps);
     expect(result.state.builder.mode).toBe('fill');
     expect(result.events.length).toBe(0);
   });
@@ -111,7 +111,7 @@ describe('reduceApp', () => {
   it('edit-title dispatches to reduceBuilder and updates builder.puzzle.title', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { kind: 'edit-title', title: Title.try('My Puzzle') }, deps);
+    const result = reduceApp(state, { target: 'builder', kind: 'edit-title', title: Title.try('My Puzzle') }, deps);
     expect(result.state.builder.puzzle.title).toEqual(Title.try('My Puzzle'));
     expect(result.events.length).toBe(0);
   });
@@ -121,7 +121,7 @@ describe('reduceApp', () => {
     const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
     const stateWithPlayer = { ...state, player: PlayerState.loaded(puzzle) };
     const deps = makeDeps();
-    const result = reduceApp(stateWithPlayer, { kind: 'import-new-puzzle' }, deps);
+    const result = reduceApp(stateWithPlayer, { target: 'player', kind: 'import-new-puzzle' }, deps);
     expect(result.state.player.phase).toBe('import');
     expect(result.events.length).toBe(0);
   });
@@ -136,7 +136,7 @@ describe('reduceApp', () => {
   it('passthrough: a BuilderIntent that emits a download event returns that event in leftoverEvents', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { kind: 'export-incomplete' }, deps);
+    const result = reduceApp(state, { target: 'builder', kind: 'export-incomplete' }, deps);
     expect(result.events).toHaveLength(1);
     expect(result.events[0]!.kind).toBe('download');
     const download = result.events[0]!;
@@ -155,9 +155,9 @@ describe('reduceApp', () => {
       ...state,
       builder: { ...state.builder, mode: 'fill' as const },
       modal: { kind: 'confirm-design-switch' as const },
-      pendingConfirmIntent: { kind: 'confirm-switch-to-design' as const },
+      pendingConfirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' } as const,
     };
-    const result = reduceApp(appState, { kind: 'confirm-switch-to-design' }, deps);
+    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-switch-to-design' }, deps);
     expect(result.state.modal).toBeNull();
     expect(result.state.pendingConfirmIntent).toBeNull();
     expect(result.state.builder.mode).toBe('design');
@@ -197,9 +197,9 @@ describe('reduceApp', () => {
         puzzle: Puzzle.withGrid(base.puzzle, grid),
       },
       modal: { kind: 'confirm-import-puzzle' as const },
-      pendingConfirmIntent: { kind: 'confirm-import-puzzle', fileContent: json } as const,
+      pendingConfirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json } as const,
     };
-    const result = reduceApp(appState, { kind: 'confirm-import-puzzle', fileContent: json }, deps);
+    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json }, deps);
     expect(result.state.modal).toBeNull();
     expect(result.state.pendingConfirmIntent).toBeNull();
     expect(result.state.builder.puzzle.key).toEqual(PuzzleKey.try('00000000-0000-4000-8000-000000000000'));
@@ -219,9 +219,9 @@ describe('reduceApp', () => {
         puzzle: Puzzle.withGrid(base.puzzle, grid),
       },
       modal: { kind: 'confirm-reset-builder' as const },
-      pendingConfirmIntent: { kind: 'confirm-reset-builder' as const },
+      pendingConfirmIntent: { target: 'builder', kind: 'confirm-reset-builder' } as const,
     };
-    const result = reduceApp(appState, { kind: 'confirm-reset-builder' }, deps);
+    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-reset-builder' }, deps);
     expect(result.state.modal).toBeNull();
     expect(result.state.pendingConfirmIntent).toBeNull();
     expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
@@ -242,9 +242,9 @@ describe('reduceApp', () => {
       ...state,
       player,
       modal: { kind: 'confirm-reset-player' as const },
-      pendingConfirmIntent: { kind: 'confirm-reset-player' as const },
+      pendingConfirmIntent: { target: 'player', kind: 'confirm-reset-player' } as const,
     };
-    const result = reduceApp(appState, { kind: 'confirm-reset-player' }, deps);
+    const result = reduceApp(appState, { target: 'player', kind: 'confirm-reset-player' }, deps);
     expect(result.state.modal).toBeNull();
     expect(result.state.pendingConfirmIntent).toBeNull();
     expect(result.state.player.phase).toBe('solving');
@@ -259,7 +259,7 @@ describe('reduceApp', () => {
     const deps = makeDeps();
     const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
     const playState = { ...state, route: 'play' as const, player: PlayerState.loaded(puzzle) };
-    const result = reduceApp(playState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = reduceApp(playState, { target: 'player', kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
     expect(result.state.player.phase).toBe('solving');
     if (result.state.player.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.player.cursor).not.toBeNull();
@@ -275,23 +275,10 @@ describe('reduceApp', () => {
       route: 'build' as const,
       builder: { ...state.builder, mode: 'fill' as const },
     };
-    const result = reduceApp(buildState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = reduceApp(buildState, { target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
     expect(result.state.builder.cursor).not.toBeNull();
     expect(result.state.builder.cursor!.row).toBe(Row.of(0));
     expect(result.state.builder.cursor!.col).toBe(Col.of(0));
-  });
-
-  it('reduceApp: ambiguous kind (select-cell) on landing route throws (must navigate first)', () => {
-    const state = makeState();
-    const deps = makeDeps();
-    const landingState = {
-      ...state,
-      route: 'landing' as const,
-      builder: { ...state.builder, mode: 'fill' as const },
-    };
-    expect(() =>
-      reduceApp(landingState, { kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps),
-    ).toThrow(/ambiguous intent kind on landing route: select-cell; navigate first/);
   });
 
   it('reduceApp: ambiguous kind (type-letter) on play route goes to Player; backspace on build route goes to Builder', () => {
@@ -305,7 +292,7 @@ describe('reduceApp', () => {
     const playState = { ...state, route: 'play' as const, player };
     const playResult = reduceApp(
       playState,
-      { kind: 'type-letter', letter: Letter.try('A')! },
+      { target: 'player', kind: 'type-letter', letter: Letter.try('A')! },
       deps,
     );
     expect(playResult.state.player.phase).toBe('solving');
@@ -331,7 +318,7 @@ describe('reduceApp', () => {
         puzzle: Puzzle.withGrid(state.builder.puzzle, gridWithAnswer),
       },
     };
-    const buildResult = reduceApp(buildState, { kind: 'backspace' }, deps);
+    const buildResult = reduceApp(buildState, { target: 'builder', kind: 'backspace' }, deps);
     expect(GridOps.cellAt(buildResult.state.builder.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(null);
   });
 
@@ -340,7 +327,7 @@ describe('reduceApp', () => {
     const deps = makeDeps();
     const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
     const playState = { ...state, route: 'play' as const, player: PlayerState.loaded(puzzle) };
-    const playResult = reduceApp(playState, { kind: 'report-import-read-failure' }, deps);
+    const playResult = reduceApp(playState, { target: 'player', kind: 'report-import-read-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
     expect(playResult.state.player.lastImportError).toBe('Could not read that file. Please try again.');
@@ -351,7 +338,7 @@ describe('reduceApp', () => {
     });
 
     const buildState = { ...state, route: 'build' as const };
-    const buildResult = reduceApp(buildState, { kind: 'report-import-read-failure' }, deps);
+    const buildResult = reduceApp(buildState, { target: 'builder', kind: 'report-import-read-failure' }, deps);
     expect(buildResult.state.builder).toBe(state.builder);
     expect(buildResult.state.toasts).toHaveLength(1);
     expect(buildResult.state.toasts[0]).toMatchObject({
@@ -365,7 +352,7 @@ describe('reduceApp', () => {
     const deps = makeDeps();
     const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
     const playState = { ...state, route: 'play' as const, player: PlayerState.loaded(puzzle) };
-    const playResult = reduceApp(playState, { kind: 'report-pick-failure' }, deps);
+    const playResult = reduceApp(playState, { target: 'player', kind: 'report-pick-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
     expect(playResult.state.player.lastImportError).toBe('Could not open or read that file. Please try again.');
@@ -376,7 +363,7 @@ describe('reduceApp', () => {
     });
 
     const buildState = { ...state, route: 'build' as const };
-    const buildResult = reduceApp(buildState, { kind: 'report-pick-failure' }, deps);
+    const buildResult = reduceApp(buildState, { target: 'builder', kind: 'report-pick-failure' }, deps);
     expect(buildResult.state.builder).toBe(state.builder);
     expect(buildResult.state.toasts).toHaveLength(1);
     expect(buildResult.state.toasts[0]).toMatchObject({

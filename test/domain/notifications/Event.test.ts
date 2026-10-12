@@ -20,7 +20,7 @@ describe('Event', () => {
   it('DomainEvent discriminated union narrows correctly on kind', () => {
     const events: DomainEvent[] = [
       { kind: 'toast', toastKind: 'info', message: 'hi' },
-      { kind: 'modal-request', modal: { kind: 'confirm-design-switch' } as ModalRequest, confirmIntent: { kind: 'confirm-switch-to-design' } },
+      { kind: 'modal-request', modal: { kind: 'confirm-design-switch' } as ModalRequest, confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' } },
       { kind: 'load-player-progress', key: 'puzzle-key' as PuzzleKey },
       { kind: 'download', filename: 'foo.txt', content: 'bar' },
       { kind: 'clear-builder-storage' },

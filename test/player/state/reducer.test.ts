@@ -29,13 +29,13 @@ function importState() {
 
 describe('reducePlayer', () => {
   it('import-new-puzzle returns to import screen from solving phase', () => {
-    const result = reducePlayer(solvingState(), { kind: 'import-new-puzzle' }, deps);
+    const result = reducePlayer(solvingState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
     expect((result.state as { lastImportError: unknown }).lastImportError).toBe(null);
   });
 
   it('import-new-puzzle returns to import screen even from import phase', () => {
-    const result = reducePlayer(importState(), { kind: 'import-new-puzzle' }, deps);
+    const result = reducePlayer(importState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
     expect((result.state as { lastImportError: unknown }).lastImportError).toBe(null);
   });
@@ -49,20 +49,20 @@ describe('reducePlayer', () => {
         scrambledArrangement: null,
       },
     };
-    const result = reducePlayer(state, { kind: 'escape' }, deps);
+    const result = reducePlayer(state, { kind: 'escape', target: 'player' }, deps);
     expect(result.state.phase).toBe('solving');
     expect((result.state as { anagram: unknown }).anagram).toBe(null);
   });
 
   it('escape is no-op when no anagram open', () => {
     const state = solvingState();
-    const result = reducePlayer(state, { kind: 'escape' }, deps);
+    const result = reducePlayer(state, { kind: 'escape', target: 'player' }, deps);
     expect(result.state).toBe(state);
   });
 
   it('escape is no-op in import phase', () => {
     const state = importState();
-    const result = reducePlayer(state, { kind: 'escape' }, deps);
+    const result = reducePlayer(state, { kind: 'escape', target: 'player' }, deps);
     expect(result.state).toBe(state);
   });
 
@@ -75,7 +75,7 @@ describe('reducePlayer', () => {
         scrambledArrangement: null,
       },
     };
-    const result = reducePlayer(state, { kind: 'close-anagram-helper' }, deps);
+    const result = reducePlayer(state, { kind: 'close-anagram-helper', target: 'player' }, deps);
     expect(result.state.phase).toBe('solving');
     expect((result.state as { anagram: unknown }).anagram).toBe(null);
   });
@@ -107,11 +107,11 @@ describe('reducePlayer', () => {
     );
     state = { ...state, puzzle: { ...state.puzzle, grid } };
 
-    const checked = reducePlayer(state, { kind: 'check' }, deps);
+    const checked = reducePlayer(state, { kind: 'check', target: 'player' }, deps);
     if (checked.state.phase !== 'solving') throw new Error('expected solving');
     expect(checked.state.checkResult?.classification).toBe('incomplete-incorrect');
 
-    const result = reducePlayer(checked.state, { kind: 'clear-errors' }, deps);
+    const result = reducePlayer(checked.state, { kind: 'clear-errors', target: 'player' }, deps);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
@@ -124,7 +124,7 @@ describe('reducePlayer', () => {
 
   it('clear-errors is no-op when checkResult is null', () => {
     const state = solvingState();
-    const result = reducePlayer(state, { kind: 'clear-errors' }, deps);
+    const result = reducePlayer(state, { kind: 'clear-errors', target: 'player' }, deps);
     expect(result.state).toBe(state);
   });
 
@@ -173,7 +173,7 @@ describe('reducePlayer', () => {
     );
     state = { ...state, puzzle: { ...state.puzzle, grid } };
 
-    const result = reducePlayer(state, { kind: 'check' }, deps);
+    const result = reducePlayer(state, { kind: 'check', target: 'player' }, deps);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.checkResult).toEqual({
@@ -185,7 +185,7 @@ describe('reducePlayer', () => {
   });
 
   it('returns ReducerResult shape (state + events: [])', () => {
-    const result = reducePlayer(importState(), { kind: 'import-new-puzzle' }, deps);
+    const result = reducePlayer(importState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.events).toEqual([]);
   });
 
@@ -241,7 +241,7 @@ describe('reducePlayer', () => {
     it('import-puzzle: valid complete file transitions to solving phase and emits load-player-progress', () => {
       const result = reducePlayer(
         importState(),
-        { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
+        { kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() },
         deps,
       );
 
@@ -253,7 +253,7 @@ describe('reducePlayer', () => {
     it('import-puzzle: parse failure sets lastImportError and emits error toast', () => {
       const result = reducePlayer(
         importState(),
-        { kind: 'import-puzzle', fileContent: 'not json' },
+        { kind: 'import-puzzle', target: 'player', fileContent: 'not json' },
         deps,
       );
 
@@ -293,7 +293,7 @@ describe('reducePlayer', () => {
 
       const result = reducePlayer(
         importState(),
-        { kind: 'import-puzzle', fileContent: incomplete },
+        { kind: 'import-puzzle', target: 'player', fileContent: incomplete },
         deps,
       );
 
@@ -344,7 +344,7 @@ describe('reducePlayer', () => {
     function loadedFromFixture() {
       const parsed = reducePlayer(
         importState(),
-        { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
+        { kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() },
         deps,
       );
       expect(parsed.state.phase).toBe('solving');
@@ -356,7 +356,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(
         state,
         {
-          kind: 'apply-loaded-progress',
+          kind: 'apply-loaded-progress', target: 'player',
           playerLetters: [
             [Letter.try('X'), Letter.try('Y')],
             [Letter.try('Z'), Letter.try('W')],
@@ -381,7 +381,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(
         state,
         {
-          kind: 'apply-loaded-progress',
+          kind: 'apply-loaded-progress', target: 'player',
           playerLetters: [[Letter.try('X'), Letter.try('Y')]],
           savedGridSize: GridSize.of(13),
         },
@@ -396,7 +396,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(
         state,
         {
-          kind: 'apply-loaded-progress',
+          kind: 'apply-loaded-progress', target: 'player',
           playerLetters: [[Letter.try('X'), null]],
           savedGridSize: GridSize.of(2),
         },
@@ -416,7 +416,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(
         state,
         {
-          kind: 'apply-loaded-progress',
+          kind: 'apply-loaded-progress', target: 'player',
           playerLetters: [
             [Letter.try('X'), Letter.try('Y')],
             [Letter.try('Z'), Letter.try('W')],
@@ -471,7 +471,7 @@ describe('reducePlayer', () => {
     function loadedFromFixture() {
       const parsed = reducePlayer(
         importState(),
-        { kind: 'import-puzzle', fileContent: makeCompleteFixture() },
+        { kind: 'import-puzzle', target: 'player', fileContent: makeCompleteFixture() },
         deps,
       );
       expect(parsed.state.phase).toBe('solving');
@@ -480,13 +480,13 @@ describe('reducePlayer', () => {
 
     it('request-reset-player is delegated: solving phase emits modal-request', () => {
       const state = loadedFromFixture();
-      const result = reducePlayer(state, { kind: 'request-reset-player' }, deps);
+      const result = reducePlayer(state, { kind: 'request-reset-player', target: 'player' }, deps);
 
       expect(result.events).toEqual([
         {
           kind: 'modal-request',
           modal: { kind: 'confirm-reset-player' },
-          confirmIntent: { kind: 'confirm-reset-player' },
+          confirmIntent: { kind: 'confirm-reset-player', target: 'player' },
         },
       ]);
       expect(result.state).toBe(state);
@@ -494,7 +494,7 @@ describe('reducePlayer', () => {
 
     it('request-reset-player is delegated: import phase is no-op', () => {
       const state = importState();
-      const result = reducePlayer(state, { kind: 'request-reset-player' }, deps);
+      const result = reducePlayer(state, { kind: 'request-reset-player', target: 'player' }, deps);
 
       expect(result.state).toBe(state);
       expect(result.events).toEqual([]);
@@ -524,7 +524,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'confirm-reset-player' }, deps);
+      const result = reducePlayer(state, { kind: 'confirm-reset-player', target: 'player' }, deps);
 
       expect(result.state.phase).toBe('solving');
       if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -572,7 +572,7 @@ describe('reducePlayer', () => {
       };
       const expectedKey = state.puzzle.words[0]!.key;
 
-      const result = reducePlayer(state, { kind: 'open-anagram-helper' }, deps);
+      const result = reducePlayer(state, { kind: 'open-anagram-helper', target: 'player' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.anagram).toEqual({
@@ -597,7 +597,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'anagram-input', input: 'abc123' }, deps);
+      const result = reducePlayer(state, { kind: 'anagram-input', target: 'player', input: 'abc123' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.anagram?.input).toBe('ABC');
@@ -628,7 +628,7 @@ describe('reducePlayer', () => {
         .map((e) => e.letter)
         .filter((l): l is Letter => l !== null);
 
-      const result = reducePlayer(state, { kind: 'anagram-scramble' }, {
+      const result = reducePlayer(state, { kind: 'anagram-scramble', target: 'player' }, {
         rng: new SeededRng(42),
         now: clock.now.bind(clock),
       });
@@ -651,7 +651,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'close-anagram-helper' }, deps);
+      const result = reducePlayer(state, { kind: 'close-anagram-helper', target: 'player' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.anagram).toBe(null);
@@ -671,7 +671,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'escape' }, deps);
+      const result = reducePlayer(state, { kind: 'escape', target: 'player' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.anagram).toBe(null);
@@ -690,7 +690,7 @@ describe('reducePlayer', () => {
     it('select-cell is delegated: solving-phase cursor navigation', () => {
       const result = reducePlayer(
         solvingStateWithWords(),
-        { kind: 'select-cell', row: Row.of(0), col: Col.of(0) },
+        { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) },
         deps,
       );
 
@@ -716,7 +716,7 @@ describe('reducePlayer', () => {
         },
       };
 
-      const result = reducePlayer(state, { kind: 'move-cursor', direction: 'across', sign: 1 }, deps);
+      const result = reducePlayer(state, { kind: 'move-cursor', target: 'player', direction: 'across', sign: 1 }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.cursor).toEqual({
@@ -732,7 +732,7 @@ describe('reducePlayer', () => {
       if (state.phase !== 'solving') throw new Error('expected solving');
       const wordKey = state.puzzle.words[0]!.key;
 
-      const result = reducePlayer(state, { kind: 'click-clue-panel-word', wordKey }, deps);
+      const result = reducePlayer(state, { kind: 'click-clue-panel-word', target: 'player', wordKey }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(result.state.cursor).toEqual({
@@ -750,7 +750,7 @@ describe('reducePlayer', () => {
         cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' },
       };
 
-      const result = reducePlayer(state, { kind: 'type-letter', letter: Letter.try('A')! }, deps);
+      const result = reducePlayer(state, { kind: 'type-letter', target: 'player', letter: Letter.try('A')! }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
@@ -780,7 +780,7 @@ describe('reducePlayer', () => {
         cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' },
       };
 
-      const result = reducePlayer(state, { kind: 'backspace' }, deps);
+      const result = reducePlayer(state, { kind: 'backspace', target: 'player' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
       expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);

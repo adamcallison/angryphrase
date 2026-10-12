@@ -146,6 +146,7 @@ export function createAppStore(
     }
     const intent: PlayerIntent = {
       kind: 'apply-loaded-progress',
+      target: 'player',
       playerLetters: parsed.playerLetters,
       savedGridSize: parsed.gridSize,
     };

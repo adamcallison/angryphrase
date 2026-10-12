@@ -69,6 +69,3 @@ const confirmableKindRecord = {
 export const BUILDER_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(builderKindRecord));
 export const PLAYER_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(playerKindRecord));
 export const CONFIRMABLE_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(confirmableKindRecord));
-
-export const AMBIGUOUS_INTENT_KINDS: ReadonlySet<string> =
-  new Set([...BUILDER_INTENT_KINDS].filter(k => PLAYER_INTENT_KINDS.has(k)));

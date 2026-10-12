@@ -2,6 +2,8 @@ import type { ToastKind } from './ToastKind';
 import type { ModalRequest } from './ModalRequest';
 import type { PuzzleKey } from '../puzzle/PuzzleKey';
 
+export type IntentTarget = 'builder' | 'player';
+
 export type DomainEvent =
   | { kind: 'toast'; toastKind: ToastKind; message: string }
   | { kind: 'modal-request'; modal: ModalRequest; confirmIntent: ConfirmableIntent }
@@ -11,10 +13,10 @@ export type DomainEvent =
   | { kind: 'clear-player-storage'; key: PuzzleKey };
 
 export type ConfirmableIntent =
-  | { kind: 'confirm-switch-to-design' }
-  | { kind: 'confirm-import-puzzle'; fileContent: string }
-  | { kind: 'confirm-reset-builder' }
-  | { kind: 'confirm-reset-player' };
+  | { target: 'builder'; kind: 'confirm-switch-to-design' }
+  | { target: 'builder'; kind: 'confirm-import-puzzle'; fileContent: string }
+  | { target: 'builder'; kind: 'confirm-reset-builder' }
+  | { target: 'player'; kind: 'confirm-reset-player' };
 
 export type ReducerResult<S> = { state: S; events: DomainEvent[] };
 

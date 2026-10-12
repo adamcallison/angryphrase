@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision).
 
 ---
 
@@ -154,3 +154,85 @@ No new source modules; no intent, event, or port changes; `v1.test.ts` untouched
 ### Consequence (change cost after)
 
 A future rule of "what a complete puzzle is" lands in `CompletenessCheck` once; the export gate, the toolbar display, and the parser's complete-file validation all inherit it (the parser adds only a message mapping). The round-trip suite fails CI if either gate drifts. Displaced clues remain deliberately outside the gate; their omission is now user-visible and their rationale is recorded here rather than only in the archived requirements. The smell-#2-adjacent leftover is none; the next ranked smell is #3 (intent identity/routing), which also owns the deferred `report-*` twin constants from #1.
+
+---
+
+## 3. Intent identity is not unique — collision is absorbed by runtime route-dispatch machinery — resolved 2026-10-12
+
+### The smell (recap)
+
+`BuilderIntent` and `PlayerIntent` shared eight kind strings — the six grid-interaction kinds (`select-cell`, `move-cursor`, `type-letter`, `backspace`, `escape`, `click-clue-panel-word`) and the two port-failure kinds (`report-import-read-failure`, `report-pick-failure`). `reduceApp` therefore needed `AMBIGUOUS_INTENT_KINDS` (the runtime intersection in `app/state/intentKinds.ts`) and a `state.route`-based switch (`reducer.ts`) to disambiguate; the function signatures took `(intent: AppIntent | BuilderIntent | PlayerIntent)` and the two route helpers had to use `intent as unknown as BuilderIntent` / `as unknown as PlayerIntent` casts because TS could not narrow by `AMBIGUOUS_INTENT_KINDS.has`. Three fragilities: (1) silent collisions — a Builder kind string matching an existing Player kind was absorbed into the ambiguous set with no signal at the addition site; (2) mounting topology — the `'landing'` throw depended on no Builder/Player shell being mounted, a property of the UI tree rather than the state layer; (3) two architectures for one concept — `report-download-failure` / `report-builder-save-failure` / `report-player-save-failure` lived in `AppIntent` and were handled centrally, while `report-pick-failure` / `report-import-read-failure` lived in *both* experience unions and round-tripped through sub-reducers with near-identical toast emissions (plus Player's `lastImportError` write). See `architecture_smells.md` §3 for the full evidence.
+
+### Decision
+
+Options considered and their fates:
+
+- **A — status quo + type-level disjointness safety net** (split the `satisfies Record<Kind, null>` records into `Exclude`-narrowed unique records plus a shared-kind record so a kind appearing in both unions fails `tsc`): rejected. Fixes fragility 1 at compile time but leaves the dispatch model untouched; fragility 2 (mounting topology) and the `'landing'` throw remain, and the `as unknown as` casts stay because `state.route` is still the only dispatch discriminator.
+- **B — lift the two `report-*` failure kinds into `AppIntent`**: rejected as a *primary* fix. Architecturally attractive (collapses fragility 3 by removing the duplication), but it loses Player's `lastImportError` inline error on file-read failure — the user gets a toast but the import screen no longer shows the persistent error, a UX regression. The criterion that emerged from the existing code (AppIntent for failures whose effect is constant across experiences; experience union for failures that mutate experience-specific state) is satisfied by the existing placement; the asymmetry is principled. Kept as a partial finding (see "Two architectures" below) but not chosen.
+- **C — hoist the eight shared kinds into a third union `SharedIntent`** routed through a shared handler that injects the right `LetterSlot` or experience-specific behaviour: rejected. The six grid kinds have different behaviour per experience (Builder does not clear `checkResult`; Player does; backspace no-op semantics differ; the unified rule from #1 fixes the algorithm but each experience still wraps it differently). The shared handler would have to branch by target anyway, ending in a re-routed dispatch with extra indirection.
+- **D — `target: 'builder' | 'player'` literal discriminator on every Builder/Player intent variant**: **chosen**. Eliminates fragility 1 by construction (adding a kind to one union that matches the other produces a TS error — both unions carry the literal, the discriminator resolves at the dispatch site, no string-set membership is consulted). Eliminates fragility 2 (no route-based fallback; an ambiguous dispatch cannot reach `reduceApp` because the discriminator is set by the facade that knows its experience, not by `state.route`). The `as unknown as` casts are gone — TS narrows on the literal `target`. The criterion for AppIntent vs experience-union placement is unchanged (the smell's re-reading showed it was already principled); the duplicated message constants ride along as P5.
+- **E — per-reducer dispatch table** (each sub-reducer registers `canHandle: (kind: string) => boolean`; first match wins): rejected. Loses the compile-time kind-coverage guarantee the `satisfies Record<Kind, null>` records give today; trades a known mechanism for an unprincipled one.
+- **F — combined A + B + C**: rejected. Cheaper than D but accepts fragility 2 and a UX regression; not "good code".
+- **G — D with named-alias factory contracts** (`type TargetedGridIntent = { target: 'builder' | 'player' } & GridInteractionIntent` and analogous for `filePickActions`): **chosen addition to D**. The target discriminator breaks the contravariance that lets the current factory dispatch `(intent: GridInteractionIntent) => void` accept a facade dispatch `(intent: BuilderIntent) => void` (a BuilderIntent grid variant now has a `target` field that GridInteractionIntent lacks). The named alias names the seam; the factory takes a `target` parameter and stamps it on every dispatched intent, restoring assignability. Same shape as an inline intersection but spelled out — the seam is named, not spelled.
+- **H — return-intent factory** (factories produce typed intent values; the caller dispatches): rejected. Most architecturally pure (the factory becomes a pure constructor with no side-effect knowledge) but every call site changes from `actions.selectCell(...)` to `dispatch(actions.selectCell(...))` — `applyTypingIntent` in `ui/shared/typingIntent.ts` and every grid click handler. Acceptable churn is more than we want for the same architectural outcome D already delivers.
+
+Approved package: **D + G + P5 + doc amendment**.
+
+**Two architectures (the smell's fragility 3, re-read):** the criterion that emerges from the existing placement is sound — AppIntent holds port-failure reports whose effect is constant across experiences (`report-download-failure`, `report-builder-save-failure`, `report-player-save-failure` emit only toasts; neither slice's state changes); experience unions hold port-failure reports that mutate experience-specific state (`report-pick-failure` / `report-import-read-failure` additionally write Player's `lastImportError`, which has no Builder counterpart). The smell's framing of "two architectures for one concept" partially dissolves under closer reading — the criterion is coherent, the asymmetry is principled. What remains concrete is the duplicated message constants (the deferred P5 from #1's resolution) and the duplicated toast-emission shape. Both are addressed by P5 and D's literal-tag unification respectively.
+
+### Design as implemented
+
+**Discriminator type — `src/domain/notifications/Event.ts`.** New `export type IntentTarget = 'builder' | 'player';` (a literal union, not `string`). Both `intents.ts` files import it. `ConfirmableIntent` gains `target` on every variant: `confirm-switch-to-design` / `confirm-import-puzzle` / `confirm-reset-builder` carry `target: 'builder'`; `confirm-reset-player` carries `target: 'player'`. `IntentTarget` lives in `domain/notifications/` because both intent unions need it and neither can import from `app/state/` (the existing layer rule).
+
+**BuilderIntent — `src/builder/state/intents.ts`.** Every variant carries `target: 'builder'` as a literal. The six shared grid-interaction variants are expressed via intersection: `{ target: 'builder' } & SelectCellIntent | { target: 'builder' } & MoveCursorIntent | ...` — TS distributes the intersection over the union, giving each variant `target: 'builder'` as a literal.
+
+**PlayerIntent — `src/player/state/intents.ts`.** Symmetric pattern with `target: 'player'`.
+
+**Kind sets — `src/app/state/intentKinds.ts`.** `AMBIGUOUS_INTENT_KINDS` is deleted. `BUILDER_INTENT_KINDS`, `PLAYER_INTENT_KINDS`, `CONFIRMABLE_INTENT_KINDS` remain — the last is still used by `reducer.ts` to clear `state.modal` / `state.pendingConfirmIntent` after a `confirm-*` intent executes. The `satisfies Record<Kind, null>` records still prove each union's coverage.
+
+**Dispatch — `src/app/state/reducer.ts`.** The switch over `intent.kind` covers all six AppIntent variants (`navigate`, `cancel-modal`, `dismiss-toast`, `report-download-failure`, `report-builder-save-failure`, `report-player-save-failure`) and returns in each case. After the switch, `intent` is `BuilderIntent | PlayerIntent`; both carry `target`. The dispatch is now:
+
+```ts
+if (intent.target === 'builder') return routeToBuilder(intent);
+return routeToPlayer(intent);
+```
+
+The `state.route` switch (`'build' | 'play' | 'landing'`) is gone. The `case 'landing'` throw is gone (no longer applicable — every dispatch reaches a sub-reducer or throws an unreachable-kind error before reaching `reducer.ts` from a non-mounted shell). The `intent as unknown as BuilderIntent` and `intent as unknown as PlayerIntent` casts in `routeToBuilder` / `routeToPlayer` are gone — TS narrowing by the literal `target` provides the correct type. The unreachable-branch throw at the bottom of the function (the pre-existing `unknown intent kind` guard) is preserved as a defensive end-of-function check.
+
+**Factory contracts — `src/ui/bindings/gridActions.ts` and `src/ui/bindings/filePickActions.ts`.** Each introduces a local (non-exported) named alias:
+
+```ts
+// gridActions.ts
+type TargetedGridIntent = { target: 'builder' | 'player' } & GridInteractionIntent;
+// filePickActions.ts
+type TargetedFilePickIntent = { target: 'builder' | 'player' } & FilePickFailureIntent;
+```
+
+The factory signatures take `target: 'builder' | 'player'` as a parameter; the dispatch parameter is typed against the alias. Every action-method body stamps `target` on the dispatched intent literal. The facade call sites (`builderFacade.ts`, `playerFacade.ts`) pass `'builder'` / `'player'` to the factories. Public facade `dispatch` signatures remain `(intent: BuilderIntent) => void` / `(intent: PlayerIntent) => void`; the internal `dispatch` callback passed to the factory is widened to `BuilderIntent | PlayerIntent` to satisfy `strictFunctionTypes` contravariance — this is invisible at the facade's API surface.
+
+**Shared message constants — `src/domain/notifications/ErrorMessages.ts`** (new). Owns `IMPORT_READ_FAILURE_MSG` and `PICK_FAILURE_MSG`. `src/builder/state/internal/importExport.ts` and `src/player/state/internal/lifecycle.ts` import from it; the locally-declared copies (formerly `importExport.ts:8-9` and `lifecycle.ts:13-14`) are deleted. This lands the P5 deferred from #1's resolution.
+
+**Docs — `llmworkspace/architecture.md`.** §3 Layer 1's trailing clause ("the kind strings and the routing model are unchanged") is replaced with a paragraph describing the `target` discriminator and the fact that the 8 shared kind strings still appear in both unions (same `kind`, different `target`). §5's `Routing.` paragraph is rewritten to describe target-based dispatch and to state that no `AMBIGUOUS_INTENT_KINDS` set exists and no route-based fallback remains. No other section was touched.
+
+### Deliberate behaviour changes
+
+None. The dispatch path now reads `intent.target` instead of consulting `state.route`, but every intent reaches the same sub-reducer as before — no observable behaviour change. The Player `lastImportError` write on file-read failure is preserved (B was rejected on this ground).
+
+### Files
+
+Created: `src/domain/notifications/ErrorMessages.ts`.
+
+Modified: `src/domain/notifications/Event.ts`; `src/app/state/intentKinds.ts`; `src/app/state/reducer.ts`; `src/builder/state/intents.ts`; `src/player/state/intents.ts`; `src/ui/bindings/gridActions.ts`; `src/ui/bindings/filePickActions.ts`; `src/ui/bindings/builderFacade.ts`; `src/ui/bindings/playerFacade.ts`; `src/ui/bindings/appStore.svelte.ts`; `src/builder/state/internal/designMode.ts`; `src/builder/state/internal/importExport.ts`; `src/builder/state/internal/lifecycle.ts`; `src/player/state/internal/lifecycle.ts`. Test files: `test/app/state/{reducer,intentKinds,effects}.test.ts`; `test/builder/state/{reducer,state}.test.ts`; `test/builder/state/internal/{designMode,fillMode,importExport,joinSubMode,lifecycle,reattachSubMode,reconcileWords}.test.ts`; `test/player/state/{reducer,state}.test.ts`; `test/player/state/internal/{anagram,lifecycle,solving}.test.ts`; `test/ui/bindings/{appStore,modalFacade,playerFacade,builderFacade,toastFacade,gridActions,filePickActions}.test.ts`; `test/domain/notifications/Event.test.ts`. Docs: `llmworkspace/architecture.md` (§3 Layer 1, §5 routing); `llmworkspace/architecture_smells.md` (§3 status line).
+
+No source modules deleted. No new intent kinds, no new event variants, no port contract changes, no UI/bindings API changes visible at the component layer.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **85 test files / 1229 tests green** (no net test count change from after #2 — +2 new TS-level target assertions in `intentKinds.test.ts` ("every BuilderIntent variant carries target: 'builder'", "every PlayerIntent variant carries target: 'player'"), -1 removed AMBIGUOUS_INTENT_KINDS case, -1 removed `'landing route throws'` reducer case = 0 net); the single-file production build succeeded (`dist/index.html` 237.92 kB, gzip 103.34 kB).
+- Type-level proof of the discriminator: the `_BuilderTargetCheck` / `_PlayerTargetCheck` assertions in `intentKinds.test.ts` (TS conditional types `AssertTarget<T, Expected>`) compile only if every variant of `BuilderIntent` / `PlayerIntent` carries the literal `target` value. Any future regression — adding a variant without `target`, or widening the literal — fails `tsc`.
+- Discriminator at dispatch sites: every `dispatch({...})` literal at a facade or factory site carries `target`. The facades' public `dispatch` signatures still accept the full union; the factories' `dispatch` parameter type uses the named alias; TS rejects any future dispatch literal missing `target` at compile time.
+- Process: six implementation tasks (ErrorMessages consolidation → Builder intent type + Builder dispatch sites + Builder tests in parallel with Player intent type + Player dispatch sites + Player tests → ConfirmableIntent + intentKinds + reducer rewrite + shared test files in parallel with factory target-stamping + facade call sites + factory tests → doc amendment → CI verification), each verified by the implementer; one mid-flight rejection (the Player task's first pass used `target?: 'player'` (optional) instead of the required literal — caught at review against the spec, corrected in a tiny follow-up). One process observation: tasks 4 and 5 ran in parallel and observed each other's intermediate states; the final state is clean and was verified by the reviewer running `npx tsc --noEmit` and `npm run ci` directly.
+
+### Consequence (change cost after)
+
+A new intent kind lands in exactly one of the two unions; the property carries `target: 'builder'` or `target: 'player'` as required by the union. TS refuses to compile if the literal is missing, widened, or wrong-valued. Adding the same kind string to both unions (should a future feature require shared payload but experience-specific dispatch) is permitted — each variant carries its own `target` literal and the dispatch site picks the right one. The `AMBIGUOUS_INTENT_KINDS` set is gone, the route-based dispatch switch is gone, the `as unknown as` casts are gone, and the dispatch layer's correctness no longer depends on the UI tree's mounting topology. The "two architectures" criterion for failure reports is now coherent by construction — `AppIntent` for effect-constant failures, experience unions for state-mutating failures — and the duplicated message constants have a single owner. The deferred P5 from #1 lands here; the smell-#3-adjacent leftover is none.

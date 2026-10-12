@@ -94,7 +94,7 @@ function makeState(
   describe('handleSelectCell', () => {
   it('select-cell: no-op in design mode', () => {
     const state = makeState(5, [], null, 'design');
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -104,7 +104,7 @@ function makeState(
 
   it('select-cell: no-op on out-of-bounds coords', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(999), col: Col.of(0) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(999), col: Col.of(0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -114,7 +114,7 @@ function makeState(
 
   it('select-cell: no-op on black cell (FR-9)', () => {
     const state = makeState(5, [[0, 0]]);
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -128,7 +128,7 @@ function makeState(
       [1, 2],
       [3, 2],
     ]);
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -146,7 +146,7 @@ function makeState(
       [2, 1],
       [2, 3],
     ]);
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -160,7 +160,7 @@ function makeState(
 
   it('select-cell: on selectable cell part of both → direction defaults across (FR-10)', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -174,7 +174,7 @@ function makeState(
 
   it('select-cell: clicking already-selected cell that is in both words → toggles direction (FR-11)', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -195,7 +195,7 @@ function makeState(
       ],
       { row: 2, col: 2, direction: 'across' },
     );
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -210,7 +210,7 @@ function makeState(
 
   it('select-cell: clicking a different already-selectable cell replaces cursor with new cell + computed direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'select-cell', row: Row.of(3), col: Col.of(3) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(3), col: Col.of(3) };
 
     const result = handleSelectCell(state, intent);
 
@@ -226,7 +226,7 @@ function makeState(
 describe('handleMoveCursor', () => {
   it('move-cursor: no-op in design mode', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' }, 'design');
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: 1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'down', sign: 1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -236,7 +236,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: no-op when cursor is null', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -246,7 +246,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target selectable → moves cursor to target and updates direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -260,7 +260,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target not selectable (next cell is black) → cursor stays, direction updates (FR-14)', () => {
     const state = makeState(5, [[2, 3]], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -274,7 +274,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor: target at grid boundary → cursor stays, direction updates', () => {
     const state = makeState(5, [], { row: 2, col: 4, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: 1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -288,7 +288,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor with sign: -1 moves cursor backward along the across axis (column decrements)', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: -1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -302,7 +302,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor with sign: -1 along down axis (row decrements)', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'down', sign: -1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'down', sign: -1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -316,7 +316,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor with sign: -1 target not selectable (black cell behind) → cursor stays, direction updates', () => {
     const state = makeState(5, [[2, 1]], { row: 2, col: 2, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: -1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -330,7 +330,7 @@ describe('handleMoveCursor', () => {
 
   it('move-cursor with sign: -1 at grid boundary (column 0) → cursor stays, direction updates', () => {
     const state = makeState(5, [], { row: 2, col: 0, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'move-cursor', direction: 'across', sign: -1 };
+    const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: -1 };
 
     const result = handleMoveCursor(state, intent);
 
@@ -346,7 +346,7 @@ describe('handleMoveCursor', () => {
 describe('handleTypeLetter', () => {
   it('type-letter: no-op in design mode', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design');
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -356,7 +356,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: no-op when cursor is null', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -366,7 +366,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: writes letter to selected cell answerLetter (FR-12)', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -385,7 +385,7 @@ describe('handleTypeLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [
       [0, 0, 'B'],
     ]);
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -396,7 +396,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: advances cursor to next selectable cell in current direction (FR-12)', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -409,7 +409,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: stays on current cell when next cell is black (FR-12)', () => {
     const state = makeState(5, [[0, 1]], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -423,7 +423,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: stays on current cell when at grid boundary (FR-12)', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -437,7 +437,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: letter still written when cursor stays (FR-12)', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -448,7 +448,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: direction "down" advances +1 row', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'down' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -461,7 +461,7 @@ describe('handleTypeLetter', () => {
 
   it('type-letter: no-op on black cursor cell (defensive)', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'type-letter', letter: Letter.try('A')! };
+    const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
     const result = handleTypeLetter(state, intent);
 
@@ -553,7 +553,7 @@ describe('handleBackspace', () => {
 describe('handleToggleMarker', () => {
   it('toggle-marker: no-op in design mode', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design');
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -563,7 +563,7 @@ describe('handleToggleMarker', () => {
 
   it('toggle-marker: no-op when cursor is null', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -573,7 +573,7 @@ describe('handleToggleMarker', () => {
 
   it('toggle-marker: no-op on black cursor cell (defensive)', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -583,7 +583,7 @@ describe('handleToggleMarker', () => {
 
   it('toggle-marker: toggles a virgin marker flag to true (space-right)', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -598,7 +598,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -613,7 +613,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
@@ -627,7 +627,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'hyphen-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'hyphen-right' };
 
     const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
@@ -641,7 +641,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'hyphen-bottom' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'hyphen-bottom' };
 
     const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
@@ -655,7 +655,7 @@ describe('handleToggleMarker', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
@@ -668,7 +668,7 @@ describe('handleToggleMarker', () => {
 
   it('toggle-marker: updates puzzle.grid via Puzzle.withGrid', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
 
     const result = handleToggleMarker(state, intent);
 
@@ -683,7 +683,7 @@ describe('handleEditClue', () => {
   it('edit-clue: no-op in design mode', () => {
     const state = makeStateWithWords(4, [], 'design');
     const wordKey = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'New clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'New clue' };
 
     const result = handleEditClue(state, intent);
 
@@ -698,7 +698,7 @@ describe('handleEditClue', () => {
       startCol: Col.of(999),
       direction: 'across',
     };
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'New clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'New clue' };
 
     const result = handleEditClue(state, intent);
 
@@ -709,7 +709,7 @@ describe('handleEditClue', () => {
   it('edit-clue: updates clue of a head word (no chain)', () => {
     const state = makeStateWithWords(4, []);
     const wordKey = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'A fine clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'A fine clue' };
 
     const result = handleEditClue(state, intent);
 
@@ -723,7 +723,7 @@ describe('handleEditClue', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const headKey = state.puzzle.words[0]!.key;
     const targetKey = state.puzzle.words[1]!.key;
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey: headKey, clue: 'Head clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey: headKey, clue: 'Head clue' };
 
     const result = handleEditClue(state, intent);
 
@@ -737,7 +737,7 @@ describe('handleEditClue', () => {
   it('edit-clue: rejects edit on non-head chain word with error toast (FR-31)', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const targetKey = state.puzzle.words[1]!.key;
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey: targetKey, clue: 'Bad clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey: targetKey, clue: 'Bad clue' };
 
     const result = handleEditClue(state, intent);
 
@@ -758,7 +758,7 @@ describe('handleEditClue', () => {
       WordKey.equals(w.key, wordKey) ? { ...w, clue: 'Prior' } : w,
     );
     const stateWithClue = { ...state, puzzle: Puzzle.withWords(state.puzzle, words) };
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: '' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: '' };
 
     const result = handleEditClue(stateWithClue, intent);
 
@@ -771,7 +771,7 @@ describe('handleEditClue', () => {
     const state = makeStateWithWords(4, []);
     const wordKey = state.puzzle.words[0]!.key;
     const clue = '  spaces & punct!  ';
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue };
 
     const result = handleEditClue(state, intent);
 
@@ -788,7 +788,7 @@ describe('handleEditClue', () => {
       WordKey.equals(w.key, otherKey) ? { ...w, clue: 'Original other' } : w,
     );
     const stateWithOtherClue = { ...state, puzzle: Puzzle.withWords(state.puzzle, words) };
-    const intent: BuilderIntent = { kind: 'edit-clue', wordKey, clue: 'Updated clue' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'Updated clue' };
 
     const result = handleEditClue(stateWithOtherClue, intent);
 
@@ -804,7 +804,7 @@ describe('handleClickWord', () => {
   it('click-word: no-op in design mode', () => {
     const state = makeStateWithWords(4, [], 'design');
     const wordKey = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey };
 
     const result = handleClickWord(state, intent, rng);
 
@@ -819,7 +819,7 @@ describe('handleClickWord', () => {
       startCol: Col.of(999),
       direction: 'across',
     };
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey };
 
     const result = handleClickWord(state, intent, rng);
 
@@ -830,7 +830,7 @@ describe('handleClickWord', () => {
   it('click-word: subMode=none navigates cursor to start cell + direction', () => {
     const state = makeStateWithWords(4, []);
     const wordKey = state.puzzle.words[1]!.key;
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey };
 
     const result = handleClickWord(state, intent, rng);
 
@@ -847,7 +847,7 @@ describe('handleClickWord', () => {
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[1]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
-    const intent: BuilderIntent = { kind: 'click-grid-word', wordKey: target };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-grid-word', wordKey: target };
 
     const result = handleClickWord(stateWithJoin, intent, rng);
 
@@ -865,7 +865,7 @@ describe('handleClickWord', () => {
       subMode: { kind: 'reattach' as const, displacedClueId: clue.id },
     };
     const target = state.puzzle.words[0]!.key;
-    const intent: BuilderIntent = { kind: 'click-clue-panel-word', wordKey: target };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey: target };
 
     const result = handleClickWord(state, intent, rng);
 
@@ -880,7 +880,7 @@ describe('handleClickWord', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
-    const intent: BuilderIntent = { kind: 'click-grid-word', wordKey: source };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-grid-word', wordKey: source };
 
     const result = handleClickWord(stateWithJoin, intent, rng);
 
