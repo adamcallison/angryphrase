@@ -78,6 +78,7 @@ export function handleBeginJoin(
 export function handleUnjoin(
   state: BuilderState,
   intent: Extract<BuilderIntent, { kind: 'unjoin' }>,
+  rng: Rng,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -94,6 +95,10 @@ export function handleUnjoin(
   }
 
   const downstreamKey = source.nextWord;
+  const downstream = state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey));
+  const newDisplacedClues = downstream !== undefined && downstream.clue !== ''
+    ? [...state.displacedClues, DisplacedClue.create(rng, downstream.clue, downstream.key.direction)]
+    : state.displacedClues;
   const newWords = state.puzzle.words.map(w => {
     if (WordKey.equals(w.key, intent.source)) return { ...w, nextWord: null };
     if (WordKey.equals(w.key, downstreamKey)) return { ...w, clue: '' };
@@ -104,6 +109,7 @@ export function handleUnjoin(
   return Result.ok({
     ...state,
     puzzle: Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords),
+    displacedClues: newDisplacedClues,
   });
 }
 

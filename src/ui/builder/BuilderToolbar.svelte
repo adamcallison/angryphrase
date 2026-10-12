@@ -141,6 +141,13 @@
     >
       Export Complete
     </button>
+    {#if vm.exportCompleteMessages.length > 0}
+      <div class="flex flex-col gap-1">
+        {#each vm.exportCompleteMessages as message}
+          <p class="text-sm text-red-600">{message}</p>
+        {/each}
+      </div>
+    {/if}
     <button
       type="button"
       class="rounded bg-red-100 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-200"

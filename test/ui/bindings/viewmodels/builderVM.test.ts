@@ -181,6 +181,63 @@ describe('deriveBuilderToolbarVM', () => {
     expect(vm.exportCompleteViolations).toEqual(CompletenessCheck.check(state.puzzle));
     expect(vm.exportCompleteViolations.length).toBeGreaterThan(0);
   });
+
+  it('toolbar VM maps export-complete violations to user-facing messages', () => {
+    let state = makeBlankState(2);
+    state = stateWithAnswerLetter(state, 0, 0, 'A');
+    state = stateWithAnswerLetter(state, 0, 1, 'B');
+    state = stateWithAnswerLetter(state, 1, 0, 'C');
+    state = stateWithAnswerLetter(state, 1, 1, 'D');
+    state = stateWithWords(state, [
+      makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: '' }),
+    ]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.exportCompleteMessages).toEqual(['Missing clue for word 1 across.']);
+    expect(vm.exportCompleteMessages).toEqual(vm.exportCompleteViolations.map((v) => CompletenessCheck.message(v)));
+  });
+
+  it('toolbar VM includes the non-head-clue message when a non-head word carries a clue', () => {
+    let state = makeBlankState(2);
+    state = stateWithAnswerLetter(state, 0, 0, 'A');
+    state = stateWithAnswerLetter(state, 0, 1, 'B');
+    state = stateWithAnswerLetter(state, 1, 0, 'C');
+    state = stateWithAnswerLetter(state, 1, 1, 'D');
+    const tail = makeWord({
+      startRow: 1,
+      startCol: 0,
+      direction: 'across',
+      number: 2,
+      length: 2,
+      clue: 'Tail clue',
+    });
+    const head = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 2,
+      clue: 'Head clue',
+      nextWord: tail.key,
+    });
+    state = stateWithWords(state, [head, tail]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.exportCompleteMessages).toContain('Word 2 across is a non-head chain word with a non-empty clue.');
+    expect(vm.exportCompleteMessages).toEqual(vm.exportCompleteViolations.map((v) => CompletenessCheck.message(v)));
+  });
+
+  it('toolbar VM exportCompleteMessages is empty when the puzzle is complete', () => {
+    let state = makeBlankState(2);
+    state = stateWithAnswerLetter(state, 0, 0, 'A');
+    state = stateWithAnswerLetter(state, 0, 1, 'B');
+    state = stateWithAnswerLetter(state, 1, 0, 'C');
+    state = stateWithAnswerLetter(state, 1, 1, 'D');
+    state = stateWithWords(state, [
+      makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: 'Head clue' }),
+    ]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.canExportComplete).toBe(true);
+    expect(vm.exportCompleteMessages).toEqual([]);
+  });
 });
 
 describe('deriveDisplacedCluesPanelVM', () => {

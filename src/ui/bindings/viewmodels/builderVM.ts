@@ -23,6 +23,7 @@ export type BuilderToolbarVM = {
   markerFlags: CellMarker;
   canExportComplete: boolean;
   exportCompleteViolations: CompletenessViolation[];
+  exportCompleteMessages: string[];
 };
 
 export type DisplacedClueEntryVM = {
@@ -69,6 +70,7 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     markerFlags,
     canExportComplete: exportCompleteViolations.length === 0,
     exportCompleteViolations,
+    exportCompleteMessages: exportCompleteViolations.map((v) => CompletenessCheck.message(v)),
   };
 }
 

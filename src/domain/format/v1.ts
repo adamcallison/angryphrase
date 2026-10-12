@@ -2,6 +2,7 @@ import type { Puzzle } from '../puzzle/Puzzle';
 import { Title } from '../puzzle/Title';
 import { Author } from '../puzzle/Author';
 import { PuzzleKey } from '../puzzle/PuzzleKey';
+import { CompletenessCheck } from '../puzzle/CompletenessCheck';
 import { GridSize } from '../grid/GridSize';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
@@ -17,7 +18,6 @@ import { WordDerivation } from '../word/WordDerivation';
 import { Numbering } from '../word/Numbering';
 import { WordMap } from '../word/WordMap';
 import { ChainValidation } from '../chain/ChainValidation';
-import { Chain } from '../chain/Chain';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
 import { DisplacedClueId } from '../builder/DisplacedClueId';
@@ -455,30 +455,23 @@ function validateClues(words: Word[], fileType: PuzzleFileType, failures: ParseF
     return true;
   }
 
-  const map = WordMap.fromWords(words);
-  let ok = true;
-
-  for (const w of words) {
-    const isHead = Chain.isHead(map, w.key);
-    const number = Number(w.number);
-    const direction = w.key.direction;
-
-    if (isHead) {
-      if (w.clue.trim() === '') {
-        failures.push({ message: `Word ${number} ${direction} (chain head) is missing a clue.` });
-        ok = false;
-      }
-    } else {
-      if (w.clue.trim() !== '') {
+  const violations = CompletenessCheck.clueViolations(words);
+  for (const v of violations) {
+    switch (v.kind) {
+      case 'missing-clue':
         failures.push({
-          message: `Word ${number} ${direction} is a non-head chain word with a non-empty clue (not allowed in complete files).`,
+          message: `Word ${Number(v.wordNumber)} ${v.direction} (chain head) is missing a clue.`,
         });
-        ok = false;
-      }
+        break;
+      case 'non-head-clue':
+        failures.push({
+          message: `Word ${Number(v.wordNumber)} ${v.direction} is a non-head chain word with a non-empty clue (not allowed in complete files).`,
+        });
+        break;
     }
   }
 
-  return ok;
+  return violations.length === 0;
 }
 
 function validateDisplacedClues(

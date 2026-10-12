@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions).
 
 ---
 
@@ -93,3 +93,64 @@ Deleted: `src/ui/builder/BuilderGrid.svelte`; `src/ui/player/PlayerGrid.svelte`.
 ### Consequence (change cost after)
 
 A new keyboard interaction now touches: `GridInteraction` (+ its test), the shared variant type and the kind records in `app/state/intentKinds.ts`, a thin per-tree adapter only if policy differs, `typingIntent.ts` if the surface mapping changes, and the `GridActions` factory — one site per concept instead of fourteen. A cursor-semantics change (e.g. skip-black-cell advance) is a change to one function. The remaining #1-adjacent duplication is exactly what was deferred: the `report-*` intent twins and their failure-message constants (smell #3).
+
+---
+
+## 2. "Complete puzzle" is defined twice, and the export gate is weaker than the import gate — resolved 2026-10-12
+
+### The smell (recap)
+
+Two independent definitions of "complete" existed: `CompletenessCheck` (`domain/puzzle/`) gated `export-complete`, and `v1.parsePuzzle`'s complete-mode rules (`domain/format/`) gated import. They disagreed in two ways: (1) the parser strictly rejects a non-head chain word carrying a non-empty clue, but `CompletenessCheck` never checked it — and the Builder could legitimately hold that state (an incomplete import skips clue validation entirely; no Builder operation empties a pre-existing non-head clue), so the app could emit a complete file its own parser refused, in either experience; (2) `serializeComplete` silently omitted displaced clues while the parser forbids the field in complete files. No test covered either path. See `architecture_smells.md` §2.
+
+One audit finding was corrected during resolution: divergence (2) is not drift. The archived requirements (FR-59/FR-63) specify displaced-clue omission from complete files as deliberate — they are a Builder-only concept, preserved in Builder state and the incomplete format, and must not block export. The real defect in that half was the *silence*, not the omission; the fix de-silences it. Recording the rationale here so it survives the archive (smell #11).
+
+### Decision
+
+Options considered and their fates:
+
+- **A — single domain owner, parser delegates (layered, mirroring #1's chosen shape): chosen.** `CompletenessCheck` owns the domain-level clue rules of a complete puzzle; `v1`'s complete-mode clue validation consumes them, keeping byte-shape rules to itself. Both gates then share one definition by construction.
+- **B — close the state hole at the import boundary (displace non-head clues when importing an incomplete file): rejected as primary.** It fixes today's instance but not the split — the next rule added to one gate still has no structural reason to reach the other (the smell's own thesis); it makes incomplete import stop being byte-faithful to the user's file; and it would add a fourth site maintaining the non-head-clue-empty invariant (join, unjoin, reconcile, import) — more scattering, not less.
+- **C — round-trip conformance tests: included** as a regression net over A (pins that a gate-passing puzzle always serializes to parser-accepted bytes, in both directions of drift). Rejected as a fix alone, per the #1 precedent ("pins the symptom").
+- **D — branded `CompletePuzzle` type** (`serializeComplete` only accepts gate-passing puzzles): rejected. Compile-time enforcement for one call site, at the cost of brand owner #16 — the exact three-site config tax smell #12 documents — plus parser return-type churn; and it cannot cover the displaced-clue half (not part of `Puzzle`).
+- **E — runtime self-check (serialize then re-parse in the export handler before downloading): rejected.** A runtime patch over a structural split; failure surfaces as "we made a file we refuse" at the user's face.
+
+Displaced-clue half: omission retained (specified behaviour, above); **de-silenced** with a non-blocking `warning` toast on export-complete when displaced clues exist (wording W1, human-selected); blocking export on displaced clues was rejected as contradicting the specified behaviour.
+
+Remedy sub-decision (the gate now blocks the imported non-head-clue state, so the Builder needed an in-app fix that does not destroy the text): **unjoin now displaces a non-empty downstream clue** instead of silently blanking it — the same policy join already uses, consistent with displaced-clue semantics; approved as a deliberate behaviour change. Allowing edit-clue on non-head words was rejected (it would muddy the heads-only clue-editing rule).
+
+### Design as implemented
+
+**`src/domain/puzzle/CompletenessCheck.ts`** — the single owner of the complete-puzzle clue rules. `CompletenessViolation` gains `{ kind: 'non-head-clue'; wordNumber; direction }`. New `clueViolations(words)` walks words in order: head with empty (or whitespace-only) clue → `missing-clue`; non-head with non-empty clue → `non-head-clue`. `check(p)` = letter scan (row-major, unchanged) + `clueViolations(p.words)` — ordering contract preserved. New `message(v)` renders every violation kind as user-facing text (exhaustive switch, no default), following the `v1.ts` precedent of domain-owned message strings; the former twin mapping in `importExport.ts` is deleted.
+
+**`src/domain/format/v1.ts`** — `validateClues` (complete branch) delegates to `CompletenessCheck.clueViolations` and maps violations to the exact pre-existing `ParseFailure` strings, so parser behaviour and messages are byte-identical (the full `v1` suite passed without a single test edit). The incomplete-file early return is untouched; byte-shape rules stay in the parser.
+
+**`src/builder/state/internal/importExport.ts`** — the export gate consumes the strengthened `CompletenessCheck` unchanged in structure: violations → error toasts via `CompletenessCheck.message`; no download. On success with `state.displacedClues.length > 0`, the download event is followed by a `warning` toast: `Exported without N displaced clue(s). They remain in the Displaced Clues panel.` (singular/plural interpolated; first use of the `warning` toast kind).
+
+**`src/builder/state/internal/joinSubMode.ts` + `reducer.ts`** — `handleUnjoin` takes `rng` (threaded from `deps.rng` like the other rng-consuming handlers) and, when the downstream word's clue is non-empty, appends `DisplacedClue.create(rng, clue, direction)` before blanking it — mirroring `resolveJoin`'s displace policy exactly. Under normal invariants the downstream clue is always empty, so the change is unobservable except in imported edge states, where it converts silent data loss into a recoverable displaced entry.
+
+**`src/ui/bindings/viewmodels/builderVM.ts` + `src/ui/builder/BuilderToolbar.svelte`** — `BuilderToolbarVM` gains `exportCompleteMessages: string[]` (derived from the single `check` call already in the derivation, mapped via `CompletenessCheck.message`; the structured `exportCompleteViolations` field is retained). The toolbar renders the messages below the export row whenever the gate fails. This completes the specified "display all blocking errors" behaviour, which had been half-implemented: the VM carried the violations but no component rendered them, so a blocked user saw only a disabled button with no explanation — a latent gap the fix surfaced (the new rule would otherwise have been illegible).
+
+### Deliberate behaviour changes
+
+1. **Unjoin displaces instead of destroying.** A non-empty downstream clue becomes a displaced-clue entry (text + direction preserved, reattachable) instead of being silently blanked. Unobservable under builder-maintained invariants; data-preserving in imported edge states. Pinned by new `joinSubMode` tests.
+2. **Export-complete is blocked by the non-head-clue rule.** A state that previously exported a parser-rejected artifact now yields error toasts and (via the toolbar) visible blocking messages, with unjoin as the in-app remedy. Pinned by the round-trip suite.
+3. **Export-complete with displaced clues emits a `warning` toast** naming the count and where the clues remain. Non-blocking; specified omission behaviour unchanged. Pinned by two new `importExport` tests.
+
+Also found and fixed during implementation: the `importExport` test fixture `completeStateWithChain` was itself constructing the smell's violating state — it set a clue on every word while they were standalone heads, then linked one word to another without blanking the linked-to word's clue. The test name claimed "non-heads empty"; the fixture lied. The new rule caught it on first run; the fixture now blanks the tail's clue at link time, mirroring what a real join does.
+
+### Files
+
+Modified: `src/domain/puzzle/CompletenessCheck.ts`; `src/domain/format/v1.ts`; `src/builder/state/internal/importExport.ts`; `src/builder/state/internal/joinSubMode.ts`; `src/builder/state/reducer.ts`; `src/ui/bindings/viewmodels/builderVM.ts`; `src/ui/builder/BuilderToolbar.svelte`; `test/domain/puzzle/CompletenessCheck.test.ts`; `test/builder/state/internal/joinSubMode.test.ts`; `test/builder/state/internal/importExport.test.ts`; `test/ui/bindings/viewmodels/builderVM.test.ts`; `llmworkspace/architecture.md` (§3 domain/puzzle + domain/format rows, §7 unjoin rule + builder import/export row + `BuilderToolbar` inventory row, §12 coverage); `llmworkspace/architecture_smells.md` (§2 status line).
+
+No new source modules; no intent, event, or port changes; `v1.test.ts` untouched.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **1229 tests green** (from 1210 after #1 — +19: 7 `CompletenessCheck`, 4 `joinSubMode`, 2 export-toast, 3 round-trip conformance, 3 `builderVM`); the single-file production build succeeded.
+- Round-trip conformance (new, in `importExport.test.ts`): a gate-passing chained puzzle's `serializeComplete` output re-parses cleanly and deep-equals the source puzzle; the non-head-clue state is blocked by the gate *and* rejected by the parser with matching wording — the two gates cannot drift apart silently again; the displaced-omission artifact carries no `displacedClues` field and re-parses cleanly.
+- Existing suites stayed green without weakened assertions except the one named fixture correction above. Parser rejection messages are byte-identical (zero `v1` test edits).
+- Process: six implementation tasks (domain rule → export gate/toast + unjoin in parallel → parser delegation + toolbar in parallel → round-trip suite), each verified by the implementer and re-run by the reviewer before acceptance; one mid-flight review correction (a dead `default` branch in the delegated switch, removed).
+
+### Consequence (change cost after)
+
+A future rule of "what a complete puzzle is" lands in `CompletenessCheck` once; the export gate, the toolbar display, and the parser's complete-file validation all inherit it (the parser adds only a message mapping). The round-trip suite fails CI if either gate drifts. Displaced clues remain deliberately outside the gate; their omission is now user-visible and their rationale is recorded here rather than only in the archived requirements. The smell-#2-adjacent leftover is none; the next ranked smell is #3 (intent identity/routing), which also owns the deferred `report-*` twin constants from #1.

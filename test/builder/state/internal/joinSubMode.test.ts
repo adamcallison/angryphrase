@@ -166,7 +166,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -181,7 +181,7 @@ describe('handleUnjoin', () => {
     };
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -192,7 +192,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
@@ -203,7 +203,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toBeNull();
@@ -216,7 +216,7 @@ describe('handleUnjoin', () => {
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const downstreamAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey));
     expect(downstreamAfter!.clue).toBe('');
@@ -236,7 +236,7 @@ describe('handleUnjoin', () => {
     const downstreamBefore = state.puzzle.words[1]!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const downstreamAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey))!;
     expect(downstreamAfter.key).toEqual(downstreamBefore.key);
@@ -259,7 +259,7 @@ describe('handleUnjoin', () => {
     const cKey = state.puzzle.words[2]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const bAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, bKey))!;
     expect(WordKey.equals(bAfter.nextWord!, cKey)).toBe(true);
@@ -279,7 +279,7 @@ describe('handleUnjoin', () => {
     const cKey = state.puzzle.words[2]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const cAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, cKey))!;
     expect(cAfter).toEqual(cBefore);
@@ -293,7 +293,7 @@ describe('handleUnjoin', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source))!;
     expect(sourceAfter.clue).toBe('Source clue');
@@ -309,10 +309,65 @@ describe('handleUnjoin', () => {
     const otherBefore = state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const otherAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, otherKey))!;
     expect(otherAfter).toEqual(otherBefore);
+  });
+
+  it('unjoin with non-empty downstream clue displaces it (appended to displacedClues with the downstream word\'s direction)', () => {
+    const state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
+    const source = state.puzzle.words[0]!.key;
+    const downstreamKey = state.puzzle.words[0]!.nextWord!;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent, rng);
+
+    expect(result.state.displacedClues).toHaveLength(1);
+    expect(result.state.displacedClues[0]!.clue).toBe('Downstream clue');
+    expect(result.state.displacedClues[0]!.direction).toBe(downstreamKey.direction);
+  });
+
+  it('unjoin with non-empty downstream clue blanks the downstream clue and clears source.nextWord and the boundary marker', () => {
+    let state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
+    state = withMarkerAt(state, 0, 3, 'space-right');
+    const source = state.puzzle.words[0]!.key;
+    const downstreamKey = state.puzzle.words[0]!.nextWord!;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent, rng);
+
+    const downstreamAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, downstreamKey));
+    expect(downstreamAfter!.clue).toBe('');
+    const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
+    expect(sourceAfter!.nextWord).toBeNull();
+    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.hyphenRight).toBe(false);
+  });
+
+  it('unjoin with empty downstream clue adds no displaced entry (behaviour unchanged)', () => {
+    const state = withChain(makeStateWithWords(4, []), 0, 1);
+    const source = state.puzzle.words[0]!.key;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent, rng);
+
+    expect(result.state.displacedClues).toHaveLength(0);
+  });
+
+  it('unjoin preserves pre-existing displaced clues and appends the new one', () => {
+    const existing = DisplacedClue.create(rng, 'existing', 'down');
+    const base = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
+    const state = { ...base, displacedClues: [existing] };
+    const source = state.puzzle.words[0]!.key;
+    const intent: BuilderIntent = { kind: 'unjoin', source };
+
+    const result = handleUnjoin(state, intent, rng);
+
+    expect(result.state.displacedClues).toHaveLength(2);
+    expect(result.state.displacedClues[0]).toBe(existing);
+    expect(result.state.displacedClues[1]!.clue).toBe('Downstream clue');
   });
 });
 
@@ -554,7 +609,7 @@ describe('unjoin boundary markers (FR-37)', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(cell.marker.spaceRight).toBe(false);
@@ -571,7 +626,7 @@ describe('unjoin boundary markers (FR-37)', () => {
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { kind: 'unjoin', source };
 
-    const result = handleUnjoin(state, intent);
+    const result = handleUnjoin(state, intent, rng);
 
     const sourceLast = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(sourceLast.marker.spaceRight).toBe(false);

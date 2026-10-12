@@ -112,7 +112,7 @@ export function reduceBuilder(
       return handleBeginJoin(state, intent);
 
     case 'unjoin':
-      return handleUnjoin(state, intent);
+      return handleUnjoin(state, intent, deps.rng);
 
     case 'begin-reattach':
       return handleBeginReattach(state, intent);

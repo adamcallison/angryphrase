@@ -1,10 +1,9 @@
 import type { BuilderIntent } from '../intents';
 import { BuilderState } from '../state';
-import type { ReducerResult } from '../../../domain/notifications/Event';
+import type { DomainEvent, ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
 import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
-import type { CompletenessViolation } from '../../../domain/puzzle/CompletenessCheck';
 
 const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
 const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
@@ -62,15 +61,6 @@ export function handleReportPickFailure(state: BuilderState): ReducerResult<Buil
   return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }]);
 }
 
-function violationMessage(v: CompletenessViolation): string {
-  switch (v.kind) {
-    case 'missing-answer-letter':
-      return `Missing answer letter at row ${Number(v.row)}, col ${Number(v.col)}.`;
-    case 'missing-clue':
-      return `Missing clue for word ${Number(v.wordNumber)} ${v.direction}.`;
-  }
-}
-
 export function handleExportIncomplete(state: BuilderState): ReducerResult<BuilderState> {
   const content = serializeIncomplete(state.puzzle, state.displacedClues);
   const filename = Filename.incomplete(state.puzzle.key);
@@ -91,17 +81,26 @@ export function handleExportComplete(state: BuilderState): ReducerResult<Builder
       violations.map((v) => ({
         kind: 'toast' as const,
         toastKind: 'error' as const,
-        message: violationMessage(v),
+        message: CompletenessCheck.message(v),
       })),
     );
   }
   const content = serializeComplete(state.puzzle);
   const filename = Filename.complete(state.puzzle.key);
-  return Result.withEvents(state, [
+  const events: DomainEvent[] = [
     {
       kind: 'download' as const,
       filename,
       content,
     },
-  ]);
+  ];
+  if (state.displacedClues.length > 0) {
+    const n = state.displacedClues.length;
+    events.push({
+      kind: 'toast' as const,
+      toastKind: 'warning' as const,
+      message: `Exported without ${n} displaced clue${n === 1 ? '' : 's'}. They remain in the Displaced Clues panel.`,
+    });
+  }
+  return Result.withEvents(state, events);
 }

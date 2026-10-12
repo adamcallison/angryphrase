@@ -186,4 +186,96 @@ describe('CompletenessCheck', () => {
 
     expect(CompletenessCheck.isComplete(puzzle)).toBe(false);
   });
+
+  it('check reports non-head-clue for a non-head chain word with a non-empty clue', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const grid = fillGrid(p.grid);
+    const tail = makeWord(0, 2, 'across', 2, 'stowaway');
+    const head = makeWord(0, 0, 'across', 1, 'head clue', tail.key);
+    const words = [head, tail];
+    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
+
+    expect(CompletenessCheck.check(puzzle)).toStrictEqual([
+      { kind: 'non-head-clue', wordNumber: WordNumber.of(2), direction: 'across' },
+    ]);
+  });
+
+  it('check does not report non-head-clue when the non-head clue is empty', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const grid = fillGrid(p.grid);
+    const tail = makeWord(0, 2, 'across', 2, '');
+    const head = makeWord(0, 0, 'across', 1, 'head clue', tail.key);
+    const words = [head, tail];
+    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
+
+    expect(CompletenessCheck.check(puzzle)).toStrictEqual([]);
+  });
+
+  it('check does not report non-head-clue for whitespace-only clue on a non-head word (trim)', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const grid = fillGrid(p.grid);
+    const tail = makeWord(0, 2, 'across', 2, '   ');
+    const head = makeWord(0, 0, 'across', 1, 'head clue', tail.key);
+    const words = [head, tail];
+    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
+
+    expect(CompletenessCheck.check(puzzle)).toStrictEqual([]);
+  });
+
+  it('check does not report non-head-clue for a head word with a non-empty clue', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const grid = fillGrid(p.grid);
+    const words = [makeWord(0, 0, 'across', 1, 'real clue')];
+    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
+
+    expect(CompletenessCheck.check(puzzle)).toStrictEqual([]);
+  });
+
+  it('clueViolations returns violations in word order', () => {
+    const tail = makeWord(0, 2, 'across', 2, 'bad');
+    const head = makeWord(0, 0, 'across', 1, '', tail.key);
+    const words = [head, tail];
+
+    expect(CompletenessCheck.clueViolations(words)).toStrictEqual([
+      { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
+      { kind: 'non-head-clue', wordNumber: WordNumber.of(2), direction: 'across' },
+    ]);
+  });
+
+  it('isComplete returns false when a non-head-clue violation exists', () => {
+    const p = Puzzle.blank(GridSize.of(3), makeKey());
+    const grid = fillGrid(p.grid);
+    const tail = makeWord(0, 2, 'across', 2, 'stowaway');
+    const head = makeWord(0, 0, 'across', 1, 'head clue', tail.key);
+    const words = [head, tail];
+    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
+
+    expect(CompletenessCheck.isComplete(puzzle)).toBe(false);
+  });
+
+  it('message returns the exact user-facing string for each violation kind', () => {
+    expect(
+      CompletenessCheck.message({
+        kind: 'missing-answer-letter',
+        row: Row.of(5),
+        col: Col.of(7),
+      }),
+    ).toBe('Missing answer letter at row 5, col 7.');
+
+    expect(
+      CompletenessCheck.message({
+        kind: 'missing-clue',
+        wordNumber: WordNumber.of(3),
+        direction: 'across',
+      }),
+    ).toBe('Missing clue for word 3 across.');
+
+    expect(
+      CompletenessCheck.message({
+        kind: 'non-head-clue',
+        wordNumber: WordNumber.of(3),
+        direction: 'across',
+      }),
+    ).toBe('Word 3 across is a non-head chain word with a non-empty clue.');
+  });
 });

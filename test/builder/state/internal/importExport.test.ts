@@ -19,7 +19,7 @@ import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 import type { Direction } from '../../../../src/domain/word/Direction';
-import { serializeComplete, serializeIncomplete } from '../../../../src/domain/format/v1';
+import { parsePuzzle, serializeComplete, serializeIncomplete } from '../../../../src/domain/format/v1';
 import { CompletenessCheck } from '../../../../src/domain/puzzle/CompletenessCheck';
 import { WordMap } from '../../../../src/domain/word/WordMap';
 import { Chain } from '../../../../src/domain/chain/Chain';
@@ -180,9 +180,15 @@ function completeStateWithChain(): BuilderState {
   if (!firstAcross || !secondAcross) {
     throw new Error('completeStateWithChain: expected across words');
   }
-  const chained = base.puzzle.words.map((w) =>
-    WordKey.equals(w.key, firstAcross.key) ? { ...w, nextWord: secondAcross.key } : w,
-  );
+  const chained = base.puzzle.words.map((w) => {
+    if (WordKey.equals(w.key, firstAcross.key)) {
+      return { ...w, nextWord: secondAcross.key };
+    }
+    if (WordKey.equals(w.key, secondAcross.key)) {
+      return { ...w, clue: '' };
+    }
+    return w;
+  });
   return { ...base, puzzle: Puzzle.withWords(base.puzzle, chained) };
 }
 
@@ -526,6 +532,43 @@ describe('export-complete', () => {
     expect(result.events).toHaveLength(1);
     expect(result.events[0]).toMatchObject({ kind: 'download' });
   });
+
+  it('export-complete with displaced clues emits download plus a warning toast listing the count', () => {
+    const state = {
+      ...completeState(2),
+      displacedClues: [
+        DisplacedClue.create(rng, 'First displaced', 'across'),
+        DisplacedClue.create(rng, 'Second displaced', 'down'),
+      ],
+    };
+
+    const result = handleExportComplete(state);
+
+    expect(result.events).toHaveLength(2);
+    expect(result.events[0]).toMatchObject({ kind: 'download' });
+    expect(result.events[1]).toEqual({
+      kind: 'toast',
+      toastKind: 'warning',
+      message: 'Exported without 2 displaced clues. They remain in the Displaced Clues panel.',
+    });
+  });
+
+  it('export-complete with exactly one displaced clue uses the singular form', () => {
+    const state = {
+      ...completeState(2),
+      displacedClues: [DisplacedClue.create(rng, 'Only displaced', 'across')],
+    };
+
+    const result = handleExportComplete(state);
+
+    expect(result.events).toHaveLength(2);
+    expect(result.events[0]).toMatchObject({ kind: 'download' });
+    expect(result.events[1]).toEqual({
+      kind: 'toast',
+      toastKind: 'warning',
+      message: 'Exported without 1 displaced clue. They remain in the Displaced Clues panel.',
+    });
+  });
 });
 
 describe('report-import-read-failure', () => {
@@ -551,5 +594,95 @@ describe('report-pick-failure', () => {
       { kind: 'toast', toastKind: 'error', message: 'Could not open or read that file. Please try again.' },
     ]);
     expect(result.state).toBe(state);
+  });
+});
+
+describe('export/import round-trip (smell #2)', () => {
+  it('export-complete output of a gate-passing chained puzzle re-parses cleanly as a complete file', () => {
+    const state = completeStateWithChain();
+
+    const result = handleExportComplete(state);
+
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toMatchObject({ kind: 'download' });
+    const content = (result.events[0] as { kind: 'download'; content: string }).content;
+    const parsed = parsePuzzle(content);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.fileType).toBe('complete');
+    try {
+      expect(parsed.puzzle).toStrictEqual(state.puzzle);
+    } catch {
+      expect(parsed.puzzle.key).toBe(state.puzzle.key);
+      expect(parsed.puzzle.gridSize).toBe(state.puzzle.gridSize);
+      expect(parsed.puzzle.title).toBe(state.puzzle.title);
+      expect(parsed.puzzle.author).toBe(state.puzzle.author);
+      expect(parsed.puzzle.words).toStrictEqual(state.puzzle.words);
+      expect(parsed.puzzle.grid).toStrictEqual(state.puzzle.grid);
+    }
+  });
+
+  it('a non-head clue state is blocked by the gate and its serialized form is rejected by the parser (gate and parser agree)', () => {
+    const base = completeStateWithChain();
+    const tail = base.puzzle.words.find(
+      (w) => w.key.startRow === Row.of(1) && w.key.direction === 'across',
+    );
+    if (!tail) {
+      throw new Error('fixture: expected tail across word');
+    }
+    const words = base.puzzle.words.map((w) =>
+      WordKey.equals(w.key, tail.key) ? { ...w, clue: 'Non-head clue' } : w,
+    );
+    const state = { ...base, puzzle: Puzzle.withWords(base.puzzle, words) };
+
+    const checkViolations = CompletenessCheck.check(state.puzzle);
+    expect(checkViolations.some((v) => v.kind === 'non-head-clue')).toBe(true);
+
+    const result = handleExportComplete(state);
+
+    expect(result.events.some((e) => e.kind === 'download')).toBe(false);
+    expect(
+      result.events.some(
+        (e) =>
+          e.kind === 'toast' &&
+          e.toastKind === 'error' &&
+          e.message.includes('non-head chain word with a non-empty clue'),
+      ),
+    ).toBe(true);
+
+    const serialized = serializeComplete(state.puzzle);
+    const parsed = parsePuzzle(serialized);
+    expect(parsed.ok).toBe(false);
+    if (parsed.ok) return;
+    expect(parsed.failures.some((f) => f.message.includes('not allowed in complete files'))).toBe(true);
+  });
+
+  it('export-complete with displaced clues: artifact omits displacedClues and re-parses cleanly, warning toast emitted', () => {
+    const state = {
+      ...completeState(2),
+      displacedClues: [
+        DisplacedClue.create(rng, 'First displaced', 'across'),
+        DisplacedClue.create(rng, 'Second displaced', 'down'),
+      ],
+    };
+
+    const result = handleExportComplete(state);
+
+    expect(result.events).toHaveLength(2);
+    expect(result.events[0]).toMatchObject({ kind: 'download' });
+    expect(result.events[1]).toEqual({
+      kind: 'toast',
+      toastKind: 'warning',
+      message: 'Exported without 2 displaced clues. They remain in the Displaced Clues panel.',
+    });
+
+    const content = (result.events[0] as { kind: 'download'; content: string }).content;
+    const artifact = JSON.parse(content);
+    expect('displacedClues' in artifact).toBe(false);
+
+    const parsed = parsePuzzle(content);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.fileType).toBe('complete');
   });
 });

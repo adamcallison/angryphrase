@@ -79,6 +79,8 @@ No test covers either path (`test/.../importExport.test.ts` has no non-head-clue
 
 Why architectural: "what a complete puzzle is" is a domain invariant with two owners in two modules whose consumers point in opposite directions (one validates ingoing bytes, one gates outgoing bytes). Any future rule added to one definition (e.g. marker sanity, chain validity on export) has no structural reason to reach the other.
 
+**Status (2026-10-12): addressed** — resolution in `architecture_smell_resolutions.md`. (The audit's framing of divergence 2 as drift was corrected during resolution: displaced-clue omission from complete files is specified behaviour — FR-59/FR-63 in the archived requirements — not an accident; the fix de-silences it instead of blocking it.)
+
 ---
 
 ## 3. Intent identity is not unique — collision is absorbed by runtime route-dispatch machinery
