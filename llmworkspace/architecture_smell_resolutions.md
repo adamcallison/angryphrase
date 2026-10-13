@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage).
 
 ---
 
@@ -354,3 +354,69 @@ Test files modified in proportion: `test/domain/grid/CellMarker.test.ts`; `test/
 ### Consequence (change cost after)
 
 A new marker-related feature (e.g. diagonal markers or user-defined marker glyphs) touches: `CellSeparator` (if new kinds), `CellMarker` (add axis or new separator), the v1 format adapter (`markerFromJson` / `markerToJson`), and the call sites that render the new separator. A new admission rule (e.g. "no link between two parallel words of the same length") touches `ChainAdmission.canLink` and its `message` function. The Builder handlers stay thin. The six-site marker-interpretation drift and the unreachable admission policy are gone.
+
+---
+
+## 5. The event-fold pipeline has two owners and a redundant stage — resolved 2026-10-13
+
+### The smell (recap)
+
+`ReducerResult<S>` promised `(state, events) → { state, events: DomainEvent[] }`, but `events` meant two things depending on the caller. Sub-reducers returned their *fresh* events (toasts, modal-requests, external effects) under that field; `reduceApp`'s `routeToBuilder` / `routeToPlayer` ran `applyEventsToApp` on the sub-reducer's events and returned only the *leftovers* (external effects) under the same field. The store then ran `applyEventsToApp` **again** on those leftovers — a guaranteed no-op pass, since the only kinds that survived into it (`download`, `clear-builder-storage`, `clear-player-storage`, `load-player-progress`) fell straight through `applyEventsToApp`'s `leftover.push(e)` branch. The duplicated confirm-clearing (`CONFIRMABLE_INTENT_KINDS` check + `modal: null, pendingConfirmIntent: null` reset, copy-pasted between `routeToBuilder` and `routeToPlayer`) was the per-experience parallelism of smell #1 surfacing at the app layer. See `architecture_smells.md` §5 for the original audit.
+
+### Decision
+
+Options considered and their fates:
+
+- **A — fold only in the store; reducer returns raw events** (single owner = store, matching §3 Layer 2's stated ownership): **chosen**. `reduceApp`'s job becomes state composition + post-`confirm-*` clear; sub-reducer events bubble up raw. The store's `applyEventsToApp` call becomes the single fold site. `events` means one thing at every call site. The implicit contract "sub-reducers do not emit `modal-request` events for `confirm-*` intents" was already upheld (the confirm handlers run their action; they don't open another modal) and is unchanged by this fix.
+- **B — fold only in the reducer; store consumes leftovers**: rejected. The architecture doc §3 Layer 2 already named the store as the event folder; folding in the reducer would have contradicted the doc and would have made the reducer responsible for both state composition and external-world interpretation — two concerns instead of one.
+- **C — minimum diff (delete only the store's second `applyEventsToApp` call)**: rejected as an end state. The dual ownership (reducer folding *and* store folding — though now the store would do nothing meaningful) remained, and `events` still meant two things. Cheaper than A but accepted the smell's structural failure.
+- **D — rename `ReducerResult.events` to `leftoverEvents` (or split into `stateUpdates` + `externalEffects`)**: rejected as a fix. Renaming alone doesn't change the contract — the reducer still had to interpret events into one bucket or another; A solves the underlying problem more directly. Splitting into two fields is a future option if a new event kind blurs the line, but right now `DomainEvent`'s two-bucket taxonomy (state-affecting vs external) is small and stable.
+
+The duplicated confirm-clearing was not its own option — every option in the above set had to address it, since the rule applies to *both* routing helpers regardless of who folds. Extracted into a local `clearPendingConfirm(s: AppState): AppState` helper in `reducer.ts` so the rule is named once and applied twice.
+
+### Design as implemented
+
+**`src/app/state/reducer.ts`** — `reduceApp` no longer imports or calls `applyEventsToApp`. The top-of-function App-level intent switch (`navigate`, `cancel-modal`, `dismiss-toast`, `report-*-failure`) is unchanged — those cases always returned raw events. `routeToBuilder` and `routeToPlayer` are now thin policy adapters:
+
+```ts
+function clearPendingConfirm(s: AppState): AppState {
+  return { ...s, modal: null, pendingConfirmIntent: null };
+}
+
+function routeToBuilder(intent: BuilderIntent): ReducerResult<AppState> {
+  const r = reduceBuilder(state.builder, intent, deps);
+  const merged = { ...state, builder: r.state };
+  const final = CONFIRMABLE_INTENT_KINDS.has(intent.kind) ? clearPendingConfirm(merged) : merged;
+  return { state: final, events: r.events };
+}
+```
+
+`routeToPlayer` is the symmetric shape. The two helpers share only the `clearPendingConfirm` rule (the per-experience parallelism of smell #1 that surfaced here is now down to one line: the sub-reducer call and the slice field). The implicit contract "sub-reducers don't emit `modal-request` events for `confirm-*` intents" remains a property of the sub-reducers (none do); no defensive stripping is needed.
+
+**`src/app/state/effects.ts`** — unchanged. The function still does exactly what its name promises (apply events to AppState, separating folded state from leftover external events); it just has one caller now instead of two.
+
+**`src/ui/bindings/appStore.svelte.ts`** — unchanged. Its dispatch loop (`reduceApp` → `applyEventsToApp` → set rune → iterate leftovers) is now the *only* fold path, which is what §3 Layer 2 has always described.
+
+**`src/app/state/intentKinds.ts`** — unchanged. `CONFIRMABLE_INTENT_KINDS` is still consulted by `reduceApp` for the post-`confirm-*` clear.
+
+### Deliberate behaviour changes
+
+None. Every dispatch reaches the same state and the same observable side effects as before. The dead pass is removed; the store's `applyEventsToApp` call now actually does work on every dispatch that produces sub-reducer events (toast and modal-request events).
+
+### Files
+
+Modified: `src/app/state/reducer.ts`; `test/app/state/reducer.test.ts` (the two `report-import-read-failure` / `report-pick-failure` tests that asserted on folded `state.toasts` now assert on raw `result.events`; one new test `'reduceApp: returns sub-reducer toast events raw (state.toasts unchanged; fold happens in the store)'` pins the new contract); `llmworkspace/architecture.md` (§5 `reduceApp fold` and `AppStore performs external side effects` paragraphs rewritten to describe raw-events-out / single-fold-in and to make the store's role as sole interpreter explicit); `llmworkspace/architecture_smells.md` (§5 status line); this file (header status list).
+
+No source modules deleted; no new source modules created; no new intent kinds, no new event variants, no port contract changes, no UI/bindings API changes.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **86 test files / 1250 tests green** (from 86 / 1249 after #4 — net +1: one new reducer test pinning the raw-events contract); the single-file production build succeeded (`dist/index.html` 237.35 kB, gzip 103.49 kB).
+- The single new test case (`reducer.test.ts:375`, `'reduceApp: returns sub-reducer toast events raw …'`) dispatches `request-import-puzzle { fileContent: 'not valid json' }`, which the sub-reducer turns into a `toast` event; the test asserts the event is present in `result.events` and that `result.state.toasts` and `result.state.builder` are reference-equal to the input — the new contract pinned by construction.
+- The two updated tests (the `report-import-read-failure` / `report-pick-failure` ones) switched from asserting `result.state.toasts` (folded) to asserting `result.events.toContainEqual({ kind: 'toast', … })` (raw). All other assertions in those tests (sub-slice state changes, `lastImportError` writes, builder identity) are unchanged.
+- Existing suites stayed green without weakened assertions. The store's `applyEventsToApp` call (unchanged in source) continues to produce the same folded `AppState` after a dispatch — proven by the unchanged `appStore.test.ts` (24 tests) and `effects.test.ts` (8 tests).
+- Process: two implementation tasks in sequence (reducer.ts → reducer.test.ts), each verified by the implementer with `tsc --noEmit` and the relevant `vitest run`; the reviewer re-ran `npm run ci` for the final green.
+
+### Consequence (change cost after)
+
+A new event kind that updates `AppState` (e.g. an `aria-live` announcement, an undo entry) lands in `DomainEvent`, gets a case in `applyEventsToApp`'s switch, and the store's fold handles it automatically — no reducer change. A new event kind that needs external performance (e.g. a copy-to-clipboard) follows the same shape; `applyEventsToApp` puts it in the leftover pile and `performExternalEvent` adds a case. The `ReducerResult.events` field means one thing at every call site, and the store's dispatch loop reads as a single fold + single perform, exactly as the architecture doc has always described.

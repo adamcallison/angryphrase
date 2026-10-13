@@ -139,6 +139,8 @@ So "who folds events into AppState" has two answers, and the store's loop contai
 
 The same fold-adjacent duplication appears in the confirm-clearing logic: the `CONFIRMABLE_INTENT_KINDS` check + `modal: null, pendingConfirmIntent: null` reset is copy-pasted into both routing helpers (`reducer.ts:47-53` and `59-65`) — the per-experience parallelism of #1 surfacing again at the app layer.
 
+**Status (2026-10-13): addressed** — resolution in `architecture_smell_resolutions.md`.
+
 ---
 
 ## 6. The confirm-intent contract is declared twice, checked in only one direction

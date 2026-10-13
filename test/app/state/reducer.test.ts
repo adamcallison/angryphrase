@@ -331,18 +331,18 @@ describe('reduceApp', () => {
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
     expect(playResult.state.player.lastImportError).toBe('Could not read that file. Please try again.');
-    expect(playResult.state.toasts).toHaveLength(1);
-    expect(playResult.state.toasts[0]).toMatchObject({
-      kind: 'error',
+    expect(playResult.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
       message: 'Could not read that file. Please try again.',
     });
 
     const buildState = { ...state, route: 'build' as const };
     const buildResult = reduceApp(buildState, { target: 'builder', kind: 'report-import-read-failure' }, deps);
     expect(buildResult.state.builder).toBe(state.builder);
-    expect(buildResult.state.toasts).toHaveLength(1);
-    expect(buildResult.state.toasts[0]).toMatchObject({
-      kind: 'error',
+    expect(buildResult.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
       message: 'Could not read that file. Please try again.',
     });
   });
@@ -356,19 +356,36 @@ describe('reduceApp', () => {
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
     expect(playResult.state.player.lastImportError).toBe('Could not open or read that file. Please try again.');
-    expect(playResult.state.toasts).toHaveLength(1);
-    expect(playResult.state.toasts[0]).toMatchObject({
-      kind: 'error',
+    expect(playResult.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
       message: 'Could not open or read that file. Please try again.',
     });
 
     const buildState = { ...state, route: 'build' as const };
     const buildResult = reduceApp(buildState, { target: 'builder', kind: 'report-pick-failure' }, deps);
     expect(buildResult.state.builder).toBe(state.builder);
-    expect(buildResult.state.toasts).toHaveLength(1);
-    expect(buildResult.state.toasts[0]).toMatchObject({
-      kind: 'error',
+    expect(buildResult.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
       message: 'Could not open or read that file. Please try again.',
     });
+  });
+
+  it('reduceApp: returns sub-reducer toast events raw (state.toasts unchanged; fold happens in the store)', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const result = reduceApp(
+      state,
+      { target: 'builder', kind: 'request-import-puzzle', fileContent: 'not valid json' },
+      deps,
+    );
+    expect(result.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      message: expect.stringContaining('valid'),
+    });
+    expect(result.state.toasts).toBe(state.toasts);
+    expect(result.state.builder).toBe(state.builder);
   });
 });

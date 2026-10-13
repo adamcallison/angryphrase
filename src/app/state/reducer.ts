@@ -7,7 +7,6 @@ import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
-import { applyEventsToApp } from './effects';
 import { CONFIRMABLE_INTENT_KINDS } from './intentKinds';
 
 export function reduceApp(
@@ -32,28 +31,22 @@ export function reduceApp(
   }
 
   // Builder or Player intent: dispatch by target.
-  function routeToBuilder(builderIntent: BuilderIntent): ReducerResult<AppState> {
-    const r = reduceBuilder(state.builder, builderIntent, deps);
-    const folded = applyEventsToApp({ ...state, builder: r.state }, r.events, deps);
-    if (CONFIRMABLE_INTENT_KINDS.has(builderIntent.kind)) {
-      return {
-        state: { ...folded.state, modal: null, pendingConfirmIntent: null },
-        events: folded.leftoverEvents,
-      };
-    }
-    return { state: folded.state, events: folded.leftoverEvents };
+  function clearPendingConfirm(s: AppState): AppState {
+    return { ...s, modal: null, pendingConfirmIntent: null };
   }
 
-  function routeToPlayer(playerIntent: PlayerIntent): ReducerResult<AppState> {
-    const r = reducePlayer(state.player, playerIntent, deps);
-    const folded = applyEventsToApp({ ...state, player: r.state }, r.events, deps);
-    if (CONFIRMABLE_INTENT_KINDS.has(playerIntent.kind)) {
-      return {
-        state: { ...folded.state, modal: null, pendingConfirmIntent: null },
-        events: folded.leftoverEvents,
-      };
-    }
-    return { state: folded.state, events: folded.leftoverEvents };
+  function routeToBuilder(intent: BuilderIntent): ReducerResult<AppState> {
+    const r = reduceBuilder(state.builder, intent, deps);
+    const merged = { ...state, builder: r.state };
+    const final = CONFIRMABLE_INTENT_KINDS.has(intent.kind) ? clearPendingConfirm(merged) : merged;
+    return { state: final, events: r.events };
+  }
+
+  function routeToPlayer(intent: PlayerIntent): ReducerResult<AppState> {
+    const r = reducePlayer(state.player, intent, deps);
+    const merged = { ...state, player: r.state };
+    const final = CONFIRMABLE_INTENT_KINDS.has(intent.kind) ? clearPendingConfirm(merged) : merged;
+    return { state: final, events: r.events };
   }
 
   switch (intent.target) {
