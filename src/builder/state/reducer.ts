@@ -17,7 +17,7 @@ import {
   handleEditClue,
   handleMoveCursor,
   handleSelectCell,
-  handleToggleMarker,
+  handleSetMarker,
   handleTypeLetter,
 } from './internal/fillMode';
 import { handleBeginJoin, handleUnjoin } from './internal/joinSubMode';
@@ -98,8 +98,8 @@ export function reduceBuilder(
     case 'backspace':
       return handleBackspace(state);
 
-    case 'toggle-marker':
-      return handleToggleMarker(state, intent);
+    case 'set-marker':
+      return handleSetMarker(state, intent);
 
     case 'edit-clue':
       return handleEditClue(state, intent);

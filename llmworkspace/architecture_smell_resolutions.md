@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission).
 
 ---
 
@@ -244,3 +244,113 @@ No source modules deleted. No new intent kinds, no new event variants, no port c
 ### Consequence (change cost after)
 
 A new intent kind lands in exactly one of the two unions; the property carries `target: 'builder'` or `target: 'player'` as required by the union. TS refuses to compile if the literal is missing, widened, or wrong-valued. Adding the same kind string to both unions (should a future feature require shared payload but experience-specific dispatch) is permitted — each variant carries its own `target` literal and the dispatch site picks the right one. The `AMBIGUOUS_INTENT_KINDS` set is gone, the route-based dispatch switch is gone, the `as unknown as` casts are gone, and the dispatch layer's correctness no longer depends on the UI tree's mounting topology. The "two architectures" criterion for failure reports is now coherent by construction — `AppIntent` for effect-constant failures, experience unions for state-mutating failures — and the duplicated message constants have a single owner. The deferred P5 from #1 lands here; the smell-#3-adjacent leftover is none.
+
+---
+
+## 4. Chain-boundary marker semantics are scattered across six sites — resolved 2026-10-13
+
+### The smell (recap)
+
+`CellMarker` was a four-boolean struct (`spaceRight`, `spaceBottom`, `hyphenRight`, `hyphenBottom`). Every interpretation of those flags — "what a boundary marker means on a linked word's end cell" — was re-implemented at six sites: `joinSubMode.ts` (empty-pair test + marker materialize/clear), `reconcileWords.ts` (a second marker-patch vocabulary), `v1.ts` (a third empty-pair normalization), `Anagram.ts` (marker→`CellSeparator` derivation, twice), `gridVM.ts` (a third derivation), and `LengthPattern.ts` (the same space/hyphen/run logic inlined three times). The "marker pair" mutual-exclusion rule existed only in `CellMarker.toggle`; every other site re-derived it by hand. See `architecture_smells.md` §4 for the full evidence table.
+
+The same concept space had a second, related split: chain **structural** validation lived in `domain/chain/ChainValidation.ts`, but the chain **admission** rules (`source has no nextWord`, `target not already linked`, `target clue empty`, `target is a chain head` — FR-35/FR-42) lived only in `builder/state/internal/joinSubMode.ts` and `reattachSubMode.ts`. The domain could tell you a chain was invalid; only Builder state knew what made a link admissible, so future callers had no way to enforce the same policy.
+
+### Decision
+
+**Marker shape options:**
+
+- **A1 — keep the four booleans and extract helper functions:** rejected. The root cause was representation: the booleans still made invalid combinations (`spaceRight && hyphenRight`) representable, and every consumer still had to know the precedence rule.
+- **A2 — introduce a separate `ChainBoundary` value object:** rejected. It would own the linked-word end-cell concept but would leave standalone-word markers and the six call sites' re-derivation largely intact.
+- **A3 — make `CellSeparator` the internal representation:** **chosen**. `CellMarker` becomes `{ right: CellSeparator, bottom: CellSeparator }`; mutual exclusion is a type-level fact. The v1 file format stays four-boolean on disk; an adapter pair local to `v1.ts` bridges the two shapes.
+
+**Chain admission options:**
+
+- **B1 — keep the rules in Builder state:** rejected. Leaves the split untouched; future callers cannot reuse the policy.
+- **B2 — extract a pure domain predicate, keep mutation in Builder state:** **chosen**. Admission is a dependency-free predicate over a `words` snapshot; mutation still needs `Rng` for `DisplacedClue` UUIDs and belongs in Builder state.
+- **B3 — make admission an aggregate-level operation that also performs the link/reattach mutation:** rejected. It would pull `Rng` and `BuilderState` knowledge into `domain/chain/`, violating the domain's framework-free, port-free boundary.
+
+### Design as implemented
+
+**`src/domain/grid/CellMarker.ts`** — the single owner of marker read/write semantics.
+
+```ts
+export type CellMarker = { right: CellSeparator; bottom: CellSeparator };
+
+export const CellMarker = {
+  EMPTY: { right: 'none', bottom: 'none' },
+  read(marker, axis: 'right' | 'bottom'): CellSeparator,
+  write(marker, axis, separator: CellSeparator): CellMarker,
+  isEmpty(marker, axis): boolean,
+};
+```
+
+`CellMarkerFlag.ts` and `CellMarker.toggle` are deleted. `Cell.EMPTY.marker` is `CellMarker.EMPTY`.
+
+**`src/domain/format/v1.ts`** — wire-format adapter pair. The on-disk cell shape stays four-boolean for backward compatibility:
+
+```ts
+function markerFromJson(spaceRight, spaceBottom, hyphenRight, hyphenBottom, r, c, failures)
+  : CellMarker | null
+function markerToJson(marker: CellMarker)
+  : { spaceRight, spaceBottom, hyphenRight, hyphenBottom }
+```
+
+`markerFromJson` rejects any cell carrying both `space*` and `hyphen*` on the same axis (`"Cell (r, c) has conflicting right/bottom markers."`). Previously that malformed state was silently collapsed using the implicit "space wins" rule; it is now a parse failure.
+
+**Migrated call sites:**
+
+- `builder/state/internal/joinSubMode.ts` — `isBoundaryPairEmpty`, `materializeJoinMarker`, and `clearBoundaryMarker` now call `CellMarker.isEmpty` / `.write`.
+- `builder/state/internal/reconcileWords.ts` — the old `readBoundaryKind` / `clearPatch` / `setPatch` vocabulary is replaced by `CellMarker.read` / `.write`.
+- `domain/format/v1.ts` — four-boolean normalization is replaced by `markerFromJson` / `markerToJson`.
+- `domain/anagram/Anagram.ts` — the two inlined marker→separator derivations now call `CellMarker.read`.
+- `ui/bindings/viewmodels/gridVM.ts` — `separatorRight` / `separatorBottom` now come from `CellMarker.read`.
+- `domain/chain/LengthPattern.ts` — the inlined space/hyphen/run logic now reads `CellSeparator` via a single `separatorAt` helper that calls `CellMarker.read`.
+
+**`src/domain/chain/ChainAdmission.ts`** — the single owner of admission policy.
+
+```ts
+export type AdmissionReason =
+  | 'source-not-found' | 'target-not-found' | 'source-has-link' | 'target-already-linked'
+  | 'clue-not-found' | 'target-has-clue' | 'target-non-head';
+
+export type AdmissionResult = { ok: true } | { ok: false; reason: AdmissionReason };
+
+export const ChainAdmission = {
+  canLink(words, source, target): AdmissionResult,
+  canReattach(words, displacedClues, displacedClueId, target): AdmissionResult,
+  message(result): string,
+};
+```
+
+`canLink` enforces: source exists, target exists, source has no `nextWord`, no other word already points to target. `canReattach` enforces: displaced clue exists, target exists, target clue is empty, target is a chain head (no word points to it). `message` returns the exact user-facing strings; the toast messages that were previously inlined in `joinSubMode.ts` and `reattachSubMode.ts` now live here.
+
+**Builder-layer handling.** `joinSubMode.resolveJoin` and `reattachSubMode.resolveReattach` call `ChainAdmission` and branch:
+
+- Self-link (`source === target`) is handled in `resolveJoin` before calling `canLink` — it is a UX-level cancel (FR-34), not an admission outcome.
+- `source-not-found` / `target-not-found` / `clue-not-found` → silent `Result.ok(state)` (defensive no-ops for stale UI dispatches).
+- Every other rejection → `Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: ChainAdmission.message(result) }])`.
+- Success path is unchanged: it still mutates `words`, grid markers, displaced clues, and `subMode`, using `deps.rng` where needed.
+
+### Deliberate behaviour changes
+
+None for in-app paths. The marker migration is observationally identical except that v1 import now rejects cells with conflicting markers on the same axis — a new strictness rule for malformed files, not a change to any path the app itself produces. The chain-admission refactor preserves the exact toast strings, the same defensive no-ops, and the same success path. The self-link cancel behaviour is unchanged.
+
+### Files
+
+Created: `src/domain/chain/ChainAdmission.ts`; `test/domain/chain/ChainAdmission.test.ts`.
+
+Modified: `src/domain/grid/CellMarker.ts` (rewrite); `src/domain/format/v1.ts` (adapter pair); `src/domain/anagram/Anagram.ts`; `src/domain/chain/LengthPattern.ts`; `src/ui/bindings/viewmodels/gridVM.ts`; `src/builder/state/internal/joinSubMode.ts`; `src/builder/state/internal/reconcileWords.ts`; `src/builder/state/internal/fillMode.ts`; `src/builder/state/internal/reattachSubMode.ts`; `src/builder/state/intents.ts`; `src/builder/state/reducer.ts`; `src/app/state/intentKinds.ts`; `src/ui/bindings/builderFacade.ts`; `src/ui/bindings/viewmodels/builderVM.ts`; `src/ui/builder/BuilderToolbar.svelte`.
+
+Deleted: `src/domain/grid/CellMarkerFlag.ts`.
+
+Test files modified in proportion: `test/domain/grid/CellMarker.test.ts`; `test/domain/grid/Cell.test.ts`; `test/domain/grid/GridOps.test.ts`; `test/domain/format/v1.test.ts`; `test/domain/anagram/Anagram.test.ts`; `test/domain/chain/LengthPattern.test.ts`; `test/ui/bindings/viewmodels/gridVM.test.ts`; `test/ui/bindings/viewmodels/builderVM.test.ts`; `test/ui/bindings/builderFacade.test.ts`; `test/builder/state/internal/fillMode.test.ts`; `test/builder/state/internal/joinSubMode.test.ts`; `test/builder/state/internal/reconcileWords.test.ts`; `test/ui/bindings/viewmodels/anagramVM.test.ts`; `test/app/state/intentKinds.test.ts`; `test/builder/state/reducer.test.ts`. Docs: `llmworkspace/architecture.md`; `llmworkspace/architecture_smells.md`.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **86 test files / 1249 tests green** (from 85 files / 1229 tests after #3 — +1 file `ChainAdmission.test.ts`, +20 tests: +21 new admission tests, −1 vacuous mutual-exclusion case that became unrepresentable); the single-file production build succeeded.
+- `ChainAdmission.test.ts` pins every `canLink` and `canReattach` outcome and the exact `message` text for every reason code.
+- Existing suites stayed green without weakened assertions; no source-file edits were needed outside the marker/admission migration.
+
+### Consequence (change cost after)
+
+A new marker-related feature (e.g. diagonal markers or user-defined marker glyphs) touches: `CellSeparator` (if new kinds), `CellMarker` (add axis or new separator), the v1 format adapter (`markerFromJson` / `markerToJson`), and the call sites that render the new separator. A new admission rule (e.g. "no link between two parallel words of the same length") touches `ChainAdmission.canLink` and its `message` function. The Builder handlers stay thin. The six-site marker-interpretation drift and the unreachable admission policy are gone.

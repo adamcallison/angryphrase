@@ -64,24 +64,14 @@ function withMarker(grid: Grid, row: number, col: number, marker: CellMarker): G
 
 function withRightFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
   const marker = markerAt(grid, row, col);
-  const nextMarker =
-    flag === 'space'
-      ? { ...marker, spaceRight: true, hyphenRight: false }
-      : flag === 'hyphen'
-        ? { ...marker, spaceRight: false, hyphenRight: true }
-        : { ...marker, spaceRight: false, hyphenRight: false };
-  return withMarker(grid, row, col, nextMarker);
+  const separator = flag === 'none' ? 'none' : flag;
+  return withMarker(grid, row, col, CellMarker.write(marker, 'right', separator));
 }
 
 function withBottomFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
   const marker = markerAt(grid, row, col);
-  const nextMarker =
-    flag === 'space'
-      ? { ...marker, spaceBottom: true, hyphenBottom: false }
-      : flag === 'hyphen'
-        ? { ...marker, spaceBottom: false, hyphenBottom: true }
-        : { ...marker, spaceBottom: false, hyphenBottom: false };
-  return withMarker(grid, row, col, nextMarker);
+  const separator = flag === 'none' ? 'none' : flag;
+  return withMarker(grid, row, col, CellMarker.write(marker, 'bottom', separator));
 }
 
 describe('reconcileWords', () => {
@@ -381,8 +371,7 @@ describe('reconcileWords', () => {
       marked = withRightFlag(marked, 0, 2, kind);
       const { grid: reconciledGrid, words } = reconcileWords(marked, oldWords, newWords, [], new SeededRng(1));
       const marker = markerAt(reconciledGrid, 0, 2);
-      expect(marker.spaceRight).toBe(kind === 'space');
-      expect(marker.hyphenRight).toBe(kind === 'hyphen');
+      expect(marker.right).toBe(kind);
       const a = words.find((word) => WordKey.toCanonical(word.key) === WordKey.toCanonical(aKey));
       expect(a!.nextWord).toEqual(bKey);
     }
@@ -406,10 +395,8 @@ describe('reconcileWords', () => {
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
-    expect(markerAt(reconciledGrid, 0, 1).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 1).hyphenRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 2).spaceRight).toBe(true);
-    expect(markerAt(reconciledGrid, 0, 2).hyphenRight).toBe(false);
+    expect(markerAt(reconciledGrid, 0, 1).right).toBe('none');
+    expect(markerAt(reconciledGrid, 0, 2).right).toBe('space');
   });
 
   it('end-shortened linked word defaults its boundary to space when the old end cell is destroyed', () => {
@@ -423,8 +410,7 @@ describe('reconcileWords', () => {
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
     expect(GridOps.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(true);
-    expect(markerAt(reconciledGrid, 0, 1).spaceRight).toBe(true);
-    expect(markerAt(reconciledGrid, 0, 1).hyphenRight).toBe(false);
+    expect(markerAt(reconciledGrid, 0, 1).right).toBe('space');
   });
 
   it('split linked word moves the boundary marker; surviving old end cell is cleared', () => {
@@ -437,10 +423,8 @@ describe('reconcileWords', () => {
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
-    expect(markerAt(reconciledGrid, 0, 3).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 3).hyphenRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 1).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 1).hyphenRight).toBe(true);
+    expect(markerAt(reconciledGrid, 0, 3).right).toBe('none');
+    expect(markerAt(reconciledGrid, 0, 1).right).toBe('hyphen');
   });
 
   it('severed link (target destroyed) clears the source\'s boundary marker', () => {
@@ -458,8 +442,7 @@ describe('reconcileWords', () => {
 
     const a = words.find((word) => WordKey.toCanonical(word.key) === WordKey.toCanonical(aKey));
     expect(a!.nextWord).toBeNull();
-    expect(markerAt(reconciledGrid, 0, 1).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 1).hyphenRight).toBe(false);
+    expect(markerAt(reconciledGrid, 0, 1).right).toBe('none');
   });
 
   it('destroyed linked word clears its old end-cell marker', () => {
@@ -476,8 +459,7 @@ describe('reconcileWords', () => {
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
     expect(GridOps.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 2).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 2).hyphenRight).toBe(false);
+    expect(markerAt(reconciledGrid, 0, 2).right).toBe('none');
   });
 
   it('standalone words\' markers are untouched by reconciliation', () => {
@@ -496,8 +478,7 @@ describe('reconcileWords', () => {
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
-    expect(markerAt(reconciledGrid, 0, 2).spaceRight).toBe(false);
-    expect(markerAt(reconciledGrid, 0, 2).hyphenRight).toBe(true);
+    expect(markerAt(reconciledGrid, 0, 2).right).toBe('hyphen');
   });
 
   it('across and down linked words sharing a boundary cell update independent pairs', () => {
@@ -543,9 +524,7 @@ describe('reconcileWords', () => {
     const { grid: reconciledGrid } = reconcileWords(marked, oldWords, newWords, [], new SeededRng(1));
 
     const marker = markerAt(reconciledGrid, 1, 1);
-    expect(marker.spaceRight).toBe(true);
-    expect(marker.hyphenRight).toBe(false);
-    expect(marker.spaceBottom).toBe(false);
-    expect(marker.hyphenBottom).toBe(true);
+    expect(marker.right).toBe('space');
+    expect(marker.bottom).toBe('hyphen');
   });
 });

@@ -342,8 +342,7 @@ describe('handleUnjoin', () => {
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toBeNull();
     const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
-    expect(cell.marker.spaceRight).toBe(false);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('none');
   });
 
   it('unjoin with empty downstream clue adds no displaced entry (behaviour unchanged)', () => {
@@ -549,10 +548,12 @@ function withMarkerAt(
   state: BuilderState,
   row: number,
   col: number,
-  flag: import('../../../../src/domain/grid/CellMarkerFlag').CellMarkerFlag,
+  flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom',
 ): BuilderState {
+  const axis = flag.endsWith('right') ? 'right' : 'bottom';
+  const separator = flag.startsWith('space') ? 'space' : 'hyphen';
   const cell = GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col));
-  const newCell = Cell.setMarker(cell, CellMarker.toggle(cell.marker, flag));
+  const newCell = Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator));
   const newGrid = GridOps.setCell(state.puzzle.grid, Row.of(row), Col.of(col), newCell);
   return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) };
 }
@@ -566,8 +567,8 @@ describe('join boundary markers (FR-36)', () => {
     const result = resolveJoin(state, source, target, rng);
 
     const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
-    expect(cell.marker.spaceRight).toBe(true);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('space');
+    expect(cell.marker.bottom).toBe('none');
   });
 
   it('join materializes default space marker on source last cell (down → spaceBottom)', () => {
@@ -584,8 +585,8 @@ describe('join boundary markers (FR-36)', () => {
     const result = resolveJoin(state, source, target, rng);
 
     const cell = GridOps.cellAt(result.state.puzzle.grid, lastCell.row, lastCell.col);
-    expect(cell.marker.spaceBottom).toBe(true);
-    expect(cell.marker.hyphenBottom).toBe(false);
+    expect(cell.marker.bottom).toBe('space');
+    expect(cell.marker.right).toBe('none');
   });
 
   it('join respects a pre-existing hyphen marker on source last cell', () => {
@@ -597,8 +598,8 @@ describe('join boundary markers (FR-36)', () => {
     const result = resolveJoin(state, source, target, rng);
 
     const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
-    expect(cell.marker.hyphenRight).toBe(true);
-    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.right).toBe('hyphen');
+    expect(cell.marker.bottom).toBe('none');
   });
 });
 
@@ -612,8 +613,8 @@ describe('unjoin boundary markers (FR-37)', () => {
     const result = handleUnjoin(state, intent, rng);
 
     const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
-    expect(cell.marker.spaceRight).toBe(false);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('none');
+    expect(cell.marker.bottom).toBe('none');
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toBeNull();
   });
@@ -629,10 +630,9 @@ describe('unjoin boundary markers (FR-37)', () => {
     const result = handleUnjoin(state, intent, rng);
 
     const sourceLast = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
-    expect(sourceLast.marker.spaceRight).toBe(false);
-    expect(sourceLast.marker.hyphenRight).toBe(false);
-    expect(sourceLast.marker.spaceBottom).toBe(true);
+    expect(sourceLast.marker.right).toBe('none');
+    expect(sourceLast.marker.bottom).toBe('space');
     const other = GridOps.cellAt(result.state.puzzle.grid, Row.of(2), Col.of(2));
-    expect(other.marker.hyphenRight).toBe(true);
+    expect(other.marker.right).toBe('hyphen');
   });
 });

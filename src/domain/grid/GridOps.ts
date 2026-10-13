@@ -201,10 +201,8 @@ export const GridOps: {
           cellA.black !== cellB.black ||
           cellA.answerLetter !== cellB.answerLetter ||
           cellA.playerLetter !== cellB.playerLetter ||
-          cellA.marker.spaceRight !== cellB.marker.spaceRight ||
-          cellA.marker.spaceBottom !== cellB.marker.spaceBottom ||
-          cellA.marker.hyphenRight !== cellB.marker.hyphenRight ||
-          cellA.marker.hyphenBottom !== cellB.marker.hyphenBottom
+          cellA.marker.right !== cellB.marker.right ||
+          cellA.marker.bottom !== cellB.marker.bottom
         ) {
           return false;
         }

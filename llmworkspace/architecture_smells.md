@@ -122,6 +122,8 @@ Related split in the same concept space: chain **structural** validation (cycle/
 
 Also adjacent: the "marker pair" idea (space and hyphen as mutually exclusive per direction) is encoded structurally only in `CellMarker.toggle`; every other site re-derives exclusivity by checking both booleans by hand.
 
+**Status (2026-10-13): addressed** — resolution in `architecture_smell_resolutions.md`.
+
 ---
 
 ## 5. The event-fold pipeline has two owners and a redundant stage

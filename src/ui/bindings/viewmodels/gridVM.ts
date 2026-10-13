@@ -3,6 +3,7 @@ import { GridSize } from '../../../domain/grid/GridSize';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import type { Cell } from '../../../domain/grid/Cell';
+import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import { GridOps } from '../../../domain/grid/GridOps';
 import type { Word } from '../../../domain/word/Word';
@@ -36,15 +37,11 @@ function cellKey(r: number, c: number): string {
 }
 
 function deriveSeparatorRight(cell: Cell): CellSeparator {
-  if (cell.marker.spaceRight) return 'space';
-  if (cell.marker.hyphenRight) return 'hyphen';
-  return 'none';
+  return CellMarker.read(cell.marker, 'right');
 }
 
 function deriveSeparatorBottom(cell: Cell): CellSeparator {
-  if (cell.marker.spaceBottom) return 'space';
-  if (cell.marker.hyphenBottom) return 'hyphen';
-  return 'none';
+  return CellMarker.read(cell.marker, 'bottom');
 }
 
 export function deriveGridVM(input: {

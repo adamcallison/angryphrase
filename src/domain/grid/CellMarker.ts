@@ -1,57 +1,31 @@
-import type { CellMarkerFlag } from './CellMarkerFlag';
+import type { CellSeparator } from './CellSeparator';
+
+export type CellMarkerAxis = 'right' | 'bottom';
 
 export type CellMarker = {
-  spaceRight: boolean;
-  spaceBottom: boolean;
-  hyphenRight: boolean;
-  hyphenBottom: boolean;
+  right: CellSeparator;
+  bottom: CellSeparator;
 };
 
 export const CellMarker: {
   EMPTY: CellMarker;
-  toggle(marker: CellMarker, flag: CellMarkerFlag): CellMarker;
+  read(marker: CellMarker, axis: CellMarkerAxis): CellSeparator;
+  write(marker: CellMarker, axis: CellMarkerAxis, separator: CellSeparator): CellMarker;
+  isEmpty(marker: CellMarker, axis: CellMarkerAxis): boolean;
 } = {
-  EMPTY: Object.freeze({
-    spaceRight: false,
-    spaceBottom: false,
-    hyphenRight: false,
-    hyphenBottom: false,
-  }),
+  EMPTY: Object.freeze({ right: 'none', bottom: 'none' }),
 
-  toggle(marker: CellMarker, flag: CellMarkerFlag): CellMarker {
-    switch (flag) {
-      case 'space-right': {
-        const spaceRight = !marker.spaceRight;
-        return {
-          ...marker,
-          spaceRight,
-          hyphenRight: spaceRight ? false : marker.hyphenRight,
-        };
-      }
-      case 'hyphen-right': {
-        const hyphenRight = !marker.hyphenRight;
-        return {
-          ...marker,
-          hyphenRight,
-          spaceRight: hyphenRight ? false : marker.spaceRight,
-        };
-      }
-      case 'space-bottom': {
-        const spaceBottom = !marker.spaceBottom;
-        return {
-          ...marker,
-          spaceBottom,
-          hyphenBottom: spaceBottom ? false : marker.hyphenBottom,
-        };
-      }
-      case 'hyphen-bottom': {
-        const hyphenBottom = !marker.hyphenBottom;
-        return {
-          ...marker,
-          hyphenBottom,
-          spaceBottom: hyphenBottom ? false : marker.spaceBottom,
-        };
-      }
-    }
+  read(marker: CellMarker, axis: CellMarkerAxis): CellSeparator {
+    return marker[axis];
+  },
+
+  write(marker: CellMarker, axis: CellMarkerAxis, separator: CellSeparator): CellMarker {
+    return axis === 'right'
+      ? { ...marker, right: separator }
+      : { ...marker, bottom: separator };
+  },
+
+  isEmpty(marker: CellMarker, axis: CellMarkerAxis): boolean {
+    return marker[axis] === 'none';
   },
 };

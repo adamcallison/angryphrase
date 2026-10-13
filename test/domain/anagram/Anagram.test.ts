@@ -5,7 +5,7 @@ import { Position } from '../../../src/domain/anagram/Position';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
-import type { CellMarkerFlag } from '../../../src/domain/grid/CellMarkerFlag';
+
 import { Col } from '../../../src/domain/grid/Col';
 import { GridOps } from '../../../src/domain/grid/GridOps';
 import { GridSize } from '../../../src/domain/grid/GridSize';
@@ -32,14 +32,16 @@ describe('Anagram', () => {
     grid: CellType[][],
     row: number,
     col: number,
-    flag: CellMarkerFlag
+    flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'
   ): CellType[][] {
+    const axis = flag.endsWith('right') ? 'right' : 'bottom';
+    const separator = flag.startsWith('space') ? 'space' : 'hyphen';
     const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
     return GridOps.setCell(
       grid,
       Row.of(row),
       Col.of(col),
-      Cell.setMarker(cell, CellMarker.toggle(CellMarker.EMPTY, flag))
+      Cell.setMarker(cell, CellMarker.write(CellMarker.EMPTY, axis, separator))
     );
   }
 

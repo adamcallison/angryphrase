@@ -14,7 +14,6 @@ import type { Grid } from '../../../src/domain/grid/Grid';
 import type { Word } from '../../../src/domain/word/Word';
 import type { WordKey } from '../../../src/domain/word/WordKey';
 import type { Direction as DirectionType } from '../../../src/domain/word/Direction';
-import type { CellMarkerFlag } from '../../../src/domain/grid/CellMarkerFlag';
 
 function makeWord(
   row: number,
@@ -41,19 +40,25 @@ function wordMap(words: Word[]) {
   return WordMap.fromWords(words);
 }
 
+function markerFlag(flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): CellMarker {
+  const axis = flag.endsWith('right') ? 'right' : 'bottom';
+  const separator = flag.startsWith('space') ? 'space' : 'hyphen';
+  return CellMarker.write(CellMarker.EMPTY, axis, separator);
+}
+
 function applyMarker(grid: Grid, row: number, col: number, marker: CellMarker): Grid {
   const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
   return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(cell, marker));
 }
 
-function applyBoundaryMarker(grid: Grid, w: Word, flag: CellMarkerFlag): Grid {
+function applyBoundaryMarker(grid: Grid, w: Word, flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): Grid {
   const end = Direction.advance(
     { row: w.key.startRow, col: w.key.startCol },
     w.key.direction,
     Number(w.length) - 1,
   );
   const cell = GridOps.cellAt(grid, end.row, end.col);
-  return GridOps.setCell(grid, end.row, end.col, Cell.setMarker(cell, CellMarker.toggle(cell.marker, flag)));
+  return GridOps.setCell(grid, end.row, end.col, Cell.setMarker(cell, markerFlag(flag)));
 }
 
 describe('LengthPattern', () => {
@@ -67,7 +72,7 @@ describe('LengthPattern', () => {
 
   it('head word with nextWord null, single space marker between cells 1-2 of 4 returns "2, 2"', () => {
     let grid = GridOps.blank(GridSize.of(5));
-    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const words = wordMap([w]);
 
@@ -76,7 +81,7 @@ describe('LengthPattern', () => {
 
   it('head word with nextWord null, single hyphen marker between cells 1-2 of 4 returns "2-2"', () => {
     let grid = GridOps.blank(GridSize.of(5));
-    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    grid = applyMarker(grid, 0, 1, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const words = wordMap([w]);
 
@@ -85,19 +90,20 @@ describe('LengthPattern', () => {
 
   it('head word with nextWord null, mixed space and hyphen markers returns "2, 2-2"', () => {
     let grid = GridOps.blank(GridSize.of(6));
-    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
-    grid = applyMarker(grid, 0, 3, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
+    grid = applyMarker(grid, 0, 3, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 6);
     const words = wordMap([w]);
 
     expect(LengthPattern.forWord(grid, words, w)).toBe('2, 2-2');
   });
 
-  it('across word reads spaceRight / hyphenRight markers', () => {
+  it('across word reads right-axis markers', () => {
     let grid = GridOps.blank(GridSize.of(5));
-    const marker = CellMarker.toggle(
-      CellMarker.toggle(CellMarker.EMPTY, 'space-right'),
-      'space-bottom',
+    const marker = CellMarker.write(
+      CellMarker.write(CellMarker.EMPTY, 'right', 'space'),
+      'bottom',
+      'space',
     );
     grid = applyMarker(grid, 0, 1, marker);
     const w = makeWord(0, 0, 'across', null, 4);
@@ -106,11 +112,12 @@ describe('LengthPattern', () => {
     expect(LengthPattern.forWord(grid, words, w)).toBe('2, 2');
   });
 
-  it('down word reads spaceBottom / hyphenBottom markers', () => {
+  it('down word reads bottom-axis markers', () => {
     let grid = GridOps.blank(GridSize.of(5));
-    const marker = CellMarker.toggle(
-      CellMarker.toggle(CellMarker.EMPTY, 'space-right'),
-      'space-bottom',
+    const marker = CellMarker.write(
+      CellMarker.write(CellMarker.EMPTY, 'right', 'space'),
+      'bottom',
+      'space',
     );
     grid = applyMarker(grid, 1, 1, marker);
     const w = makeWord(0, 1, 'down', null, 4);
@@ -174,7 +181,7 @@ describe('LengthPattern', () => {
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
-    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 2, 1, markerFlag('space-right'));
     grid = applyBoundaryMarker(grid, head, 'space-right');
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const words = wordMap([head, middle, tail]);
@@ -187,7 +194,7 @@ describe('LengthPattern', () => {
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
-    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    grid = applyMarker(grid, 2, 1, markerFlag('hyphen-right'));
     grid = applyBoundaryMarker(grid, head, 'space-right');
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const words = wordMap([head, middle, tail]);
@@ -199,8 +206,8 @@ describe('LengthPattern', () => {
     let grid = GridOps.blank(GridSize.of(9));
     const middle = makeWord(1, 0, 'across', null, 4);
     const head = makeWord(0, 0, 'across', middle.key, 4);
-    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
-    grid = applyMarker(grid, 1, 1, CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right'));
+    grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
+    grid = applyMarker(grid, 1, 1, markerFlag('hyphen-right'));
     grid = applyBoundaryMarker(grid, head, 'space-right');
     const words = wordMap([head, middle]);
 
@@ -211,7 +218,7 @@ describe('LengthPattern', () => {
     let grid = GridOps.blank(GridSize.of(9));
     const tail = makeWord(1, 0, 'across', null, 5);
     const head = makeWord(0, 0, 'across', tail.key, 4);
-    grid = applyMarker(grid, 0, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     grid = applyBoundaryMarker(grid, head, 'space-right');
     const words = wordMap([head, tail]);
 
@@ -223,7 +230,7 @@ describe('LengthPattern', () => {
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
-    grid = applyMarker(grid, 2, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 2, 1, markerFlag('space-right'));
     grid = applyBoundaryMarker(grid, head, 'space-right');
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const words = wordMap([head, middle, tail]);
@@ -270,7 +277,7 @@ describe('LengthPattern', () => {
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
-    grid = applyMarker(grid, 1, 1, CellMarker.toggle(CellMarker.EMPTY, 'space-right'));
+    grid = applyMarker(grid, 1, 1, markerFlag('space-right'));
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const words = wordMap([head, middle, tail]);
 

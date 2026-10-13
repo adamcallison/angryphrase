@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
+import { CellMarker } from '../../../src/domain/grid/CellMarker';
 import { Col } from '../../../src/domain/grid/Col';
 import type { Grid } from '../../../src/domain/grid/Grid';
 import { GridOps } from '../../../src/domain/grid/GridOps';
@@ -214,13 +215,13 @@ describe('GridOps', () => {
     const cloned = GridOps.clone(grid);
 
     const originalMarker = cloned[0]![0]!.marker;
-    const mutatedMarker = { ...originalMarker, spaceRight: true };
+    const mutatedMarker = CellMarker.write(originalMarker, 'right', 'space');
     const mutatedCell: CellType = { ...cloned[0]![0]!, marker: mutatedMarker };
     const mutatedGrid = GridOps.setCell(cloned, Row.of(0), Col.of(0), mutatedCell);
 
     expect(grid[0]![0]!.marker).toEqual(originalMarker);
-    expect(grid[0]![0]!.marker.spaceRight).toBe(false);
-    expect(mutatedGrid[0]![0]!.marker.spaceRight).toBe(true);
+    expect(grid[0]![0]!.marker.right).toBe('none');
+    expect(mutatedGrid[0]![0]!.marker.right).toBe('space');
   });
 
   it('GridOps.equals returns true for two structurally equal grids, false for any field difference', () => {

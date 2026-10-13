@@ -75,10 +75,10 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker`, `CellMarkerFlag`, `CellSeparator` (derived render separator: `'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridOps` (typed accessors — raw indexing happens nowhere else), `GridInteraction` (the shared cursor/typing transitions used by both experiences — `select`/`move`/`typeLetter`/`backspace` over `(grid, cursor)` with an injected `LetterSlot` policy for the answer-vs-player field — plus the shared intent payload variants, see §3 Layer 1), `CellIndex` |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker` (`{ right: CellSeparator, bottom: CellSeparator }` — structural mutual exclusion; API `CellMarker.read(marker, axis)` / `.write(marker, axis, separator)` / `.isEmpty(marker, axis)`; `EMPTY` is the canonical no-marker value), `CellSeparator` (`'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridOps` (typed accessors — raw indexing happens nowhere else), `GridInteraction` (the shared cursor/typing transitions used by both experiences — `select`/`move`/`typeLetter`/`backspace` over `(grid, cursor)` with an injected `LetterSlot` policy for the answer-vs-player field — plus the shared intent payload variants, see §3 Layer 1), `CellIndex` |
 | `domain/word/` | `Word`, `WordKey` (`{startRow, startCol, direction}`), `WordLength` (≥2), `Direction` + helpers, `DerivedWord` (pre-numbering shape), `WordDerivation` (grid scan → `DerivedWord[]`), `Numbering` (assigns word numbers), `WordMap` (canonical-string-keyed O(1) lookup), `WordSelection` (`findContainingWord`) |
 | `domain/letter/` | `Letter` brand + `try`/`from`/`equals` (case-folds, validates A–Z) |
-| `domain/chain/` | `Chain` traversal, `ChainValidation` (cycle/branch/dangling/self-reference), `ChainViolation`, `DisplayClue`, `LengthPattern`, `ChainCells` (cell-coord sets shared by builder/player VMs) |
+| `domain/chain/` | `Chain` traversal, `ChainValidation` (cycle/branch/dangling/self-reference), `ChainViolation`, `ChainAdmission` — the single owner of the chain-link admission rules (`canLink` / `canReattach` / `message(result)`); both `Builder` join and reattach handlers consume it, and any future caller (Player-side chain feature, import path, scripting API) shares the same admission policy, `DisplayClue`, `LengthPattern`, `ChainCells` (cell-coord sets shared by builder/player VMs) |
 | `domain/anagram/` | `AnagramEntry` (discriminated by `fixed`: `fixed: true ⇒ letter: Letter`), `Position` (≥0), `Anagram` (`buildWordModel`, `buildChainModel`, `validateInput`, `validateChainInput`, `scramble`) |
 | `domain/puzzle/` | `Puzzle` aggregate, `PuzzleKey` (UUID-v4 brand; `generate(rng)`), `Title`, `Author`, `CompletenessCheck` + `CompletenessViolation` — the single owner of the complete-puzzle clue rules (`clueViolations`: head clue non-empty, non-head clue empty; `check` = letter scan + clue rules; `message(v)` renders a violation as user-facing text). Both the export gate and the parser's complete-file validation consume it; `domain/format/` owns only byte-shape rules |
 | `domain/builder/` | `DisplacedClue`, `DisplacedClueId` (UUID-v4 brand) — Builder-only concepts |
@@ -283,7 +283,7 @@ Four user actions are guarded: switch-to-design, Builder import, Builder reset, 
 - `join { source }` → attempt the join. Validity: source ≠ target, source has no outgoing `nextWord`, target not already pointed to, both exist. On success: set `source.nextWord`, displace a non-empty target clue to the displaced list, materialize the default space boundary marker on the source's last cell if the direction pair there is empty, reset sub-mode. On failure: toast with reason, sub-mode stays active.
 - `reattach { displacedClueId }` → attempt reattach. Validity: target exists, empty clue, is a chain head. On success: move the clue text, remove the displaced entry. Only text transfers, never chain membership.
 
-`unjoin` clears `source.nextWord` **and** its chain-boundary marker pair, and blanks the downstream word's clue — displacing it into the displaced-clue list first if it was non-empty (the same policy as join; a no-op under normal invariants, data-preserving in imported edge states). `escape` cancels join/reattach sub-mode (Builder) or closes the anagram modal (Player).
+`unjoin` clears `source.nextWord` **and** its chain-boundary marker pair, and blanks the downstream word's clue — displacing it into the displaced-clue list first if it was non-empty (the same policy as join; a no-op under normal invariants, data-preserving in imported edge states). Admission rules for both join (`source has no nextWord`, `target not already linked`) and reattach (`target clue empty`, `target is a chain head`) are owned by `ChainAdmission` in `domain/chain/`, and user-facing rejection messages come from `ChainAdmission.message(result)`. `escape` cancels join/reattach sub-mode (Builder) or closes the anagram modal (Player).
 
 ### Reconciliation (design-mode grid changes)
 
@@ -363,7 +363,7 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 | Component | Receives | Invokes (via action bag) |
 |---|---|---|
 | `BuilderShell` | `BuilderFacade` prop | composes children; layout: grid+controls left, clues right |
-| `BuilderToolbar` | `BuilderToolbarVM` + actions | mode toggle, grid-size control, marker toggles (gated on cell selection), Export Incomplete / Export Complete, Reset, Import (via FilePicker), title/author edits; renders the export-complete blocking-error messages (`exportCompleteMessages`) below the export row whenever the gate fails |
+| `BuilderToolbar` | `BuilderToolbarVM` + actions | mode toggle, grid-size control, marker toggles (gated on cell selection; four-button UI dispatches `set-marker` intents — toggle semantics in the facade, reducer is dumb write), Export Incomplete / Export Complete, Reset, Import (via FilePicker), title/author edits; renders the export-complete blocking-error messages below the export row whenever the gate fails |
 | `GridSizeControl` | min/max/value/disabled | `change-grid-size`; numeric input, clamps on blur; disabled when not blank |
 | `BuilderCluePanel` | `CluePanelVM` + actions | clue edits (heads only — non-heads show "See N Direction"), Link next / Unlink, `click-clue-panel-word`, `begin-join`, `unjoin`; scrolls the highlighted clue into view via manual delta on the panel element (not native `scrollIntoView`) |
 | `DisplacedCluesPanel` | `DisplacedCluesPanelVM` + actions | `begin-reattach`, `delete-displaced-clue`; always rendered, empty state |
@@ -426,7 +426,7 @@ angryphrase/
 │  vitest.config.ts, tailwind.config.ts, postcss.config.js, .nvmrc
 ├─ src/
 │  ├─ main.ts, app.css, vite-env.d.ts
-│  ├─ domain/         grid/ (incl. GridInteraction) word/ letter/ chain/ anagram/
+│  ├─ domain/         grid/ (incl. GridInteraction) word/ letter/ chain/ (incl. ChainAdmission) anagram/
 │  │                  puzzle/ builder/ uuid/ time/ notifications/ format/
 │  │                  rng/ ports/  brand.ts            (§3 Layer 0)
 │  ├─ builder/state/  state.ts intents.ts reducer.ts + internal/

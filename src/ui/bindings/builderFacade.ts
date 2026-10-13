@@ -7,9 +7,12 @@ import type { AppStore } from './appStore.svelte';
 import { Row } from '../../domain/grid/Row';
 import { Col } from '../../domain/grid/Col';
 import { GridSize } from '../../domain/grid/GridSize';
+import { GridOps } from '../../domain/grid/GridOps';
 import { Title } from '../../domain/puzzle/Title';
 import { Author } from '../../domain/puzzle/Author';
-import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
+import { CellMarker } from '../../domain/grid/CellMarker';
+import type { CellMarkerAxis } from '../../domain/grid/CellMarker';
+import type { CellSeparator } from '../../domain/grid/CellSeparator';
 import type { WordKey } from '../../domain/word/WordKey';
 import type { DisplacedClueId } from '../../domain/builder/DisplacedClueId';
 import { createGridActions } from './gridActions';
@@ -21,7 +24,7 @@ export type BuilderToolbarActions = {
   switchToFill(): void;
   requestSwitchToDesign(): void;
   changeGridSize(size: number): void;
-  toggleMarker(flag: CellMarkerFlag): void;
+  setMarker(axis: CellMarkerAxis, separator: CellSeparator): void;
   exportIncomplete(): void;
   exportComplete(): void;
   requestResetBuilder(): void;
@@ -93,8 +96,17 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     changeGridSize(size: number) {
       dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(size) });
     },
-    toggleMarker(flag: CellMarkerFlag) {
-      dispatch({ target: 'builder', kind: 'toggle-marker', flag });
+    setMarker(axis: CellMarkerAxis, separator: CellSeparator) {
+      const state = appStore.getBuilder();
+      const cursor = state.cursor;
+      if (cursor === null || state.mode !== 'fill') {
+        dispatch({ target: 'builder', kind: 'set-marker', axis, separator: 'none' });
+        return;
+      }
+      const cell = GridOps.cellAt(state.puzzle.grid, cursor.row, cursor.col);
+      const current = CellMarker.read(cell.marker, axis);
+      const newSeparator = current === separator ? 'none' : separator;
+      dispatch({ target: 'builder', kind: 'set-marker', axis, separator: newSeparator });
     },
     exportIncomplete() {
       dispatch({ target: 'builder', kind: 'export-incomplete' });

@@ -119,14 +119,14 @@ describe('Cell', () => {
   });
 
   it('Cell.setMarker sets marker on a white cell', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+    const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     const cell = Cell.white();
     const updated = Cell.setMarker(cell, marker);
     expect(updated.marker).toEqual(marker);
   });
 
   it('Cell.setMarker is a no-op on black cells (invariant holds)', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+    const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     const cell = Cell.black();
     const updated = Cell.setMarker(cell, marker);
     expect(updated.black).toBe(true);
@@ -134,7 +134,7 @@ describe('Cell', () => {
   });
 
   it('Cell.setMarker returns a new object; input cell is unchanged', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+    const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     const cell = Cell.white();
     const updated = Cell.setMarker(cell, marker);
     expect(updated).not.toBe(cell);
@@ -145,7 +145,7 @@ describe('Cell', () => {
     const nonNull = Letter.try('A');
     expect(nonNull).not.toBeNull();
     const A = nonNull!;
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'hyphen-bottom');
+    const marker = CellMarker.write(CellMarker.EMPTY, 'bottom', 'hyphen');
 
     const cell = Cell.white();
     const withAnswer = Cell.setAnswerLetter(cell, A);

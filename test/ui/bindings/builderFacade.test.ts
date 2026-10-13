@@ -208,12 +208,21 @@ describe('builderFacade.ts', () => {
       expect(builderFacade.builderShellVM().toolbar.mode).toBe('fill');
     });
 
-    it('dispatchToggleMarker("space-right") sets spaceRight true on selected cell', () => {
+    it('dispatchSetMarker("right", "space") sets right separator to space on selected cell', () => {
       builderFacade.actions.toolbar.switchToFill();
       builderFacade.actions.grid.selectCell(0, 0);
-      builderFacade.actions.toolbar.toggleMarker('space-right');
+      builderFacade.actions.toolbar.setMarker('right', 'space');
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.marker.spaceRight).toBe(true);
+      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.marker.right).toBe('space');
+    });
+
+    it('dispatchSetMarker with the current separator clears it to none', () => {
+      builderFacade.actions.toolbar.switchToFill();
+      builderFacade.actions.grid.selectCell(0, 0);
+      builderFacade.actions.toolbar.setMarker('right', 'space');
+      builderFacade.actions.toolbar.setMarker('right', 'space');
+
+      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.marker.right).toBe('none');
     });
 
     it('dispatchEditTitle("Hello") sets puzzle title to "Hello"', () => {

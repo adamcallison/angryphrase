@@ -276,13 +276,13 @@ describe('reduceBuilder', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker is delegated to fillMode', () => {
+  it('set-marker is delegated to fillMode', () => {
     const state = fillState([], { row: 0, col: 0, direction: 'across' });
 
-    const result = reduceBuilder(state, { target: 'builder', kind: 'toggle-marker', flag: 'space-right' }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' }, deps);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
-      true,
+    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+      'space',
     );
     expect(result.state.puzzle).not.toBe(state.puzzle);
     expect(result.events).toEqual([]);

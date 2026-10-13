@@ -11,7 +11,7 @@ import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 import type { Word } from '../../../../src/domain/word/Word';
-import type { CellMarkerFlag } from '../../../../src/domain/grid/CellMarkerFlag';
+
 import type { AnagramModalState } from '../../../../src/player/state/state';
 
 const CLOSED_BASELINE = {
@@ -84,11 +84,13 @@ function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): 
   return GridOps.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
 }
 
-function setMarker(grid: Grid, row: number, col: number, flag: CellMarkerFlag): Grid {
+function setMarker(grid: Grid, row: number, col: number, flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
   const cell = GridOps.cellAt(grid, r, c);
-  return GridOps.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.toggle(cell.marker, flag)));
+  const axis = flag.endsWith('right') ? 'right' : 'bottom';
+  const separator = flag.startsWith('space') ? 'space' : 'hyphen';
+  return GridOps.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
 }
 
 function makeLetters(s: string): Letter[] {

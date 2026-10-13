@@ -4,7 +4,7 @@ import {
   handleMoveCursor,
   handleTypeLetter,
   handleBackspace,
-  handleToggleMarker,
+  handleSetMarker,
   handleEditClue,
   handleClickWord,
 } from '../../../../src/builder/state/internal/fillMode';
@@ -550,131 +550,87 @@ describe('handleBackspace', () => {
   });
 });
 
-describe('handleToggleMarker', () => {
-  it('toggle-marker: no-op in design mode', () => {
+describe('handleSetMarker', () => {
+  it('set-marker: no-op in design mode', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'design');
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker: no-op when cursor is null', () => {
+  it('set-marker: no-op when cursor is null', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker: no-op on black cursor cell (defensive)', () => {
+  it('set-marker: no-op on black cursor cell (defensive)', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
     expect(result.state).toBe(state);
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker: toggles a virgin marker flag to true (space-right)', () => {
+  it('set-marker: writes separator on cursor cell (right space)', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
-      true,
+    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+      'space',
     );
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker: toggles an existing flag back to false', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+  it('set-marker: overwrites an existing separator on the same axis', () => {
+    const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'hyphen');
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
-      false,
+    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+      'space',
     );
     expect(result.events).toEqual([]);
   });
 
-  it('toggle-marker: FR-27 mutual exclusion — toggling space-right on turns hyphen-right off', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'hyphen-right');
+  it('set-marker: only affects the requested axis', () => {
+    const marker = CellMarker.write(CellMarker.EMPTY, 'bottom', 'space');
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
       [0, 0, marker],
     ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'hyphen' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
     const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
-    expect(newMarker.spaceRight).toBe(true);
-    expect(newMarker.hyphenRight).toBe(false);
+    expect(newMarker.right).toBe('hyphen');
+    expect(newMarker.bottom).toBe('space');
   });
 
-  it('toggle-marker: FR-27 mutual exclusion — toggling hyphen-right on turns space-right off', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
-    const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
-      [0, 0, marker],
-    ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'hyphen-right' };
-
-    const result = handleToggleMarker(state, intent);
-    const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
-
-    expect(newMarker.hyphenRight).toBe(true);
-    expect(newMarker.spaceRight).toBe(false);
-  });
-
-  it('toggle-marker: FR-27 mutual exclusion — space-bottom and hyphen-bottom pair', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-bottom');
-    const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
-      [0, 0, marker],
-    ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'hyphen-bottom' };
-
-    const result = handleToggleMarker(state, intent);
-    const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
-
-    expect(newMarker.hyphenBottom).toBe(true);
-    expect(newMarker.spaceBottom).toBe(false);
-  });
-
-  it('toggle-marker: left/right independent of top/bottom (toggling space-right does not affect bottom flags)', () => {
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-bottom');
-    const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [], [
-      [0, 0, marker],
-    ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
-
-    const result = handleToggleMarker(state, intent);
-    const newMarker = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
-
-    expect(newMarker.spaceRight).toBe(true);
-    expect(newMarker.spaceBottom).toBe(true);
-    expect(newMarker.hyphenRight).toBe(false);
-    expect(newMarker.hyphenBottom).toBe(false);
-  });
-
-  it('toggle-marker: updates puzzle.grid via Puzzle.withGrid', () => {
+  it('set-marker: updates puzzle.grid via Puzzle.withGrid', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-marker', flag: 'space-right' };
+    const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' };
 
-    const result = handleToggleMarker(state, intent);
+    const result = handleSetMarker(state, intent);
 
     expect(result.state.puzzle.grid).not.toBe(state.puzzle.grid);
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.spaceRight).toBe(
-      true,
+    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+      'space',
     );
   });
 });

@@ -72,12 +72,8 @@ function designState(size: GridSize, blackCells: [number, number][], words: Word
 
 function withRightFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
   const marker = GridOps.cellAt(grid, Row.of(row), Col.of(col)).marker;
-  const nextMarker =
-    flag === 'space'
-      ? { ...marker, spaceRight: true, hyphenRight: false }
-      : flag === 'hyphen'
-        ? { ...marker, spaceRight: false, hyphenRight: true }
-        : { ...marker, spaceRight: false, hyphenRight: false };
+  const separator = flag === 'none' ? 'none' : flag;
+  const nextMarker = CellMarker.write(marker, 'right', separator);
   return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(GridOps.cellAt(grid, Row.of(row), Col.of(col)), nextMarker));
 }
 
@@ -200,7 +196,7 @@ describe('toggle-design-cell', () => {
 
   it('toggled cell resets answerLetter and marker', () => {
     const letter = Letter.try('A')!;
-    const marker = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+    const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     const whiteCell = Cell.setMarker(Cell.setAnswerLetter(Cell.white(), letter), marker);
     const grid = GridOps.setCell(GridOps.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), whiteCell);
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
@@ -236,8 +232,8 @@ describe('toggle-design-cell', () => {
 
     const reconciled = result.state.puzzle.grid;
     expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(2)).black).toBe(true);
-    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.spaceRight).toBe(true);
-    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.hyphenRight).toBe(false);
+    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.right).toBe('space');
+    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.bottom).toBe('none');
   });
 });
 

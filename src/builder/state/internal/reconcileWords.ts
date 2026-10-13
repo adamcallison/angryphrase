@@ -1,5 +1,6 @@
 import type { Grid } from '../../../domain/grid/Grid';
-import type { CellMarker } from '../../../domain/grid/CellMarker';
+import { CellMarker } from '../../../domain/grid/CellMarker';
+import type { CellMarkerAxis } from '../../../domain/grid/CellMarker';
 import type { Word } from '../../../domain/word/Word';
 import type { DerivedWord } from '../../../domain/word/DerivedWord';
 import type { DisplacedClue } from '../../../domain/builder/DisplacedClue';
@@ -148,9 +149,9 @@ export function reconcileWords(
   return { grid: reconciledGrid, words, displacedClues, events: lengthChangeEvents };
 }
 
-type BoundaryKind = 'space' | 'hyphen' | 'none';
-
-type MarkerPatch = Partial<CellMarker>;
+function directionAxis(direction: Direction): CellMarkerAxis {
+  return direction === 'across' ? 'right' : 'bottom';
+}
 
 function applyBoundaryMarkerRule(
   grid: Grid,
@@ -158,12 +159,10 @@ function applyBoundaryMarkerRule(
   newByCanonical: Map<string, DerivedWord>,
   survivingByCanonical: Map<string, DerivedWord>,
 ): Grid {
-  const patches = new Map<string, MarkerPatch>();
+  const updates: { row: Row; col: Col; cell: Cell }[] = [];
 
-  function patch(row: Row, col: Col, markerPatch: MarkerPatch): void {
-    const key = `${Number(row)},${Number(col)}`;
-    const existing = patches.get(key);
-    patches.set(key, { ...existing, ...markerPatch });
+  function pushMarker(row: Row, col: Col, marker: CellMarker): void {
+    updates.push({ row, col, cell: Cell.setMarker(GridOps.cellAt(grid, row, col), marker) });
   }
 
   for (const oldWord of oldWords) {
@@ -177,12 +176,16 @@ function applyBoundaryMarkerRule(
 
     if (!GridOps.withinBounds(grid, oldEnd.row, oldEnd.col)) continue;
 
-    const kind = readBoundaryKind(grid, oldEnd.row, oldEnd.col, oldWord.key.direction);
+    const axis = directionAxis(oldWord.key.direction);
+    const oldEndCell = GridOps.cellAt(grid, oldEnd.row, oldEnd.col);
+    const kind = Cell.isWhite(oldEndCell)
+      ? CellMarker.read(oldEndCell.marker, axis)
+      : 'space';
     const canonical = WordKey.toCanonical(oldWord.key);
 
     if (!newByCanonical.has(canonical)) {
       if (Cell.isWhite(GridOps.cellAt(grid, oldEnd.row, oldEnd.col))) {
-        patch(oldEnd.row, oldEnd.col, clearPatch(oldWord.key.direction));
+        pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridOps.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
       }
       continue;
     }
@@ -191,7 +194,7 @@ function applyBoundaryMarkerRule(
     if (survivor === undefined) continue;
 
     if (Cell.isWhite(GridOps.cellAt(grid, oldEnd.row, oldEnd.col))) {
-      patch(oldEnd.row, oldEnd.col, clearPatch(oldWord.key.direction));
+      pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridOps.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
     }
 
     if (survivor.nextWord !== null) {
@@ -204,60 +207,13 @@ function applyBoundaryMarkerRule(
         GridOps.withinBounds(grid, newEnd.row, newEnd.col) &&
         Cell.isWhite(GridOps.cellAt(grid, newEnd.row, newEnd.col))
       ) {
-        patch(newEnd.row, newEnd.col, setPatch(survivor.key.direction, kind));
+        pushMarker(newEnd.row, newEnd.col, CellMarker.write(GridOps.cellAt(grid, newEnd.row, newEnd.col).marker, directionAxis(survivor.key.direction), kind));
       }
     }
   }
 
-  if (patches.size === 0) return grid;
-
-  const updates: { row: Row; col: Col; cell: Cell }[] = [];
-  for (const [key, markerPatch] of patches) {
-    const [rowStr, colStr] = key.split(',');
-    const row = Row.of(Number(rowStr));
-    const col = Col.of(Number(colStr));
-    const cell = GridOps.cellAt(grid, row, col);
-    if (!Cell.isWhite(cell)) continue;
-    const nextMarker: CellMarker = { ...cell.marker, ...markerPatch };
-    updates.push({ row, col, cell: Cell.setMarker(cell, nextMarker) });
-  }
-
+  if (updates.length === 0) return grid;
   return GridOps.updateCells(grid, updates);
-}
-
-function readBoundaryKind(grid: Grid, row: Row, col: Col, direction: Direction): BoundaryKind {
-  const cell = GridOps.cellAt(grid, row, col);
-  if (!Cell.isWhite(cell)) return 'space';
-  const marker = cell.marker;
-  if (direction === 'across') {
-    if (marker.spaceRight) return 'space';
-    if (marker.hyphenRight) return 'hyphen';
-  } else {
-    if (marker.spaceBottom) return 'space';
-    if (marker.hyphenBottom) return 'hyphen';
-  }
-  return 'none';
-}
-
-function clearPatch(direction: Direction): MarkerPatch {
-  return direction === 'across'
-    ? { spaceRight: false, hyphenRight: false }
-    : { spaceBottom: false, hyphenBottom: false };
-}
-
-function setPatch(direction: Direction, kind: BoundaryKind): MarkerPatch {
-  if (direction === 'across') {
-    return kind === 'space'
-      ? { spaceRight: true, hyphenRight: false }
-      : kind === 'hyphen'
-        ? { spaceRight: false, hyphenRight: true }
-        : { spaceRight: false, hyphenRight: false };
-  }
-  return kind === 'space'
-    ? { spaceBottom: true, hyphenBottom: false }
-    : kind === 'hyphen'
-      ? { spaceBottom: false, hyphenBottom: true }
-      : { spaceBottom: false, hyphenBottom: false };
 }
 
 function describeViolation(violation: ChainViolation): string {

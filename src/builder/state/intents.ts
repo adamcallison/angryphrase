@@ -1,7 +1,8 @@
 import type { Row } from '../../domain/grid/Row';
 import type { Col } from '../../domain/grid/Col';
 import type { GridSize } from '../../domain/grid/GridSize';
-import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
+import type { CellSeparator } from '../../domain/grid/CellSeparator';
+import type { CellMarkerAxis } from '../../domain/grid/CellMarker';
 import type {
   SelectCellIntent,
   MoveCursorIntent,
@@ -30,7 +31,7 @@ export type BuilderIntent =
   | ({ target: 'builder' } & TypeLetterIntent)
   | ({ target: 'builder' } & BackspaceIntent)
   // fill — markers
-  | { target: 'builder'; kind: 'toggle-marker'; flag: CellMarkerFlag }
+  | { target: 'builder'; kind: 'set-marker'; axis: CellMarkerAxis; separator: CellSeparator }
   // fill — clues
   | { target: 'builder'; kind: 'edit-clue'; wordKey: WordKey; clue: string }
   // fill — chains

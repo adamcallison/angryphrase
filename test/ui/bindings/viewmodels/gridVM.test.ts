@@ -152,29 +152,29 @@ describe('deriveGridVM', () => {
     expect(vm.cells[1]![1]!.hilite).toBe('none');
   });
 
-  it('deriveGridVM: separatorRight reflects marker.spaceRight and marker.hyphenRight (space takes priority)', () => {
+  it('deriveGridVM: separatorRight reflects marker.right', () => {
     const grid = GridOps.blank(GridSize.of(2));
     const cell = GridOps.cellAt(grid, Row.of(0), Col.of(0));
-    const markedSpace = Cell.setMarker(cell, CellMarker.toggle(cell.marker, 'space-right'));
+    const markedSpace = Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'space'));
     const gSpace = GridOps.setCell(grid, Row.of(0), Col.of(0), markedSpace);
     const vmSpace = deriveGridVM({ grid: gSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmSpace.cells[0]![0]!.separatorRight).toBe('space');
 
-    const cell2 = Cell.setMarker(cell, CellMarker.toggle(cell.marker, 'hyphen-right'));
+    const cell2 = Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'hyphen'));
     const gHyphen = GridOps.setCell(grid, Row.of(0), Col.of(0), cell2);
     const vmHyphen = deriveGridVM({ grid: gHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmHyphen.cells[0]![0]!.separatorRight).toBe('hyphen');
   });
 
-  it('deriveGridVM: separatorBottom reflects marker.spaceBottom and marker.hyphenBottom', () => {
+  it('deriveGridVM: separatorBottom reflects marker.bottom', () => {
     const grid = GridOps.blank(GridSize.of(2));
     const cell = GridOps.cellAt(grid, Row.of(0), Col.of(0));
-    const markedSpace = Cell.setMarker(cell, CellMarker.toggle(cell.marker, 'space-bottom'));
+    const markedSpace = Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'space'));
     const gSpace = GridOps.setCell(grid, Row.of(0), Col.of(0), markedSpace);
     const vmSpace = deriveGridVM({ grid: gSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmSpace.cells[0]![0]!.separatorBottom).toBe('space');
 
-    const cell2 = Cell.setMarker(cell, CellMarker.toggle(cell.marker, 'hyphen-bottom'));
+    const cell2 = Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'hyphen'));
     const gHyphen = GridOps.setCell(grid, Row.of(0), Col.of(0), cell2);
     const vmHyphen = deriveGridVM({ grid: gHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmHyphen.cells[0]![0]!.separatorBottom).toBe('hyphen');

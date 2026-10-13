@@ -86,9 +86,9 @@ export function handleBackspace(state: BuilderState): ReducerResult<BuilderState
       });
 }
 
-export function handleToggleMarker(
+export function handleSetMarker(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'toggle-marker' }>,
+  intent: Extract<BuilderIntent, { kind: 'set-marker' }>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill' || state.cursor === null) {
     return Result.ok(state);
@@ -100,7 +100,7 @@ export function handleToggleMarker(
     return Result.ok(state);
   }
 
-  const newMarker = CellMarker.toggle(c.marker, intent.flag);
+  const newMarker = CellMarker.write(c.marker, intent.axis, intent.separator);
   const newCell = Cell.setMarker(c, newMarker);
   const newGrid = GridOps.setCell(g, state.cursor.row, state.cursor.col, newCell);
   const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);

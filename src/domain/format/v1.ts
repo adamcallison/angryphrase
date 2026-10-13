@@ -8,7 +8,8 @@ import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
 import { GridOps } from '../grid/GridOps';
 import { Cell } from '../grid/Cell';
-import type { CellMarker } from '../grid/CellMarker';
+import { CellMarker } from '../grid/CellMarker';
+import type { CellMarker as CellMarkerType } from '../grid/CellMarker';
 import { WordKey } from '../word/WordKey';
 import { WordLength } from '../word/WordLength';
 import { Direction } from '../word/Direction';
@@ -29,13 +30,47 @@ export type ParseFailure = {
   message: string;
 };
 
-type CellJson = {
-  black: boolean;
-  puzzleLetter: string | null;
+function markerFromJson(
+  spaceRight: boolean,
+  spaceBottom: boolean,
+  hyphenRight: boolean,
+  hyphenBottom: boolean,
+  r: number,
+  c: number,
+  failures: ParseFailure[],
+): CellMarkerType | null {
+  if (spaceRight && hyphenRight) {
+    failures.push({ message: `Cell (${r}, ${c}) has conflicting right markers.` });
+    return null;
+  }
+  if (spaceBottom && hyphenBottom) {
+    failures.push({ message: `Cell (${r}, ${c}) has conflicting bottom markers.` });
+    return null;
+  }
+  return {
+    right: spaceRight ? 'space' : hyphenRight ? 'hyphen' : 'none',
+    bottom: spaceBottom ? 'space' : hyphenBottom ? 'hyphen' : 'none',
+  };
+}
+
+function markerToJson(marker: CellMarkerType): {
   spaceRight: boolean;
   spaceBottom: boolean;
   hyphenRight: boolean;
   hyphenBottom: boolean;
+} {
+  return {
+    spaceRight: marker.right === 'space',
+    spaceBottom: marker.bottom === 'space',
+    hyphenRight: marker.right === 'hyphen',
+    hyphenBottom: marker.bottom === 'hyphen',
+  };
+}
+
+type CellJson = {
+  black: boolean;
+  puzzleLetter: string | null;
+  marker: CellMarkerType;
 };
 
 type ParsedWord = {
@@ -172,12 +207,25 @@ function validateCell(
     return null;
   }
 
-  const markerKeys: (keyof CellJson)[] = ['spaceRight', 'spaceBottom', 'hyphenRight', 'hyphenBottom'];
+  const markerKeys = ['spaceRight', 'spaceBottom', 'hyphenRight', 'hyphenBottom'] as const;
   for (const key of markerKeys) {
     if (key in cell && typeof cell[key] !== 'boolean') {
       failures.push({ message: `Cell at row ${r}, col ${c} is malformed.` });
       return null;
     }
+  }
+
+  const marker = markerFromJson(
+    !!cell.spaceRight,
+    !!cell.spaceBottom,
+    !!cell.hyphenRight,
+    !!cell.hyphenBottom,
+    r,
+    c,
+    failures,
+  );
+  if (marker === null) {
+    return null;
   }
 
   if (fileType === 'complete' && cell.black === false && letter === null) {
@@ -190,10 +238,7 @@ function validateCell(
   return {
     black: cell.black,
     puzzleLetter: letter as string | null,
-    spaceRight: !!cell.spaceRight,
-    spaceBottom: !!cell.spaceBottom,
-    hyphenRight: !!cell.hyphenRight,
-    hyphenBottom: !!cell.hyphenBottom,
+    marker,
   };
 }
 
@@ -331,13 +376,7 @@ function buildDomainGrid(cells: CellJson[][], gridSize: GridSize): Grid {
         if (cellData.puzzleLetter !== null) {
           cell = Cell.setAnswerLetter(cell, Letter.try(cellData.puzzleLetter));
         }
-        const marker: CellMarker = {
-          spaceRight: cellData.spaceRight,
-          spaceBottom: cellData.spaceBottom,
-          hyphenRight: cellData.hyphenRight,
-          hyphenBottom: cellData.hyphenBottom,
-        };
-        cell = Cell.setMarker(cell, marker);
+        cell = Cell.setMarker(cell, cellData.marker);
       }
 
       grid = GridOps.setCell(grid, Row.of(r), Col.of(c), cell);
@@ -545,17 +584,9 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
     const cell = GridOps.cellAt(grid, end.row, end.col);
     if (!Cell.isWhite(cell)) continue;
 
-    const marker = cell.marker;
-    const empty =
-      w.key.direction === 'across'
-        ? !marker.spaceRight && !marker.hyphenRight
-        : !marker.spaceBottom && !marker.hyphenBottom;
-
-    if (empty) {
-      const newMarker =
-        w.key.direction === 'across'
-          ? { ...marker, spaceRight: true }
-          : { ...marker, spaceBottom: true };
+    const axis = w.key.direction === 'across' ? 'right' : 'bottom';
+    if (CellMarker.isEmpty(cell.marker, axis)) {
+      const newMarker = CellMarker.write(cell.marker, axis, 'space');
       updates.push({ row: end.row, col: end.col, cell: Cell.setMarker(cell, newMarker) });
     }
   }
@@ -692,10 +723,7 @@ function buildSerializedOutput(
       row.push({
         black: cell.black,
         puzzleLetter: cell.black ? null : cell.answerLetter ? String(cell.answerLetter) : null,
-        spaceRight: cell.marker.spaceRight,
-        spaceBottom: cell.marker.spaceBottom,
-        hyphenRight: cell.marker.hyphenRight,
-        hyphenBottom: cell.marker.hyphenBottom,
+        ...markerToJson(cell.marker),
       });
     }
     grid.push(row);

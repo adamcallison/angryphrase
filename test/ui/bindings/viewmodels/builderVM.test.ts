@@ -158,7 +158,7 @@ describe('deriveBuilderToolbarVM', () => {
 
   it('deriveBuilderToolbarVM: cursor set → cellSelected=true, markerFlags=selected cell marker', () => {
     let state = makeBlankState(3);
-    const marked = CellMarker.toggle(CellMarker.EMPTY, 'space-right');
+    const marked = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     state = stateWithCellMarker(state, 1, 2, marked);
     state = stateWithCursor(state, { row: Row.of(1), col: Col.of(2), direction: 'across' });
     const vm = deriveBuilderToolbarVM(state);

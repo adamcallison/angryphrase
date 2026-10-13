@@ -603,8 +603,7 @@ describe('parsePuzzle', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
-    expect(cell.marker.spaceRight).toBe(true);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('space');
   });
 
   it('v1 chain with unmarked down-word boundary normalizes the bottom pair', () => {
@@ -614,8 +613,7 @@ describe('parsePuzzle', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const cell = GridOps.cellAt(result.puzzle.grid, Row.of(1), Col.of(0));
-    expect(cell.marker.spaceBottom).toBe(true);
-    expect(cell.marker.hyphenBottom).toBe(false);
+    expect(cell.marker.bottom).toBe('space');
   });
 
   it('v1 chain with hyphen boundary marker is preserved', () => {
@@ -625,8 +623,7 @@ describe('parsePuzzle', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
-    expect(cell.marker.hyphenRight).toBe(true);
-    expect(cell.marker.spaceRight).toBe(false);
+    expect(cell.marker.right).toBe('hyphen');
   });
 
   it('v2 chain with unmarked boundary is preserved as no separator', () => {
@@ -636,8 +633,31 @@ describe('parsePuzzle', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const cell = GridOps.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
-    expect(cell.marker.spaceRight).toBe(false);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('none');
+  });
+
+  it('rejects a cell with conflicting right markers', () => {
+    const data = makeValidIncomplete();
+    data.grid[0]![0] = makeCell(false, null, { spaceRight: true, hyphenRight: true });
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.map((f) => f.message)).toContain(
+      'Cell (0, 0) has conflicting right markers.',
+    );
+  });
+
+  it('rejects a cell with conflicting bottom markers', () => {
+    const data = makeValidIncomplete();
+    data.grid[0]![0] = makeCell(false, null, { spaceBottom: true, hyphenBottom: true });
+    const result = parsePuzzle(JSON.stringify(data));
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failures.map((f) => f.message)).toContain(
+      'Cell (0, 0) has conflicting bottom markers.',
+    );
   });
 });
 
@@ -707,8 +727,7 @@ describe('serializeIncomplete', () => {
     if (!roundTrip.ok) return;
 
     const cell = GridOps.cellAt(roundTrip.puzzle.grid, Row.of(0), Col.of(2));
-    expect(cell.marker.spaceRight).toBe(false);
-    expect(cell.marker.hyphenRight).toBe(false);
+    expect(cell.marker.right).toBe('none');
   });
 });
 

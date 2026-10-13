@@ -16,7 +16,7 @@ const builderKindRecord = {
   'move-cursor': null,
   'type-letter': null,
   'backspace': null,
-  'toggle-marker': null,
+  'set-marker': null,
   'edit-clue': null,
   'begin-join': null,
   'click-clue-panel-word': null,

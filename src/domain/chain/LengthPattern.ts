@@ -4,41 +4,39 @@ import type { WordMap } from '../word/WordMap';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
 import { GridOps } from '../grid/GridOps';
+import { CellMarker } from '../grid/CellMarker';
+import type { CellSeparator } from '../grid/CellSeparator';
 import { Chain } from './Chain';
 
 export type LengthPattern = string;
 
+function separatorAt(grid: Grid, w: Word, offset: number): CellSeparator {
+  const { startRow, startCol, direction } = w.key;
+  const row = direction === 'down' ? Number(startRow) + offset : Number(startRow);
+  const col = direction === 'across' ? Number(startCol) + offset : Number(startCol);
+  const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
+  const axis = direction === 'across' ? 'right' : 'bottom';
+  return CellMarker.read(cell.marker, axis);
+}
+
+function appendSeparator(pieces: string[], run: number, separator: CellSeparator): number {
+  if (separator === 'space') {
+    pieces.push(String(run), ', ');
+    return 1;
+  }
+  if (separator === 'hyphen') {
+    pieces.push(String(run), '-');
+    return 1;
+  }
+  return run + 1;
+}
+
 function singleWordPattern(grid: Grid, w: Word): LengthPattern {
   let run = 1;
   const pieces: string[] = [];
-  const { startRow, startCol, direction } = w.key;
 
   for (let i = 0; i < w.length - 1; i++) {
-    const row = direction === 'down' ? Number(startRow) + i : Number(startRow);
-    const col = direction === 'across' ? Number(startCol) + i : Number(startCol);
-    const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
-
-    if (direction === 'across') {
-      if (cell.marker.spaceRight) {
-        pieces.push(String(run), ', ');
-        run = 1;
-      } else if (cell.marker.hyphenRight) {
-        pieces.push(String(run), '-');
-        run = 1;
-      } else {
-        run++;
-      }
-    } else {
-      if (cell.marker.spaceBottom) {
-        pieces.push(String(run), ', ');
-        run = 1;
-      } else if (cell.marker.hyphenBottom) {
-        pieces.push(String(run), '-');
-        run = 1;
-      } else {
-        run++;
-      }
-    }
+    run = appendSeparator(pieces, run, separatorAt(grid, w, i));
   }
 
   pieces.push(String(run));
@@ -52,63 +50,14 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
   for (let memberIndex = 0; memberIndex < members.length; memberIndex++) {
     const w = members[memberIndex];
     if (w === undefined) continue;
-    const { startRow, startCol, direction } = w.key;
     const lastIndex = Number(w.length) - 1;
 
     for (let i = 0; i < lastIndex; i++) {
-      const row = direction === 'down' ? Number(startRow) + i : Number(startRow);
-      const col = direction === 'across' ? Number(startCol) + i : Number(startCol);
-      const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
-
-      if (direction === 'across') {
-        if (cell.marker.spaceRight) {
-          pieces.push(String(run), ', ');
-          run = 1;
-        } else if (cell.marker.hyphenRight) {
-          pieces.push(String(run), '-');
-          run = 1;
-        } else {
-          run++;
-        }
-      } else {
-        if (cell.marker.spaceBottom) {
-          pieces.push(String(run), ', ');
-          run = 1;
-        } else if (cell.marker.hyphenBottom) {
-          pieces.push(String(run), '-');
-          run = 1;
-        } else {
-          run++;
-        }
-      }
+      run = appendSeparator(pieces, run, separatorAt(grid, w, i));
     }
 
     if (memberIndex < members.length - 1) {
-      const lastRow = direction === 'down' ? Number(startRow) + lastIndex : Number(startRow);
-      const lastCol = direction === 'across' ? Number(startCol) + lastIndex : Number(startCol);
-      const cell = GridOps.cellAt(grid, Row.of(lastRow), Col.of(lastCol));
-
-      if (direction === 'across') {
-        if (cell.marker.spaceRight) {
-          pieces.push(String(run), ', ');
-          run = 1;
-        } else if (cell.marker.hyphenRight) {
-          pieces.push(String(run), '-');
-          run = 1;
-        } else {
-          run++;
-        }
-      } else {
-        if (cell.marker.spaceBottom) {
-          pieces.push(String(run), ', ');
-          run = 1;
-        } else if (cell.marker.hyphenBottom) {
-          pieces.push(String(run), '-');
-          run = 1;
-        } else {
-          run++;
-        }
-      }
+      run = appendSeparator(pieces, run, separatorAt(grid, w, lastIndex));
     }
   }
 

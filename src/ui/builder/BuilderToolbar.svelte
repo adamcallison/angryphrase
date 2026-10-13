@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { BuilderToolbarActions } from '../bindings/builderFacade';
   import type { BuilderToolbarVM } from '../bindings/viewmodels/builderVM';
-  import type { CellMarkerFlag } from '../../domain/grid/CellMarkerFlag';
-  import type { CellMarker } from '../../domain/grid/CellMarker';
   import FilePicker from '../shared/FilePicker.svelte';
   import GridSizeControl from './GridSizeControl.svelte';
 
@@ -32,19 +30,12 @@
     authorDraft = author;
   });
 
-  const markerButtons: { flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'; label: string }[] = [
-    { flag: 'space-right', label: 'Space right' },
-    { flag: 'space-bottom', label: 'Space bottom' },
-    { flag: 'hyphen-right', label: 'Hyphen right' },
-    { flag: 'hyphen-bottom', label: 'Hyphen bottom' },
+  const markerButtons: { axis: 'right' | 'bottom'; separator: 'space' | 'hyphen'; label: string }[] = [
+    { axis: 'right', separator: 'space', label: 'Space right' },
+    { axis: 'bottom', separator: 'space', label: 'Space bottom' },
+    { axis: 'right', separator: 'hyphen', label: 'Hyphen right' },
+    { axis: 'bottom', separator: 'hyphen', label: 'Hyphen bottom' },
   ];
-
-  const markerFlagToKey: Record<CellMarkerFlag, keyof CellMarker> = {
-    'space-right': 'spaceRight',
-    'space-bottom': 'spaceBottom',
-    'hyphen-right': 'hyphenRight',
-    'hyphen-bottom': 'hyphenBottom',
-  };
 
 
 </script>
@@ -107,14 +98,14 @@
   <!-- Marker toolbar -->
   <div class="flex flex-wrap items-center gap-2">
     <span class="text-sm text-gray-700">Markers:</span>
-    {#each markerButtons as { flag, label }}
+    {#each markerButtons as { axis, separator, label }}
       <button
         type="button"
         disabled={!vm.cellSelected}
-        class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[markerFlagToKey[flag]]
+        class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[axis] === separator
           ? 'bg-blue-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50 disabled:cursor-not-allowed"
-        onclick={() => actions.toggleMarker(flag)}
+        onclick={() => actions.setMarker(axis, separator)}
       >
         {label}
       </button>

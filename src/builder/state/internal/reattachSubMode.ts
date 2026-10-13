@@ -3,10 +3,9 @@ import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { Result } from '../../../domain/notifications/Event';
-import { WordMap } from '../../../domain/word/WordMap';
-import { Chain } from '../../../domain/chain/Chain';
 import { WordKey } from '../../../domain/word/WordKey';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
+import { ChainAdmission } from '../../../domain/chain/ChainAdmission';
 
 
 export function handleBeginReattach(
@@ -56,39 +55,31 @@ export function resolveReattach(
   displacedClueId: DisplacedClueId,
   targetKey: WordKey,
 ): ReducerResult<BuilderState> {
-  const displacedClue = state.displacedClues.find(d =>
-    DisplacedClueId.equals(d.id, displacedClueId),
+  const admission = ChainAdmission.canReattach(
+    state.puzzle.words,
+    state.displacedClues,
+    displacedClueId,
+    targetKey,
   );
-  if (displacedClue === undefined) {
-    return Result.ok(state); // defensive — UI should not dispatch
-  }
-
-  const words = state.puzzle.words;
-  const target = words.find(w => WordKey.equals(w.key, targetKey));
-  if (target === undefined) {
-    return Result.ok(state); // defensive — UI should not dispatch
-  }
-
-  // FR-42(b): target's clue must be empty.
-  if (target.clue !== '') {
+  if (!admission.ok) {
+    if (admission.reason === 'clue-not-found' || admission.reason === 'target-not-found') {
+      return Result.ok(state); // defensive — UI should not dispatch
+    }
     return Result.withEvents(state, [{
       kind: 'toast',
       toastKind: 'error',
-      message: 'Target already has a clue.',
-    }]);
-  }
-
-  // FR-42(c): target must be a chain head.
-  const wordMap = WordMap.fromWords(words);
-  if (!Chain.isHead(wordMap, targetKey)) {
-    return Result.withEvents(state, [{
-      kind: 'toast',
-      toastKind: 'error',
-      message: 'Target is a non-head chain word and cannot be given a clue (FR-31).',
+      message: ChainAdmission.message(admission),
     }]);
   }
 
   // FR-43: success. Move text; remove displaced clue from list; reset sub-mode.
+  const displacedClue = state.displacedClues.find(d =>
+    DisplacedClueId.equals(d.id, displacedClueId),
+  );
+  if (displacedClue === undefined) {
+    return Result.ok(state); // defensive — admission mismatch
+  }
+  const words = state.puzzle.words;
   const newWords = words.map(w =>
     WordKey.equals(w.key, targetKey) ? { ...w, clue: displacedClue.clue } : w,
   );

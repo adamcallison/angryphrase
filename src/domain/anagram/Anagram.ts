@@ -6,6 +6,7 @@ import { Direction } from '../word/Direction';
 import type { Word } from '../word/Word';
 import { Letter } from '../letter/Letter';
 import type { Rng } from '../rng/Rng';
+import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import type { AnagramEntry } from './AnagramEntry';
 import { Position } from './Position';
@@ -81,24 +82,8 @@ export const Anagram: {
       );
 
       if (i < word.length - 1) {
-        const marker = cell.marker;
-        if (direction === 'across') {
-          if (marker.spaceRight) {
-            separators.push('space');
-          } else if (marker.hyphenRight) {
-            separators.push('hyphen');
-          } else {
-            separators.push('none');
-          }
-        } else {
-          if (marker.spaceBottom) {
-            separators.push('space');
-          } else if (marker.hyphenBottom) {
-            separators.push('hyphen');
-          } else {
-            separators.push('none');
-          }
-        }
+        const axis = direction === 'across' ? 'right' : 'bottom';
+        separators.push(CellMarker.read(cell.marker, axis));
       }
 
       coord = Direction.advance(coord, direction, 1);
@@ -134,24 +119,8 @@ export const Anagram: {
           Number(member.length) - 1
         );
         const lastCell = GridOps.cellAt(grid, lastCoord.row, lastCoord.col);
-        const marker = lastCell.marker;
-        if (member.key.direction === 'across') {
-          if (marker.spaceRight) {
-            separators.push('space');
-          } else if (marker.hyphenRight) {
-            separators.push('hyphen');
-          } else {
-            separators.push('none');
-          }
-        } else {
-          if (marker.spaceBottom) {
-            separators.push('space');
-          } else if (marker.hyphenBottom) {
-            separators.push('hyphen');
-          } else {
-            separators.push('none');
-          }
-        }
+        const axis = member.key.direction === 'across' ? 'right' : 'bottom';
+        separators.push(CellMarker.read(lastCell.marker, axis));
       }
     }
 

@@ -21,7 +21,7 @@ const BUILDER_KINDS = [
   'move-cursor',
   'type-letter',
   'backspace',
-  'toggle-marker',
+  'set-marker',
   'edit-clue',
   'begin-join',
   'click-clue-panel-word',
