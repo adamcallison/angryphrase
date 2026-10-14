@@ -137,17 +137,13 @@ export function createAppStore(
   }
 
   function handleLoadPlayerProgress(key: PuzzleKey): PlayerIntent | null {
-    let blob: string | null;
-    try {
-      blob = ports.storage.loadPlayerProgress(key);
-    } catch (err) {
-      console.warn('appStore: loadPlayerProgress threw (NFR-9 silent drop)', err);
+    const result = ports.storage.loadPlayerProgress(key);
+    if (result.kind !== 'loaded') {
+      // 'absent' is silent. 'failed' was already warned once by localStoragePort;
+      // user-visible behaviour stays silent (NFR-9 silent drop).
       return null;
     }
-    if (blob === null) {
-      return null;
-    }
-    const parsed = parsePlayerProgress(blob);
+    const parsed = parsePlayerProgress(result.value);
     if (parsed === null) {
       console.warn('appStore: parsePlayerProgress returned null (NFR-9 silent drop)');
       return null;

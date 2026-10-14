@@ -355,15 +355,15 @@ describe('appStore.svelte.ts', () => {
     warnSpy.mockRestore();
   });
 
-  it('appStore: load-player-progress with storage throwing → console.warn, no throw, no apply-loaded-progress dispatched', () => {
+  it('appStore: load-player-progress with storage failure → no apply-loaded-progress dispatched, no throw, state unchanged', () => {
     const puzzle = makeCompletePuzzle(31, 3);
-    inMemoryStorage.throwOnNextLoad = true;
+    inMemoryStorage.simulateFailure = new Error('load failed');
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     expect(() => store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) })).not.toThrow();
 
-    expect(warnSpy).toHaveBeenCalled();
+    expect(warnSpy).not.toHaveBeenCalled();
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
     if (player.phase !== 'solving') throw new Error('unreachable');

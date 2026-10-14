@@ -36,41 +36,39 @@ export function serializeBuilderSnapshot(state: BuilderState): string {
 }
 
 export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
+  let snap: unknown;
   try {
-    const snap = JSON.parse(blob) as unknown;
-    if (
-      typeof snap !== 'object' ||
-      snap === null ||
-      (snap as { kind?: unknown }).kind !== 'builder-snapshot' ||
-      (snap as { version?: unknown }).version !== 1
-    ) {
-      console.warn('parseBuilderSnapshot: shape mismatch', snap);
-      return null;
-    }
-
-    // Re-serialize the embedded puzzle back to a string and feed to parsePuzzle.
-    const puzzleJSON = JSON.stringify((snap as { puzzle: unknown }).puzzle);
-    const result = parsePuzzle(puzzleJSON);
-    if (!result.ok || result.fileType !== 'incomplete') {
-      console.warn('parseBuilderSnapshot: embedded puzzle failed to parse', result);
-      return null;
-    }
-
-    const mode = (snap as { mode?: unknown }).mode;
-    if (mode !== 'design' && mode !== 'fill') {
-      console.warn('parseBuilderSnapshot: invalid mode', mode);
-      return null;
-    }
-
-    return {
-      puzzle: result.puzzle,
-      displacedClues: result.displacedClues,
-      mode,
-    };
-  } catch (err) {
-    console.warn('parseBuilderSnapshot: parse error', err);
+    snap = JSON.parse(blob);
+  } catch {
     return null;
   }
+
+  if (
+    typeof snap !== 'object' ||
+    snap === null ||
+    (snap as { kind?: unknown }).kind !== 'builder-snapshot' ||
+    (snap as { version?: unknown }).version !== 1
+  ) {
+    return null;
+  }
+
+  // Re-serialize the embedded puzzle back to a string and feed to parsePuzzle.
+  const puzzleJSON = JSON.stringify((snap as { puzzle: unknown }).puzzle);
+  const result = parsePuzzle(puzzleJSON);
+  if (!result.ok || result.fileType !== 'incomplete') {
+    return null;
+  }
+
+  const mode = (snap as { mode?: unknown }).mode;
+  if (mode !== 'design' && mode !== 'fill') {
+    return null;
+  }
+
+  return {
+    puzzle: result.puzzle,
+    displacedClues: result.displacedClues,
+    mode,
+  };
 }
 
 // ----- Player progress -----
@@ -103,49 +101,53 @@ export function serializePlayerProgress(state: PlayerState): string | null {
 }
 
 export function parsePlayerProgress(blob: string): PlayerProgressBlob | null {
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(blob) as unknown;
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      (parsed as { kind?: unknown }).kind !== 'player-progress' ||
-      (parsed as { version?: unknown }).version !== 1
-    ) {
-      console.warn('parsePlayerProgress: shape mismatch', parsed);
-      return null;
-    }
-
-    if (typeof (parsed as { key: unknown }).key !== 'string' || typeof (parsed as { gridSize: unknown }).gridSize !== 'number') {
-      console.warn('parsePlayerProgress: scalar shape mismatch');
-      return null;
-    }
-
-    if (!Array.isArray((parsed as { playerLetters: unknown }).playerLetters)) {
-      console.warn('parsePlayerProgress: playerLetters not an array');
-      return null;
-    }
-
-    const key = PuzzleKey.try((parsed as { key: string }).key);
-    if (key === null) {
-      console.warn('parsePlayerProgress: invalid PuzzleKey (not a UUID v4)');
-      return null;
-    }
-    const gridSize = GridSizeCtor.of((parsed as { gridSize: number }).gridSize);
-    const rawLetters = (parsed as { playerLetters: unknown[] }).playerLetters;
-    const playerLetters: (Letter | null)[][] = rawLetters.map((row: unknown) => {
-      if (!Array.isArray(row)) throw new Error('parsePlayerProgress: row not array');
-      return row.map((cell: unknown) => {
-        if (cell === null) return null;
-        if (typeof cell !== 'string') throw new Error('parsePlayerProgress: cell not string');
-        const letter = LetterCtor.try(cell);
-        if (letter === null) throw new Error('parsePlayerProgress: invalid letter cell');
-        return letter;
-      });
-    });
-
-    return { key, gridSize, playerLetters };
-  } catch (err) {
-    console.warn('parsePlayerProgress: parse error', err);
+    parsed = JSON.parse(blob);
+  } catch {
     return null;
   }
+
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    (parsed as { kind?: unknown }).kind !== 'player-progress' ||
+    (parsed as { version?: unknown }).version !== 1
+  ) {
+    return null;
+  }
+
+  if (typeof (parsed as { key: unknown }).key !== 'string' || typeof (parsed as { gridSize: unknown }).gridSize !== 'number') {
+    return null;
+  }
+
+  if (!Array.isArray((parsed as { playerLetters: unknown }).playerLetters)) {
+    return null;
+  }
+
+  const key = PuzzleKey.try((parsed as { key: string }).key);
+  if (key === null) {
+    return null;
+  }
+  const gridSize = GridSizeCtor.try((parsed as { gridSize: number }).gridSize);
+  if (gridSize === null) {
+    return null;
+  }
+
+  const rawLetters = (parsed as { playerLetters: unknown[] }).playerLetters;
+  const playerLetters: (Letter | null)[][] = [];
+  for (const rawRow of rawLetters) {
+    if (!Array.isArray(rawRow)) return null;
+    const row: (Letter | null)[] = [];
+    for (const rawCell of rawRow) {
+      if (rawCell === null) { row.push(null); continue; }
+      if (typeof rawCell !== 'string') return null;
+      const letter = LetterCtor.try(rawCell);
+      if (letter === null) return null;
+      row.push(letter);
+    }
+    playerLetters.push(row);
+  }
+
+  return { key, gridSize, playerLetters };
 }

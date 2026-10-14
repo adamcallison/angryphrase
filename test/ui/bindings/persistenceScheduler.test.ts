@@ -126,10 +126,10 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parseBuilderSnapshot: returns null on garbage JSON (and console.warn)', () => {
+    it('parseBuilderSnapshot: returns null on garbage JSON (codec is silent)', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parseBuilderSnapshot('not json')).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
     });
 
@@ -210,26 +210,26 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid letter in playerLetters returns null (NFR-9 corrupt-drop, consistent with row/cell throws)', () => {
+    it('parsePlayerProgress: invalid letter in playerLetters returns null (NFR-9 corrupt-drop, codec is silent)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: '00000000-0000-4000-8000-000000000000', gridSize: 2, playerLetters: [['@', null], [null, null]] });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress(json)).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid non-UUID key returns null (H1 corrupt-drop)', () => {
+    it('parsePlayerProgress: invalid non-UUID key returns null (H1 corrupt-drop, codec is silent)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: 'not-a-uuid', gridSize: 2, playerLetters: [[null, null], [null, null]] });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress(json)).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: returns null on garbage JSON', () => {
+    it('parsePlayerProgress: returns null on garbage JSON (codec is silent)', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress('not json')).toBeNull();
-      expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
     });
   });

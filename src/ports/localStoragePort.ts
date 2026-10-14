@@ -1,4 +1,4 @@
-import type { StoragePort } from '../domain/ports/ports';
+import type { LoadResult, StoragePort } from '../domain/ports/ports';
 import type { PuzzleKey } from '../domain/puzzle/PuzzleKey';
 
 // Key-naming convention:
@@ -10,12 +10,13 @@ const PLAYER_PREFIX = 'angryphrase:player-progress:';
 
 export function createLocalStoragePort(): StoragePort {
   return {
-    loadBuilder(): string | null {
+    loadBuilder(): LoadResult<string> {
       try {
-        return localStorage.getItem(BUILDER_KEY);
+        const value = localStorage.getItem(BUILDER_KEY);
+        return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
       } catch (err) {
         console.warn('localStoragePort.loadBuilder failed:', err);
-        return null;
+        return { kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) };
       }
     },
     saveBuilder(blob: string): Error | null {
@@ -34,12 +35,13 @@ export function createLocalStoragePort(): StoragePort {
         return err instanceof Error ? err : new Error(String(err));
       }
     },
-    loadPlayerProgress(key: PuzzleKey): string | null {
+    loadPlayerProgress(key: PuzzleKey): LoadResult<string> {
       try {
-        return localStorage.getItem(PLAYER_PREFIX + String(key));
+        const value = localStorage.getItem(PLAYER_PREFIX + String(key));
+        return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
       } catch (err) {
         console.warn('localStoragePort.loadPlayerProgress failed:', err);
-        return null;
+        return { kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) };
       }
     },
     savePlayerProgress(key: PuzzleKey, blob: string): Error | null {

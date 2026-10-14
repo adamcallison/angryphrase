@@ -1,22 +1,23 @@
-import type { StoragePort } from '../../src/domain/ports/ports';
+import type { LoadResult, StoragePort } from '../../src/domain/ports/ports';
 import type { PuzzleKey } from '../../src/domain/puzzle/PuzzleKey';
 
 export class InMemoryStoragePort implements StoragePort {
   private builderBlob: string | null = null;
   private playerProgress: Map<string, string> = new Map();
 
-  // For corruption tests: set this to make the next loadX throw.
-  public throwOnNextLoad: boolean = false;
+  // For read-failure tests: set this to make the next load return the Error without reading storage.
+  public simulateFailure: Error | null = null;
 
   // For write-failure tests: set this to make the next write return the Error without mutating storage.
   public nextWriteError: Error | null = null;
 
-  loadBuilder(): string | null {
-    if (this.throwOnNextLoad) {
-      this.throwOnNextLoad = false;
-      throw new Error('simulated storage read error');
+  loadBuilder(): LoadResult<string> {
+    if (this.simulateFailure !== null) {
+      const error = this.simulateFailure;
+      this.simulateFailure = null;
+      return { kind: 'failed', error };
     }
-    return this.builderBlob;
+    return this.builderBlob === null ? { kind: 'absent' } : { kind: 'loaded', value: this.builderBlob };
   }
 
   saveBuilder(blob: string): Error | null {
@@ -39,12 +40,14 @@ export class InMemoryStoragePort implements StoragePort {
     return null;
   }
 
-  loadPlayerProgress(key: PuzzleKey): string | null {
-    if (this.throwOnNextLoad) {
-      this.throwOnNextLoad = false;
-      throw new Error('simulated storage read error');
+  loadPlayerProgress(key: PuzzleKey): LoadResult<string> {
+    if (this.simulateFailure !== null) {
+      const error = this.simulateFailure;
+      this.simulateFailure = null;
+      return { kind: 'failed', error };
     }
-    return this.playerProgress.get(key) ?? null;
+    const value = this.playerProgress.get(key);
+    return value === undefined ? { kind: 'absent' } : { kind: 'loaded', value };
   }
 
   savePlayerProgress(key: PuzzleKey, blob: string): Error | null {

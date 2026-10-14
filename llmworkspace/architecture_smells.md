@@ -173,6 +173,8 @@ Two readings, both smell-worthy: either the contract is not believed (then it sh
 
 The same defensive-layering instinct appears elsewhere in the persistence chain, uncoordinated: the precondition "player in import phase ⇒ nothing to save" is enforced independently in **three** places — `persistenceScheduler.ts:62` (`schedulePlayerSave` early-return), `persistenceScheduler.ts:40` (`doSavePlayer` early-return), and `persistenceCodec.ts:85` (`serializePlayerProgress` returns null) — each layer defending against the other two being wrong.
 
+**Status (2026-10-14): addressed** — resolution in `architecture_smell_resolutions.md`. The fix moves the storage-read failure channel into the type (`LoadResult<T>`), drops every consumer-side try/catch and per-branch `console.warn` around port reads and parse calls, and collapses the `phase !== 'solving'` invariant to its single owner (`serializePlayerProgress`).
+
 ---
 
 ## 8. Persistence lifecycle is incomplete: `flush()` is dead, and the boot-time data-loss window is unwired

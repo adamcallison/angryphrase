@@ -36,41 +36,41 @@ beforeEach(() => {
 });
 
 describe('localStoragePort', () => {
-  it('localStoragePort: loadBuilder returns null when nothing saved', () => {
+  it('localStoragePort: loadBuilder returns absent when nothing saved', () => {
     const port = createLocalStoragePort();
-    expect(port.loadBuilder()).toBeNull();
+    expect(port.loadBuilder()).toEqual({ kind: 'absent' });
   });
 
   it('localStoragePort: saveBuilder then loadBuilder returns the saved blob', () => {
     const port = createLocalStoragePort();
     port.saveBuilder('snapshot-v1');
-    expect(port.loadBuilder()).toBe('snapshot-v1');
+    expect(port.loadBuilder()).toEqual({ kind: 'loaded', value: 'snapshot-v1' });
   });
 
   it('localStoragePort: clearBuilder removes the saved blob', () => {
     const port = createLocalStoragePort();
     port.saveBuilder('snapshot-v1');
     port.clearBuilder();
-    expect(port.loadBuilder()).toBeNull();
+    expect(port.loadBuilder()).toEqual({ kind: 'absent' });
   });
 
-  it('localStoragePort: loadPlayerProgress returns null when nothing saved for that key', () => {
+  it('localStoragePort: loadPlayerProgress returns absent when nothing saved for that key', () => {
     const port = createLocalStoragePort();
-    expect(port.loadPlayerProgress(KEY_A)).toBeNull();
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'absent' });
   });
 
   it('localStoragePort: savePlayerProgress then loadPlayerProgress returns the saved blob', () => {
     const port = createLocalStoragePort();
     port.savePlayerProgress(KEY_A, 'progress-v1');
-    expect(port.loadPlayerProgress(KEY_A)).toBe('progress-v1');
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'loaded', value: 'progress-v1' });
   });
 
   it('localStoragePort: savePlayerProgress with different keys produces different slots', () => {
     const port = createLocalStoragePort();
     port.savePlayerProgress(KEY_A, 'progress-a');
     port.savePlayerProgress(KEY_B, 'progress-b');
-    expect(port.loadPlayerProgress(KEY_A)).toBe('progress-a');
-    expect(port.loadPlayerProgress(KEY_B)).toBe('progress-b');
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'loaded', value: 'progress-a' });
+    expect(port.loadPlayerProgress(KEY_B)).toEqual({ kind: 'loaded', value: 'progress-b' });
   });
 
   it('localStoragePort: clearPlayerProgress removes only that key (other keys preserved)', () => {
@@ -78,8 +78,8 @@ describe('localStoragePort', () => {
     port.savePlayerProgress(KEY_A, 'progress-a');
     port.savePlayerProgress(KEY_B, 'progress-b');
     port.clearPlayerProgress(KEY_A);
-    expect(port.loadPlayerProgress(KEY_A)).toBeNull();
-    expect(port.loadPlayerProgress(KEY_B)).toBe('progress-b');
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'absent' });
+    expect(port.loadPlayerProgress(KEY_B)).toEqual({ kind: 'loaded', value: 'progress-b' });
   });
 
   it('localStoragePort: clearBuilder does not affect player progress; clearPlayerProgress does not affect builder', () => {
@@ -87,12 +87,12 @@ describe('localStoragePort', () => {
     port.saveBuilder('snapshot-v1');
     port.savePlayerProgress(KEY_A, 'progress-a');
     port.clearBuilder();
-    expect(port.loadBuilder()).toBeNull();
-    expect(port.loadPlayerProgress(KEY_A)).toBe('progress-a');
+    expect(port.loadBuilder()).toEqual({ kind: 'absent' });
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'loaded', value: 'progress-a' });
     port.saveBuilder('snapshot-v2');
     port.clearPlayerProgress(KEY_A);
-    expect(port.loadBuilder()).toBe('snapshot-v2');
-    expect(port.loadPlayerProgress(KEY_A)).toBeNull();
+    expect(port.loadBuilder()).toEqual({ kind: 'loaded', value: 'snapshot-v2' });
+    expect(port.loadPlayerProgress(KEY_A)).toEqual({ kind: 'absent' });
   });
 
   it('localStoragePort: saveBuilder returns an Error when localStorage.setItem throws (graceful failure)', () => {
@@ -124,13 +124,14 @@ describe('localStoragePort', () => {
     setItemSpy.mockRestore();
   });
 
-  it('localStoragePort: loadBuilder returns null when localStorage.getItem throws (graceful failure)', () => {
+  it('localStoragePort: loadBuilder returns failed when localStorage.getItem throws (graceful failure)', () => {
     const port = createLocalStoragePort();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const getItemSpy = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
       throw new Error('SecurityError');
     });
-    expect(port.loadBuilder()).toBeNull();
+    const result = port.loadBuilder();
+    expect(result).toEqual({ kind: 'failed', error: new Error('SecurityError') });
     expect(warnSpy).toHaveBeenCalledOnce();
     warnSpy.mockRestore();
     getItemSpy.mockRestore();

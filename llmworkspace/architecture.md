@@ -138,10 +138,20 @@ Port contract:
 
 - Port implementations are **stateless** — every method is self-contained over per-call locals; the module-level `export const xPort` instances are benign stateless singletons.
 - **Never-throw:** `StoragePort`/`FilePickPort` methods never throw; non-`Error` throws are coerced to `Error` at the port boundary.
-- **Storage reads** return a benign `null` when missing or unreadable (absent ≡ failed → the same fresh-start fallback) and warn once in the adapter.
-- **Storage writes** return `Error | null` silently — the appStore (which has dispatch context) warns/toasts.
+- **Storage reads** return `LoadResult<T>`:
+
+  ```ts
+  type LoadResult<T> =
+    | { kind: 'loaded'; value: T }    // bytes successfully read
+    | { kind: 'absent' }              // nothing stored under this key — silent
+    | { kind: 'failed'; error: Error }; // the underlying primitive threw
+  ```
+
+  The failure signal travels in the type, so the contract is enforced at compile time. The port implementation warns **once on `kind: 'failed'`**; callers do not warn on load and never try/catch. `absent` and `failed` both collapse to a "fresh-start" / "drop-the-key" response at the call site today — main.ts returns `AppState.blank(...)`, `appStore.handleLoadPlayerProgress` returns `null`. The three cases stay distinguishable in the union so a future port that surfaces a meaningful difference (e.g. quota-exceeded vs. missing) does not require another breaking change. `LoadResult<T>` is defined in `src/domain/ports/ports.ts` and is used by both `StoragePort.loadBuilder()` and `StoragePort.loadPlayerProgress(key)`.
+
+- **Storage writes** return `Error | null` silently — the appStore (which has dispatch context) warns/toasts via the `handleWriteResult` latch (`src/ui/bindings/appStore.svelte.ts`). The latch keys on `slice` and `deps.now()`; same shape as before.
 - **File picks** return discriminated unions carrying `Error`: `PickResult` = `'picked' | 'cancelled' | 'failed'`; `DroppedFileResult` = `'read' | 'failed'` (a drop has no cancel path). Cancel is fully silent; failures travel as data and the facades warn once + dispatch the failure intent.
-- Consumers add no redundant catch layers — callers check returns, they do not catch.
+- Consumers add no redundant catch layers — callers pattern-match the result union, they do not catch. The type makes both contracts (`LoadResult<T>` and `Error | null`) the only visible failure channels; if a caller needs to react to a load failure it does so via the union, and if it needs to surface a save failure it dispatches `report-builder-save-failure` / `report-player-save-failure` from `handleWriteResult`. A defensive try/catch around a port call indicates a port author broke the contract, not that the consumer needs another guard.
 
 ### Layer 5 — `src/main.ts` (the only composer)
 

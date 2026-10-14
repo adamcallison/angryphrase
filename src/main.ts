@@ -42,20 +42,13 @@ function loadInitialAppState(): AppState {
     AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));
 
   // NFR-9: corrupt / missing storage degrades gracefully.
-  let savedBuilderBlob: string | null = null;
-  try {
-    savedBuilderBlob = ports.storage.loadBuilder();
-  } catch (err) {
-    console.warn('main: storage.loadBuilder threw; starting fresh.', err);
-    return freshBlank();
-  }
-
-  if (savedBuilderBlob === null) {
+  const result = ports.storage.loadBuilder();
+  if (result.kind !== 'loaded') {
     return freshBlank();
   }
 
   // Parse the saved snapshot; null ⇒ corrupt → fall back to blank.
-  const snapshot = parseBuilderSnapshot(savedBuilderBlob);
+  const snapshot = parseBuilderSnapshot(result.value);
   if (snapshot === null) {
     console.warn('main: parseBuilderSnapshot returned null; starting fresh.');
     return freshBlank();

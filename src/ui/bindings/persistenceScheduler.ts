@@ -37,10 +37,9 @@ export function createPersistenceScheduler(
   }
 
   function doSavePlayer(state: PlayerState): void {
-    if (state.phase !== 'solving') return;
-    const key = state.puzzle.key;
     const blob = serializePlayerProgress(state);
     if (blob === null) return;
+    const key = (state as Extract<PlayerState, { phase: 'solving' }>).puzzle.key;
     const err = storage.savePlayerProgress(key, blob);
     onWriteResult('player', err);
   }
@@ -59,7 +58,6 @@ export function createPersistenceScheduler(
     },
 
     schedulePlayerSave(state) {
-      if (state.phase !== 'solving') return; // Nothing to save during import phase.
       pendingPlayerState = state;
       if (playerTimer !== null) clearTimeout(playerTimer);
       playerTimer = setTimeout(() => {

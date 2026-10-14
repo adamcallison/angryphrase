@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract).
 
 ---
 
@@ -526,3 +526,139 @@ No new source modules; no intent, event, or port contract changes; no UI compone
 ### Consequence (change cost after)
 
 A new guarded user action (a fifth request/confirm pair, e.g. "really discard the in-progress anagram?") lands in three places: a `request-*` intent in the appropriate union, a `confirm-*` intent variant in the appropriate union, and a matching entry in `ConfirmableIntent` (`Event.ts`). The emit site that emits `modal-request` is where the type-checked reference happens — the compiler names `Event.ts` in the error if the `ConfirmableIntent` entry is forgotten. No runtime kind set to keep in sync; no string-match to verify; no `satisfies Record<Kind, null>` to update. Modal lifecycle is now owned by exactly one layer (the bindings layer's dispatch observation), with the reducer no longer carrying any modal-state mutation in its post-routing logic. If a future contributor wants the `ConfirmableIntent` kind list to be auto-derived from a marker on each confirm variant (closing the only remaining drift surface — the type's hand-maintained entries), the marker-interface proposal in the Decision section is a low-cost follow-up; it is not adopted here because the emit-site enforcement already catches the same drift vector with lower type-system surface area. The smell-#6-adjacent leftover is none.
+
+---
+
+## 7. Port consumers do not trust the port contract — resolved 2026-10-14
+
+### The smell (recap)
+
+`architecture.md` §3 Layer 4 stated the port contract plainly: port methods never throw; storage reads return `string | null`; "Consumers add no redundant catch layers — callers check returns, they do not catch." The port implementations honoured it (`localStoragePort` caught and coerced everything; `filePickPort` resolved failures as data). The consumers did not.
+
+- `main.ts` wrapped `ports.storage.loadBuilder()` in a try/catch with its own warn-and-fall-back policy.
+- `appStore.svelte.ts` wrapped `ports.storage.loadPlayerProgress(key)` in a try/catch with its own warn policy.
+- `persistenceCodec.ts` parsers wrapped the entire body (including `JSON.parse`) in try/catch with per-branch `console.warn` calls — a third warn policy, distinct from the appStore's and the port's.
+- The "player in import phase ⇒ nothing to save" invariant was enforced at **three** layers (`persistenceCodec.ts:85`, `persistenceScheduler.ts:62`, `persistenceScheduler.ts:40`) — each defending against the other two being wrong.
+- Two reads, three warn policies, four sites of defensive duplication, and the doc said otherwise. See `architecture_smells.md` §7 for the evidence table and the per-site line-number inventory.
+
+### Decision
+
+The smell was first read as a **defensive-layering problem**: callers wrap port calls and parser calls in try/catch because they don't trust the type signature to express failure. Two readings, both surface-level:
+
+- **(rejected)** "Trust the contract; just delete the catches." The minimum-churn option closes the symptom (fewer `try` blocks) but does not close the root cause — the failure channel is still invisible to the compiler. A future port that breaks the contract (e.g. IndexedDB exception surfaces that localStorage doesn't) would only blow up at runtime, where the consumer's catch might mask it. Not enough.
+- **(rejected)** "Document the read-failure policy explicitly; unify the warns via a single helper." This accepts the defensive posture as authoritative and centralises the warn site. It papers over the same hole that produced the smell — the type doesn't carry the failure channel, so future ports will keep re-fanning out.
+- **(chosen) A — make the contract compile-checkable.** Introduce `LoadResult<T>` (a discriminated union carrying `loaded` / `absent` / `failed`) for storage reads. The port returns the union; consumers pattern-match. Centralise the *port-level* diagnostic in one place (the adapter's own `console.warn` on `failed`); consumers do not warn on load. Centralise the *parse-level* diagnostic in one place (the consumer's "parse returned null" warn, kept where it already was); the codec is silent.
+
+Why A wins: the smell's root cause is that the failure channel was invisible at the type level, so each consumer re-decided what to do on failure. With `LoadResult<T>`, the compiler enforces the contract, and the duplication collapses by construction. The 'absent' and 'failed' arms stay distinguishable in the union (not collapsed to a single shape) so a future port that surfaces a meaningful difference does not require another breaking change. The third "phase !== 'solving'" guard survives as the single owner of that invariant (the serializer); the two scheduler copies are deleted.
+
+A was chosen over "minimum-churn" because the user explicitly framed this work as architecture improvement, not as small diff. The cost is one new exported type, two consume-site refreshes, a codec-silence pass, and a scheduler dedupe — well-scoped and all in the original `ui/bindings/` / `domain/ports/` surface that the smell itself identified.
+
+A was also chosen over "introduce a runtime helper to consolidate warns." The warns are *deliberately* at two layers (port-level failure vs. parse-level corruption) — those are distinct concepts and stay separately visible. A shared helper that swallowed both would lose the distinction and re-obscure the boundary the fix is meant to clarify.
+
+### Design as implemented
+
+**`src/domain/ports/ports.ts`** — new exported union, alongside `PickResult` and `DroppedFileResult`:
+
+```ts
+export type LoadResult<T> =
+  | { kind: 'loaded'; value: T }    // bytes successfully read
+  | { kind: 'absent' }              // nothing stored under this key — silent
+  | { kind: 'failed'; error: Error }; // the underlying primitive threw
+```
+
+`StoragePort.loadBuilder()` and `StoragePort.loadPlayerProgress(key)` both now return `LoadResult<string>`. Write-method signatures are unchanged (`saveBuilder`, `clearBuilder`, `savePlayerProgress`, `clearPlayerProgress` keep `Error | null`).
+
+**`src/ports/localStoragePort.ts`** — implements the new shape. The `failed` arm still carries the existing single `console.warn` (this is the "warn once in the adapter" the doc specifies). Write paths are byte-identical to before:
+
+```ts
+loadBuilder(): LoadResult<string> {
+  try {
+    const value = localStorage.getItem(BUILDER_KEY);
+    return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
+  } catch (err) {
+    console.warn('localStoragePort.loadBuilder failed:', err);
+    return { kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) };
+  }
+},
+// loadPlayerProgress is structurally identical
+```
+
+Non-`Error` throws are coerced to `Error` at the boundary, exactly as before.
+
+**`test/fakes/InMemoryStoragePort.ts`** — implements the new shape. The `throwOnNextLoad: boolean` mechanism (which simulated a port-author contract violation by throwing) is replaced with `simulateFailure: Error | null` — the next load returns `{ kind: 'failed', error: simulateFailure }` and clears the flag. The fake never throws, in line with the contract. `nextWriteError` on write methods is unchanged.
+
+**`src/main.ts`** — `loadInitialAppState` now consumes `LoadResult` directly. The try/catch around the port call is deleted. The single remaining warn ("main: parseBuilderSnapshot returned null; starting fresh.") is the parse-corruption diagnostic, distinct from the port-level warn that lives in `localStoragePort.loadBuilder`:
+
+```ts
+const result = ports.storage.loadBuilder();
+if (result.kind !== 'loaded') {
+  return freshBlank();    // 'absent' or 'failed' — same fresh-start response
+}
+const snapshot = parseBuilderSnapshot(result.value);
+if (snapshot === null) {
+  console.warn('main: parseBuilderSnapshot returned null; starting fresh.');
+  return freshBlank();
+}
+```
+
+**`src/ui/bindings/appStore.svelte.ts`** — `handleLoadPlayerProgress` gets the same shape. The try/catch and the `let blob: string | null` intermediate are gone; the port-failure warn at the old line 144 is gone (the port already warned); the parse-null warn stays:
+
+```ts
+const result = ports.storage.loadPlayerProgress(key);
+if (result.kind !== 'loaded') {
+  return null;    // 'absent' silent; 'failed' was warned once by localStoragePort
+}
+const parsed = parsePlayerProgress(result.value);
+if (parsed === null) {
+  console.warn('appStore: parsePlayerProgress returned null (NFR-9 silent drop)');
+  return null;
+}
+```
+
+The two warn policies are now legible: port-level failure lives at the adapter (`localStoragePort`); parse-level corruption lives at the consumer's "parse returned null" line in each call site.
+
+**`src/ui/bindings/persistenceCodec.ts`** — parsers become total: every shape-mismatch path returns `null` silently. The outer try/catch around each parser is collapsed to a single `try { parsed = JSON.parse(blob); } catch { return null; }` over just the JSON parse step. The manual `throw new Error(...)` calls in `parsePlayerProgress` (three sites — row-not-array, cell-not-string, invalid-letter) are replaced with a manual nested loop that returns `null` on first invalid leaf. The `GridSizeCtor.of(...)` call (which threw on bad input) is changed to `GridSizeCtor.try(...)` so the symmetric `null`-on-failure idiom holds across the type system. External signatures are unchanged (`parseBuilderSnapshot(blob: string): BuilderSnapshot | null`, `parsePlayerProgress(blob: string): PlayerProgressBlob | null`). The `serializePlayerProgress` `phase !== 'solving'` guard is preserved verbatim — it is now the single owner of that invariant.
+
+**`src/ui/bindings/persistenceScheduler.ts`** — the two redundant guards are deleted (`schedulePlayerSave`'s top-of-function `if (state.phase !== 'solving') return;` and `doSavePlayer`'s `if (state.phase !== 'solving') return;`). Observable behaviour is preserved: a non-solving state still produces no write. In `doSavePlayer`, the `state.puzzle.key` read is moved below `serializePlayerProgress`'s null-check and narrowed with `Extract<PlayerState, { phase: 'solving' }>` so the compiler can see that the access is sound without re-introducing the phase guard. `flush()` is untouched. `scheduleBuilderSave` / `doSaveBuilder` are untouched (the codec's serialization is total — no null return path).
+
+**`test/ui/bindings/persistenceCodec.test.ts`** — new file, mirroring the source. 19 test cases: round-trip on Builder snapshot and Player progress; shape-mismatch returns null; serializer returns null for non-`solving` PlayerState (single-owner assertion); every "no warn" assertion uses `vi.spyOn(console, 'warn')` to assert silence. The pre-existing test file `test/ui/bindings/persistenceScheduler.test.ts` had four warn-expectations on the codec path; those are flipped to silence assertions after the codec change.
+
+### Deliberate behaviour changes
+
+- Port reads no longer log a second warn at the consumer. Previously a storage read failure produced two warns (port + consumer); now exactly one (port). The pre-existing `appStore.test.ts` assertion that the consumer does not throw on storage failure is retained; the assertion that the consumer did *log* on storage failure is flipped to `not.toHaveBeenCalled()` to pin the new contract.
+- `parseBuilderSnapshot` and `parsePlayerProgress` are now silent on shape mismatch. Previously each branch emitted its own `console.warn`; the parse failure was — by volume — the loudest path in the persistence chain. The single consumer-side warn ("parse returned null") carries the diagnostic from now on. Tests pin this with `vi.spyOn(console, 'warn')`.
+- A non-`solving` PlayerState now flows through `schedulePlayerSave` (sets the pending snapshot, arms the 400 ms timer) without an early return. The timer fires, `serializePlayerProgress` returns `null`, the save is a no-op. Cosmetically a 400 ms timer + a no-op write per dispatched event during the import phase; observably identical to before. The third "phase guard" disappears with the scheduler copies.
+
+### Files
+
+- `src/domain/ports/ports.ts` — `LoadResult<T>` added; `StoragePort` read signatures updated.
+- `src/ports/localStoragePort.ts` — implements `LoadResult` on both reads; existing single warn preserved.
+- `src/main.ts` — `loadInitialAppState` consumes `LoadResult` directly; one try/catch and one intermediate `let` removed.
+- `src/ui/bindings/appStore.svelte.ts` — `handleLoadPlayerProgress` consumes `LoadResult` directly; one try/catch and one intermediate `let` removed.
+- `src/ui/bindings/persistenceCodec.ts` — parsers are total and silent; `phase` guard is now the single owner of the import-phase invariant.
+- `src/ui/bindings/persistenceScheduler.ts` — two redundant `phase` guards deleted; `Extract<PlayerState, { phase: 'solving' }>` cast added at the post-serialize access site.
+- `test/fakes/InMemoryStoragePort.ts` — `throwOnNextLoad` replaced with `simulateFailure`.
+- `test/ports/localStoragePort.test.ts` — 14 tests rewritten to assert on `LoadResult` (kind discriminators and union members).
+- `test/fakes/InMemoryStoragePort.test.ts` — 6 tests rewritten for `LoadResult`; the "throws when throwOnNextLoad is set" case is replaced with "returns failed when simulateFailure is set, then clears the flag".
+- `test/ui/bindings/appStore.test.ts` — 1 test renamed/adapted; `throwOnNextLoad` replaced with `simulateFailure`; the consumer-no-warn assertion pinned.
+- `test/ui/bindings/persistenceCodec.test.ts` — new, 19 tests.
+- `test/ui/bindings/persistenceScheduler.test.ts` — 4 warn-expectations flipped to silence assertions after the codec change.
+- `llmworkspace/architecture.md` §3 Layer 4 (port contract) — the "Storage reads" bullet and the "Consumers add no redundant catch layers" bullet amended to specify the new shape and the type-enforced contract.
+
+### Verification
+
+- `npm run test`: 87 files, 1266 tests, all green (was 80 files / 1154 tests before this resolution; the 19-test codec mirror file is the bulk of the growth, the rest comes from other in-flight resolutions).
+- `npm run lint`: clean (eslint + madge, no cycles).
+- `npx tsc --noEmit`: clean.
+- `npx vitest run test/ui/bindings/persistenceCodec.test.ts test/ui/bindings/persistenceScheduler.test.ts`: 53 passed (the new 19 + the existing 34).
+- `npx vitest run test/ports test/fakes`: 53 passed (Task 1's contribution, preserved end-to-end).
+- `npx vitest run test/ui/bindings/appStore.test.ts`: 28 passed, including the renamed silent-failure case.
+- Process: four implementation tasks. Task 1 (type + port impl + fake + port tests) ran first, was verified at 53 passing locally before Tasks 2/3/4 were dispatched. Tasks 2 (main.ts), 3 (appStore), 4 (codec + scheduler + codec tests) ran in parallel and each self-verified the file it touched typecheck-clean and lint-clean; the reviewer re-ran `npm run test` and `npm run lint` for the final green at 1266 + clean.
+
+### Consequence (change cost after)
+
+Adding a new storage read (e.g. a `loadAppSettings()` slot in a future feature) is a single interface change. The port's new method returns `LoadResult<T>`; the caller pattern-matches; the port warns once on `failed`. No "where do I add the catch?" decision; no "which warn policy does this consumer use?" decision; no "is the `phase` guard supposed to be here?" question. The four sites of defensive duplication collapse: `main.ts` is silent on load, `appStore` is silent on load, the codec is silent on parse failure, the scheduler is silent on the import phase. Two distinct warn sites remain — the port's adapter warn and the two existing parse-null warns at each consumer — and they correspond to two genuinely distinct concepts: port-level storage failure versus parse-level data corruption.
+
+A future port author who breaks the never-throw contract (e.g. an IndexedDB port that lets a `DOMException` escape) will surface as a non-matching `kind` at every caller — which, under the new signature, *is a compile error* on the call site that catches it, rather than a runtime surprise eaten by a defensive try/catch. The contract is now load-bearing in the type system, not aspirational.
+
+The smell-#7-adjacent leftovers are none: the load-side and save-side invariants are now each owned by exactly one layer; the "absence of redundant catch layers" rule is type-enforced rather than by-convention; and the test mirror discipline (smell #8's separate concern) is restored for `persistenceCodec.ts` via the new test file.
