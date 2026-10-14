@@ -85,9 +85,17 @@ export function createAppStore(
       while (activeQueue.length > 0) {
         const next = activeQueue.shift();
         if (next === undefined) break;
+        const modalWasOpen = s.modal !== null;
         const result = reduceApp(s, next, d);
         const folded = applyEventsToApp(result.state, result.events, d);
         s = folded.state;
+        // Any dispatch while a modal is open closes it. The UI invariant from
+        // architecture.md §187 says other guarded controls are disabled while a
+        // modal is open, so the only legal dispatches are cancel-modal or the
+        // stashed confirm intent — both of which must clear the modal state.
+        if (modalWasOpen) {
+          s = { ...s, modal: null, pendingConfirmIntent: null };
+        }
         state = s;
         for (const event of folded.leftoverEvents) {
           const followup = performExternalEvent(event);

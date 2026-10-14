@@ -1,10 +1,8 @@
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
-import type { ConfirmableIntent } from '../../domain/notifications/Event';
 
 export type BuilderIntentKind = BuilderIntent extends { kind: infer K } ? K : never;
 export type PlayerIntentKind = PlayerIntent extends { kind: infer K } ? K : never;
-export type ConfirmableIntentKind = ConfirmableIntent extends { kind: infer K } ? K : never;
 
 const builderKindRecord = {
   'switch-to-fill': null,
@@ -59,13 +57,5 @@ const playerKindRecord = {
   'anagram-scramble': null,
 } satisfies Record<PlayerIntentKind, null>;
 
-const confirmableKindRecord = {
-  'confirm-switch-to-design': null,
-  'confirm-import-puzzle': null,
-  'confirm-reset-builder': null,
-  'confirm-reset-player': null,
-} satisfies Record<ConfirmableIntentKind, null>;
-
 export const BUILDER_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(builderKindRecord));
 export const PLAYER_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(playerKindRecord));
-export const CONFIRMABLE_INTENT_KINDS: ReadonlySet<string> = new Set(Object.keys(confirmableKindRecord));

@@ -7,7 +7,6 @@ import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
-import { CONFIRMABLE_INTENT_KINDS } from './intentKinds';
 
 export function reduceApp(
   state: AppState,
@@ -19,7 +18,8 @@ export function reduceApp(
     case 'navigate':
       return { state: { ...state, route: intent.route }, events: [] };
     case 'cancel-modal':
-      return { state: { ...state, modal: null, pendingConfirmIntent: null }, events: [] };
+      // modal clearing happens in the bindings layer's dispatch loop (see appStore.svelte.ts dispatch)
+      return { state, events: [] };
     case 'dismiss-toast':
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
     case 'report-download-failure':
@@ -31,22 +31,14 @@ export function reduceApp(
   }
 
   // Builder or Player intent: dispatch by target.
-  function clearPendingConfirm(s: AppState): AppState {
-    return { ...s, modal: null, pendingConfirmIntent: null };
-  }
-
   function routeToBuilder(intent: BuilderIntent): ReducerResult<AppState> {
     const r = reduceBuilder(state.builder, intent, deps);
-    const merged = { ...state, builder: r.state };
-    const final = CONFIRMABLE_INTENT_KINDS.has(intent.kind) ? clearPendingConfirm(merged) : merged;
-    return { state: final, events: r.events };
+    return { state: { ...state, builder: r.state }, events: r.events };
   }
 
   function routeToPlayer(intent: PlayerIntent): ReducerResult<AppState> {
     const r = reducePlayer(state.player, intent, deps);
-    const merged = { ...state, player: r.state };
-    const final = CONFIRMABLE_INTENT_KINDS.has(intent.kind) ? clearPendingConfirm(merged) : merged;
-    return { state: final, events: r.events };
+    return { state: { ...state, player: r.state }, events: r.events };
   }
 
   switch (intent.target) {

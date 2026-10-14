@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction).
 
 ---
 
@@ -420,3 +420,109 @@ No source modules deleted; no new source modules created; no new intent kinds, n
 ### Consequence (change cost after)
 
 A new event kind that updates `AppState` (e.g. an `aria-live` announcement, an undo entry) lands in `DomainEvent`, gets a case in `applyEventsToApp`'s switch, and the store's fold handles it automatically — no reducer change. A new event kind that needs external performance (e.g. a copy-to-clipboard) follows the same shape; `applyEventsToApp` puts it in the leftover pile and `performExternalEvent` adds a case. The `ReducerResult.events` field means one thing at every call site, and the store's dispatch loop reads as a single fold + single perform, exactly as the architecture doc has always described.
+
+---
+
+## 6. The confirm-intent contract is declared twice, checked in only one direction — resolved 2026-10-14
+
+### The smell (recap)
+
+`ConfirmableIntent` (`domain/notifications/Event.ts`) was a hand-maintained duplicate of the `confirm-*` variants of `BuilderIntent` and `PlayerIntent` (`builder/state/intents.ts:23, 51, 60`; `player/state/intents.ts:34`), including payload fields (`confirm-import-puzzle { fileContent }` spelled out in both places). The runtime check `CONFIRMABLE_INTENT_KINDS.has(intent.kind)` in `reduceApp` (`reducer.ts:41, 48`) decided whether to clear `state.modal` and `state.pendingConfirmIntent` after a `confirm-*` dispatch. The enforcement was one-directional: `confirmableKindRecord satisfies Record<ConfirmableIntentKind, null>` (`intentKinds.ts:62-67`) proved the record covered `ConfirmableIntent`'s kinds, but nothing proved `ConfirmableIntent` was a subset of the actual intent unions, or that payload shapes stayed in sync. Adding `confirm-foo { payload }` to `BuilderIntent` and forgetting `Event.ts` was a silent failure: `CONFIRMABLE_INTENT_KINDS` lacked the new kind, the modal-closing string-match returned false, the modal didn't close on Confirm (only on the next `cancel-modal`), and `pendingConfirmIntent`'s payload type never saw the new field. The whole modal pipeline hung on string-set membership agreements across three layers (state field → event payload → runtime kind set → facade dispatch → re-dispatch), of which exactly one was compiler-checked. See `architecture_smells.md` §6.
+
+### Decision
+
+The smell was first re-read as a **type-derivation problem**: two places declared the same contract, only one was checked, so fix the derivation. Three options in that framing, all rejected as primary:
+
+- **A — derive `ConfirmableIntent` from the intent unions filtered by the `confirm-` kind prefix** (`Extract<BuilderIntent | PlayerIntent, { kind: \`confirm-${string}\` }>`): rejected as primary. Removed the duplication, but the behaviour modifier ("this intent closes a modal") was hidden inside the kind string — a string prefix acting as a behaviour modifier is a hack. Renaming `confirm-import-puzzle` to `confirm-puzzle-import` would silently change the confirmable set; the convention was load-bearing, undocumented outside one `Extract` call, and grep-resistant.
+- **B — keep `ConfirmableIntent` explicit, make `BuilderIntent` / `PlayerIntent` reference it** (each confirm variant becomes `Extract<ConfirmableIntent, { target: 'builder' }>` or equivalent intersection): rejected. More code than A for the same property, strictly weaker: still requires an explicit `Equal<...>` assertion to prove the source-of-truth unions haven't drifted past `ConfirmableIntent`.
+- **C — hybrid: derive, then `Assert<Equal<derived, curated>>`**: rejected. The curated list added no design value over the derivation — either it matched (ceremony) or it didn't (incoherence). Preserved a layering choice the code didn't actually need.
+
+The re-reading that changed the framing: `CONFIRMABLE_INTENT_KINDS` and the string-match in `reduceApp` exist for **one reason** — to let the pure reducer decide whether to clear modal state. The reducer is the wrong place to make that decision. Modal lifecycle is a UI concern; the bindings layer already owns the dispatch loop, the event fold, and the modal-state mutation on the open side (`effects.ts:21-23`). The smell is a symptom of modal lifecycle being split between the reducer (close side, via string-match) and the bindings layer (open side, via event fold).
+
+Three options in the architectural-placement framing:
+
+- **D — move modal-clearing into the bindings layer, delete the runtime kind set entirely**: **chosen**. The bindings layer's dispatch loop already observes "did the dispatched intent consume the pending modal" via the UI invariant ("while a modal is open, other actions are disabled" — `architecture.md` §187). With that invariant, any dispatch while a modal is open must be either `cancel-modal` or the `confirm-*` intent; either way the modal closes. The rule is structural, not a string-match. `CONFIRMABLE_INTENT_KINDS` and `confirmableKindRecord` are deleted; `ConfirmableIntent` stays as the type for `AppState.pendingConfirmIntent` and `modal-request.confirmIntent` (the compiler still enforces it at the reducer emit site). The reducer's `cancel-modal` case becomes a no-op (modal clearing moves out entirely); the `routeToBuilder` / `routeToPlayer` helpers lose the `CONFIRMABLE_INTENT_KINDS.has(...) ? clearPendingConfirm(...) : merged` line and the `clearPendingConfirm` helper.
+- **E — keep the string-match, fix only the type-drift risk** (marker interface on each confirm variant, derive `ConfirmableIntent`): rejected. Closes one half of the drift surface (the type side) while leaving the architectural confusion (modal lifecycle split across layers) intact. Lower churn than D but accepts the structural failure the smell is really about.
+- **F — push the modal state out of `AppState` into the bindings layer entirely** (modal and pendingConfirmIntent become local to the store, not part of the AppState shape): rejected. Architecturally clean, but touches the `AppState` shape, the `dispatch` work-queue's `state` variable, every test fixture that constructs an `AppState`, and the `Modal.svelte` / `modalFacade` / `appStore` read paths. D achieves the same layering improvement at a fraction of the surface area; F is a future option if modal state ever needs to grow beyond what fits in two nullable fields.
+
+D was chosen because it eliminates the runtime kind set (the load-bearing piece of the smell), moves modal lifecycle to its natural owner (the bindings layer), and reduces test surface rather than expanding it. The cost is one new observation step in the bindings layer's dispatch loop, one local helper deleted from `reducer.ts`, and the deletion of two runtime exports (`CONFIRMABLE_INTENT_KINDS`, `ConfirmableIntentKind`) plus their hand-maintained record. No new types, no new event variants, no new intent kinds, no `Assert<Equal<...>>` machinery, no template-literal-type tricks, no string-prefix-as-behaviour-modifier.
+
+**The marker-interface proposal (E's mechanism, considered as a follow-up):** with D chosen, the type-drift risk for `ConfirmableIntent` is caught at the reducer emit site (each reducer that emits `modal-request` must pass a value assignable to `ConfirmableIntent`; the type is hand-listed). Adding `confirm-foo { payload }` to `BuilderIntent` and forgetting to extend `ConfirmableIntent` makes the emit fail to typecheck — caught at compile time, with a clear error pointing at the emit site. That is sufficient enforcement for the smell.
+
+A marker interface (`__confirmable: true` on each confirm variant; `ConfirmableIntent = Extract<BuilderIntent, { __confirmable: true }> | Extract<PlayerIntent, { __confirmable: true }>`) would additionally make `ConfirmableIntent` self-maintaining: forgetting to mark a new confirm variant would silently exclude it from the union. The marker adds one compile-time guarantee (the kind-list is auto-derived from the marker) at the cost of a phantom field on every confirm variant and one more piece of type machinery. **Not adopted in this fix.** The drift surface it would close is already closed by D's emit-site enforcement. If a future contributor wants the kind list to be a *property* of each variant rather than a hand-maintained union, the marker is a low-cost follow-up; the present fix leaves `ConfirmableIntent` as a hand-listed type and records this rationale so the choice survives.
+
+### Design as implemented
+
+**`src/app/state/reducer.ts`** — `reduceApp` no longer imports `CONFIRMABLE_INTENT_KINDS`. The `cancel-modal` case in the top-of-function `AppIntent` switch becomes a no-op (`return { state, events: [] }`) — modal clearing moves out of the reducer entirely. The local `clearPendingConfirm` helper is deleted. `routeToBuilder` and `routeToPlayer` are reduced to their core responsibility (compose the sub-reducer's state and pass its events through raw):
+
+```ts
+function routeToBuilder(intent: BuilderIntent): ReducerResult<AppState> {
+  const r = reduceBuilder(state.builder, intent, deps);
+  return { state: { ...state, builder: r.state }, events: r.events };
+}
+
+function routeToPlayer(intent: PlayerIntent): ReducerResult<AppState> {
+  const r = reducePlayer(state.player, intent, deps);
+  return { state: { ...state, player: r.state }, events: r.events };
+}
+```
+
+The `switch (intent.target)` dispatch at the bottom is unchanged. The end-of-function unknown-kind throw is preserved as a defensive guard.
+
+**`src/app/state/intentKinds.ts`** — `CONFIRMABLE_INTENT_KINDS`, `ConfirmableIntentKind`, the `import type { ConfirmableIntent }` line, and the `confirmableKindRecord satisfies Record<...>` are deleted. `BUILDER_INTENT_KINDS` and `PLAYER_INTENT_KINDS` remain; they are still consulted by `intentKinds.test.ts` for the kind-set coverage assertions and are still exported (future tests may need them).
+
+**`src/domain/notifications/Event.ts`** — `ConfirmableIntent` is unchanged. It is still the type of `AppState.pendingConfirmIntent` (`app/state/state.ts:15`) and the type of `modal-request.confirmIntent` (`Event.ts:9`). The compiler enforces it at every reducer that emits `modal-request`: each such emit site assigns a `BuilderIntent` / `PlayerIntent` variant to the `confirmIntent` field, which must be assignable to `ConfirmableIntent`. Drift in the type side (forgetting to extend `ConfirmableIntent` when adding a confirm variant) produces a typecheck error at the emit site, not a runtime bug.
+
+**`src/ui/bindings/appStore.svelte.ts`** — the dispatch work-queue gains one observation step after `applyEventsToApp` folds the sub-reducer's events:
+
+```ts
+while (activeQueue.length > 0) {
+  const next = activeQueue.shift();
+  if (next === undefined) break;
+  const modalWasOpen = s.modal !== null;
+  const result = reduceApp(s, next, d);
+  const folded = applyEventsToApp(result.state, result.events, d);
+  s = folded.state;
+  // Any dispatch while a modal is open closes it. The UI invariant from
+  // architecture.md §187 says other guarded controls are disabled while a
+  // modal is open, so the only legal dispatches are cancel-modal or the
+  // stashed confirm intent — both of which must clear the modal state.
+  if (modalWasOpen) {
+    s = { ...s, modal: null, pendingConfirmIntent: null };
+  }
+  state = s;
+  for (const event of folded.leftoverEvents) {
+    const followup = performExternalEvent(event);
+    if (followup !== null) {
+      activeQueue.push(followup);
+    }
+  }
+}
+```
+
+The `modalWasOpen` snapshot is taken before `reduceApp` runs, so even a no-op reducer return (or a reducer that returns state unchanged) clears the modal — the user's confirm intent is consumed regardless of whether the sub-reducer acted on it. `cancel-modal` still clears the modal because the reducer's case is now a no-op (it returns state unchanged) and the bindings layer's `modalWasOpen` check fires anyway.
+
+**`src/ui/shared/Modal.svelte` / `src/ui/bindings/modalFacade.ts`** — unchanged. The facade still exposes `getPendingConfirm()` and `actions.confirm()` / `actions.cancel()`; the dispatched intent type is unchanged; `ModalActions.confirm()` still dispatches `pendingConfirmIntent`.
+
+### Deliberate behaviour changes
+
+None. Every dispatch reaches the same state and the same observable side effects as before. The post-confirm modal clear that was previously performed inside `reduceApp`'s string-match now happens in the bindings layer's dispatch loop, after `reduceApp` returns — same outcome (modal closed, `pendingConfirmIntent` null), different mechanism. The `cancel-modal` clear moves from "handled by reducer case" to "handled by bindings layer observation" — same outcome. The reducer's `clearPendingConfirm` helper is deleted; its single call site (the two routing helpers) is replaced by an unconditional pass-through of the sub-reducer's state.
+
+The drift scenario in the smell (add `confirm-foo` to `BuilderIntent`, forget `Event.ts`) now has a single failure mode: the reducer that emits `modal-request` with `confirm-foo` fails to typecheck, naming the emit site. The smell's documented runtime failure ("the modal closes only via the next `cancel-modal`") is structurally impossible — there is no string-match that can return false for a missing kind.
+
+### Files
+
+Modified: `src/app/state/reducer.ts` (deleted `clearPendingConfirm`; `cancel-modal` now returns `{ state, events: [] }` with a comment pointing to the bindings layer; `routeToBuilder` / `routeToPlayer` lost the `CONFIRMABLE_INTENT_KINDS.has(...)` conditional; removed the `CONFIRMABLE_INTENT_KINDS` import); `src/app/state/intentKinds.ts` (deleted `ConfirmableIntentKind`, the `import type { ConfirmableIntent }` line, `confirmableKindRecord`, `CONFIRMABLE_INTENT_KINDS`); `src/ui/bindings/appStore.svelte.ts` (dispatch loop gained the `modalWasOpen` snapshot and the post-fold clear step); `test/app/state/reducer.test.ts` (deleted the four `'reduceApp: confirm-* clears modal and pendingConfirmIntent'` tests; renamed and rewrote the `'cancel-modal'` test to `'cancel-modal returns state unchanged; modal clearing happens in bindings layer'`, asserting `result.state === state`); `test/app/state/intentKinds.test.ts` (deleted the `CONFIRMABLE_INTENT_KINDS` import, the `CONFIRMABLE_KINDS` array, the `'CONFIRMABLE_INTENT_KINDS contains exactly the ConfirmableIntent kinds'` test, the `'every ConfirmableIntent kind is a Builder or Player kind'` test, and the `CONFIRMABLE_INTENT_KINDS.has(kind)` line in the AppIntent-not-in-any-set test); `test/ui/bindings/appStore.test.ts` (added the four modal-clearing observation tests: `'appStore: dispatching a confirm-* intent while a modal is open closes the modal and clears pendingConfirmIntent'`, `'appStore: dispatching cancel-modal while a modal is open closes the modal and clears pendingConfirmIntent'`, `'appStore: dispatching a non-modal action while no modal is open leaves modal and pendingConfirmIntent null'`, `'appStore: dispatching a confirm-* intent while no modal is open leaves modal and pendingConfirmIntent null'`); `llmworkspace/architecture.md` (§5 `reduceApp` paragraph: removed the post-`confirm-*` clause and added a sentence pointing to the bindings layer; §5 `Routing` paragraph: replaced the `CONFIRMABLE_INTENT_KINDS remain as the kind-set records` sentence with one noting `CONFIRMABLE_INTENT_KINDS` is no longer exported; §5 `Confirmation modals as state` paragraph: removed the `clearing both fields` clause from the `cancel-modal` description and added the structural-rule explanation); `llmworkspace/architecture_smells.md` (§6 status line); this file (header status list).
+
+No new source modules; no intent, event, or port contract changes; no UI component changes; no `Modal.svelte` / facade API changes; no `AppState` shape changes.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **86 test files / 1248 tests green** (from 86 files / 1250 tests after #5 — net −2: −4 deleted reducer tests, −2 deleted intentKinds tests, +4 new appStore tests, +1 renamed reducer test net-zero on count); the single-file production build succeeded (`dist/index.html` 235.96 kB, gzip 103.24 kB).
+- The four new appStore tests pin the bindings-layer observation directly: each constructs an `AppState` with a non-null `modal` / `pendingConfirmIntent`, dispatches an intent via `store.dispatch(...)`, and asserts the post-dispatch `getModal()` and `getPendingConfirmIntent()` return `null`. The "non-modal action while no modal is open" test asserts the new code path is a no-op when no modal is present (the `modalWasOpen` snapshot is false). The "confirm-* intent while no modal is open" test asserts the symmetrical no-op and additionally pins that the sub-reducer's effect still ran (`store.getBuilder().mode === 'design'`) — important because the bindings-layer rule fires on `modalWasOpen`, not on intent kind, so a stale dispatched confirm-* intent after the modal was already closed (e.g. a race) cannot accidentally clear state that was already null, and the sub-reducer must still act on the dispatched intent.
+- Type-level proof: with `ConfirmableIntent` unchanged as a hand-listed union, the existing emit-site enforcement applies — every reducer that emits `modal-request` (`builder/state/internal/designMode.ts`, `builder/state/internal/importExport.ts`, `builder/state/internal/lifecycle.ts`, `player/state/internal/lifecycle.ts`) must pass a value assignable to `ConfirmableIntent`. Adding `confirm-foo { payload }` to `BuilderIntent` without extending `ConfirmableIntent` causes `tsc` to fail at the emit site naming the new variant, with the fix message pointing at `Event.ts`. No runtime drift is possible because the runtime kind set no longer exists.
+- Process: three implementation tasks dispatched in parallel (reducer.ts + reducer tests; intentKinds.ts + intentKinds tests; appStore.svelte.ts + new appStore tests), each verified by the implementer with `npx tsc --noEmit` and the relevant `vitest run`; one mid-flight observation (a pre-existing `appStore: dispatch cancel-modal clears getModal() and getPendingConfirmIntent()` test was previously failing because it relied on the reducer's modal-clearing behaviour and now passes as a side effect of the bindings-layer observation — no test edit was needed, the change in behaviour is exactly what the test always intended to assert); the reviewer re-ran `npm run ci` for the final green.
+
+### Consequence (change cost after)
+
+A new guarded user action (a fifth request/confirm pair, e.g. "really discard the in-progress anagram?") lands in three places: a `request-*` intent in the appropriate union, a `confirm-*` intent variant in the appropriate union, and a matching entry in `ConfirmableIntent` (`Event.ts`). The emit site that emits `modal-request` is where the type-checked reference happens — the compiler names `Event.ts` in the error if the `ConfirmableIntent` entry is forgotten. No runtime kind set to keep in sync; no string-match to verify; no `satisfies Record<Kind, null>` to update. Modal lifecycle is now owned by exactly one layer (the bindings layer's dispatch observation), with the reducer no longer carrying any modal-state mutation in its post-routing logic. If a future contributor wants the `ConfirmableIntent` kind list to be auto-derived from a marker on each confirm variant (closing the only remaining drift surface — the type's hand-maintained entries), the marker-interface proposal in the Decision section is a low-cost follow-up; it is not adopted here because the emit-site enforcement already catches the same drift vector with lower type-system surface area. The smell-#6-adjacent leftover is none.

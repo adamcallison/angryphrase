@@ -153,6 +153,8 @@ The enforcement chain is one-directional: `confirmableKindRecord` `satisfies Rec
 
 The whole modal pipeline (state field → event → kind-set membership → facade confirm → re-dispatch) hangs on string-set membership agreements across three layers, of which exactly one is compiler-checked.
 
+**Status (2026-10-14): addressed** — resolution in `architecture_smell_resolutions.md`. The runtime kind set was deleted and modal lifecycle moved to the bindings layer's dispatch loop; the chain now runs state field → event → facade confirm → re-dispatch, all four layers structurally checked.
+
 ---
 
 ## 7. Port consumers do not trust the port contract — defensive catches contradict it

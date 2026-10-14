@@ -169,6 +169,57 @@ describe('appStore.svelte.ts', () => {
     expect(store.getPendingConfirmIntent()).toBeNull();
   });
 
+  it('appStore: dispatching a confirm-* intent while a modal is open closes the modal and clears pendingConfirmIntent', () => {
+    const initial: AppStateType = {
+      ...makeBlankAppState(42),
+      modal: { kind: 'confirm-design-switch' },
+      pendingConfirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' },
+    };
+    const storeWithModal = createAppStore(
+      initial,
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+
+    storeWithModal.dispatch({ target: 'builder', kind: 'confirm-switch-to-design' });
+
+    expect(storeWithModal.getModal()).toBeNull();
+    expect(storeWithModal.getPendingConfirmIntent()).toBeNull();
+  });
+
+  it('appStore: dispatching cancel-modal while a modal is open closes the modal and clears pendingConfirmIntent', () => {
+    const initial: AppStateType = {
+      ...makeBlankAppState(42),
+      modal: { kind: 'confirm-reset-player' },
+      pendingConfirmIntent: { target: 'player', kind: 'confirm-reset-player' },
+    };
+    const storeWithModal = createAppStore(
+      initial,
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+
+    storeWithModal.dispatch({ kind: 'cancel-modal' });
+
+    expect(storeWithModal.getModal()).toBeNull();
+    expect(storeWithModal.getPendingConfirmIntent()).toBeNull();
+  });
+
+  it('appStore: dispatching a non-modal action while no modal is open leaves modal and pendingConfirmIntent null', () => {
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
+  });
+
+  it('appStore: dispatching a confirm-* intent while no modal is open leaves modal and pendingConfirmIntent null', () => {
+    store.dispatch({ target: 'builder', kind: 'confirm-switch-to-design' });
+
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
+    expect(store.getBuilder().mode).toBe('design');
+  });
+
   it('appStore: dispatch dismiss-toast removes the toast by id', () => {
     store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: 'not valid json' });
     const toast = store.getToasts()[0]!;

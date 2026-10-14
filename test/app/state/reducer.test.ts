@@ -32,7 +32,7 @@ describe('reduceApp', () => {
     expect(result.events.length).toBe(0);
   });
 
-  it('cancel-modal clears modal and pendingConfirmIntent', () => {
+  it('cancel-modal returns state unchanged; modal clearing happens in bindings layer', () => {
     const state = {
       ...makeState(),
       modal: { kind: 'confirm-reset-builder' as const },
@@ -40,8 +40,7 @@ describe('reduceApp', () => {
     };
     const deps = makeDeps();
     const result = reduceApp(state, { kind: 'cancel-modal' }, deps);
-    expect(result.state.modal).toBeNull();
-    expect(result.state.pendingConfirmIntent).toBeNull();
+    expect(result.state).toBe(state);
     expect(result.events.length).toBe(0);
   });
 
@@ -146,112 +145,6 @@ describe('reduceApp', () => {
       expect(download.content.length).toBeGreaterThan(0);
     }
     expect(result.state).toEqual(state);
-  });
-
-  it('reduceApp: confirm-switch-to-design clears modal and pendingConfirmIntent', () => {
-    const state = makeState();
-    const deps = makeDeps();
-    const appState = {
-      ...state,
-      builder: { ...state.builder, mode: 'fill' as const },
-      modal: { kind: 'confirm-design-switch' as const },
-      pendingConfirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' } as const,
-    };
-    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-switch-to-design' }, deps);
-    expect(result.state.modal).toBeNull();
-    expect(result.state.pendingConfirmIntent).toBeNull();
-    expect(result.state.builder.mode).toBe('design');
-  });
-
-  it('reduceApp: confirm-import-puzzle clears modal and pendingConfirmIntent', () => {
-    const state = makeState();
-    const deps = makeDeps();
-    const base = state.builder;
-    const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
-    const json = JSON.stringify({
-      version: 1,
-      type: 'incomplete',
-      key: '00000000-0000-4000-8000-000000000000',
-      gridSize: 2,
-      title: 'Title',
-      author: 'Author',
-      grid: [
-        [
-          { black: false, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
-          { black: false, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
-        ],
-        [
-          { black: true, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
-          { black: true, puzzleLetter: null, spaceRight: false, spaceBottom: false, hyphenRight: false, hyphenBottom: false },
-        ],
-      ],
-      words: [{ startRow: 0, startCol: 0, direction: 'across', length: 2, clue: '', nextWord: null }],
-      displacedClues: [],
-    });
-    const appState = {
-      ...state,
-      builder: {
-        ...base,
-        mode: 'fill' as const,
-        puzzle: Puzzle.withGrid(base.puzzle, grid),
-      },
-      modal: { kind: 'confirm-import-puzzle' as const },
-      pendingConfirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json } as const,
-    };
-    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-import-puzzle', fileContent: json }, deps);
-    expect(result.state.modal).toBeNull();
-    expect(result.state.pendingConfirmIntent).toBeNull();
-    expect(result.state.builder.puzzle.key).toEqual(PuzzleKey.try('00000000-0000-4000-8000-000000000000'));
-  });
-
-  it('reduceApp: confirm-reset-builder clears modal and pendingConfirmIntent; builder reset executes (storage clear event still passes through)', () => {
-    const state = makeState();
-    const deps = makeDeps();
-    const base = state.builder;
-    const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
-    const appState = {
-      ...state,
-      builder: {
-        ...base,
-        mode: 'fill' as const,
-        puzzle: Puzzle.withGrid(base.puzzle, grid),
-      },
-      modal: { kind: 'confirm-reset-builder' as const },
-      pendingConfirmIntent: { target: 'builder', kind: 'confirm-reset-builder' } as const,
-    };
-    const result = reduceApp(appState, { target: 'builder', kind: 'confirm-reset-builder' }, deps);
-    expect(result.state.modal).toBeNull();
-    expect(result.state.pendingConfirmIntent).toBeNull();
-    expect(result.events).toEqual([{ kind: 'clear-builder-storage' }]);
-  });
-
-  it('reduceApp: confirm-reset-player clears modal and pendingConfirmIntent; player reset executes', () => {
-    const state = makeState();
-    const deps = makeDeps();
-    const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(1)));
-    const grid = GridOps.setCell(
-      puzzle.grid,
-      Row.of(0),
-      Col.of(0),
-      Cell.setPlayerLetter(GridOps.cellAt(puzzle.grid, Row.of(0), Col.of(0)), Letter.try('X')!),
-    );
-    const player = PlayerState.loaded({ ...puzzle, grid });
-    const appState = {
-      ...state,
-      player,
-      modal: { kind: 'confirm-reset-player' as const },
-      pendingConfirmIntent: { target: 'player', kind: 'confirm-reset-player' } as const,
-    };
-    const result = reduceApp(appState, { target: 'player', kind: 'confirm-reset-player' }, deps);
-    expect(result.state.modal).toBeNull();
-    expect(result.state.pendingConfirmIntent).toBeNull();
-    expect(result.state.player.phase).toBe('solving');
-    if (result.state.player.phase !== 'solving') throw new Error('expected solving');
-    expect(GridOps.cellAt(result.state.player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
-    expect(result.state.player.cursor).toBe(null);
-    expect(result.events).toEqual([{ kind: 'clear-player-storage', key: puzzle.key }]);
   });
 
   it('reduceApp: ambiguous kind (select-cell) routes to Player when state.route="play" — verify state.player.cursor changes', () => {
