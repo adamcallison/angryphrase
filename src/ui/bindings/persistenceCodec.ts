@@ -29,8 +29,6 @@ export function serializeBuilderSnapshot(state: BuilderState): string {
     kind: 'builder-snapshot',
     puzzle: puzzleObj, // includes displacedClues field already
     mode: state.mode,
-    subMode: 'none', // FR-64: forced to 'none' on save
-    // cursor omitted per C6
   };
   return JSON.stringify(wrapper);
 }

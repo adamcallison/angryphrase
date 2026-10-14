@@ -6,75 +6,25 @@ link.rel = 'icon';
 link.type = 'image/png';
 link.href = faviconUrl;
 document.head.appendChild(link);
+
 import { mount } from 'svelte';
 import App from './ui/app/App.svelte';
 import { createAppStore } from './ui/bindings/appStore.svelte';
+import { createInitialAppState } from './ui/bindings/boot';
+import { installTeardown } from './ui/bindings/teardown';
 import { localStoragePort } from './ports/localStoragePort';
 import { downloadPort } from './ports/downloadPort';
 import { filePickPort } from './ports/filePickPort';
 import { rngPort } from './ports/rngPort';
-import { parseBuilderSnapshot } from './ui/bindings/persistenceCodec';
-import { AppState } from './app/state/state';
-import { PlayerState } from './player/state/state';
-import type { BuilderState } from './builder/state/state';
-import { GridSize } from './domain/grid/GridSize';
-import { PuzzleKey } from './domain/puzzle/PuzzleKey';
 import { EpochMs } from './domain/time/EpochMs';
 
 const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort };
 const deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) };
 
-/**
- * Build the initial AppState per FR-65 / FR-64 / C6 / NFR-9:
- * 1. Try to load saved Builder snapshot from localStorage via the storage port.
- * 2. If present and parseable: restore puzzle/displacedClues/mode but force
- *    subMode = 'none' (FR-64) and cursor = null (C6).
- * 3. If absent or corrupt: log a warning and start with a fresh blank Builder
- *    (blank 15×15 puzzle, freshly generated PuzzleKey via the injected rng).
- * 4. Player always starts in the import phase (FR-67).
- * 5. Route always starts at 'landing' (FR-1 — choice of Build/Play is NOT persisted across sessions).
- */
-function loadInitialAppState(): AppState {
-  const rng = rngPort;
-
-  // No choice persistence across sessions — FR-1.
-  const freshBlank = (): AppState =>
-    AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));
-
-  // NFR-9: corrupt / missing storage degrades gracefully.
-  const result = ports.storage.loadBuilder();
-  if (result.kind !== 'loaded') {
-    return freshBlank();
-  }
-
-  // Parse the saved snapshot; null ⇒ corrupt → fall back to blank.
-  const snapshot = parseBuilderSnapshot(result.value);
-  if (snapshot === null) {
-    console.warn('main: parseBuilderSnapshot returned null; starting fresh.');
-    return freshBlank();
-  }
-
-  // Restore: FR-64 (subMode 'none'), C6 (cursor null).
-  const builder: BuilderState = {
-    puzzle: snapshot.puzzle,
-    displacedClues: snapshot.displacedClues,
-    mode: snapshot.mode,
-    subMode: { kind: 'none' },
-    cursor: null,
-  };
-
-  return {
-    route: 'landing',
-    builder,
-    player: PlayerState.importScreen(),
-    toasts: [],
-    modal: null,
-    pendingConfirmIntent: null,
-  };
-}
-
-const initial = loadInitialAppState();
+const initial = createInitialAppState(ports, deps);
 const store = createAppStore(initial, deps, ports);
+
+installTeardown(store);
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
 const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });

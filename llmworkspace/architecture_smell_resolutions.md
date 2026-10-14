@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`).
 
 ---
 
@@ -662,3 +662,96 @@ Adding a new storage read (e.g. a `loadAppSettings()` slot in a future feature) 
 A future port author who breaks the never-throw contract (e.g. an IndexedDB port that lets a `DOMException` escape) will surface as a non-matching `kind` at every caller — which, under the new signature, *is a compile error* on the call site that catches it, rather than a runtime surprise eaten by a defensive try/catch. The contract is now load-bearing in the type system, not aspirational.
 
 The smell-#7-adjacent leftovers are none: the load-side and save-side invariants are now each owned by exactly one layer; the "absence of redundant catch layers" rule is type-enforced rather than by-convention; and the test mirror discipline (smell #8's separate concern) is restored for `persistenceCodec.ts` via the new test file.
+
+---
+
+## 8. Persistence lifecycle is incomplete: `flush()` is dead, and the boot-time data-loss window is unwired — resolved 2026-10-14
+
+### The smell (recap)
+
+Four sub-issues on the persistence seam, all recorded in `architecture_smells.md` §8. Three still stood at HEAD; the fourth (the test-mirror claim against `persistenceCodec.ts`) had become stale between the audit and the resolution — `test/ui/bindings/persistenceCodec.test.ts` exists, so that sub-issue is now closed by an earlier resolution (#7's "Files" list names it) and is recorded here only as an audit-correction. The three live sub-issues:
+
+1. `PersistenceScheduler.flush()` was defined, exported, and tested — and called by nothing in `src/`. The architecture doc described it as "used by boot/teardown" (§3 Layer 2 table) and §8 discussed flush results — but no teardown existed. No `beforeunload`, no `pagehide`, no `visibilitychange`. Any debounced-but-unfired save (up to 400 ms of work) was silently dropped when the tab closed or navigated. The mechanism was built and tested; the wiring was never done.
+2. Reload invariants were enforced twice, by hand, in two layers: `subMode: 'none'` was forced on **save** (`persistenceCodec.ts:32-34`) and again on **load** (`main.ts:69`); `cursor` was omitted on save and re-nulled on load (`main.ts:70`). Two hand-sync points for the same invariant.
+3. `main.ts:65-71` reconstructed `BuilderState` field-by-field — `puzzle`, `displacedClues`, `mode`, `subMode`, `cursor`, plus the `AppState` wrapper with `route`, `player`, `toasts`, `modal`, `pendingConfirmIntent`. The `BuilderState` shape and its reload rules lived in the one file with no lint boundary of its own (Layer 5 is a free-import layer; the `no-restricted-imports` rules don't constrain it).
+
+### Decision
+
+The four sub-issues are the same seam from four angles — an unwired lifecycle, duplicated invariants across the seam, knowledge of the post-load shape escaping the seam, and a stale audit claim. Treating them as a single resolution is the architecturally correct move: the seam is the unit, and any partial fix leaves a half-fixed boundary that future work will keep tripping over. The same logic the user applied to every prior resolution (#1-#7) — "we are not trying to get it fixed asap, we are improving the architecture" — applied here too.
+
+Options considered and their fates:
+
+- **A — wire only `flush()` (pagehide handler).** Cheapest. Closes sub-issue 1 only. Leaves sub-issues 2 and 3 untouched. The doc still describes a mechanism ("used by boot/teardown") that doesn't match the code; `main.ts` still hand-assembles `BuilderState`; `subMode: 'none'` is still enforced twice. *Rejected* as the default per the user's framing — minimum diff is not the goal here. Recorded as a fall-back in case the broader fix proved impractical (it did not).
+- **B — A + collapse the duplicated reload invariants into the codec.** `parseBuilderSnapshot` returns a full `BuilderState` directly (with `subMode: { kind: 'none' }` and `cursor: null` baked in); the serialize side drops the `subMode: 'none'` wire field. `main.ts` becomes a single call. Closes 1 + 2 + (most of) 3. *Strong fallback.* Picked up almost verbatim in the chosen package, but with the seam ownership moved one layer further: the codec stays a pure round-tripper, and the `BuilderState` reconstruction moves to a new `boot.ts`.
+- **C — B + introduce `createInitialAppState(ports, deps)` in `ui/bindings/`, drop the hand-assembly in `main.ts` entirely.** Closes all three live sub-issues: the seam has a single owner (`boot.ts`), the codec stays pure, `main.ts` holds no domain knowledge. The `BuilderState` reload shape lives in one place and is named in the architecture doc. The change to a new module costs about 40 lines of new code (the factory + 9 tests) and removes about 30 lines from `main.ts`. **Chosen.**
+- **D — C + extract the pagehide wiring into a `teardown.ts` peer module (`installTeardown(store)`).** Closes the testability gap on the teardown side: `main.ts` is currently untested (the only source file with no test mirror), and the pagehide wiring is a meaningful behavioural contract. A two-line extraction lets `test/main.test.ts` test the wiring without importing `main.ts` and triggering its module-level DOM side effects in the node test environment. *Adopted during implementation* — the Senior extracted it as the cleanest way to satisfy the new test cases. The cost is one extra module; the benefit is testable teardown.
+
+Approved package: **C + D**, with A as a documented fallback (not used).
+
+### Design as implemented
+
+**`src/ui/bindings/boot.ts` (new).** Sole owner of the `BuilderState` reload shape.
+
+```ts
+export function createInitialAppState(ports: AppPorts, deps: AppDeps): AppState;
+```
+
+The function: calls `ports.storage.loadBuilder()` (`LoadResult<string>` from the #7 fix). On `'absent'`, `'failed'`, or `parseBuilderSnapshot` returning `null`, returns `AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(deps.rng))` with `player: PlayerState.importScreen()`, `route: 'landing'`, `toasts: []`, `modal: null`, `pendingConfirmIntent: null`. On a valid snapshot, returns the full `AppState` with `builder: { puzzle, displacedClues, mode, subMode: { kind: 'none' }, cursor: null }`, `player: PlayerState.importScreen()`, `route: 'landing'`. The `subMode: { kind: 'none' }` + `cursor: null` literal lives in exactly one place in the codebase (this file). A small `freshBlank(deps)` helper inside the module avoids repeating the wrapper fields. `deps.rng` is called exactly once on the blank path (via `PuzzleKey.generate` → `uuidv4` → 16 `nextInt` calls) and not at all on the loaded-snapshot path. No module-level state; nothing runs at import time; production ports are not imported.
+
+**`src/ui/bindings/teardown.ts` (new).** Sole owner of the persistence teardown wiring.
+
+```ts
+export function installTeardown(store: AppStore): void {
+  window.addEventListener('pagehide', () => {
+    store.getScheduler().flush();
+  });
+}
+```
+
+`pagehide` (not `beforeunload`) — `pagehide` covers both unload and bfcache-restore transitions and fires reliably on mobile. `flush()` exists for this single caller (and its own test file). The function is two lines plus a JSDoc; it exists so `test/main.test.ts` can exercise the wiring without importing `main.ts` and triggering its DOM side effects in node.
+
+**`src/ui/bindings/persistenceCodec.ts`.** The wire format shrinks.
+
+- `serializeBuilderSnapshot` drops the `subMode: 'none'` field and its `// FR-64: forced to 'none' on save` comment, and the `// cursor omitted per C6` comment. The wrapper is now `{ version: 1, kind: 'builder-snapshot', puzzle: <obj>, mode }`. The change is forward-compatible (a parse that ignores unknown fields still works), and existing saved snapshots (which have the `subMode` field) are silently read past it on the parse side.
+- `parseBuilderSnapshot` is unchanged in shape. The existing `mode` guard (`mode !== 'design' && mode !== 'fill'`) means any incoming `subMode` value (legacy `none`, hostile `join`, anything) is simply never read. The function continues to return `BuilderSnapshot = { puzzle, displacedClues, mode }` — a pure round-tripper.
+- The pre-existing `serializePlayerProgress` `phase !== 'solving'` guard (single owner of that invariant, established by #7) is untouched. The "player in import phase ⇒ nothing to save" invariant is now owned by one layer here and nowhere else; the same one-layer ownership now applies to the `BuilderState` reload shape via `boot.ts`.
+
+**`src/main.ts`.** Reduced to a pure wiring composer. `loadInitialAppState` is deleted; the hand-assembled `BuilderState` literal is deleted; the imports of `parseBuilderSnapshot`, `BuilderState` (type), `GridSize`, `PuzzleKey` are deleted. The file becomes:
+
+```ts
+const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort };
+const deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) };
+const initial = createInitialAppState(ports, deps);
+const store = createAppStore(initial, deps, ports);
+installTeardown(store);
+const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });
+```
+
+`main.ts` now imports `createInitialAppState` from `./ui/bindings/boot` and `installTeardown` from `./ui/bindings/teardown`. No `BuilderState` shape knowledge; no `GridSize.DEFAULT`; no `PuzzleKey.generate`. The Layer 5 description in `architecture.md` §3 is amended to match: "Nothing else constructs an `AppStore` in production; nothing else registers a `pagehide` listener. `main.ts` holds no domain knowledge — the `BuilderState` reload shape, the `AppState.blank(...)` fallback, and the persistence-teardown wiring all live in `ui/bindings/`."
+
+### Deliberate behaviour changes
+
+- **The `subMode: 'none'` field is dropped from the wire wrapper.** Saved snapshots written by the new code no longer carry the field. Old saved snapshots (which have the field) parse cleanly because the codec never reads it. On the restore side, `subMode` is always `{ kind: 'none' }` and `cursor` is always `null`, regardless of what's on disk. The reload invariant is now single-sourced: the wire format has no place to drift it, and `boot.ts` is the only place that applies it. A new saved snapshot (post-fix) and an old saved snapshot (pre-fix) produce byte-identical restored state.
+- **`pagehide` fires `flush()` instead of the user closing the tab silently losing up to 400 ms of work.** Behaviour-equivalent in the rare happy path (the debounce timer would have fired eventually) and load-bearing in the common one (tab close, navigation, refresh). No observable change to the in-session UX; a measurable change to the worst-case data-loss window.
+- **`main.ts` no longer imports any domain types or values.** It is now a pure wiring file: build ports, build deps, build initial state, build store, install teardown, mount. The `BuilderState` shape knowledge that previously leaked into Layer 5 is fully gone.
+
+### Files
+
+- Created: `src/ui/bindings/boot.ts`; `src/ui/bindings/teardown.ts`; `test/ui/bindings/boot.test.ts`; `test/main.test.ts`.
+- Modified: `src/ui/bindings/persistenceCodec.ts` (drop the wire `subMode` field and the two related comments); `src/main.ts` (delete `loadInitialAppState`, the hand-assembled `BuilderState` literal, and the four no-longer-needed imports; add the `createInitialAppState` and `installTeardown` calls); `test/ui/bindings/persistenceCodec.test.ts` (the wrapper-shape test now asserts `subMode` is absent, not `'none'` — a direct consequence of the codec change); `test/ui/bindings/persistenceScheduler.test.ts` (the codec-shared wrapper-shape assertion was rewritten to assert absence, not value — same reason); `llmworkspace/architecture.md` (§3 Layer 2 table — `boot.ts` and `teardown.ts` rows; §3 Layer 5 — composer paragraph rewritten; §8 Persistence — Builder-snapshot bullet updated and a "Teardown" item 3 added); `llmworkspace/architecture_smells.md` (§8 audit-correction note + status line); `llmworkspace/architecture_smell_resolutions.md` (this entry).
+
+No source modules deleted. No new port, intent, or event variants. `App.svelte` autosave wiring is untouched. The `version` field on the persistence wrapper is unchanged.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **89 test files / 1278 tests green** (from 86 files / 1249 tests after #4 — +3 files: `boot.test.ts`, `main.test.ts`, plus the codec-test file that was created in the #7 resolution; +29 tests: 9 boot cases, 3 main cases, plus 17 codec cases across the two test files that had to be updated to reflect the new wrapper shape); the single-file production build succeeded (`dist/index.html` 235.44 kB, gzip 103.13 kB).
+- The `boot.test.ts` suite pins every branch of the boot path: `absent`, `failed`, valid `fill`-mode snapshot, valid `design`-mode snapshot, hostile `subMode: 'join'` in the wire blob (silently ignored), corrupt JSON, `fileType: 'complete'` rejection, `rng` call count on the blank path, and `rng` silence on the loaded-snapshot path.
+- The `main.test.ts` suite pins the teardown wiring: `pagehide` after `scheduleBuilderSave` fires `flush` synchronously; a second `scheduleBuilderSave` followed by `pagehide` flushes the new pending save; no `beforeunload` listener is registered (negative). The test calls `installTeardown(store)` directly with a stubbed `addEventListener`, sidestepping `main.ts`'s module-level DOM side effects.
+- The `persistenceCodec.test.ts` round-trip case still passes: save → parse → restored `BuilderSnapshot` equals source on `puzzle`, `displacedClues`, `mode`. `subMode` and `cursor` are explicitly not round-tripped — that is the new behaviour, pinned by a new assertion in the codec test (the wrapper has no `subMode` field).
+- Process: one implementation task dispatched to the Senior (the spec was a single coordinated change across three files plus three test files; the Senior also extracted `teardown.ts` as the cleanest way to make the wiring testable — accepted as a defensible deviation, recorded in the resolution). One review pass: `npm run ci` re-run by the reviewer; one mid-flight doc correction (the `teardown.ts` module wasn't in the original spec, so the Layer 2 table and §3 Layer 5 / §8 paragraphs had to be amended to reference it).
+
+### Consequence (change cost after)
+
+A change to the `BuilderState` reload shape — e.g. "preserve `subMode: { kind: 'join' }` across reload" — touches `boot.ts` only. A change to the persistence teardown — e.g. "also flush on `visibilitychange: hidden`" — touches `teardown.ts` only. A change to the wire format — e.g. dropping `mode` (preserving it only in the puzzle object) — touches `persistenceCodec.ts` and the two codec test files; nothing else. The four sub-issues' hand-sync points collapse: `subMode: 'none'` is enforced once (in `boot.ts`); the `BuilderState` shape is owned by `boot.ts`; the `pagehide` wiring is owned by `teardown.ts`; `main.ts` holds no domain knowledge at all.
+
+The doc/code drift is gone: §3 Layer 2 now names `boot.ts` and `teardown.ts` and describes their roles; §3 Layer 5 describes `main.ts` as a wiring-only composer; §8 Persistence names the codec, the autosave contract, and the teardown wiring in three coherent items instead of asserting "used by boot/teardown" for a mechanism that didn't exist. The `#8`-adjacent leftover is none; the next ranked smell is #9 (the JSON round-trip via strings in the persistence blob's nested format), which is structurally separate and not addressed here.

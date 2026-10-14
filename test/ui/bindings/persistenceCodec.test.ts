@@ -68,7 +68,7 @@ function makeAllBlackPuzzle(seed: number, size: number): PuzzleType {
 
 describe('persistenceCodec.ts', () => {
   describe('serializeBuilderSnapshot + parseBuilderSnapshot', () => {
-    it('serializeBuilderSnapshot: output JSON has version=1, kind="builder-snapshot", mode from state.mode, subMode="none" (forced)', () => {
+    it('serializeBuilderSnapshot: output JSON has version=1, kind="builder-snapshot", mode from state.mode and no subMode field', () => {
       const state = makeBuilderState(1, {
         mode: 'fill',
         subMode: { kind: 'join', source: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' } },
@@ -78,7 +78,7 @@ describe('persistenceCodec.ts', () => {
       expect(parsed.version).toBe(1);
       expect(parsed.kind).toBe('builder-snapshot');
       expect(parsed.mode).toBe('fill');
-      expect(parsed.subMode).toBe('none');
+      expect(parsed.subMode).toBeUndefined();
     });
 
     it('serializeBuilderSnapshot: cursor field is omitted (C6 — not persisted)', () => {

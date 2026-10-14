@@ -117,6 +117,8 @@ The only module that imports from all other layers plus Svelte. Everything here 
 | `modalFacade.ts` / `toastFacade.ts` | `createModalFacade` / `createToastFacade` — modal/toast VM getters + `ModalActions` / `ToastHostActions`. Own no state. |
 | `persistenceCodec.ts` | Pure encode/decode of the two `localStorage` blob shapes (§8). |
 | `persistenceScheduler.ts` | `createPersistenceScheduler(storage, debounceMs, onWriteResult)` — mechanical debounce/serialize/coalesce/cancel-on-clear/flush. Holds no failure policy (the latches live in the appStore). |
+| `boot.ts` | `createInitialAppState(ports, deps)` — load-or-blank boot: `ports.storage.loadBuilder()` → `parseBuilderSnapshot` → restore a full `BuilderState` (subMode forced to `'none'`, cursor to `null`) → wrap into `AppState`; or fresh `AppState.blank(...)` on absent/corrupt. Sole owner of the `BuilderState` reload shape. |
+| `teardown.ts` | `installTeardown(store)` — registers the `pagehide` listener that invokes `store.getScheduler().flush()` so any debounced-but-unfired save fires before the tab is hidden. Sole owner of the persistence teardown wiring; `main.ts` calls it once. |
 | `viewmodels/` | `builderVM`, `playerVM`, `gridVM`, `cluePanelVM`, `anagramVM`, `toastVM`, `modalVM` — pure state→VM derivation. |
 
 Naming rule: **"store"** is reserved for the state-owning `AppStore`; the four experience modules are **facades**. There is no ports-register singleton (`ports.ts` is deleted); `main.ts` instantiates production ports directly.
@@ -155,7 +157,7 @@ Port contract:
 
 ### Layer 5 — `src/main.ts` (the only composer)
 
-Boots the app: instantiates production ports, loads initial `AppState` (Builder snapshot from `localStorage` or a fresh blank puzzle — `GridSize.DEFAULT`, fresh `PuzzleKey.generate(rng)`; player always starts at the import screen), builds `deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) }` and `ports = { storage, download, filePick }`, calls `createAppStore(initial, deps, ports)` exactly once (running on default options: 400 ms persistence debounce, 60 s save-failure re-toast cadence), and mounts `<App appStore={store} />` to `#app`. Nothing else constructs an `AppStore` in production.
+Boots the app: instantiates production ports, builds `deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) }` and `ports = { storage, download, filePick }`, calls `createInitialAppState(ports, deps)` (the bindings-layer boot function) then `createAppStore(initial, deps, ports)` exactly once (running on default options: 400 ms persistence debounce, 60 s save-failure re-toast cadence), calls `installTeardown(store)` (registers the `pagehide` listener — see `teardown.ts`), and mounts `<App appStore={store} />` to `#app`. Nothing else constructs an `AppStore` in production; nothing else registers a `pagehide` listener. `main.ts` holds no domain knowledge — the `BuilderState` reload shape, the `AppState.blank(...)` fallback, and the persistence-teardown wiring all live in `ui/bindings/`.
 
 ## 4. Boundary Enforcement
 
@@ -311,9 +313,10 @@ Four user actions are guarded: switch-to-design, Builder import, Builder reset, 
 Two mechanisms, both bindings-layer:
 
 1. **State observation (autosave).** `App.svelte` runs two `$effect`s over the store — one per slice (builder; player-when-solving) so a change to one slice does not re-arm the other's debounce. Changes are debounced (default 400 ms) and written via the internally-constructed `PersistenceScheduler`. The persisted blobs (`persistenceCodec.ts`):
-   - **Builder snapshot:** `{ version: 1, kind: 'builder-snapshot', puzzle: <incomplete puzzle JSON>, mode: 'design'|'fill', subMode: 'none' }` — a wrapper around the puzzle JSON (`serializeIncomplete` produces the embedded portion); `subMode` is forced to `'none'` on save and the cursor is omitted — it is never restored on reload.
+   - **Builder snapshot:** `{ version: 1, kind: 'builder-snapshot', puzzle: <incomplete puzzle JSON>, mode: 'design'|'fill' }` — a wrapper around the puzzle JSON (`serializeIncomplete` produces the embedded portion). The reload invariants (`subMode: { kind: 'none' }`, `cursor: null`) are owned by `createInitialAppState` (§3 Layer 2 / `boot.ts`); the wrapper does not carry them, so a saved snapshot has no place to drift them.
    - **Player progress:** `{ version: 1, kind: 'player-progress', key, gridSize, playerLetters: (Letter|null)[][] }`.
 2. **Event-driven clears.** `clear-builder-storage` / `clear-player-storage { key }` events (emitted by the confirm-reset reducers) trigger the scheduler's synchronous `clear*`, cancelling any pending debounced save before it fires.
+3. **Teardown.** `installTeardown(store)` (in `ui/bindings/teardown.ts`, called once by `main.ts`) registers a `pagehide` listener that invokes the scheduler's `flush()`, firing any pending debounced save synchronously before the tab is hidden. `pagehide` (not `beforeunload`) — `pagehide` covers both unload and bfcache-restore transitions and fires reliably on mobile. `flush()` exists for this single caller (and tests); it is not part of the autosave contract.
 
 **Write-failure surfacing (per slice).** The scheduler reports every attempted write (save or clear, including `flush()`) via `onWriteResult(slice, err)`. The appStore latches per slice: the first failure of an episode warns (`console.warn`) and dispatches `report-builder-save-failure` / `report-player-save-failure` (error toast); further failures stay silent until 60 s (configurable) have passed since that slice's last toast, then warn + re-toast; the next successful write re-arms the latch. Reminders ride on attempted writes — an idle session writes nothing and loses nothing new. A failed Builder clear self-heals on the next successful autosave; a failed player-progress clear leaves a stale keyed blob that resurrects only if that exact puzzle is re-imported (accepted edge).
 
