@@ -1,22 +1,22 @@
 import type { Grid } from '../grid/Grid';
 import type { Word } from '../word/Word';
 import type { WordMap } from '../word/WordMap';
-import { Row } from '../grid/Row';
-import { Col } from '../grid/Col';
 import { GridOps } from '../grid/GridOps';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
+import { WordGeometry } from '../word/WordGeometry';
 import { Chain } from './Chain';
 
 export type LengthPattern = string;
 
 function separatorAt(grid: Grid, w: Word, offset: number): CellSeparator {
-  const { startRow, startCol, direction } = w.key;
-  const row = direction === 'down' ? Number(startRow) + offset : Number(startRow);
-  const col = direction === 'across' ? Number(startCol) + offset : Number(startCol);
-  const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
-  const axis = direction === 'across' ? 'right' : 'bottom';
-  return CellMarker.read(cell.marker, axis);
+  const cells = WordGeometry.cells(w);
+  const cell = cells[offset];
+  if (cell === undefined) {
+    throw new Error('LengthPattern.separatorAt: offset out of range');
+  }
+  const axis = w.key.direction === 'across' ? 'right' : 'bottom';
+  return CellMarker.read(GridOps.cellAt(grid, cell.row, cell.col).marker, axis);
 }
 
 function appendSeparator(pieces: string[], run: number, separator: CellSeparator): number {

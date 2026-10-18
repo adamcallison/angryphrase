@@ -1,5 +1,6 @@
 import type { Word } from '../word/Word';
 import { WordMap } from '../word/WordMap';
+import { WordGeometry } from '../word/WordGeometry';
 import { Chain } from './Chain';
 
 export const ChainCells: {
@@ -8,10 +9,8 @@ export const ChainCells: {
 } = {
   cellsOfWord(w: Word): Set<string> {
     const set = new Set<string>();
-    for (let i = 0; i < w.length; i++) {
-      const r = w.key.direction === 'across' ? Number(w.key.startRow) : Number(w.key.startRow) + i;
-      const c = w.key.direction === 'across' ? Number(w.key.startCol) + i : Number(w.key.startCol);
-      set.add(`${r},${c}`);
+    for (const cell of WordGeometry.cells(w)) {
+      set.add(`${Number(cell.row)},${Number(cell.col)}`);
     }
     return set;
   },

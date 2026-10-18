@@ -4,7 +4,7 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways).
 
 ---
 
@@ -865,3 +865,141 @@ A change to the puzzle schema (e.g. a v3 column for anagram hints, or a new mark
 The drift risk that the smell called out — "a future format change must keep the embed/extract round-trip coherent or corrupt every stored snapshot" — is structurally gone. There is no embed/extract round-trip; there is one structural shape that both formats share by construction. The two formats can only diverge if `v1.ts` itself is changed to make them diverge, which is now an explicit decision in one module rather than an accidental one across two.
 
 The doc/code drift is gone: §3 Layer 0 names the two modules and their roles; §10 explicitly commits to the structural shape as the canonical wire shape; §8 Persistence describes the embedded puzzle as a structural shape rather than "puzzle JSON"; §13 File / Module Map names both files. The `#9`-adjacent leftover is none; the next ranked smell is #10 (word-membership / white-run semantics implemented four ways — see `architecture_smells.md`).
+
+---
+
+## 10. Word-membership and white-run semantics are implemented four ways — resolved 2026-10-18
+
+### The smell (recap)
+
+The single piece of crossword geometry — "which white cells form a word / is this cell part of a word" — was encoded four times across `domain/`:
+
+1. `GridOps.isSelectable` — inline left/right/up/down run count scans (`GridOps.isSelectable`).
+2. `WordDerivation.derive` — maximal-run scan with its own white-run loop (`WordDerivation.deriveDirection`).
+3. `partOfAcross` / `partOfDown` / `hasWhiteNeighbour` — one-step white-neighbour checks duplicated across the Builder `fillMode` and Player `solving` adapters at the time the smell was filed (already collapsed into a single private helper set under `GridInteraction` during smell #1's hoist).
+4. `WordSelection.findContainingWord` — start-cell + length bounds arithmetic over a pre-derived word list.
+
+Plus three sites that walked a `Word`'s coordinates by `length` and `direction` with their own `for i in 0..length` advance loops: `ChainCells.cellsOfWord`, `LengthPattern.separatorAt`, `Anagram.buildWordModel` / `buildChainModel`. The four grid-level encodings "agreed by convention and testing, not by construction"; the three word-walking sites duplicated advance arithmetic.
+
+### Decision
+
+Options considered and their fates:
+
+- **A — Confine the duplication by adding conformance tests only.** Pins the symptom, doesn't change change-cost next time. Rejected: the smell's "low-medium at current scale" risk is exactly the kind that graduates to "high" the moment a feature touches what-a-word-is (rebus cells, circled exclusions, marker-based splits — half-supported by `CellMarker` today). The user explicitly framed the goal as architecture-improvement, not minimum-churn.
+- **B — Pre-compute word topology into `Puzzle`.** Each cell gains `wordKey: WordKey | null` per direction; all four predicates become O(1). Rejected. Invasively mutates the domain aggregate; the "domain is value-object pure" rule (§2 principle 2) demands cell-level additions stay cell-shaped. Future schema drift cost is paid by every state-tree operation that doesn't need the topology.
+- **C — Two new public primitives: a `WordRun`/runs/partOfRun module for grid-level topology, and a `Word.cells` iterator for word-coordinate walking.** Chosen. Each of the four grid-level sites either delegates or is removed. The three word-walking sites share one iterator. Public-surface cost: two new modules (~50 lines each) and one small method on `Word`. Change cost next time ("what counts as a word") shrinks to: touch `WordTopology.runs` and one test file.
+- **D — Compress everything into `GridOps`.** Rejected as a final state (the cycle-fix absorbed `WordTopology` into `GridOps` once and immediately revealed the kitchen-sink shape `GridOps` was becoming — typed accessors, neighbour queries, structural helpers, and run-enumeration in one object). Noted as a stepping stone below.
+- **E — Spec-only: leave the duplication, document the four sites in §3.** Rejected. Documentation cannot prevent drift; the smell is architectural, not informational.
+
+Approved package: **C** (the two-primitive split), with an explicit commitment to *decomposition not absorption*: each primitive is its own module that *depends on a leaf*, never the other way around. See "Process note" below.
+
+### Design as implemented
+
+Three new modules, plus a deliberate leaf-extraction that was added mid-flight when the first iteration (a separate `WordTopology.ts` parallel to the existing `GridOps.ts`) introduced a `WordTopology ← → GridOps` cycle because both needed cell access plus `GridOps.isSelectable` wanted `WordTopology.partOfRun`. The cycle was broken by extracting the cell-access primitives into a leaf module; the absorption-into-`GridOps` interim was reverted.
+
+**`src/domain/grid/GridAccess.ts` — the raw-indexing leaf.** Public surface:
+
+```ts
+export const GridAccess: {
+  blank(size: GridSize): Grid;
+  cellAt(g: Grid, row: Row, col: Col): Cell;
+  setCell(g: Grid, row: Row, col: Col, c: Cell): Grid;
+  updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid;
+  withinBounds(g: Grid, row: Row, col: Col): boolean;
+}
+```
+
+Sanctioned site for non-null indexing on `Cell[][]` — the `eslint.config.js` non-null-assertion exception now lists `GridAccess.ts` (the leaf), retaining `GridOps.ts` for the legacy `GridOps.equals` non-nulls that have not yet been migrated. `GridAccess` is leaf: it imports only from sibling grid types.
+
+**`src/domain/grid/WordTopology.ts` — grid-level word geometry.** Public surface:
+
+```ts
+export type WordRun = {
+  startRow: Row;
+  startCol: Col;
+  length: number;
+  direction: Direction;
+};
+
+export const WordTopology: {
+  runs(grid: Grid, direction: Direction): readonly WordRun[];
+  partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean;
+}
+```
+
+Depends only on `GridAccess` for cell reads; no path to `GridOps`. `runs(grid, direction)` enumerates every maximal white run on a single axis including length-1 runs (the length-≥-2 filter belongs to callers like `WordDerivation`, not topology). `partOfRun(grid, row, col, direction)` is O(run length) by walking back to the run start then counting forward; returns true iff the original cell lies within the run and length ≥ 2 (the "part of a selectable word slot" semantics that all current call sites need).
+
+**`src/domain/grid/GridOps.ts` — slimmed.** Public surface unchanged for the 88 existing call sites (`blank`, `cellAt`, `setCell`, `updateCells`, `withinBounds`, `neighbours`, `neighboursInDirection`, `isSelectable`, `clone`, `equals`). The first five now delegate to `GridAccess.*` (one-line bodies). `isSelectable` is two `WordTopology.partOfRun` calls behind the existing bounds + `Cell.isWhite` pre-checks. `runs` / `partOfRun` are no longer on `GridOps`.
+
+**`src/domain/word/WordGeometry.ts` — word-coordinate iterator.** Public surface:
+
+```ts
+export const WordGeometry: {
+  cells(word: Word): readonly { row: Row; col: Col; offset: number }[]
+}
+```
+
+Iterates a `Word`'s coordinates in order (offset 0 = start, offset length-1 = end), drives `direction` correctly (across → col increments; down → row increments), branded `Row.of` / `Col.of` per emitted cell. Consumed by `ChainCells`, `LengthPattern.separatorAt`, `Anagram.buildWordModel` / `buildChainModel`.
+
+**Consumer migration.** All mechanical:
+
+- `src/domain/word/WordDerivation.ts` — `derive` becomes `[...WordTopology.runs(g, 'across'), ...WordTopology.runs(g, 'down')].filter(length ≥ 2).map(toDerivedWord)`. The local `isWhite` / `deriveDirection` helpers are gone.
+- `src/domain/grid/GridOps.ts` `isSelectable` — out-of-bounds and non-white pre-checks retained, then `WordTopology.partOfRun(g, r, c, 'across') || WordTopology.partOfRun(g, r, c, 'down')`.
+- `src/domain/grid/GridInteraction.ts` `select` — `partOfAcross` / `partOfDown` / `hasWhiteNeighbour` private helpers deleted (already single-sourced after #1); `select` calls `WordTopology.partOfRun` twice.
+- `src/domain/chain/ChainCells.ts` `cellsOfWord` — iterates `WordGeometry.cells(w)`, builds the existing `'r,c'` set from `${Number(cell.row)},${Number(cell.col)}`. `cellsOfChain` unchanged.
+- `src/domain/chain/LengthPattern.ts` `separatorAt` — `cells[offset]` from `WordGeometry.cells(w)`, then the existing `GridOps.cellAt(...).marker` read with the same axis derivation. `singleWordPattern` / `chainPattern` / `forWord` / `forActiveClueBanner` unchanged.
+- `src/domain/anagram/Anagram.ts` `buildWordModel` — iterates `WordGeometry.cells(word)`; the local `coord` + per-iteration `Direction.advance` is gone. `buildChainModel` retains its inter-word join logic and the single `Direction.advance` for the last-cell lookup. `validateInput` / `validateChainInput` / `scramble` unchanged.
+- `eslint.config.js` — non-null-assertion `ignores` extended from `[GridOps]` to `[GridAccess, GridOps]`, with the comment updated to explain both reasons (GridAccess is the leaf; GridOps retains the exception for the legacy `equals` non-nulls).
+
+`WordSelection.findContainingWord` was **not** changed — its O(n) scan over a pre-derived word list using start-cell + length arithmetic is a different query (which-word-contains-cursor), not a derivation, and it stays in its own file untouched.
+
+### Deliberate behaviour changes
+
+None. All 1324 pre-existing tests passed unchanged except the redistribution of the moved cases between `GridOps.test.ts` (14 tests, was 51) → `GridAccess.test.ts` (13 tests, new) + `WordTopology.test.ts` (24 tests, re-created). Zero test edits in any consumer test file: `WordDerivation.test.ts`, `GridInteraction.test.ts`, `ChainCells.test.ts`, `LengthPattern.test.ts`, `Anagram.test.ts`, `fillMode.test.ts`, `solving.test.ts` all retained their assertion bodies byte-for-byte.
+
+### Files
+
+Created: `src/domain/grid/GridAccess.ts`; `src/domain/grid/WordTopology.ts`; `src/domain/word/WordGeometry.ts`; mirrored test files `test/domain/grid/GridAccess.test.ts`, `test/domain/grid/WordTopology.test.ts`, `test/domain/word/WordGeometry.test.ts`.
+
+Modified: `src/domain/grid/GridOps.ts` (delegates the five leaf methods; `isSelectable` uses `WordTopology.partOfRun`); `src/domain/word/WordDerivation.ts`; `src/domain/grid/GridInteraction.ts`; `src/domain/chain/ChainCells.ts`; `src/domain/chain/LengthPattern.ts`; `src/domain/anagram/Anagram.ts`; `test/domain/grid/GridOps.test.ts` (cases redistributed); `eslint.config.js` (non-null-assertion exception expanded); `llmworkspace/architecture.md` (§3 Layer 0 `domain/grid/` row names the three grid modules and their roles; `domain/word/` row names `WordGeometry` and points `WordDerivation` at `WordTopology.runs`; §13 File / Module Map updated).
+
+Deleted: `src/domain/grid/WordRun.ts` (transient type file from an interim step; the `WordRun` type lives in `WordTopology.ts`).
+
+### Process note — interim fold and the rule it produced
+
+The first implementation pass put `runs`/`partOfRun`/`WordRun` into a separate `WordTopology.ts` and updated the three direct consumers (`WordDerivation`, `GridInteraction`, `GridOps.isSelectable`). `madge --circular` then rejected the layout: `GridOps.isSelectable` calls `WordTopology.partOfRun`, and `WordTopology`'s body needs `GridOps.cellAt` / `withinBounds`. Under cycle pressure, the run-discovery primitives were folded into `GridOps` itself — `WordTopology.ts` deleted, the methods became part of `GridOps`. This unblocked CI but made `GridOps` a kitchen-sink (typed accessors + neighbour queries + structural helpers + run enumeration in one object), which is exactly the kind of absorption that produced the smell in the first place.
+
+Under the user's framing — "we are not trying to get it fixed asap, we are trying to improve the architecture" — the absorption was rejected as a paper-over and reverted by extracting `GridAccess.ts` as a leaf: `GridOps.cellAt` etc. became delegates, `WordTopology` was re-created depending on `GridAccess` only, and the cycle disappeared structurally rather than by hiding it. CI green, the kitchen-sink flag removed.
+
+**Rule adopted:** "no paper-over." When an implementation step surfaces an unforeseen structural problem (a cycle, a layered violation, a contract mismatch), the fix is the structural one even if it means reverting completed work and starting the cycle-break from scratch. The interim fix is acceptable as a stepping stone only when it is followed immediately by the structural fix in the same change-set (as it was here). Standing alone, an absorption is rejected.
+
+### Verification
+
+- `npx madge --circular --extensions ts,svelte src/` → `✔ No circular dependency found!` (cycle-break confirmed structurally).
+- `npm run lint` → clean.
+- `npm run typecheck` → 0 errors, 0 warnings.
+- `npx vitest run test/domain/grid/GridAccess.test.ts` → 13 passed.
+- `npx vitest run test/domain/grid/WordTopology.test.ts` → 24 passed.
+- `npx vitest run test/domain/word/WordGeometry.test.ts` → 10 passed.
+- `npx vitest run test/domain/grid/GridOps.test.ts` → 14 passed (after redistribution).
+- `npx vitest run test/domain/word/WordDerivation.test.ts` → 11 passed.
+- `npx vitest run test/domain/grid/GridInteraction.test.ts` → 38 passed.
+- `npx vitest run test/builder/state/internal/fillMode.test.ts` → 56 passed.
+- `npx vitest run test/player/state/internal/solving.test.ts` → 85 passed.
+- `npx vitest run test/domain/chain/ChainCells.test.ts` → 8 passed.
+- `npx vitest run test/domain/chain/LengthPattern.test.ts` → 21 passed.
+- `npx vitest run test/domain/anagram/Anagram.test.ts` → 27 passed.
+- `npm run test` → 1324 passed (90 files).
+- `npm run build` → built.
+- `npm run ci` → exit 0.
+
+The `WordTopology` suite exercises both directions of `runs` (all-white, all-black, isolated single white, 5-cell row/column, two separate runs, mid-run black interruption, maximal-bounded, correct-field contracts) plus the immutability check, plus 12 `partOfRun` cases (across-only true/false/down, down-only true/false/across, both, isolated single false in both, black false, OOB false non-throwing, run start true, run end true, both length-2 cells true, length-1-across / length-2-down mixed). The `WordGeometry` suite exercises both directions at length 2/3/5, fresh-branched-cell guarantee, no-mutation, and offset sequencing.
+
+### Consequence (change cost after)
+
+- A change to "what counts as a word" (length cutoff, circled exclusions, marker-based splits) touches `WordTopology.runs` and `WordTopology.test.ts` only — three call sites pick up the change automatically (`WordDerivation.derive`, `GridOps.isSelectable`, `GridInteraction.select`).
+- A change to cell access (e.g. switch the leaf to row-major storage, add cell-level caching, brand-check `Row.try` differently) touches `GridAccess` and its mirrored test only — `GridOps` keeps delegating unchanged.
+- A change to word-walk semantics (e.g. cells() gains an `Orientation` discriminator, or returns iterators instead of arrays) touches `WordGeometry` + its tests; `ChainCells`, `LengthPattern`, `Anagram` pick up the change automatically.
+- The architectural separation is now real, not aspirational: `GridAccess` is a leaf, `WordTopology` depends on the leaf, `GridOps` depends on both (for neighbours/isSelectable). A cycle cannot be reintroduced without structural change to the dependency graph.
+
+The `#10`-adjacent leftover is exactly what was deliberately deferred: `WordSelection.findContainingWord` is the only remaining O(n) word-membership query over a derived word list, and it is a different operation (which-word-contains-cursor) than the four topologies this smell named. Not a smell-#10 item. The next ranked smell in the audit is #11 (traceability rot: live code cites archived requirements vocabulary).

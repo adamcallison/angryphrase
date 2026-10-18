@@ -6,6 +6,7 @@ import type { Direction } from '../word/Direction';
 import type { Letter } from '../letter/Letter';
 import type { WordKey } from '../word/WordKey';
 import { GridOps } from './GridOps';
+import { WordTopology } from './WordTopology';
 import { Cell } from './Cell';
 import { Row as RowCtor } from './Row';
 import { Col as ColCtor } from './Col';
@@ -36,40 +37,6 @@ const DELTA: Record<Direction, { dr: number; dc: number }> = {
   down: { dr: 1, dc: 0 },
 };
 
-function hasWhiteNeighbour(
-  g: Grid,
-  row: Row,
-  col: Col,
-  dr: number,
-  dc: number,
-): boolean {
-  const r = Number(row) + dr;
-  const c = Number(col) + dc;
-  if (r < 0 || c < 0) {
-    return false;
-  }
-
-  const neighbourRow = RowCtor.try(r);
-  const neighbourCol = ColCtor.try(c);
-  if (
-    neighbourRow === null ||
-    neighbourCol === null ||
-    !GridOps.withinBounds(g, neighbourRow, neighbourCol)
-  ) {
-    return false;
-  }
-
-  return Cell.isWhite(GridOps.cellAt(g, neighbourRow, neighbourCol));
-}
-
-function partOfAcross(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, 0, -1) || hasWhiteNeighbour(g, row, col, 0, 1);
-}
-
-function partOfDown(g: Grid, row: Row, col: Col): boolean {
-  return hasWhiteNeighbour(g, row, col, -1, 0) || hasWhiteNeighbour(g, row, col, 1, 0);
-}
-
 export const GridInteraction: {
   select(grid: Grid, cursor: Cursor, row: Row, col: Col): Cursor | null;
   move(grid: Grid, cursor: Cursor, direction: Direction, sign: -1 | 1): Cursor;
@@ -85,8 +52,8 @@ export const GridInteraction: {
       return null;
     }
 
-    const inAcross = partOfAcross(grid, row, col);
-    const inDown = partOfDown(grid, row, col);
+    const inAcross = WordTopology.partOfRun(grid, row, col, 'across');
+    const inDown = WordTopology.partOfRun(grid, row, col, 'down');
 
     const sameCell =
       cursor !== null &&

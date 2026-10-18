@@ -394,11 +394,12 @@ export default [
     }
   },
   // Regression guard: ban non-null assertions in production code.
-  // Sanctioned exception: src/domain/grid/GridOps.ts (AD §1.1 B3 permits raw indexing inside GridOps).
+  // Sanctioned exception: src/domain/grid/GridAccess.ts (raw-indexing leaf) and
+  // src/domain/grid/GridOps.ts (legacy equals non-nulls).
   // Two intentional retains: src/main.ts:84 (strict-null on DOM API -- not noUncheckedIndexedAccess)
   {
     files: ['src/**/*.ts', 'src/**/*.svelte'],
-    ignores: ['src/domain/grid/GridOps.ts'],
+    ignores: ['src/domain/grid/GridAccess.ts', 'src/domain/grid/GridOps.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'error'
     }

@@ -1,8 +1,7 @@
 import { GridOps } from '../grid/GridOps';
 import type { Grid } from '../grid/Grid';
-import type { Row } from '../grid/Row';
-import type { Col } from '../grid/Col';
 import { Direction } from '../word/Direction';
+import { WordGeometry } from '../word/WordGeometry';
 import type { Word } from '../word/Word';
 import { Letter } from '../letter/Letter';
 import type { Rng } from '../rng/Rng';
@@ -64,29 +63,26 @@ export const Anagram: {
   buildWordModel(grid: Grid, word: Word): { entries: AnagramEntry[]; separators: CellSeparator[] } {
     const entries: AnagramEntry[] = [];
     const separators: CellSeparator[] = [];
-
-    let coord: { row: Row; col: Col } = { row: word.key.startRow, col: word.key.startCol };
     const direction = word.key.direction;
 
-    for (let i = 0; i < word.length; i++) {
-      const cell = GridOps.cellAt(grid, coord.row, coord.col);
+    const cells = WordGeometry.cells(word);
+    for (let i = 0; i < cells.length; i++) {
+      const cellCoord = cells[i];
+      if (cellCoord === undefined) throw new Error('Anagram.buildWordModel: cell undefined');
+      const cell = GridOps.cellAt(grid, cellCoord.row, cellCoord.col);
       if (cell.black) {
         throw new Error('Anagram.buildWordModel: word cell is black');
       }
-
       const playerLetter = cell.playerLetter;
       entries.push(
         playerLetter !== null
           ? { position: Position.of(i), fixed: true, letter: playerLetter }
           : { position: Position.of(i), fixed: false, letter: null }
       );
-
       if (i < word.length - 1) {
         const axis = direction === 'across' ? 'right' : 'bottom';
         separators.push(CellMarker.read(cell.marker, axis));
       }
-
-      coord = Direction.advance(coord, direction, 1);
     }
 
     return { entries, separators };
