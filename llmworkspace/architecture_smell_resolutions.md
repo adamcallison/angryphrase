@@ -755,3 +755,113 @@ No source modules deleted. No new port, intent, or event variants. `App.svelte` 
 A change to the `BuilderState` reload shape — e.g. "preserve `subMode: { kind: 'join' }` across reload" — touches `boot.ts` only. A change to the persistence teardown — e.g. "also flush on `visibilitychange: hidden`" — touches `teardown.ts` only. A change to the wire format — e.g. dropping `mode` (preserving it only in the puzzle object) — touches `persistenceCodec.ts` and the two codec test files; nothing else. The four sub-issues' hand-sync points collapse: `subMode: 'none'` is enforced once (in `boot.ts`); the `BuilderState` shape is owned by `boot.ts`; the `pagehide` wiring is owned by `teardown.ts`; `main.ts` holds no domain knowledge at all.
 
 The doc/code drift is gone: §3 Layer 2 now names `boot.ts` and `teardown.ts` and describes their roles; §3 Layer 5 describes `main.ts` as a wiring-only composer; §8 Persistence names the codec, the autosave contract, and the teardown wiring in three coherent items instead of asserting "used by boot/teardown" for a mechanism that didn't exist. The `#8`-adjacent leftover is none; the next ranked smell is #9 (the JSON round-trip via strings in the persistence blob's nested format), which is structurally separate and not addressed here.
+
+## 9. The persistence blob couples two formats through JSON string round-trips — resolved 2026-10-18
+
+### The smell (recap)
+
+The builder snapshot embedded the puzzle as an object, but the only `domain/format/` API was string-in/string-out (`parsePuzzle(json: string)`, `serializeIncomplete(p, clues): string`). The codec therefore re-encoded the puzzle through the string boundary on every save (`serializeIncomplete` → `JSON.parse` → embed) and every boot (`JSON.stringify` → `parsePuzzle` → `JSON.parse`). The deeper complaint was structural: the file format and the `localStorage` blob format shared the puzzle schema but no structured form, so any future schema change had to keep the embed/extract coherence by hand or corrupt every stored snapshot. The architectural fix is to give them a shared structured form.
+
+### Decision
+
+Options considered and their fates:
+
+- **A — Minimum diff: extract `parsePuzzleUnknown(parsed: unknown)` in `v1.ts` and a structured `serializeIncompleteShape`.** Closes the wasted-work half of the smell (real CPU savings on autosave + boot). Doesn't address the structural complaint: the file format and storage format still have no shared form by construction; a future schema change still has to touch both APIs (or carefully keep them in sync). Rejected as the default per the user's framing — minimum diff is not the goal here. Recorded as a fallback.
+- **B — Split `domain/format/` into a structural layer and a JSON-I/O layer.** `v1.ts` becomes the structural layer (`parsePuzzleShape`, `serializeIncompleteShape`, `serializeCompleteShape`, `ParseFailure`, `PuzzleFileType`; no `JSON.parse`/`JSON.stringify`). A new `v1Json.ts` holds the string adapters (`parsePuzzle`, `serializeIncomplete`, `serializeComplete`, `Filename`; each delegates to the structural layer). File import/export and player lifecycle keep using `v1Json` (their I/O is string-shaped by the browser). The codec uses `v1` directly. Closes both halves of the smell: the wasted round-trip is gone, and the file format and storage format share a structured form by construction. *Strong baseline.*
+- **C — B + an explicit "stored shape is the wire shape" commitment in the architecture doc.** Closes the drift risk at the documentation level: a future maintainer reading §10 learns that the file format and the localStorage format share the structural layer intentionally, and is told the only way they can diverge is by diverging `v1.ts` itself. No code cost; meaningful doc cost. *Adopted with B.*
+
+Approved package: **B + C**. A would have been a stepping stone to B at best; B alone is the structural fix.
+
+### Design as implemented
+
+**`src/domain/format/v1.ts` (structural layer; refactored).** The canonical wire shape — `parsePuzzleShape(parsed: unknown): Result`, `serializeIncompleteShape(p, clues): object`, `serializeCompleteShape(p): object`, plus `ParseFailure` and `PuzzleFileType`. Operates on structured values end-to-end; the module contains no `JSON.parse` or `JSON.stringify`. The existing internal helpers (`normalizeV1ChainBoundaries`, `validateTopLevelExtras`, `markerFromJson`, `markerToJson`, every private validator) stay where they are; the rename is purely on the public surface.
+
+```ts
+export const parsePuzzleShape = (parsed: unknown):
+  | { ok: true; puzzle: Puzzle; fileType: PuzzleFileType; displacedClues: DisplacedClue[] }
+  | { ok: false; failures: ParseFailure[] } => { /* body of the old parsePuzzle from after the JSON.parse */ };
+
+export const serializeIncompleteShape = (p: Puzzle, displacedClues: DisplacedClue[]): object => {
+  return buildSerializedOutput(p, 'incomplete', displacedClues);
+};
+
+export const serializeCompleteShape = (p: Puzzle): object => {
+  return buildSerializedOutput(p, 'complete', []);
+};
+```
+
+**`src/domain/format/v1Json.ts` (new; JSON I/O adapters).** Thin wrappers over the structural layer:
+
+```ts
+export const parsePuzzle = (json: string): Result => {
+  try {
+    return parsePuzzleShape(JSON.parse(json));
+  } catch {
+    return { ok: false, failures: [{ message: 'File is not valid JSON.' }] };
+  }
+};
+
+export const serializeIncomplete = (p: Puzzle, displacedClues: DisplacedClue[]): string =>
+  JSON.stringify(serializeIncompleteShape(p, displacedClues), null, 0);
+
+export const serializeComplete = (p: Puzzle): string =>
+  JSON.stringify(serializeCompleteShape(p), null, 0);
+
+// Filename moves verbatim from v1.ts (it is a string-output side effect, not a structural shape).
+```
+
+**`src/ui/bindings/persistenceCodec.ts` (round-trip gone).** The codec now uses the structural layer directly:
+
+```ts
+import { serializeIncompleteShape, parsePuzzleShape } from '../../domain/format/v1';
+
+export function serializeBuilderSnapshot(state: BuilderState): string {
+  const wrapper = {
+    version: 1,
+    kind: 'builder-snapshot',
+    puzzle: serializeIncompleteShape(state.puzzle, state.displacedClues),
+    mode: state.mode,
+  };
+  return JSON.stringify(wrapper);
+}
+
+export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
+  // …wrapper-shape guard (kind === 'builder-snapshot', version === 1)…
+  const result = parsePuzzleShape((snap as { puzzle: unknown }).puzzle);
+  if (!result.ok || result.fileType !== 'incomplete') return null;
+  // …mode guard, return { puzzle, displacedClues, mode }…
+}
+```
+
+The `serializeIncomplete` + `JSON.parse` round-trip on save and the `JSON.stringify` + `parsePuzzle` round-trip on load are both deleted. The player-progress half of the codec is untouched (it doesn't touch the format layer).
+
+**Caller migration.** `src/builder/state/internal/importExport.ts` and `src/player/state/internal/lifecycle.ts` import `parsePuzzle` / `serializeIncomplete` / `serializeComplete` / `Filename` from `'../../../domain/format/v1Json'` (their import path changed from `'../../../domain/format/v1'`). The change is a single import-line edit per file; no logic change.
+
+### Deliberate behaviour changes
+
+- **The wire JSON is byte-identical before and after.** The structural layer's `JSON.stringify` output matches the old `serializeIncomplete` / `serializeComplete` output byte-for-byte (pinned by `'serializeIncompleteShape returns an object whose JSON.stringify matches serializeIncomplete byte-for-byte'` and the analogous complete case in `test/domain/format/v1.test.ts`). Existing saved snapshots in `localStorage` parse cleanly; existing saved files still re-import; the single-file production build size (`dist/index.html` 235.44 kB, gzip 103.13 kB) is unchanged from the #8 resolution. No migration path needed.
+- **`parsePuzzle` with malformed JSON produces the same `ParseFailure` shape as before** (`{ message: 'File is not valid JSON.' }`). The byte-shape of the failure is unchanged; the throw boundary moved from the start of `parsePuzzle` into a one-line `try/catch` around `JSON.parse(json)`.
+- **`ParseFailure`, `PuzzleFileType`, `Filename` move between modules but their public behaviour is unchanged.** `Filename.incomplete` / `Filename.complete` produce the same strings.
+- **The structural layer is now importable directly.** Code paths whose I/O is genuinely string-shaped (file import/export, player lifecycle) use `v1Json`; code paths whose I/O is structured (the codec's wrapper) use `v1`. A future v3 schema change has one structural place to land (`v1.ts`); the JSON-I/O adapters pick it up automatically.
+
+### Files
+
+- **Created:** `src/domain/format/v1Json.ts`; new test cases appended to `test/domain/format/v1.test.ts` (or a sibling — see Verification) and `test/ui/bindings/persistenceCodec.test.ts`.
+- **Modified:** `src/domain/format/v1.ts` (public surface refactored to the structural layer; the string functions and `Filename` removed); `src/ui/bindings/persistenceCodec.ts` (imports switched to `v1`, round-trip deleted); `src/builder/state/internal/importExport.ts` (import path `v1` → `v1Json`); `src/player/state/internal/lifecycle.ts` (same); `test/domain/format/v1.test.ts` (7 new structural-layer cases, plus the existing string-adapter cases untouched); `test/ui/bindings/persistenceCodec.test.ts` (5 new structural-API cases, plus the existing wire-shape and round-trip cases unchanged); `llmworkspace/architecture.md` (§3 Layer 0 inventory row for `domain/format/` — split described; §3 Layer 2 `persistenceCodec.ts` row — notes the structural-API usage; §8 Persistence Builder-snapshot bullet — describes the structural shape instead of "puzzle JSON"; §10 JSON Puzzle Format — split documented and the "structural shape is the canonical wire shape" claim added; §13 File / Module Map — `format/` line now names both `v1.ts` and `v1Json.ts`); `llmworkspace/architecture_smells.md` (#9 status line added; line-number citations flagged as audit-correction); `llmworkspace/architecture_smell_resolutions.md` (this entry).
+
+No source modules deleted. No new port, intent, or event variants. No layer-boundary change (the structural layer and the JSON-I/O layer are both in `domain/format/`; the codec still lives in `ui/bindings/` and uses the structural layer from `domain/` per the existing rule). `App.svelte` autosave wiring is untouched.
+
+### Verification
+
+- `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **89 test files / 1290 tests green** (from 89 / 1278 after #8 — +12 tests: 7 structural-layer cases in `v1.test.ts` covering `parsePuzzleShape` against already-parsed objects, hostile non-objects, hostile top-level extras, and the byte-equivalence assertions for `serializeIncompleteShape` and `serializeCompleteShape`; plus the v1Json export-coverage case; plus 5 codec cases pinning the new invariant: wrapper embeds structural shape directly, parse feeds structural parser directly, byte-identical wire JSON, invalid embedded puzzle returns null, codec output round-trips through `parsePuzzle(serializeIncomplete(...))`). The single-file production build succeeded at the same byte-size (`dist/index.html` 235.44 kB, gzip 103.13 kB).
+- The `test/domain/format/v1.test.ts` structural-layer cases exercise the new entry points directly with `unknown` inputs (a parsed object, `null`, an array, a string, a number, an object with a hostile extra field) — the same rejection list the string adapter would have produced, but now provable end-to-end without the `JSON.parse` wrapper.
+- The `test/ui/bindings/persistenceCodec.test.ts` structural-API cases pin the round-trip-free invariant by capturing the wrapper object before `JSON.stringify` and asserting `wrapper.puzzle` strictly equals `serializeIncompleteShape(p, clues)`; by spying on the parser call to confirm `parsePuzzleShape` receives the embedded object reference, not a re-stringified copy; and by asserting the wire JSON bytes are unchanged across the refactor.
+- Process: two implementation tasks dispatched to the Senior (Task 1: split `v1.ts` into structural + I/O layers, with caller import migration; Task 2: switch `persistenceCodec.ts` to the structural API and pin the invariant in tests). One acceptable deviation during Task 1: the Senior touched `persistenceCodec.ts` only to migrate its imports from `v1` → `v1Json` (a forced compat change once `parsePuzzle`/`serializeIncomplete` moved out of `v1.ts`); no logic change in the codec. The structural-API migration was then the substantive content of Task 2, as planned. One review pass per task.
+
+### Consequence (change cost after)
+
+A change to the puzzle schema (e.g. a v3 column for anagram hints, or a new marker flag) touches `v1.ts` only — both `parsePuzzleShape` validation and `serializeIncompleteShape`/`serializeCompleteShape` emission live there. The JSON-I/O adapters in `v1Json.ts` pick the change up automatically because they delegate. A change to the wrapper format (e.g. "drop the `mode` field from the builder snapshot") touches `persistenceCodec.ts` and its test file only. A change to the file-import/export wire format (e.g. "add a new top-level metadata block") touches `v1.ts` (the structural shape) and `v1Json.ts` (the JSON adapters that wrap it); the codec is unaffected because it already speaks the structural shape.
+
+The drift risk that the smell called out — "a future format change must keep the embed/extract round-trip coherent or corrupt every stored snapshot" — is structurally gone. There is no embed/extract round-trip; there is one structural shape that both formats share by construction. The two formats can only diverge if `v1.ts` itself is changed to make them diverge, which is now an explicit decision in one module rather than an accidental one across two.
+
+The doc/code drift is gone: §3 Layer 0 names the two modules and their roles; §10 explicitly commits to the structural shape as the canonical wire shape; §8 Persistence describes the embedded puzzle as a structural shape rather than "puzzle JSON"; §13 File / Module Map names both files. The `#9`-adjacent leftover is none; the next ranked smell is #10 (word-membership / white-run semantics implemented four ways — see `architecture_smells.md`).

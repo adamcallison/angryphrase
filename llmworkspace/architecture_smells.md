@@ -201,6 +201,10 @@ The builder snapshot embeds a domain-format artifact as a nested object, while t
 
 Every autosave serializes the puzzle twice and parses it once more than necessary; every boot parses the snapshot twice. The deeper issue is structural: the two persistence representations (file format and localStorage blob) share no common structured form, so they can only interoperate by re-encoding through the string boundary. A future format change (e.g. the anticipated v3 in `future_considerations.md`) must keep the embed/extract round-trip coherent or corrupt every stored snapshot.
 
+*(Audit correction, 2026-10-18.)* The line citations in the bullet above (`persistenceCodec.ts:23-36` / `:38-57` and `v1.ts:579-583`) are stale after the resolution: `persistenceCodec.ts` was rewritten to use the structural format layer directly, and the structural body of `parsePuzzle` is now in `v1Json.ts` (the structural layer in `v1.ts` exposes `parsePuzzleShape(parsed: unknown)` instead). The smell's *substantive* points — the wasted round-trip, the lack of a shared structured form — are addressed by the resolution; see below.
+
+**Status (2026-10-18): addressed** — resolution in `architecture_smell_resolutions.md`. The fix splits `domain/format/` into a structural layer (`v1.ts` — `parsePuzzleShape`, `serializeIncompleteShape`, `serializeCompleteShape`; no `JSON.parse`/`JSON.stringify`) and a JSON-I/O adapter (`v1Json.ts` — the original string functions plus `Filename`, each delegating to the structural layer). `persistenceCodec.ts` now uses the structural layer directly: the round-trip on save (`serializeIncomplete` → `JSON.parse`) and on load (`JSON.stringify` → `parsePuzzle`) is deleted. File import/export and player lifecycle keep the string API (their I/O is string-shaped by the browser); the file format and the `localStorage` blob format share one structural form by construction. Wire JSON is byte-identical before and after.
+
 ---
 
 ## 10. Word-membership and white-run semantics are implemented four ways

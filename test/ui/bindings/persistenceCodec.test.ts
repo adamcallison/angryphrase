@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { serializeIncomplete } from '../../../src/domain/format/v1';
+import * as v1 from '../../../src/domain/format/v1';
+import { serializeIncompleteShape } from '../../../src/domain/format/v1';
+import { serializeIncomplete } from '../../../src/domain/format/v1Json';
 import {
   serializeBuilderSnapshot,
   parseBuilderSnapshot,
@@ -105,6 +107,83 @@ describe('persistenceCodec.ts', () => {
       expect(snap.puzzle.key).toBe(state.puzzle.key);
       expect(snap.puzzle.gridSize).toBe(state.puzzle.gridSize);
       expect(GridOps.equals(snap.puzzle.grid, state.puzzle.grid)).toBe(true);
+    });
+
+    it('serializeBuilderSnapshot: wrapper embeds the structural shape directly (no JSON round-trip)', () => {
+      const state = makeBuilderState(100, { mode: 'fill' });
+      const originalStringify = JSON.stringify;
+      const stringifySpy = vi.spyOn(JSON, 'stringify').mockImplementation((...args) => originalStringify(...args));
+      let shapeRef: unknown;
+      const originalSerialize = serializeIncompleteShape;
+      const shapeSpy = vi.spyOn(v1, 'serializeIncompleteShape').mockImplementation((p, clues) => {
+        shapeRef = originalSerialize(p, clues);
+        return shapeRef as object;
+      });
+      serializeBuilderSnapshot(state);
+      const lastCall = stringifySpy.mock.calls.at(-1)!;
+      const wrapper = lastCall[0] as { puzzle: unknown };
+      expect(wrapper.puzzle).toBe(shapeRef);
+      shapeSpy.mockRestore();
+      stringifySpy.mockRestore();
+    });
+
+    it('parseBuilderSnapshot: embedded puzzle is parsed as the structural shape, not via JSON.stringify', () => {
+      const puzzle = makeAllBlackPuzzle(11, 3);
+      const wrapperObj = {
+        version: 1,
+        kind: 'builder-snapshot',
+        puzzle: serializeIncompleteShape(puzzle, []),
+        mode: 'design' as const,
+      };
+      const blob = JSON.stringify(wrapperObj);
+      const parseShapeSpy = vi.spyOn(v1, 'parsePuzzleShape');
+      const stringifySpy = vi.spyOn(JSON, 'stringify');
+      const result = parseBuilderSnapshot(blob);
+      expect(result).not.toBeNull();
+      expect(parseShapeSpy).toHaveBeenCalledWith(wrapperObj.puzzle);
+      expect(stringifySpy).not.toHaveBeenCalled();
+      parseShapeSpy.mockRestore();
+      stringifySpy.mockRestore();
+    });
+
+    it('serializeBuilderSnapshot / parseBuilderSnapshot byte-identical wire JSON before and after structural refactor', () => {
+      const puzzle = makeAllBlackPuzzle(13, 4);
+      const state = makeBuilderState(12, { mode: 'fill', puzzle });
+      const json = serializeBuilderSnapshot(state);
+      const wrapper = JSON.parse(json) as { puzzle: unknown };
+      expect(JSON.stringify(wrapper.puzzle)).toBe(serializeIncomplete(puzzle, []));
+    });
+
+    it('parseBuilderSnapshot: invalid embedded puzzle (rejected by parsePuzzleShape) returns null', () => {
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'builder-snapshot',
+        puzzle: {
+          version: 1,
+          type: 'complete',
+          key: '00000000-0000-4000-8000-000000000000',
+          gridSize: 3,
+          title: '',
+          author: '',
+          grid: [],
+          words: [],
+        },
+        mode: 'design',
+      });
+      expect(parseBuilderSnapshot(blob)).toBeNull();
+    });
+
+    it('serializeBuilderSnapshot output remains byte-equivalent to a parsePuzzle(serializeIncomplete(...)) round-trip', () => {
+      const puzzle = makeAllBlackPuzzle(15, 3);
+      const state = makeBuilderState(14, { mode: 'design', puzzle });
+      const json = serializeBuilderSnapshot(state);
+      const expected = JSON.stringify({
+        version: 1,
+        kind: 'builder-snapshot',
+        puzzle: JSON.parse(serializeIncomplete(puzzle, state.displacedClues)),
+        mode: 'design',
+      });
+      expect(json).toBe(expected);
     });
   });
 

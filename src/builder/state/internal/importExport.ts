@@ -2,7 +2,7 @@ import type { BuilderIntent } from '../intents';
 import { BuilderState } from '../state';
 import type { DomainEvent, ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1';
+import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1Json';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 
 const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';

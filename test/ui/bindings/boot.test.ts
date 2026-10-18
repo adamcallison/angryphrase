@@ -18,7 +18,7 @@ import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import { serializeComplete } from '../../../src/domain/format/v1';
+import { serializeComplete } from '../../../src/domain/format/v1Json';
 import type { Rng } from '../../../src/domain/rng/Rng';
 
 function makeRng(seed: number): SeededRng {

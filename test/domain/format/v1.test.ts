@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parsePuzzleShape,
+  serializeIncompleteShape,
+  serializeCompleteShape,
+} from '../../../src/domain/format/v1';
+import {
   parsePuzzle,
   serializeIncomplete,
   serializeComplete,
   Filename,
-} from '../../../src/domain/format/v1';
+} from '../../../src/domain/format/v1Json';
+import * as v1JsonModule from '../../../src/domain/format/v1Json';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { Title } from '../../../src/domain/puzzle/Title';
@@ -766,5 +772,78 @@ describe('Filename', () => {
   it('Filename.complete(key) returns puzzle-<first8>-complete.json', () => {
     const key = PuzzleKey.try('abcdef01-2345-4567-89ab-cdef01234567')!;
     expect(Filename.complete(key)).toBe('puzzle-abcdef01-complete.json');
+  });
+});
+
+describe('parsePuzzleShape', () => {
+  it('parsePuzzleShape accepts an already-parsed object (not a JSON string)', () => {
+    const jsonString = JSON.stringify(makeValidIncomplete());
+    expect(parsePuzzleShape(JSON.parse(jsonString))).toEqual(parsePuzzle(jsonString));
+  });
+
+  it('parsePuzzleShape rejects non-objects with the same failures as parsePuzzle', () => {
+    const values: unknown[] = [null, [], 'hello', 42];
+    for (const v of values) {
+      const shapeResult = parsePuzzleShape(v);
+      const stringResult = parsePuzzle(JSON.stringify(v));
+
+      expect(shapeResult.ok).toBe(false);
+      expect(stringResult.ok).toBe(false);
+      if (!shapeResult.ok && !stringResult.ok) {
+        expect(shapeResult.failures).toEqual(stringResult.failures);
+      }
+    }
+  });
+
+  it('parsePuzzleShape byte-equivalent rejection: rejects hostile top-level extras identically', () => {
+    const obj = makeValidIncomplete() as Record<string, unknown>;
+    obj.extra = 'surprise';
+
+    const shapeResult = parsePuzzleShape(obj);
+    const stringResult = parsePuzzle(JSON.stringify(obj));
+
+    expect(shapeResult.ok).toBe(false);
+    expect(stringResult.ok).toBe(false);
+    if (!shapeResult.ok && !stringResult.ok) {
+      expect(shapeResult.failures).toEqual(stringResult.failures);
+    }
+  });
+});
+
+describe('serialize shape functions', () => {
+  it('serializeIncompleteShape returns an object whose JSON.stringify matches serializeIncomplete byte-for-byte', () => {
+    const p = buildPuzzle('incomplete', [null, null], '');
+    const displaced = [
+      { id: UUID_A, clue: 'Displaced clue', direction: 'across' as Direction },
+    ] as DisplacedClue[];
+
+    const shape = serializeIncompleteShape(p, displaced);
+    expect(JSON.stringify(shape, null, 0)).toBe(serializeIncomplete(p, displaced));
+  });
+
+  it('serializeCompleteShape returns an object whose JSON.stringify matches serializeComplete byte-for-byte', () => {
+    const p = buildPuzzle('complete', ['A', 'B'], 'Head clue');
+
+    const shape = serializeCompleteShape(p);
+    expect(JSON.stringify(shape, null, 0)).toBe(serializeComplete(p));
+  });
+
+  it('serializeIncompleteShape omits no fields that serializeIncomplete emits', () => {
+    const p = buildPuzzle('incomplete', [null, null], '');
+    const displaced = [{ id: UUID_A, clue: 'DC', direction: 'across' as Direction }] as DisplacedClue[];
+
+    const shape = serializeIncompleteShape(p, displaced);
+    const parsed = JSON.parse(serializeIncomplete(p, displaced));
+    expect(shape).toEqual(parsed);
+  });
+});
+
+describe('v1Json public surface', () => {
+  it('v1Json exports parsePuzzle, serializeIncomplete, serializeComplete, Filename', () => {
+    expect(typeof v1JsonModule.parsePuzzle).toBe('function');
+    expect(typeof v1JsonModule.serializeIncomplete).toBe('function');
+    expect(typeof v1JsonModule.serializeComplete).toBe('function');
+    expect(typeof v1JsonModule.Filename.incomplete).toBe('function');
+    expect(typeof v1JsonModule.Filename.complete).toBe('function');
   });
 });

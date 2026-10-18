@@ -18,7 +18,7 @@ import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
 import { Title } from '../../../src/domain/puzzle/Title';
 import { Author } from '../../../src/domain/puzzle/Author';
-import { serializeComplete } from '../../../src/domain/format/v1';
+import { serializeComplete } from '../../../src/domain/format/v1Json';
 import { createBuilderFacade, type BuilderFacade } from '../../../src/ui/bindings/builderFacade';
 
 function makeCompletePuzzle(seed: number, size: number): Puzzle {

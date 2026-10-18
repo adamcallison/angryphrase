@@ -594,18 +594,11 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
   return GridOps.updateCells(grid, updates);
 }
 
-export const parsePuzzle = (
-  json: string,
+export const parsePuzzleShape = (
+  parsed: unknown,
 ):
   | { ok: true; puzzle: Puzzle; fileType: PuzzleFileType; displacedClues: DisplacedClue[] }
   | { ok: false; failures: ParseFailure[] } => {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    return { ok: false, failures: [{ message: 'File is not valid JSON.' }] };
-  }
-
   const failures: ParseFailure[] = [];
 
   if (!isPlainObject(parsed)) {
@@ -762,12 +755,11 @@ function buildSerializedOutput(
   };
 }
 
-export const serializeIncomplete = (p: Puzzle, displacedClues: DisplacedClue[]): string => {
-  const output = buildSerializedOutput(p, 'incomplete', displacedClues);
-  return JSON.stringify(output, null, 0);
+export const serializeIncompleteShape = (p: Puzzle, displacedClues: DisplacedClue[]): object => {
+  return buildSerializedOutput(p, 'incomplete', displacedClues);
 };
 
-export const serializeComplete = (p: Puzzle): string => {
+export const serializeCompleteShape = (p: Puzzle): object => {
   const {
     version,
     type,
@@ -778,21 +770,5 @@ export const serializeComplete = (p: Puzzle): string => {
     grid,
     words,
   } = buildSerializedOutput(p, 'complete', []);
-  return JSON.stringify(
-    { version, type, key, gridSize, title, author, grid, words },
-    null,
-    0,
-  );
-};
-
-export const Filename: {
-  incomplete(key: PuzzleKey): string;
-  complete(key: PuzzleKey): string;
-} = {
-  incomplete(key: PuzzleKey): string {
-    return `puzzle-${String(key).slice(0, 8)}-incomplete.json`;
-  },
-  complete(key: PuzzleKey): string {
-    return `puzzle-${String(key).slice(0, 8)}-complete.json`;
-  },
+  return { version, type, key, gridSize, title, author, grid, words };
 };

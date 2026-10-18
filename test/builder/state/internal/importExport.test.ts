@@ -19,7 +19,7 @@ import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 import type { Direction } from '../../../../src/domain/word/Direction';
-import { parsePuzzle, serializeComplete, serializeIncomplete } from '../../../../src/domain/format/v1';
+import { parsePuzzle, serializeComplete, serializeIncomplete } from '../../../../src/domain/format/v1Json';
 import { CompletenessCheck } from '../../../../src/domain/puzzle/CompletenessCheck';
 import { WordMap } from '../../../../src/domain/word/WordMap';
 import { Chain } from '../../../../src/domain/chain/Chain';

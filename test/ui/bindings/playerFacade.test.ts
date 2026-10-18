@@ -21,7 +21,7 @@ import { Title } from '../../../src/domain/puzzle/Title';
 import { Author } from '../../../src/domain/puzzle/Author';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import { serializeComplete } from '../../../src/domain/format/v1';
+import { serializeComplete } from '../../../src/domain/format/v1Json';
 
 function makeRng(seed: number): SeededRng {
   return new SeededRng(seed);

@@ -9,7 +9,7 @@ import {
   handleRequestResetPlayer,
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
-import { parsePuzzle } from '../../../../src/domain/format/v1';
+import { parsePuzzle } from '../../../../src/domain/format/v1Json';
 import { GridOps } from '../../../../src/domain/grid/GridOps';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { GridSize } from '../../../../src/domain/grid/GridSize';

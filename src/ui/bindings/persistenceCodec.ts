@@ -1,4 +1,4 @@
-import { serializeIncomplete, parsePuzzle } from '../../domain/format/v1';
+import { serializeIncompleteShape, parsePuzzleShape } from '../../domain/format/v1';
 import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
 import { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
@@ -21,13 +21,10 @@ export type BuilderSnapshot = {
 };
 
 export function serializeBuilderSnapshot(state: BuilderState): string {
-  // Puzzle JSON (incomplete) is embedded as an object, not a string.
-  const puzzleJSON = serializeIncomplete(state.puzzle, state.displacedClues);
-  const puzzleObj = JSON.parse(puzzleJSON);
   const wrapper = {
     version: 1,
     kind: 'builder-snapshot',
-    puzzle: puzzleObj, // includes displacedClues field already
+    puzzle: serializeIncompleteShape(state.puzzle, state.displacedClues),
     mode: state.mode,
   };
   return JSON.stringify(wrapper);
@@ -50,9 +47,8 @@ export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
     return null;
   }
 
-  // Re-serialize the embedded puzzle back to a string and feed to parsePuzzle.
-  const puzzleJSON = JSON.stringify((snap as { puzzle: unknown }).puzzle);
-  const result = parsePuzzle(puzzleJSON);
+  const puzzleParsed = (snap as { puzzle: unknown }).puzzle;
+  const result = parsePuzzleShape(puzzleParsed);
   if (!result.ok || result.fileType !== 'incomplete') {
     return null;
   }

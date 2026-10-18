@@ -2,7 +2,7 @@ import { PlayerState } from '../state';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { parsePuzzle } from '../../../domain/format/v1';
+import { parsePuzzle } from '../../../domain/format/v1Json';
 import { GridOps } from '../../../domain/grid/GridOps';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';

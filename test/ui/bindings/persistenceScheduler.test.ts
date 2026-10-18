@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { serializeIncomplete } from '../../../src/domain/format/v1';
+import { serializeIncomplete } from '../../../src/domain/format/v1Json';
 import {
   serializeBuilderSnapshot,
   parseBuilderSnapshot,
