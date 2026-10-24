@@ -170,8 +170,47 @@ describe('builderFacade.ts', () => {
       expect(builderFacade.getBuilderState().puzzle.gridSize).toBe(GridSize.of(12));
     });
 
-    it('dispatchChangeGridSize throws when out of range (1)', () => {
-      expect(() => builderFacade.actions.toolbar.changeGridSize(1)).toThrow();
+    it('builderFacade: changeGridSize dispatches change-grid-size with the branded size for a valid value', () => {
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+
+      builderFacade.actions.toolbar.changeGridSize(12);
+
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchSpy).toHaveBeenCalledWith({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
+      dispatchSpy.mockRestore();
+    });
+
+    it('builderFacade: changeGridSize ignores a size below the minimum', () => {
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      const before = builderFacade.getBuilderState();
+
+      builderFacade.actions.toolbar.changeGridSize(1);
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
+      expect(builderFacade.getBuilderState()).toBe(before);
+      dispatchSpy.mockRestore();
+    });
+
+    it('builderFacade: changeGridSize ignores a size above the maximum', () => {
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      const before = builderFacade.getBuilderState();
+
+      builderFacade.actions.toolbar.changeGridSize(26);
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
+      expect(builderFacade.getBuilderState()).toBe(before);
+      dispatchSpy.mockRestore();
+    });
+
+    it('builderFacade: changeGridSize ignores a non-integer size', () => {
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+      const before = builderFacade.getBuilderState();
+
+      builderFacade.actions.toolbar.changeGridSize(15.5);
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
+      expect(builderFacade.getBuilderState()).toBe(before);
+      dispatchSpy.mockRestore();
     });
 
     it('dispatchTypeLetter("A") sets letter A on selected cell', () => {

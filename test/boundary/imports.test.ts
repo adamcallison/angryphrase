@@ -1,5 +1,4 @@
 import { Linter } from 'eslint';
-// @ts-expect-error eslint.config.js is JavaScript and has no ambient declaration.
 import config from '../../eslint.config.js';
 
 const linter = new Linter({ configType: 'flat' });
@@ -7,324 +6,344 @@ const linter = new Linter({ configType: 'flat' });
 function lintFor(filename: string, code: string) {
 	const messages = linter.verify(code, config as Linter.Config[], { filename });
 	return messages.filter(
-		(m) => m.ruleId === '@typescript-eslint/no-restricted-imports' || m.ruleId === 'no-restricted-syntax'
+		(m) =>
+			m.ruleId === 'local/no-layer-imports' ||
+			m.ruleId === 'local/no-brand-import' ||
+			m.ruleId === 'local/no-unlayered-file' ||
+			m.ruleId === 'no-restricted-globals'
 	);
 }
 
-const fixtures: { description: string; filename: string; code: string; expectError: boolean }[] = [
-	// Block 1 — src/domain/**/*.ts
+const fixtures: {
+	description: string;
+	filename: string;
+	code: string;
+	expectError: boolean;
+	expectRule?: string;
+}[] = [
+	// FORBIDDEN
 	{
-		description: 'src/domain/** forbids svelte/store',
+		description: 'src/domain/foo.ts: FORBIDDEN — import src/ui/**',
 		filename: 'src/domain/foo.ts',
-		code: 'import x from "svelte/store"',
-		expectError: true
+		code: 'import x from "../../ui/app/App.svelte"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 	{
-		description: 'src/domain/** forbids importing src/ui',
-		filename: 'src/domain/foo.ts',
-		code: 'import x from "../../ui/bindings/appStore.svelte"',
-		expectError: true
-	},
-	{
-		description: 'src/domain/** forbids importing src/ports',
+		description: 'src/domain/foo.ts: FORBIDDEN — import src/ports/**',
 		filename: 'src/domain/foo.ts',
 		code: 'import x from "../ports/downloadPort"',
-		expectError: true
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 	{
-		description: 'src/domain/** forbids importing src/builder/state',
+		description: 'src/domain/foo.ts: FORBIDDEN — import src/builder/state/**',
 		filename: 'src/domain/foo.ts',
 		code: 'import x from "../../builder/state/state"',
-		expectError: true
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 	{
-		description: 'src/domain/** allows sibling domain import',
+		description: 'src/domain/foo.ts: FORBIDDEN — import src/main.ts',
 		filename: 'src/domain/foo.ts',
-		code: 'import type { Word } from "../word/Word"',
-		expectError: false
-	},
-
-	// Block 2 — src/builder/state/**/*.ts
-	{
-		description: 'src/builder/state/** forbids importing src/ui',
-		filename: 'src/builder/state/internal/foo.ts',
-		code: 'import x from "../../ui/foo"',
-		expectError: true
+		code: 'import x from "../main.ts"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 	{
-		description: 'src/builder/state/** forbids importing src/ports',
-		filename: 'src/builder/state/internal/foo.ts',
-		code: 'import x from "../../../ports/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/builder/state/** forbids importing src/app/state',
-		filename: 'src/builder/state/internal/foo.ts',
-		code: 'import x from "../../app/state/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/builder/state/** forbids player/state/internal',
-		filename: 'src/builder/state/internal/foo.ts',
-		code: 'import x from "../../player/state/internal/anagram"',
-		expectError: true
-	},
-	{
-		description: 'src/builder/state/** forbids svelte',
-		filename: 'src/builder/state/internal/foo.ts',
+		description: 'src/domain/foo.ts: FORBIDDEN — import svelte',
+		filename: 'src/domain/foo.ts',
 		code: 'import x from "svelte"',
-		expectError: true
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 	{
-		description: 'src/builder/state/** allows sibling domain import',
-		filename: 'src/builder/state/internal/foo.ts',
-		code: 'import x from "../../../domain/word/Word"',
-		expectError: false
+		description: 'src/domain/format/v1.ts: FORBIDDEN — import src/domain/brand',
+		filename: 'src/domain/format/v1.ts',
+		code: "import { brand } from '../brand'",
+		expectError: true,
+		expectRule: 'local/no-brand-import'
 	},
 	{
-		description: 'src/builder/state/** forbids importing src/player/state (no cross-state-module imports)',
+		description: 'src/builder/state/internal/foo.ts: FORBIDDEN — import src/player/state/**',
 		filename: 'src/builder/state/internal/foo.ts',
 		code: 'import x from "../../player/state/state"',
-		expectError: true
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/builder/state/internal/foo.ts: FORBIDDEN — import src/app/state/**',
+		filename: 'src/builder/state/internal/foo.ts',
+		code: 'import x from "../../app/state/state"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/builder/state/internal/foo.ts: FORBIDDEN — import svelte',
+		filename: 'src/builder/state/internal/foo.ts',
+		code: 'import x from "svelte"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/player/state/internal/foo.ts: FORBIDDEN — import src/builder/state/**',
+		filename: 'src/player/state/internal/foo.ts',
+		code: 'import x from "../../builder/state/state"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/player/state/internal/foo.ts: FORBIDDEN — import src/app/state/**',
+		filename: 'src/player/state/internal/foo.ts',
+		code: 'import x from "../../app/state/state"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/app/state/foo.ts: FORBIDDEN — import src/builder/state/internal/**',
+		filename: 'src/app/state/foo.ts',
+		code: 'import x from "../../builder/state/internal/foo"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/app/state/foo.ts: FORBIDDEN — import non-root file of src/builder/state/**',
+		filename: 'src/app/state/foo.ts',
+		code: 'import x from "../../builder/state/internal/anagram"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/app/state/foo.ts: FORBIDDEN — import src/ui/**',
+		filename: 'src/app/state/foo.ts',
+		code: 'import x from "../../ui/foo"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/app/state/foo.ts: FORBIDDEN — import svelte',
+		filename: 'src/app/state/foo.ts',
+		code: 'import x from "svelte"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — import src/ports/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: '<script>import x from "../../ports/foo";</script>',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — import src/builder/state/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: '<script>import x from "../../builder/state/state";</script>',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — value import src/domain/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: '<script>import { Word } from "../../domain/word/Word";</script>',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — value import src/ui/bindings/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: '<script>import { createBuilderFacade } from "../bindings/builderFacade";</script>',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — dynamic import of src/ui/bindings/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: "<script>const x = import('../bindings/builderFacade');</script>",
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ports/foo.ts: FORBIDDEN — non-allowlisted src/domain module',
+		filename: 'src/ports/foo.ts',
+		code: 'import x from "../domain/word/Word"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ports/foo.ts: FORBIDDEN — import svelte',
+		filename: 'src/ports/foo.ts',
+		code: 'import x from "svelte"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/ports/foo.ts: FORBIDDEN — import src/domain/brand',
+		filename: 'src/ports/foo.ts',
+		code: "import { brand } from '../domain/brand'",
+		expectError: true,
+		expectRule: 'local/no-brand-import'
+	},
+	{
+		description: 'src/ui/bindings/foo.ts: FORBIDDEN — import src/domain/brand',
+		filename: 'src/ui/bindings/foo.ts',
+		code: "import { brand } from '../../domain/brand'",
+		expectError: true,
+		expectRule: 'local/no-brand-import'
+	},
+	{
+		description: 'src/main.ts: FORBIDDEN — import src/domain/brand',
+		filename: 'src/main.ts',
+		code: "import { brand } from './domain/brand'",
+		expectError: true,
+		expectRule: 'local/no-brand-import'
+	},
+	{
+		description: 'src/domain/foo.ts: FORBIDDEN — dynamic import()',
+		filename: 'src/domain/foo.ts',
+		code: "const x = import('./foo')",
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/domain/foo.ts: FORBIDDEN — window reference',
+		filename: 'src/domain/foo.ts',
+		code: 'const x = window;',
+		expectError: true,
+		expectRule: 'no-restricted-globals'
+	},
+	{
+		description: 'src/builder/state/internal/foo.ts: FORBIDDEN — document reference',
+		filename: 'src/builder/state/internal/foo.ts',
+		code: 'const x = document;',
+		expectError: true,
+		expectRule: 'no-restricted-globals'
+	},
+	{
+		description: 'src/domain/deep/nested/foo.ts: FORBIDDEN — relative path resolving outside src/domain',
+		filename: 'src/domain/deep/nested/foo.ts',
+		code: 'import x from "../../../main.ts"',
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
+	},
+	{
+		description: 'src/helpers/orphan.ts: FORBIDDEN — file is not assigned to a boundary layer',
+		filename: 'src/helpers/orphan.ts',
+		code: 'export const x = 1;',
+		expectError: true,
+		expectRule: 'local/no-unlayered-file'
+	},
+	{
+		description: 'src/ui/player/foo.svelte: FORBIDDEN — dynamic import of src/ports/**',
+		filename: 'src/ui/player/foo.svelte',
+		code: "<script>const x = import('../../ports/foo');</script>",
+		expectError: true,
+		expectRule: 'local/no-layer-imports'
 	},
 
-	// Block 3 — src/player/state/**/*.ts
+	// ALLOWED
 	{
-		description: 'src/player/state/** forbids importing src/ui',
-		filename: 'src/player/state/internal/foo.ts',
-		code: 'import x from "../../ui/foo"',
-		expectError: true
+		description: 'src/domain/foo.ts: ALLOWED — sibling domain import',
+		filename: 'src/domain/foo.ts',
+		code: 'import type { Word } from "./word/Word"',
+		expectError: false
 	},
 	{
-		description: 'src/player/state/** forbids importing src/ports',
-		filename: 'src/player/state/internal/foo.ts',
-		code: 'import x from "../../../ports/foo"',
-		expectError: true
+		description: 'src/builder/state/internal/foo.ts: ALLOWED — import src/domain/**',
+		filename: 'src/builder/state/internal/foo.ts',
+		code: 'import x from "../../../domain/word/Word"',
+		expectError: false
 	},
 	{
-		description: 'src/player/state/** forbids importing src/app/state',
-		filename: 'src/player/state/internal/foo.ts',
-		code: 'import x from "../../app/state/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/player/state/** forbids builder/state/internal',
-		filename: 'src/player/state/internal/foo.ts',
-		code: 'import x from "../../builder/state/internal/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/player/state/** forbids svelte',
-		filename: 'src/player/state/internal/foo.ts',
-		code: 'import x from "svelte"',
-		expectError: true
-	},
-	{
-		description: 'src/player/state/** allows sibling domain import',
+		description: 'src/player/state/internal/foo.ts: ALLOWED — import src/domain/**',
 		filename: 'src/player/state/internal/foo.ts',
 		code: 'import x from "../../../domain/word/Word"',
 		expectError: false
 	},
 	{
-		description: 'src/player/state/** forbids importing src/builder/state (no cross-state-module imports)',
-		filename: 'src/player/state/internal/foo.ts',
+		description: 'src/app/state/foo.ts: ALLOWED — public root file of src/builder/state/**',
+		filename: 'src/app/state/foo.ts',
 		code: 'import x from "../../builder/state/state"',
-		expectError: true
-	},
-
-	// Block 4 — src/app/state/**/*.ts
-	{
-		description: 'src/app/state/** forbids importing src/ui',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../../ui/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/app/state/** forbids importing src/ports',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../../ports/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/app/state/** forbids builder/state/internal',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../../builder/state/internal/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/app/state/** forbids player/state/internal',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../../player/state/internal/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/app/state/** forbids svelte',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "svelte"',
-		expectError: true
-	},
-	{
-		description: 'src/app/state/** allows domain import',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../../domain/word/Word"',
 		expectError: false
 	},
 	{
-		description: 'src/app/state/** allows builder/state public root',
-		filename: 'src/app/state/foo.ts',
-		code: 'import x from "../builder/state/state"',
-		expectError: false
-	},
-
-	// Block 5 — src/ui/** except bindings
-	{
-		description: 'src/ui/** (non-bindings) forbids importing src/ports',
-		filename: 'src/ui/player/foo.svelte',
-		code: '<script>import x from "../../ports/foo";</script>',
-		expectError: true
-	},
-	{
-		description: 'src/ui/** (non-bindings) forbids importing src/builder/state',
-		filename: 'src/ui/player/foo.svelte',
-		code: '<script>import x from "../../builder/state/state";</script>',
-		expectError: true
-	},
-	{
-		description: 'src/ui/** (non-bindings) forbids value-import of domain function',
-		filename: 'src/ui/player/foo.svelte',
-		code: '<script>import { Word } from "../../domain/word/Word";</script>',
-		expectError: true
-	},
-	{
-		description: 'src/ui/** (non-bindings) allows type-only domain import',
+		description: 'src/ui/player/foo.svelte: ALLOWED — type-only import src/domain/**',
 		filename: 'src/ui/player/foo.svelte',
 		code: '<script>import type { Word } from "../../domain/word/Word";</script>',
 		expectError: false
 	},
 	{
-		description: 'src/ui/** (non-bindings) allows svelte',
+		description: 'src/ui/player/foo.svelte: ALLOWED — type-only import src/ui/bindings/**',
 		filename: 'src/ui/player/foo.svelte',
-		code: '<script>import { onMount } from "svelte";</script>',
+		code: '<script>import type { BuilderFacade } from "../bindings/builderFacade";</script>',
 		expectError: false
 	},
 	{
-		description: 'src/ui/** (non-bindings) forbids value import of ui/bindings from a leaf',
-		filename: 'src/ui/builder/foo.svelte',
-		code: '<script>import { createBuilderFacade } from "../bindings/builderFacade";</script>',
-		expectError: true
-	},
-	{
-		description: 'src/ui/app/App.svelte allows value import of ui/bindings',
+		description: 'src/ui/app/App.svelte: ALLOWED — value import src/ui/bindings/**',
 		filename: 'src/ui/app/App.svelte',
 		code: '<script>import { createBuilderFacade } from "../bindings/builderFacade";</script>',
 		expectError: false
 	},
 	{
-		description: 'src/ui/** (non-bindings) allows type-only import of ui/bindings from a leaf',
-		filename: 'src/ui/builder/foo.svelte',
-		code: '<script>import type { BuilderFacade } from "../bindings/builderFacade";</script>',
+		description: 'src/ui/bindings/foo.ts: ALLOWED — import src/domain/**',
+		filename: 'src/ui/bindings/foo.ts',
+		code: 'import x from "../../domain/word/Word"',
 		expectError: false
 	},
 	{
-		description: 'src/ui/** (non-bindings) forbids dynamic import() of ui/bindings from a leaf',
-		filename: 'src/ui/builder/foo.svelte',
-		code: "<script>const x = import('../bindings/builderFacade');</script>",
-		expectError: true
-	},
-
-	// Block 6 — src/ports/**/*.ts
-	{
-		description: 'src/ports/** forbids svelte',
-		filename: 'src/ports/foo.ts',
-		code: 'import x from "svelte"',
-		expectError: true
+		description: 'src/ui/bindings/foo.ts: ALLOWED — import src/builder/state/**',
+		filename: 'src/ui/bindings/foo.ts',
+		code: 'import x from "../../builder/state/state"',
+		expectError: false
 	},
 	{
-		description: 'src/ports/** forbids src/ui',
-		filename: 'src/ports/foo.ts',
-		code: 'import x from "../ui/foo"',
-		expectError: true
-	},
-	{
-		description: 'src/ports/** forbids non-allowlisted src/domain',
-		filename: 'src/ports/foo.ts',
-		code: 'import x from "../domain/word/Word"',
-		expectError: true
-	},
-	{
-		description: 'src/ports/** allows domain/ports/ports',
+		description: 'src/ports/foo.ts: ALLOWED — domain/ports/ports',
 		filename: 'src/ports/foo.ts',
 		code: 'import type { DownloadPort } from "../domain/ports/ports"',
 		expectError: false
 	},
 	{
-		description: 'src/ports/** allows domain/rng/Rng',
+		description: 'src/ports/foo.ts: ALLOWED — domain/rng/Rng',
 		filename: 'src/ports/foo.ts',
 		code: 'import type { Rng } from "../domain/rng/Rng"',
 		expectError: false
 	},
 	{
-		description: 'src/ports/** allows domain/puzzle/PuzzleKey (StoragePort key type)',
+		description: 'src/ports/foo.ts: ALLOWED — domain/puzzle/PuzzleKey',
 		filename: 'src/ports/foo.ts',
 		code: 'import type { PuzzleKey } from "../domain/puzzle/PuzzleKey"',
 		expectError: false
 	},
-
-	// Block — domain/brand import boundary
 	{
-		description: 'src/domain/grid/Row.ts (brand owner) allows brand import',
+		description: 'src/domain/grid/Row.ts: ALLOWED — brand owner import',
 		filename: 'src/domain/grid/Row.ts',
 		code: "import { brand } from '../brand'",
 		expectError: false
 	},
 	{
-		description: 'src/domain/word/WordLength.ts (brand owner) allows brand import',
-		filename: 'src/domain/word/WordLength.ts',
-		code: "import { brand } from '../brand'",
+		description: 'src/main.ts: ALLOWED — import src/ui/app/App.svelte',
+		filename: 'src/main.ts',
+		code: 'import App from "./ui/app/App.svelte"',
 		expectError: false
 	},
 	{
-		description: 'src/domain/anagram/Position.ts (brand owner) allows brand import',
-		filename: 'src/domain/anagram/Position.ts',
-		code: "import { brand } from '../brand'",
-		expectError: false
-	},
-	{
-		description: 'src/domain/time/EpochMs.ts (brand owner) allows brand import',
-		filename: 'src/domain/time/EpochMs.ts',
-		code: "import { brand } from '../brand'",
-		expectError: false
-	},
-	{
-		description: 'src/domain/time/DurationMs.ts (brand owner) allows brand import',
-		filename: 'src/domain/time/DurationMs.ts',
-		code: "import { brand } from '../brand'",
-		expectError: false
-	},
-	{
-		description: 'src/domain/format/v1.ts (non-owner) forbids brand import',
-		filename: 'src/domain/format/v1.ts',
-		code: "import { brand } from '../brand'",
-		expectError: true
-	},
-	{
-		description: 'src/ui/bindings/foo.ts forbids brand import',
+		description: 'src/ui/bindings/foo.ts: ALLOWED — window reference',
 		filename: 'src/ui/bindings/foo.ts',
-		code: "import { brand } from '../../domain/brand'",
-		expectError: true
+		code: 'const x = window;',
+		expectError: false
 	},
 	{
-		description: 'test/foo.ts allows brand import (tests out of scope)',
-		filename: 'test/foo.ts',
-		code: "import { brand } from '../../src/domain/brand'",
+		description: 'src/vite-env.d.ts: ALLOWED — ambient declaration file is exempt',
+		filename: 'src/vite-env.d.ts',
+		code: '/// <reference types="vite/client" />',
 		expectError: false
 	}
 ];
 
-it.each(fixtures)('$description', ({ filename, code, expectError }) => {
+it.each(fixtures)('$description', ({ filename, code, expectError, expectRule }) => {
 	const filtered = lintFor(filename, code);
 	if (expectError) {
-		expect(filtered.length).toBeGreaterThan(0);
+		const matching = filtered.filter((m) => m.ruleId === expectRule);
+		expect(matching.length).toBeGreaterThan(0);
 	} else {
 		expect(filtered).toHaveLength(0);
 	}

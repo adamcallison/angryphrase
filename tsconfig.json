@@ -12,7 +12,7 @@
     "exactOptionalPropertyTypes": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "allowJs": false,
+    "allowJs": true,
     "noEmit": true
   },
   "include": ["src/**/*", "test/**/*"],

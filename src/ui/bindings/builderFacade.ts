@@ -94,7 +94,9 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       dispatch({ target: 'builder', kind: 'request-switch-to-design' });
     },
     changeGridSize(size: number) {
-      dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(size) });
+      const s = GridSize.try(size);
+      if (s === null) return;
+      dispatch({ target: 'builder', kind: 'change-grid-size', size: s });
     },
     setMarker(axis: CellMarkerAxis, separator: CellSeparator) {
       const state = appStore.getBuilder();

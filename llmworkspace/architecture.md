@@ -21,7 +21,7 @@ Four principles shape the whole codebase:
 1. **Thin UI.** The UI layer is as thin as possible. All logic lives in pure logic modules with no knowledge of Svelte, HTML, DOM, or rendering. Components render view-models and invoke action bags — nothing else.
 2. **Domain-Driven Design.** The domain model is the centre; persistence, format, and UI are adapters at the edges. Pure functions over immutable domain objects are the unit of behaviour. Reducers never mutate inputs; a small `clone` helper handles the few deep structures (grid). No Immer.
 3. **Explicit types.** Data bundles have named types; field types are precise (`Letter | null`, not `string`); illegal states are unrepresentable where feasible (range-checked branded constructors).
-4. **No primitive obsession.** `Row`, `Col`, `Letter`, `PuzzleKey`, `Direction`, `GridSize`, `WordNumber`, `DisplacedClueId`, `ToastId`, `CellIndex`, `WordLength`, `Position`, `EpochMs`, `DurationMs` are branded types or discriminated unions. Plain `string`/`number` do not appear in domain signatures. One deliberate exception: the `Rng` interface (`domain/rng/Rng.ts`) uses plain `number` (`nextInt(n)`) — branding a count→index operation cascades nonsense.
+4. **No primitive obsession.** `Row`, `Col`, `GridSize`, `Letter`, `Position`, `PuzzleKey`, `Title`, `Author`, `DisplacedClueId`, `WordLength`, `WordNumber`, `ToastId`, `EpochMs`, `DurationMs` are branded types; `Direction` is a discriminated union. Plain `string`/`number` do not appear in domain signatures. One deliberate exception: the `Rng` interface (`domain/rng/Rng.ts`) uses plain `number` (`nextInt(n)`) — branding a count→index operation cascades nonsense.
 
 ## 3. Layers
 
@@ -75,7 +75,7 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 
 | Module | Owns |
 |---|---|
-| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker` (`{ right: CellSeparator, bottom: CellSeparator }` — structural mutual exclusion; API `CellMarker.read(marker, axis)` / `.write(marker, axis, separator)` / `.isEmpty(marker, axis)`; `EMPTY` is the canonical no-marker value), `CellSeparator` (`'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridAccess` (the raw-indexing leaf — `blank`, `cellAt`, `setCell`, `updateCells`, `withinBounds`; the sanctioned site for non-null indexing on `Cell[][]`, see `eslint.config.js`), `WordTopology` (the single source of grid-level word geometry: `WordRun` (`{ startRow, startCol, length, direction }`), `runs(grid, direction)` enumerates maximal white runs on a single axis including length-1 runs, `partOfRun(grid, row, col, direction)` is the single-cell "part of a length-≥-2 run" predicate used by `GridOps.isSelectable` and `GridInteraction.select`; depends only on `GridAccess`), `GridOps` (structural grid operations: `neighbours`, `neighboursInDirection`, `isSelectable`, `clone`, `equals`; re-exports the leaf accessors `blank`/`cellAt`/`setCell`/`updateCells`/`withinBounds` for back-compat with 88 call sites that don't need to know about `GridAccess`; `isSelectable` delegates to `WordTopology.partOfRun`), `GridInteraction` (the shared cursor/typing transitions used by both experiences — `select`/`move`/`typeLetter`/`backspace` over `(grid, cursor)` with an injected `LetterSlot` policy for the answer-vs-player field — plus the shared intent payload variants, see §3 Layer 1), `CellIndex` |
+| `domain/grid/` | `GridSize` (2..25), `Row`, `Col`, `Cursor` (`{row, col, direction} \| null`; `null` = no selection, not persisted across reload), `Cell`, `CellMarker` (`{ right: CellSeparator, bottom: CellSeparator }` — structural mutual exclusion; API `CellMarker.read(marker, axis)` / `.write(marker, axis, separator)` / `.isEmpty(marker, axis)`; `EMPTY` is the canonical no-marker value), `CellSeparator` (`'none' \| 'space' \| 'hyphen'`), `Grid` (`Cell[][]`), `GridAccess` (the raw-indexing leaf — `blank`, `cellAt`, `setCell`, `updateCells`, `withinBounds`; the sanctioned site for non-null indexing on `Cell[][]`, see `eslint.config.js`), `WordTopology` (the single source of grid-level word geometry: `WordRun` (`{ startRow, startCol, length, direction }`), `runs(grid, direction)` enumerates maximal white runs on a single axis including length-1 runs, `partOfRun(grid, row, col, direction)` is the single-cell "part of a length-≥-2 run" predicate used by `GridOps.isSelectable` and `GridInteraction.select`; depends only on `GridAccess`), `GridOps` (structural grid operations: `neighbours`, `neighboursInDirection`, `isSelectable`, `clone`, `equals`; re-exports the leaf accessors `blank`/`cellAt`/`setCell`/`updateCells`/`withinBounds` for back-compat with 88 call sites that don't need to know about `GridAccess`; `isSelectable` delegates to `WordTopology.partOfRun`), `GridInteraction` (the shared cursor/typing transitions used by both experiences — `select`/`move`/`typeLetter`/`backspace` over `(grid, cursor)` with an injected `LetterSlot` policy for the answer-vs-player field — plus the shared intent payload variants, see §3 Layer 1) |
 | `domain/word/` | `Word`, `WordKey` (`{startRow, startCol, direction}`), `WordLength` (≥2), `Direction` + helpers, `DerivedWord` (pre-numbering shape), `WordDerivation` (`grid → DerivedWord[]`, expressed as `WordTopology.runs` over both directions filtered to length ≥ 2), `Numbering` (assigns word numbers), `WordMap` (canonical-string-keyed O(1) lookup), `WordSelection` (`findContainingWord` — scans the word list for the word containing the cursor, delegating the per-word "does this word cover this cell" test to `WordGeometry.contains`; the cursor's direction filter stays here, since it selects *which* word), `WordGeometry` (the single owner of word extent and word-coordinate walking: `cells(word)` iterates a word's coordinates in order, `contains(word, row, col)` answers "does this word cover this cell" in O(1), `lastCell(word)` returns the word's final cell; every coordinate it returns is minted and validated through `Row.of` / `Col.of`, never handed back from the input word; consumed by `ChainCells`, `LengthPattern`, the `Anagram` word/chain builders, and `WordSelection`) |
 | `domain/letter/` | `Letter` brand + `try`/`from`/`equals` (case-folds, validates A–Z) |
 | `domain/chain/` | `Chain` traversal, `ChainValidation` (cycle/branch/dangling/self-reference), `ChainViolation`, `ChainAdmission` — the single owner of the chain-link admission rules (`canLink` / `canReattach` / `message(result)`); both `Builder` join and reattach handlers consume it, and any future caller (Player-side chain feature, import path, scripting API) shares the same admission policy, `DisplayClue`, `LengthPattern`, `ChainCells` (cell-coord sets shared by builder/player VMs) |
@@ -88,7 +88,7 @@ Owns the entire domain model: value objects, branded types, pure functions, and 
 | `domain/rng/` | `Rng` interface — a deps-injection abstraction, **not** a port; reducers call it directly |
 | `domain/time/` | `EpochMs` (≥0), `DurationMs` (>0; `DEFAULT` = 3500 ms toast ttl) |
 | `domain/uuid/` | `uuidv4(rng)` — pure UUID minting, shared by `PuzzleKey.generate` and `DisplacedClueId.generate` |
-| `domain/brand.ts` | The `brand<Tag, T>()` escaper — an unsound cast, internal to the 15 branded-type owner modules (see §4) |
+| `domain/brand.ts` | The `brand<Tag, T>()` escaper — an unsound cast, internal to the 14 branded-type owner modules (see §4) |
 
 ### Layer 1 — `src/builder/state/`, `src/player/state/`, `src/app/state/` (pure reducers)
 
@@ -107,7 +107,7 @@ Module boundary rules (ESLint-enforced):
 
 ### Layer 2 — `src/ui/bindings/` (the seam; the only Svelte-aware logic module)
 
-The only module that imports from all other layers plus Svelte. Everything here is a **factory** — no file holds module-level mutable state, nothing runs at import time. Contains:
+The only module that imports from all other layers plus Svelte. Everything here is a **factory** — no file holds module-level mutable state. One exception to "nothing runs at import time": the import-phase placeholder view-models in `viewmodels/playerVM.ts` are derived once at module load. Contains:
 
 | Module | Owns |
 |---|---|
@@ -161,20 +161,31 @@ Boots the app: instantiates production ports, builds `deps = { rng: rngPort, now
 
 ## 4. Boundary Enforcement
 
-ESLint (`eslint.config.js`, `@typescript-eslint/no-restricted-imports` per-glob blocks) enforces the layer boundaries; `tsc` does not check paths.
+The layer matrix is declared once, in `tools/boundaries.js`, and enforced by ESLint: `eslint.config.js` imports that spec and generates its boundary rules from it. `tsc` does not check paths.
+
+Two properties of the enforcement:
+
+- **Allowlist, not denylist.** Each layer may import only what the spec grants it, so an unanticipated target — `src/main.ts`, a non-root file of a sibling state module, a deep path into another layer — is blocked by default instead of slipping past a list of forbidden prefixes.
+- **Path-resolved.** Each import specifier is resolved to the repo-relative file it denotes before matching, so relative spellings, extensions and `./`-style forms cannot dodge a rule.
+
+Every source file belongs to exactly one layer: a file that matches no layer, or more than one, is reported. Ambient `*.d.ts` declaration files are exempt — they declare, they do not import at runtime.
 
 | Source path | May import | Blocked |
 |---|---|---|
-| `src/domain/**` | sibling `domain/**` files | `svelte`, DOM globals, `src/ui/**`, `src/ports/**`, all three `state/` trees; `domain/brand` except the 15 branded-type owner modules |
-| `src/builder/state/**`, `src/player/state/**` | `domain/**`, own module (incl. own `internal/`) | each other (fully), `svelte`, DOM, `ui/**`, `ports/**`, `app/state/**`, sibling `internal/**`, `domain/brand` |
-| `src/app/state/**` | `domain/**`, public root files of the other two state modules, own siblings | `svelte`, DOM, `ui/**`, `ports/**`, the other modules' `internal/**`, `domain/brand` |
+| `src/domain/**` | sibling `domain/**` files only | `svelte`, DOM globals, `src/ui/**`, `src/ports/**`, all three `state/` trees, `src/main.ts`; `domain/brand` except the branded-type owner modules |
+| `src/builder/state/**`, `src/player/state/**` | `domain/**`, own module (incl. own `internal/`) | each other (fully), `svelte`, DOM globals, `ui/**`, `ports/**`, `app/state/**`, sibling `internal/**`, `domain/brand` |
+| `src/app/state/**` | `domain/**`, the public root files (`state.ts`, `intents.ts`, `reducer.ts`) of the other two state modules, own siblings | `svelte`, DOM globals, `ui/**`, `ports/**`, the other modules' `internal/**` and any other file of theirs, `domain/brand` |
 | `src/ui/**` (except `ui/bindings/**`) | siblings; **type-only** from `ui/bindings/**` and `domain/**`; `App.svelte` alone may import bindings **values** | value imports from bindings, `ports/**`, all `state/**`, `domain/brand` |
 | `src/ui/bindings/**` | all of `src/**` | `domain/brand` |
-| `src/ports/**` | `domain/ports/ports.ts`, `domain/rng/Rng.ts`, `domain/puzzle/PuzzleKey.ts` (allow-list via negative-lookahead patterns) | everything else, `svelte`, `domain/brand` |
+| `src/ports/**` | `domain/ports/ports.ts`, `domain/rng/Rng.ts`, `domain/puzzle/PuzzleKey.ts` | everything else, `svelte`, `domain/brand` |
 
-**Brand ban.** `domain/brand` is the unsound `brand()` escaper that bypasses range-checked constructors. It is importable only by the 15 branded-type owner modules (`Row`, `Col`, `GridSize`, `CellIndex`, `Letter`, `PuzzleKey`, `Title`, `Author`, `DisplacedClueId`, `WordNumber`, `ToastId`, `WordLength`, `Position`, `EpochMs`, `DurationMs`). `test/**` is out of scope (tests legitimately need the escaper for edge-case fixtures).
+**Brand ban.** `domain/brand` is the unsound `brand()` escaper that bypasses range-checked constructors. It is importable only by the branded-type owner modules — the 14 modules named in §2 principle 4. The owner set lives in `tools/boundaries.js`; it is not duplicated here, and the boundary self-test checks it against the repository in both directions. `test/**` is out of scope (tests legitimately need the escaper for edge-case fixtures).
 
-**Self-verification.** `test/boundary/imports.test.ts` drives the ESLint `Linter` API over adversarial fixture strings (with `filename` set so the per-glob rules apply) and asserts each forbidden import — static or dynamic `import()` — triggers a `no-restricted-imports` error, with negative controls proving allowed imports pass. It covers the builder↔player, state↔`internal/`, brand-ban, and bindings-value-import edges.
+**DOM globals.** `domain/**` and the three state trees may not reference browser globals (`window`, `document`, `localStorage`, `sessionStorage`, `navigator`, `location`, `history`, `fetch`, `globalThis`). The bindings layer, the UI layer and the ports may.
+
+**Dynamic import.** `import()` is banned outright in `domain/**` and the three state trees; elsewhere it is subject to the same matrix as a static import.
+
+**Self-verification.** `test/boundary/imports.test.ts` drives the ESLint `Linter` API over fixture strings (with `filename` set so the per-glob rules apply) and asserts that every forbidden edge is rejected **by the expected rule** — static import, dynamic `import()`, DOM-global reference, brand import, unlayered file — while every allowed edge passes. `test/tools/boundaries.test.ts` checks the spec module's own integrity: areas and layers resolve to real paths, brand owners exist, are unique and really import `domain/brand`, and the shipped spec validates.
 
 **Cycle policy.** `domain/` modules import each other acyclically (`domain/format/` is the bottom). No cycle can cross the bindings seam because state reducers cannot import `ui/` or `ports/`; `madge --circular` runs in `npm run lint` as a backstop.
 
@@ -267,7 +278,7 @@ export function createAppStore(
 
 Displaced clues live here, not on `Puzzle` — they are a Builder-only concept; `serializeIncomplete` takes them as a separate argument. `BuilderState.isBlank` is the work detector behind the guarded actions (§ Guarded actions). There are no `dirty`/`lastSavedAt`/`pending*` fields — persistence is a bindings concern, side effects flow as events; state is a pure snapshot of the current Builder world.
 
-`BuilderIntent` kinds: `switch-to-fill`, `request-switch-to-design`, `confirm-switch-to-design`, `toggle-design-cell { row, col }`, `change-grid-size { size }`, `select-cell`, `move-cursor { direction, sign }`, `type-letter { letter }`, `backspace`, `toggle-marker { flag }`, `edit-clue { wordKey, clue }`, `begin-join { source }`, `click-clue-panel-word { wordKey }`, `click-grid-word { wordKey }`, `unjoin { source }`, `escape`, `begin-reattach { displacedClueId }`, `delete-displaced-clue { id }`, `edit-title`, `edit-author`, `request-import-puzzle { fileContent }`, `confirm-import-puzzle { fileContent }`, `report-import-read-failure`, `report-pick-failure`, `export-incomplete`, `export-complete`, `request-reset-builder`, `confirm-reset-builder`.
+`BuilderIntent` kinds: `switch-to-fill`, `request-switch-to-design`, `confirm-switch-to-design`, `toggle-design-cell { row, col }`, `change-grid-size { size }`, `select-cell`, `move-cursor { direction, sign }`, `type-letter { letter }`, `backspace`, `set-marker { axis, separator }`, `edit-clue { wordKey, clue }`, `begin-join { source }`, `click-clue-panel-word { wordKey }`, `click-grid-word { wordKey }`, `unjoin { source }`, `escape`, `begin-reattach { displacedClueId }`, `delete-displaced-clue { id }`, `edit-title`, `edit-author`, `request-import-puzzle { fileContent }`, `confirm-import-puzzle { fileContent }`, `report-import-read-failure`, `report-pick-failure`, `export-incomplete`, `export-complete`, `request-reset-builder`, `confirm-reset-builder`.
 
 ### `PlayerState` (`player/state/state.ts`)
 
@@ -420,7 +431,7 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 
 **Fakes (`test/fakes/`).** `InMemoryStoragePort` (with one-shot `nextWriteError`), `SeededRng` (Mulberry32), `FakeClock` (manually advanced, returns `EpochMs`), `StubDownloadPort` (records calls) — each paired with a co-located unit test.
 
-**Boundary self-test.** `test/boundary/imports.test.ts` (§4).
+**Boundary self-test.** `test/boundary/imports.test.ts` (§4) — fixture-driven proof that every forbidden edge is rejected by the expected rule (static import, dynamic `import()`, DOM-global reference, brand import, unlayered file) and every allowed edge passes; `test/tools/boundaries.test.ts` checks the boundary spec module's integrity.
 
 **Scripts (`package.json`).**
 
@@ -441,7 +452,9 @@ ci        npm run lint && npm run typecheck && npm run test && npm run build
 ```
 angryphrase/
 ├─ index.html, vite.config.ts, tsconfig.json, eslint.config.js,
-│  vitest.config.ts, tailwind.config.ts, postcss.config.js, .nvmrc
+│  vitest.config.ts, tailwind.config.ts, postcss.config.js, .nvmrc,
+│  tools/boundaries.js  (the layer matrix — single source of truth),
+│  tools/boundaryRule.js  (the ESLint rules that enforce it)
 ├─ src/
 │  ├─ main.ts, app.css, vite-env.d.ts
 │  ├─ domain/         grid/ (incl. GridInteraction, GridAccess, WordTopology) word/ (incl. WordGeometry) letter/ chain/ (incl. ChainAdmission) anagram/
@@ -468,7 +481,7 @@ angryphrase/
 │  │                  filePickActions.ts, viewmodels/ (§3 Layer 2)
 │  └─ ports/          localStoragePort, downloadPort, filePickPort, rngPort
 ├─ test/              domain/ builder/state/ player/state/ app/state/
-│                     ui/bindings/ fakes/ boundary/imports.test.ts
+│                     ui/bindings/ fakes/ tools/ boundary/imports.test.ts
 ├─ puzzles/           7 sample files, version 2, unreferenced by code
 └─ llmworkspace/      architecture.md (this file),
                       future_considerations.md,

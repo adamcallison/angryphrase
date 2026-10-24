@@ -6,7 +6,7 @@ Conventions: no line-number references (they rot — see smell #11); functions, 
 
 Each entry is produced through the gates in the Appendix ("Resolution process"), added 2026-10-24. Entries written before that appendix are grandfathered; where one of their reasonings was later found unsound, the entry carries a dated note rather than being rewritten (§2's "Post-resolution correction"; §10's "Post-resolution follow-up" and "How the deferral happened").
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways). #11 (traceability rot: live code cites an archived requirements vocabulary).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways). #11 (traceability rot: live code cites an archived requirements vocabulary), #12 (boundary enforcement config triplicated and overclaiming).
 
 ---
 
@@ -1138,6 +1138,109 @@ Adding a behavioural rule now means writing it in the owning module. It does not
 | A citation whose *content* is a requirement statement, with no identifier | Not a smell: this is the chosen end-state — the rule lives in the code. | — |
 | `tsconfig.json`'s `"exclude": [..., "llmworkspace"]` | A build exclusion, not a citation. It names the workspace directory without pointing at a document. | — |
 | Section numbers of the archived design document below 100 (`§4.1`, `§6.1`, `§6.2`, `§8.9a`) | Indistinguishable in shape from a live section anchor, so no mechanical rule could have caught them. All four were re-homed by hand; the rule in architecture.md §14 forbids the practice going forward. | — |
+
+## 12. Boundary enforcement config is triplicated and slightly overclaims — resolved 2026-10-24
+
+### The smell (recap)
+
+Two findings, one mechanism. The layer matrix was hand-written rather than declared: the brand-owner list existed twice in `eslint.config.js` (once as the domain block's `ignores`, once as the brand-owner block's `files`) and a third time as prose in `architecture.md` §4; the brand-ban pattern was copy-pasted into every layer block; each block re-derived its own path patterns and messages. And the documentation promised more than the configuration enforced: §4 claimed `domain/**` was blocked from "DOM globals" (no rule did that) and claimed the boundary self-test proved every forbidden import — static *or* dynamic `import()` — was rejected, while the suite held a single dynamic fixture that tripped a different rule.
+
+Verification before the fix established the shape of the problem: the configuration's rules were deny-lists over import-specifier strings, so they could not express "may import only these", and they did not see `import()` at all. `no-restricted-imports` handles `ImportDeclaration`, `ExportNamedDeclaration`, `ExportAllDeclaration` and `TSImportEqualsDeclaration` — never `ImportExpression`. A domain file performing `await import('../../ui/bindings/appStore.svelte')` produced no error. The brand-ban pattern also missed a `./brand` specifier from a file directly under `src/domain/`, and most of its patterns wrote `\.` inside a JavaScript string literal, so the runtime regex carried `.` as "any character" — the intended cases were caught, but by accident.
+
+### Inventory (Gate 0)
+
+- **S1** brand-owner list, copy 1 — `eslint.config.js`, domain block `ignores`.
+- **S2** brand-owner list, copy 2 — `eslint.config.js`, brand-owner block `files`.
+- **S3** brand-owner list, copy 3 — `architecture.md` §4 prose.
+- **S4** brand-ban pattern — nine copies inside `eslint.config.js`.
+- **S5** per-layer path patterns and messages — nine hand-written blocks in `eslint.config.js`.
+- **S6** doc overclaim — `architecture.md` §4: "DOM globals" blocked; no rule did that.
+- **S7** doc overclaim — `architecture.md` §4: the self-test proves static and dynamic imports are rejected; one dynamic fixture, different rule.
+- **S8** latent hole — dynamic `import()` bypasses every layer rule.
+- **S9** latent hole — the brand ban missed a `./brand` specifier from `src/domain/` itself.
+- **S10** latent hole — deny-list rules permitted unintended targets: `domain` → `src/main.ts`, `ui` → `src/main.ts`, `ports` → `src/main.ts`, `app/state` → any non-root file of a sibling state module.
+- **S11** escaping accident — `\.` inside a JavaScript string literal became `.` (any character) in most patterns; two blocks used `\\.` correctly.
+- **S12** stale doc — `architecture.md` §7 listed the intent kind `toggle-marker { flag }`; the code's kind is `set-marker { axis, separator }`.
+- **S13** phantom branded type — `CellIndex` had zero importers in `src/` yet appeared in both owner lists and in the document's branded-type list.
+- **S14** adjacent defect outside this smell — the Builder facade's grid-size action used the throwing `GridSize.of`, so correctness depended on a component clamping the value first.
+- **S15** coverage hole — a source file matching no layer's `files` pattern escaped every layer rule; only the brand rule applied to it.
+
+An allowlist-model audit of every import in `src/` (static and dynamic, each specifier resolved to the file it denotes, checked against the documented matrix) found **zero violations**: the enforcement gaps were latent, not live breaches. No production import had to move.
+
+### Decision
+
+- **A — keep the hand-written configuration, correct the two document claims.** Rejected: it retires the documentation's overclaims but leaves the triplication that is the finding's actual subject, and leaves the latent holes (S8–S11, S15) open.
+- **B — path-resolved enforcement via `eslint-plugin-import` (`import/no-restricted-paths` zones).** Rejected: a new dependency plus a resolver that must handle `.svelte` and TypeScript's bundler resolution; the plugin is upstream in maintenance mode; and dynamic `import()` is not covered by `no-restricted-paths` either, so S8 would still need a separate rule.
+- **C — a project-owned boundary checker replacing ESLint for boundaries.** Rejected as the primary: a new moving part that must parse `.svelte` script blocks, replacing a working pipeline — the largest blast radius of the options — and leaving two enforcement systems if ESLint's boundary rules also stayed.
+- **D — a declarative spec module plus ESLint rules generated from it.** **Chosen.** One module owns the matrix; ESLint generates its boundary rules from that module; a local rule resolves each import specifier to the repo-relative file it denotes, so the matrix is an allowlist; DOM globals and dynamic imports gain real coverage; every source file must belong to exactly one layer.
+- **E — shrink the rule surface by changing the architecture** (for example: delete the shared brand escaper so the owner list disappears). Rejected: it trades a machine-checked list of fourteen owner modules for fourteen copies of an unsound cast — unchecked duplication against the project's one-owner principle.
+
+Approved package: **D**, plus the three adjacent corrections the fix makes possible or requires: S12 (document truth), S13 (delete the phantom type), S14 (the facade's total grid-size action). S15 was closed inside D as a structural property — "belongs to exactly one layer" became an enforced rule rather than an assumption.
+
+### Design as implemented
+
+**`tools/boundaries.js` — the single source of truth.** Plain ESM JavaScript (JSDoc types only). Exports `BOUNDARIES` and `validateBoundaries(spec)`.
+
+- `areas` — repo-relative path prefixes (`src/domain/`, `src/ui/bindings/`, `src/ui/`, `src/ports/`, `src/assets/`, `src/main.ts`, the three state trees). A target belongs to the area with the longest matching prefix.
+- `layers` — one entry per layer: `files` and `ignores` (which file belongs to it), `allowed` (area → `value` or `type`), `allowPaths` (exact files permitted regardless of area), `bannedPackages` (`svelte`, `svelte/*`).
+- `globals` — the banned browser globals (`window`, `document`, `localStorage`, `sessionStorage`, `navigator`, `location`, `history`, `fetch`, `globalThis`) and the layers they are banned in (the domain and the three state trees).
+- `dynamicImport` — the layers where `import()` is banned outright (the same four).
+- `brand` — the brand module and its fourteen owner modules.
+
+`validateBoundaries(spec)` throws with a precise message when the spec is malformed: unknown area reference, duplicate layer name, empty `files` list, missing area or `allowPaths` path, duplicate or missing brand owner, brand owner outside `src/domain/`, unknown layer named by `globals.layers` or `dynamicImport.bannedLayers`. The ESLint configuration calls it at load time, so a malformed spec fails the lint run immediately rather than silently weakening the matrix.
+
+**`tools/boundaryRule.js` — the local ESLint plugin.** Three rules:
+
+- `no-layer-imports` — options `{ layer, areas, allowed, allowPaths, bannedPackages, dynamicImportBanned }`. It resolves the importing file to a repo-relative path, resolves each specifier (relative, repository-absolute, or bare package) to a target path, looks up the target's area by longest prefix, and reports when the area is absent from the layer's `allowed` map, when a `type`-only area is imported for values, when the target matches no area and is not allowlisted, when a banned package is imported, or when a dynamic import appears in a layer that bans it. Type-only imports are detected from the declaration's `importKind` / `exportKind`; `import()` is always a value import, and outside the banned layers it is judged by the same matrix as a static import.
+- `no-brand-import` — options `{ module, owners }`. The brand module is importable only from an owner module; every other file is reported.
+- `no-unlayered-file` — options `{ layers }`. A source file that matches no layer, or more than one, is reported: a file outside the matrix is a hole, and a file claimed by two layers is a configuration error. Ambient `*.d.ts` declaration files are exempt — they declare, they do not import at runtime.
+
+**`eslint.config.js` — regenerated.** It imports `BOUNDARIES` and `validateBoundaries` from the spec, validates it at load, and emits one configuration block per layer (the layer's `files` and `ignores`, the local plugin, `local/no-layer-imports`, and — for the layers that ban them — the built-in `no-restricted-globals` with one entry per banned name), plus one block enabling `local/no-brand-import` across `src/**/*.{ts,svelte}` and one enabling `local/no-unlayered-file` across the same set. The TypeScript and Svelte recommended configurations, the Svelte parser options and the non-null-assertion guard are unchanged. The file now contains no hand-written layer list, no brand-owner list and no brand-ban pattern: the configuration shrank from 406 lines of hand-written blocks to a generator over the spec.
+
+**`test/boundary/imports.test.ts` — rewritten.** Table-driven fixtures driven through ESLint's `Linter` API with `filename` set, each fixture declaring the rule id it expects, and the assertion checking that exact rule fired — so a case cannot pass for the wrong reason. It covers the import matrix (every layer, both directions), type-only permissions, banned packages, the brand ban, dynamic imports (banned and matrix-judged), DOM globals, and the unlayered-file rule, with negative controls for every allowed edge.
+
+**`test/tools/boundaries.test.ts` — the spec's integrity.** Areas and layers resolve to real paths; layer names are unique; every `allowed` key is a known area; every layer declares a `files` list; `allowPaths` entries exist; brand owners exist, are unique, live under `src/domain/`, and really import the brand module; `globals.layers` and `dynamicImport.bannedLayers` name known layers; the shipped spec validates; malformed variants are rejected.
+
+**`src/domain/grid/CellIndex.ts` and its test — deleted.** A branded type with zero importers in `src/`; it was a phantom concept and an entry in the hand-synced lists this work consolidates. The owner set is now fourteen modules.
+
+**`src/ui/bindings/builderFacade.ts` — the grid-size action is total.** `changeGridSize` uses `GridSize.try`; an out-of-range or non-integer size is ignored instead of throwing a `RangeError` from the throwing constructor. The facade no longer depends on a component clamping the value before dispatching; the component's clamp stays as presentation.
+
+**`llmworkspace/architecture.md` — amended.** §2's branded-type list now names the fourteen real branded types (and `Direction` separately as a discriminated union); §3's grid row drops `CellIndex`; §3's bindings paragraph states the module-load exception honestly instead of claiming "nothing runs at import time"; §4 rewritten around the spec, with the DOM-global and dynamic-import rules stated as enforced and the layer-coverage rule added; §7's stale intent kind corrected; §12 and §13 describe the new tests and the `tools/` modules.
+
+### Deliberate behaviour changes
+
+1. **The Builder's grid-size action no longer throws.** `builderFacade.actions.toolbar.changeGridSize(1)` used to raise a `RangeError`; it now does nothing. Unreachable through the UI (the grid-size control clamps before dispatching); observable only to a direct caller.
+2. **`CellIndex` is gone.** The branded type and its constructor no longer exist. Nothing in `src/` imported it; the removal is visible only to code that referenced the module directly.
+3. **Nothing else changed observably.** Every import the old configuration accepted is still accepted, and the paths its deny-lists overlooked are now rejected; no import in the repository changed legality, and no runtime behaviour moved.
+
+### Files
+
+Created: `tools/boundaries.js`; `tools/boundaryRule.js`; `test/tools/boundaries.test.ts`.
+
+Modified: `eslint.config.js` (generated from the spec; the nine hand-written boundary blocks removed); `test/boundary/imports.test.ts` (rewritten); `test/tools/boundaries.test.ts` (owner-staleness case); `src/ui/bindings/builderFacade.ts` (total grid-size action); `test/ui/bindings/builderFacade.test.ts` (four grid-size cases); `tsconfig.json` (`allowJs`, so the TypeScript test can import the JavaScript spec); `llmworkspace/architecture.md` (§2, §3, §4, §7, §12, §13).
+
+Deleted: `src/domain/grid/CellIndex.ts`; `test/domain/grid/CellIndex.test.ts`.
+
+No change to any intent, event, port or domain type; no new dependency; `package.json` scripts untouched (`madge` remains the cycle backstop).
+
+### Verification
+
+- `npm run ci` — eslint and `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **92 test files / 1348 tests green**; the single-file production build succeeded.
+- The fixture suite asserts the exact rule per edge, so each forbidden edge is proved by the rule that owns it, and every allowed edge has a negative control.
+- The spec test checks the owner set against the repository in both directions: every listed owner really imports the brand module, and the matrix names only existing paths.
+- An allowlist-model audit of every import in `src/` (static and dynamic, path-resolved) found zero violations before the rules landed — the new rules accept the whole repository unchanged.
+- The configuration's own load-time validation fails fast: a malformed spec breaks the lint run rather than weakening the matrix.
+
+### Consequence (change cost after)
+
+Adding a branded type, a layer, a permitted path, a banned global or a banned package is **one edit in `tools/boundaries.js`** — the ESLint configuration, the layer-coverage check and the fixture expectations follow from it. The document no longer enumerates the owner list, so the configuration, the spec and the document cannot disagree about it. A new source file that belongs to no layer is reported at lint time instead of escaping the matrix. The two claims the old document overclaimed are now true: DOM globals are blocked in the pure layers, and dynamic `import()` is rejected everywhere the matrix forbids it.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| S14-adjacent work: the VM-contract erosion — `BuilderShell` reading raw state through the facade, two canonical word-key encodings, `AnagramModal` re-implementing the reducer's sanitisation, `playerVM`'s import-phase placeholder view-models, `App.svelte`'s autosave effects | These are intra-layer contract erosion, not import-boundary matters: no import rule can see them. They belong to the open finding "The VM contract erodes at the leaf edges", which stays open with the approach for each instance already chosen. | architecture_smells.md §13 (note dated 2026-10-24) |
+
 
 ---
 

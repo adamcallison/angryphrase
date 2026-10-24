@@ -260,6 +260,8 @@ The audit's own file list is also stale: it named `lifecycle.ts` (both), `anagra
 - The 15-file brand-owner allow-list exists **twice** (the `ignores` of the domain block at `:19-35` and the `files` of the owner block at `:76-92`) and must also stay in sync with the list in `architecture.md` §4. The brand-ban regex is repeated verbatim in eight blocks. Adding branded type #16 is a three-site edit (plus the doc) with no cross-check.
 - `architecture.md` §4's table claims `domain/**` is blocked from "DOM globals" — no rule does this. Only *imports* are restricted; `window`/`document` references in domain code would pass lint and types. The boundary is real where tested (`test/boundary/imports.test.ts` covers import edges) and aspirational where not.
 
+**Status (2026-10-24): addressed** — resolution in `architecture_smell_resolutions.md`.
+
 ---
 
 ## 13. The VM contract erodes at the leaf edges
@@ -273,6 +275,18 @@ The stated contract (§9): components receive leaf-shaped VMs and invoke bags; "
 - `BuilderShell.svelte:17-23,54-55` reads raw state via `builderFacade.getBuilderState()` for control flow (design/fill mode, typing-surface enablement) even though mode is already in `BuilderToolbarVM` — the facade state getters offer a documented but contract-eroding bypass of the VM layer.
 - `playerVM.ts:75-103` fabricates placeholder VMs (fake 2×2 grid, empty panels) for the import phase so `PlayerShellVM` stays one uniform type; module-level constants derived by calling `deriveGridVM`/`deriveAnagramModalVM` at import time bend §3's "nothing runs at import time" (harmlessly, but the stated invariant is now false as written).
 - `App.svelte:41-46` hosts the autosave `$effect`s — the one piece of orchestration logic living in the component layer rather than the bindings seam (documented as an exception in §6, but it is a standing exception to "the UI layer is as thin as possible").
+
+**Note (2026-10-24, from the #12 resolution):** the boundary-enforcement work does not address this finding. Its instances are intra-layer contract erosion, which import-level rules cannot detect; the new rules add coverage the old configuration lacked (path-resolved allowlists, dynamic `import()`, DOM globals, unlayered-file detection), and none of that overlaps these instances. No instance below was fixed by that work. The adjacent item fixed there — the Builder facade's throwing grid-size constructor — is not one of these instances.
+
+Deferred, with the approach already chosen; each stays open until its instance is closed:
+
+- `BuilderShell.svelte` reading raw state through the facade: delete the facade's raw-state getters, read mode from the toolbar VM, and assert through the store in tests.
+- Two canonical word-key encodings (`WordKey.toCanonical` in the domain, `canonicalWordKeyId` in the shared UI helper): carry a plain `id` on each clue entry in the VM and delete the UI-side helper.
+- `AnagramModal.svelte` re-implementing the reducer's input sanitisation: dispatch raw input and display the reducer-sanitised value.
+- `playerVM.ts` deriving import-phase placeholder view-models at module load: make the player shell view-model phase-discriminated so the placeholders cannot exist.
+- `App.svelte` hosting the autosave effects: move autosave into the store, driven by dispatch (accepted behaviour change: no snapshot write on mount).
+
+`architecture.md` §3 now states the module-load exception explicitly instead of claiming otherwise; the code change stays deferred.
 
 ---
 
