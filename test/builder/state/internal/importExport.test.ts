@@ -21,8 +21,7 @@ import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import { parsePuzzle, serializeComplete, serializeIncomplete } from '../../../../src/domain/format/v1Json';
 import { CompletenessCheck } from '../../../../src/domain/puzzle/CompletenessCheck';
-import { WordMap } from '../../../../src/domain/word/WordMap';
-import { Chain } from '../../../../src/domain/chain/Chain';
+import { ChainIndex } from '../../../../src/domain/chain/ChainIndex';
 import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
@@ -155,9 +154,9 @@ function withDerivedWords(state: BuilderState): BuilderState {
 }
 
 function withHeadClues(state: BuilderState, clue: string): BuilderState {
-  const wordMap = WordMap.fromWords(state.puzzle.words);
+  const index = ChainIndex.build(state.puzzle.words);
   const words = state.puzzle.words.map((w) =>
-    Chain.isHead(wordMap, w.key) ? { ...w, clue } : { ...w, clue: '' },
+    index.isHead(w.key) ? { ...w, clue } : { ...w, clue: '' },
   );
   return { ...state, puzzle: Puzzle.withWords(state.puzzle, words) };
 }

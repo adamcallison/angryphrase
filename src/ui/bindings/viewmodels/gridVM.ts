@@ -5,6 +5,7 @@ import type { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import { GridOps } from '../../../domain/grid/GridOps';
+import { WordTopology } from '../../../domain/grid/WordTopology';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../domain/grid/Cursor';
 import type { Direction } from '../../../domain/word/Direction';
@@ -53,6 +54,7 @@ export function deriveGridVM(input: {
   selectedWordCells: ReadonlySet<string>;
 }): GridVM {
   const { grid, cursor, words, whichLetter, selectedWordCells } = input;
+  const mask = WordTopology.partOfRunMask(grid);
   const size = grid.length;
   const cursorRow = cursor ? Number(cursor.row) : null;
   const cursorCol = cursor ? Number(cursor.col) : null;
@@ -109,7 +111,7 @@ export function deriveGridVM(input: {
           hilite,
           separatorRight: deriveSeparatorRight(cell),
           separatorBottom: deriveSeparatorBottom(cell),
-          selectable: GridOps.isSelectable(grid, row, col),
+          selectable: mask[r]?.[c] === true,
         });
       }
     }

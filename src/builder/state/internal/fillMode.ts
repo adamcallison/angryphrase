@@ -8,8 +8,7 @@ import { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordKey } from '../../../domain/word/WordKey';
-import { WordMap } from '../../../domain/word/WordMap';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 import { GridInteraction, type LetterSlot } from '../../../domain/grid/GridInteraction';
 import { resolveJoin } from './joinSubMode';
 import { resolveReattach } from './reattachSubMode';
@@ -122,8 +121,8 @@ export function handleEditClue(
     return Result.ok(state);
   }
 
-  const wordMap = WordMap.fromWords(words);
-  if (Chain.isNonHead(wordMap, intent.wordKey)) {
+  const index = ChainIndex.build(words);
+  if (!index.isHead(intent.wordKey)) {
     return Result.withEvents(state, [
       {
         kind: 'toast',

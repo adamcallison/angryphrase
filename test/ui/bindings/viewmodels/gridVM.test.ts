@@ -225,4 +225,15 @@ describe('deriveGridVM', () => {
       }
     }
   });
+
+  it('deriveGridVM: selectable matches GridOps.isSelectable for every cell', () => {
+    const grid = GridOps.blank(GridSize.of(3));
+    const g = GridOps.setCell(grid, Row.of(1), Col.of(1), Cell.black());
+    const vm = deriveGridVM({ grid: g, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        expect(vm.cells[r]![c]!.selectable).toBe(GridOps.isSelectable(g, Row.of(r), Col.of(c)));
+      }
+    }
+  });
 });

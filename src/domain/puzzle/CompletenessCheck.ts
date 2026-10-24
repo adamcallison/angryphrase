@@ -5,8 +5,7 @@ import type { Direction } from '../word/Direction';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
 import { GridOps } from '../grid/GridOps';
-import { WordMap } from '../word/WordMap';
-import { Chain } from '../chain/Chain';
+import { ChainIndex } from '../chain/ChainIndex';
 
 export type CompletenessViolation =
   | { kind: 'missing-answer-letter'; row: Row; col: Col }
@@ -51,16 +50,17 @@ export const CompletenessCheck: {
 
   clueViolations(words: Word[]): CompletenessViolation[] {
     const violations: CompletenessViolation[] = [];
-    const map = WordMap.fromWords(words);
+    const index = ChainIndex.build(words);
 
     for (const w of words) {
-      if (Chain.isHead(map, w.key) && w.clue.trim() === '') {
+      const isHead = index.isHead(w.key);
+      if (isHead && w.clue.trim() === '') {
         violations.push({
           kind: 'missing-clue',
           wordNumber: w.number,
           direction: w.key.direction,
         });
-      } else if (!Chain.isHead(map, w.key) && w.clue.trim() !== '') {
+      } else if (!isHead && w.clue.trim() !== '') {
         violations.push({
           kind: 'non-head-clue',
           wordNumber: w.number,

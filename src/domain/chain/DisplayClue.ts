@@ -1,18 +1,16 @@
 import type { Word } from '../word/Word';
-import type { WordMap } from '../word/WordMap';
-import { Chain } from './Chain';
-import { WordMap as WordMapCtor } from '../word/WordMap';
+import type { ChainIndex } from './ChainIndex';
 
 export const DisplayClue: {
-  forWord(words: WordMap, w: Word): string;
+  forWord(index: ChainIndex, w: Word): string;
 } = {
-  forWord(words: WordMap, w: Word): string {
-    if (Chain.isHead(words, w.key)) {
+  forWord(index: ChainIndex, w: Word): string {
+    if (index.isHead(w.key)) {
       return w.clue;
     }
 
-    const headKey = Chain.headOf(words, w.key);
-    const head = WordMapCtor.get(words, headKey);
+    const headKey = index.headOf(w.key);
+    const head = index.word(headKey);
     if (head === undefined) {
       throw new Error('DisplayClue.forWord: head missing from word map');
     }

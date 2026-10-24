@@ -3,12 +3,11 @@ import type { AnagramModalState } from '../state';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
-import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import type { Letter } from '../../../domain/letter/Letter';
 import { Result } from '../../../domain/notifications/Event';
 import { Anagram } from '../../../domain/anagram/Anagram';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 
 export function handleOpenAnagramHelper(
   state: PlayerState,
@@ -20,8 +19,8 @@ export function handleOpenAnagramHelper(
   if (word === null) {
     return Result.ok(state);
   }
-  const wordMap = WordMap.fromWords(state.puzzle.words);
-  const head = Chain.headOf(wordMap, word.key);
+  const index = ChainIndex.build(state.puzzle.words);
+  const head = index.headOf(word.key);
   const newAnagram: AnagramModalState = {
     openedForWord: head,
     input: '',
@@ -37,12 +36,12 @@ export function handleAnagramInput(
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);
   }
-  const wordMap = WordMap.fromWords(state.puzzle.words);
-  const head = WordMap.get(wordMap, state.anagram.openedForWord);
+  const index = ChainIndex.build(state.puzzle.words);
+  const head = index.word(state.anagram.openedForWord);
   if (head === undefined) {
     return Result.ok(state);
   }
-  const members = Chain.fromHead(wordMap, head.key).members;
+  const members = index.fromHead(head.key).members;
   const total = members.reduce((s, m) => s + m.length, 0);
   const sanitised = Anagram.sanitizeInput(intent.input, total);
   return Result.ok({
@@ -62,12 +61,12 @@ export function handleAnagramScramble(
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);
   }
-  const wordMap = WordMap.fromWords(state.puzzle.words);
-  const head = WordMap.get(wordMap, state.anagram.openedForWord);
+  const index = ChainIndex.build(state.puzzle.words);
+  const head = index.word(state.anagram.openedForWord);
   if (head === undefined) {
     return Result.ok(state);
   }
-  const members = Chain.fromHead(wordMap, head.key).members;
+  const members = index.fromHead(head.key).members;
   const { entries } = Anagram.buildChainModel(state.puzzle.grid, members);
   const scrambled = Anagram.scramble(entries, state.anagram.input, rng);
   const scrambledArrangement: (Letter | null)[] = scrambled.map((e) => e.letter);

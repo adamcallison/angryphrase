@@ -18,8 +18,7 @@ import { WordKey } from '../../../src/domain/word/WordKey';
 import { DisplacedClue } from '../../../src/domain/builder/DisplacedClue';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../src/domain/word/Numbering';
-import { WordMap } from '../../../src/domain/word/WordMap';
-import { Chain } from '../../../src/domain/chain/Chain';
+import { ChainIndex } from '../../../src/domain/chain/ChainIndex';
 
 describe('reduceBuilder', () => {
   const rng = new SeededRng(42);
@@ -71,9 +70,9 @@ describe('reduceBuilder', () => {
       }
     }
     const puzzleWithGrid = Puzzle.withGrid(base.puzzle, grid);
-    const wordMap = WordMap.fromWords(puzzleWithGrid.words);
+    const index = ChainIndex.build(puzzleWithGrid.words);
     const words = puzzleWithGrid.words.map((w) =>
-      Chain.isHead(wordMap, w.key) ? { ...w, clue: 'Clue text' } : w,
+      index.isHead(w.key) ? { ...w, clue: 'Clue text' } : w,
     );
     return { ...base, puzzle: Puzzle.withWords(puzzleWithGrid, words) };
   }

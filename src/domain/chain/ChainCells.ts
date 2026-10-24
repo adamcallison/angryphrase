@@ -1,7 +1,6 @@
 import type { Word } from '../word/Word';
-import { WordMap } from '../word/WordMap';
 import { WordGeometry } from '../word/WordGeometry';
-import { Chain } from './Chain';
+import { ChainIndex } from './ChainIndex';
 
 export const ChainCells: {
   cellsOfWord(w: Word): Set<string>;
@@ -19,9 +18,9 @@ export const ChainCells: {
     if (cursorWord === null) {
       return new Set<string>();
     }
-    const wordMap = WordMap.fromWords(words);
-    const head = Chain.headOf(wordMap, cursorWord.key);
-    const members = Chain.fromHead(wordMap, head).members;
+    const index = ChainIndex.build(words);
+    const head = index.headOf(cursorWord.key);
+    const members = index.fromHead(head).members;
     const set = new Set<string>();
     for (const m of members) {
       for (const cell of ChainCells.cellsOfWord(m)) {

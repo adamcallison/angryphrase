@@ -11,7 +11,7 @@ import type { Word } from '../../../../src/domain/word/Word';
 import type { BuilderSubMode } from '../../../../src/builder/state/state';
 import type { DisplacedClueId } from '../../../../src/domain/builder/DisplacedClueId';
 import { LengthPattern } from '../../../../src/domain/chain/LengthPattern';
-import { WordMap } from '../../../../src/domain/word/WordMap';
+import { ChainIndex } from '../../../../src/domain/chain/ChainIndex';
 
 function blankGrid() {
   return GridOps.blank(GridSize.of(3));
@@ -81,7 +81,7 @@ describe('deriveCluePanelVM', () => {
     const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
     const entry = findEntry(vm, head.key)!;
     expect(entry.displayClue).toBe(head.clue);
-    expect(entry.lengthPattern).toBe(LengthPattern.forWord(blankGrid(), WordMap.fromWords(words), head));
+    expect(entry.lengthPattern).toBe(LengthPattern.forWord(blankGrid(), ChainIndex.build(words), head));
   });
 
   it('deriveCluePanelVM: non-head word has displayClue = "See N Direction", lengthPattern = null', () => {

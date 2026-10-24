@@ -75,6 +75,7 @@ function measureRun(
 export const WordTopology: {
   runs(grid: Grid, direction: Direction): readonly WordRun[];
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean;
+  partOfRunMask(grid: Grid): boolean[][];
 } = {
   runs(grid: Grid, direction: Direction): readonly WordRun[] {
     const size = grid.length;
@@ -161,5 +162,26 @@ export const WordTopology: {
     }
 
     return length >= 2;
+  },
+
+  partOfRunMask(grid: Grid): boolean[][] {
+    const mask: boolean[][] = grid.map((row) => row.map(() => false));
+
+    for (const direction of ['across', 'down'] as const) {
+      for (const run of WordTopology.runs(grid, direction)) {
+        if (run.length < 2) continue;
+        const startRow = Number(run.startRow);
+        const startCol = Number(run.startCol);
+        for (let i = 0; i < run.length; i++) {
+          const r = direction === 'across' ? startRow : startRow + i;
+          const c = direction === 'across' ? startCol + i : startCol;
+          const rowMask = mask[r];
+          if (rowMask === undefined) continue;
+          rowMask[c] = true;
+        }
+      }
+    }
+
+    return mask;
   },
 };

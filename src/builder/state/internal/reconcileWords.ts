@@ -11,6 +11,7 @@ import type { ChainViolation } from '../../../domain/chain/ChainViolation';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
+import { WordMap } from '../../../domain/word/WordMap';
 import { Numbering } from '../../../domain/word/Numbering';
 import { ChainValidation } from '../../../domain/chain/ChainValidation';
 import { DisplacedClue as DisplacedClueCtor } from '../../../domain/builder/DisplacedClue';
@@ -31,10 +32,7 @@ export function reconcileWords(
   oldDisplacedClues: DisplacedClue[],
   rng: Rng,
 ): { grid: Grid; words: Word[]; displacedClues: DisplacedClue[]; events: DomainEvent[] } {
-  const oldByCanonical = new Map<string, Word>();
-  for (const word of oldWords) {
-    oldByCanonical.set(WordKey.toCanonical(word.key), word);
-  }
+  const oldByCanonical = WordMap.fromWords(oldWords);
 
   const newByCanonical = new Map<string, DerivedWord>();
   for (const word of newWords) {
@@ -123,10 +121,7 @@ export function reconcileWords(
   const reconciledGrid = applyBoundaryMarkerRule(grid, oldWords, newByCanonical, survivingByCanonical);
 
   const words = Numbering.assign(reconciledGrid, derivedWords);
-  const wordsByCanonical = new Map<string, Word>();
-  for (const word of words) {
-    wordsByCanonical.set(WordKey.toCanonical(word.key), word);
-  }
+  const wordsByCanonical = WordMap.fromWords(words);
 
   const lengthChangeEvents: DomainEvent[] = [];
   for (const { wordKey, direction, change } of lengthChanges) {

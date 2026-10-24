@@ -333,4 +333,73 @@ describe('WordTopology', () => {
       expect(WordTopology.partOfRun(g, Row.of(0), Col.of(1), 'down')).toBe(true);
     });
   });
+
+  describe('partOfRunMask', () => {
+    it('WordTopology.partOfRunMask returns a mask aligned with the grid', () => {
+      const g = blankGrid(3);
+      const mask = WordTopology.partOfRunMask(g);
+      expect(mask.length).toBe(g.length);
+      for (let r = 0; r < g.length; r++) {
+        expect(mask[r]).toHaveLength(g[r]!.length);
+      }
+    });
+
+    it('WordTopology.partOfRunMask agrees with partOfRun on every cell', () => {
+      const allWhite3 = blankGrid(3);
+
+      let withBlack = blankGrid(3);
+      withBlack = setBlack(withBlack, 1, 1);
+
+      let isolated = blankGrid(3);
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (r !== 1 || c !== 1) {
+            isolated = setBlack(isolated, r, c);
+          }
+        }
+      }
+
+      const grids = [allWhite3, withBlack, isolated];
+      for (const g of grids) {
+        const mask = WordTopology.partOfRunMask(g);
+        for (let r = 0; r < g.length; r++) {
+          for (let c = 0; c < g.length; c++) {
+            const expected =
+              WordTopology.partOfRun(g, Row.of(r), Col.of(c), 'across') ||
+              WordTopology.partOfRun(g, Row.of(r), Col.of(c), 'down');
+            expect(mask[r]![c]).toBe(expected);
+          }
+        }
+      }
+    });
+
+    it('WordTopology.partOfRunMask marks the cells of a length-2 run', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 1, 2);
+      for (let r = 0; r < 3; r++) {
+        if (r !== 1) {
+          for (let c = 0; c < 3; c++) {
+            g = setBlack(g, r, c);
+          }
+        }
+      }
+      const mask = WordTopology.partOfRunMask(g);
+      expect(mask[1]![0]).toBe(true);
+      expect(mask[1]![1]).toBe(true);
+    });
+
+    it('WordTopology.partOfRunMask leaves black cells and isolated cells false', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 0, 1);
+      g = setBlack(g, 1, 0);
+      g = setBlack(g, 1, 2);
+      g = setBlack(g, 2, 1);
+      const mask = WordTopology.partOfRunMask(g);
+      expect(mask[1]![1]).toBe(false);
+      expect(mask[0]![0]).toBe(false);
+      expect(mask[0]![2]).toBe(false);
+      expect(mask[2]![0]).toBe(false);
+      expect(mask[2]![2]).toBe(false);
+    });
+  });
 });

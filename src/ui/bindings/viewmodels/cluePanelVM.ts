@@ -2,11 +2,10 @@ import type { Grid } from '../../../domain/grid/Grid';
 import type { Word } from '../../../domain/word/Word';
 import type { Direction } from '../../../domain/word/Direction';
 import type { BuilderSubMode } from '../../../builder/state/state';
-import { WordMap } from '../../../domain/word/WordMap';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { WordKey } from '../../../domain/word/WordKey';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 
 export type { LengthPattern };
 
@@ -41,30 +40,20 @@ export function deriveCluePanelVM(input: {
   const { grid, words, highlightedWordKey, isBuilder } = input;
   const subMode = input.builderSubMode ?? { kind: 'none' };
 
-  const wordMap = WordMap.fromWords(words);
+  const index = ChainIndex.build(words);
 
   const selectedChainMemberKeys: Set<string> = (() => {
     if (highlightedWordKey === null) return new Set<string>();
-    const head = Chain.headOf(wordMap, highlightedWordKey);
-    const members = Chain.fromHead(wordMap, head).members;
+    const head = index.headOf(highlightedWordKey);
+    const members = index.fromHead(head).members;
     return new Set(members.map((m) => WordKey.toCanonical(m.key)));
   })();
-
-  const pointedAtKeys = new Set<string>();
-  const nonHeadKeys = new Set<string>();
-  for (const w of words) {
-    if (w.nextWord !== null) {
-      const canonical = WordKey.toCanonical(w.nextWord);
-      pointedAtKeys.add(canonical);
-      nonHeadKeys.add(canonical);
-    }
-  }
 
   const across: ClueEntryVM[] = [];
   const down: ClueEntryVM[] = [];
 
   for (const w of words) {
-    const isChainHead = !nonHeadKeys.has(WordKey.toCanonical(w.key));
+    const isChainHead = index.isHead(w.key);
     const hasOutgoingNextWord = w.nextWord !== null;
     const isSelected = selectedChainMemberKeys.has(WordKey.toCanonical(w.key));
 
@@ -78,7 +67,7 @@ export function deriveCluePanelVM(input: {
       isLinkableFromJoinSource =
         subMode.kind === 'join' &&
         !WordKey.equals(w.key, subMode.source) &&
-        !pointedAtKeys.has(WordKey.toCanonical(w.key));
+        index.isHead(w.key);
     }
 
     const entry: ClueEntryVM = {
@@ -86,8 +75,8 @@ export function deriveCluePanelVM(input: {
       wordKey: w.key,
       number: Number(w.number),
       direction: w.key.direction,
-      displayClue: DisplayClue.forWord(wordMap, w),
-      lengthPattern: isChainHead ? LengthPattern.forWord(grid, wordMap, w) : null,
+      displayClue: DisplayClue.forWord(index, w),
+      lengthPattern: isChainHead ? LengthPattern.forWord(grid, index, w) : null,
       isChainHead,
       hasOutgoingNextWord,
       isSelected,

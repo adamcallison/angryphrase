@@ -1,11 +1,10 @@
 import type { Grid } from '../grid/Grid';
 import type { Word } from '../word/Word';
-import type { WordMap } from '../word/WordMap';
 import { GridOps } from '../grid/GridOps';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import { WordGeometry } from '../word/WordGeometry';
-import { Chain } from './Chain';
+import type { ChainIndex } from './ChainIndex';
 
 export type LengthPattern = string;
 
@@ -66,17 +65,17 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
 }
 
 export const LengthPattern: {
-  forWord(grid: Grid, words: WordMap, w: Word): LengthPattern;
-  forActiveClueBanner(grid: Grid, words: WordMap, w: Word): LengthPattern | null;
+  forWord(grid: Grid, index: ChainIndex, w: Word): LengthPattern;
+  forActiveClueBanner(grid: Grid, index: ChainIndex, w: Word): LengthPattern | null;
 } = {
-  forWord(grid, words, w): LengthPattern {
+  forWord(grid, index, w): LengthPattern {
     if (w.nextWord !== null) {
-      return chainPattern(grid, Chain.membersOf(words, w.key));
+      return chainPattern(grid, index.membersOf(w.key));
     }
     return singleWordPattern(grid, w);
   },
 
-  forActiveClueBanner(grid, words, w): LengthPattern | null {
-    return Chain.isHead(words, w.key) ? LengthPattern.forWord(grid, words, w) : null;
+  forActiveClueBanner(grid, index, w): LengthPattern | null {
+    return index.isHead(w.key) ? LengthPattern.forWord(grid, index, w) : null;
   },
 };

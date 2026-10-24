@@ -2,15 +2,13 @@ import type { Word } from '../word/Word';
 import type { WordKey } from '../word/WordKey';
 import type { ChainViolation } from './ChainViolation';
 import { WordKey as WordKeyCtor } from '../word/WordKey';
+import { WordMap } from '../word/WordMap';
 
 export const ChainValidation: {
   validate(words: Word[]): ChainViolation[];
 } = {
   validate(words: Word[]): ChainViolation[] {
-    const wordMap = new Map<string, Word>();
-    for (const w of words) {
-      wordMap.set(WordKeyCtor.toCanonical(w.key), w);
-    }
+    const wordMap = WordMap.fromWords(words);
 
     const violations: ChainViolation[] = [];
     const processed = new Set<string>();
@@ -42,7 +40,7 @@ export const ChainValidation: {
     for (const entry of targetToSources.values()) {
       if (entry.sources.length > 1) {
         violations.push({ kind: 'branch', target: entry.target, sources: [...entry.sources] });
-        if (!wordMap.has(WordKeyCtor.toCanonical(entry.target))) {
+        if (!WordMap.has(wordMap, entry.target)) {
           // A branch to a missing target is still a branch; do not also report
           // each source as a dangling link.
           for (const source of entry.sources) {
@@ -58,7 +56,7 @@ export const ChainValidation: {
       const sourceCanonical = WordKeyCtor.toCanonical(w.key);
       if (processed.has(sourceCanonical)) continue;
       const targetCanonical = WordKeyCtor.toCanonical(w.nextWord);
-      if (wordMap.has(targetCanonical)) continue;
+      if (WordMap.has(wordMap, w.nextWord)) continue;
       const entry = targetToSources.get(targetCanonical);
       if (entry !== undefined && entry.sources.length > 1) continue;
       violations.push({ kind: 'dangling', source: w.key, missingTarget: w.nextWord });

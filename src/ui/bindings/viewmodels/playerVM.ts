@@ -3,12 +3,11 @@ import type { WordKey } from '../../../domain/word/WordKey';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerState, CheckResult, CheckClassification } from '../../../player/state/state';
-import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
-import { Chain } from '../../../domain/chain/Chain';
 import { ChainCells } from '../../../domain/chain/ChainCells';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 import { deriveGridVM, type GridVM } from './gridVM';
 import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
 import { deriveAnagramModalVM, type AnagramModalVM } from './anagramVM';
@@ -81,10 +80,10 @@ export function deriveActiveClueBannerVM(input: {
     return emptyBanner();
   }
 
-  const wordMap = WordMap.fromWords(puzzle.words);
-  const displayClue = DisplayClue.forWord(wordMap, word);
-  const lengthPattern = Chain.isHead(wordMap, word.key)
-    ? LengthPattern.forWord(puzzle.grid, wordMap, word)
+  const index = ChainIndex.build(puzzle.words);
+  const displayClue = DisplayClue.forWord(index, word);
+  const lengthPattern = index.isHead(word.key)
+    ? LengthPattern.forWord(puzzle.grid, index, word)
     : null;
 
   return {

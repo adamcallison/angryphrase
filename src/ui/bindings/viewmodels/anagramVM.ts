@@ -3,9 +3,7 @@ import type { Word } from '../../../domain/word/Word';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import type { AnagramModalState } from '../../../player/state/state';
 import { Anagram } from '../../../domain/anagram/Anagram';
-import { WordKey as WordKeyCtor } from '../../../domain/word/WordKey';
-import { WordMap } from '../../../domain/word/WordMap';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 
 export type AnagramTileVM = {
   position: number;
@@ -49,13 +47,14 @@ export function deriveAnagramModalVM(input: {
     return CLOSED_BASELINE;
   }
 
-  const head = words.find((w) => WordKeyCtor.equals(w.key, anagramModal.openedForWord));
+  const index = ChainIndex.build(words);
+
+  const head = index.word(anagramModal.openedForWord);
   if (head === undefined) {
     return CLOSED_BASELINE;
   }
 
-  const wordMap = WordMap.fromWords(words);
-  const members = Chain.fromHead(wordMap, head.key).members;
+  const members = index.fromHead(head.key).members;
   const totalLength = members.reduce((sum, member) => sum + member.length, 0);
 
   const { entries, separators } = Anagram.buildChainModel(grid, members);

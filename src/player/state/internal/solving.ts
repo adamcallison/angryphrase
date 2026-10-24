@@ -7,9 +7,8 @@ import { GridOps } from '../../../domain/grid/GridOps';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
-import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
-import { Chain } from '../../../domain/chain/Chain';
+import { ChainIndex } from '../../../domain/chain/ChainIndex';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { Cell } from '../../../domain/grid/Cell';
 import { Letter } from '../../../domain/letter/Letter';
@@ -29,8 +28,8 @@ function anagramAfterCursorChange(
   if (newCursor === null) return null;
   const word = WordSelection.findContainingWord(puzzle.words, newCursor);
   if (word === null) return null;
-  const wordMap = WordMap.fromWords(puzzle.words);
-  const head = Chain.headOf(wordMap, word.key);
+  const index = ChainIndex.build(puzzle.words);
+  const head = index.headOf(word.key);
   if (!WordKey.equals(head, anagram.openedForWord)) return null;
   return anagram;
 }

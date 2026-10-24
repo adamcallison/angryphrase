@@ -1352,6 +1352,123 @@ None. Every site in the inventory was migrated. The grid-size clamp this finding
 
 ---
 
+## 14. VM derivation is a full recompute per dispatch, with no memoization seam — cost shape resolved 2026-10-24; the frequency half remains open
+
+### The smell (recap)
+
+Each shell mounts a single `$derived` over its whole view-model tree (`BuilderShell.svelte:13`, `PlayerShell.svelte:14`), so every dispatch re-derives the whole tree. The audit's complaint was that the bindings layer has **no seam where derivation cost can be bounded independently of dispatch frequency**, so any future feature that multiplies per-cell or per-word derivation work inherits full-tree recompute on every keystroke by default.
+
+Working the finding produced a sharper diagnosis than the audit's text: the recompute is not the root defect, it is the *amplifier*. The root defect is that the domain answers structural questions by **re-deriving structure per question** — "is this word a chain head?" is a scan over every word, asked once per word; "is this cell selectable?" is a pair of run scans, asked once per cell. Those two shapes make the per-dispatch work quadratic (O(W²)) and cubic (O(N³)) in the number of words and cells, so the recompute that the audit noticed is what makes the quadratic cost visible. The audit's own framing — "the structural point: the bindings layer has no seam where derivation cost could be bounded" — remains true, and is addressed by the second half of this entry, which is **not** closed.
+
+**Audit corrections.** The finding's line anchors had drifted (`builderVM.ts:60` → `builderVM.ts:84`; `playerVM.ts:119` → `playerVM.ts:84`; `anagramVM.ts:60` → `anagramVM.ts:57`; `gridVM.ts:111` → `gridVM.ts:112`; `CompletenessCheck.ts:21-44` → `26-46`) — consistent with #11's finding about drifted anchors. Two of its claims needed narrowing: the reducer hit `fillMode.ts:248` is actually `fillMode.ts:125`, inside `handleEditClue`, so it runs per *clue edit*, not per keystroke; and the anagram view-model's rebuild only happens while the anagram modal is open. One site it missed entirely: `domain/chain/ChainCells.ts:22` rebuilt the word map on **every dispatch in both shells**.
+
+### Gate 0 — Site inventory
+
+| # | Site | Kind |
+|---|---|---|
+| S1 | `CompletenessCheck.clueViolations` — `Chain.isHead` per word (O(W²)), inside a full grid scan | chain-structure query |
+| S2 | `DisplayClue.forWord` — `Chain.isHead` + `Chain.headOf` per word (O(W²)) | chain-structure query |
+| S3 | `LengthPattern.forWord` — `Chain.membersOf` per head word (chain walk) | chain-structure query |
+| S4 | `Chain.isHead` — a linear scan over every word, for every question asked | chain-structure query |
+| S5 | `Chain.headOf` — rebuilds a reverse predecessor map on **every call** | chain-structure query |
+| S6 | `cluePanelVM.ts` — hand-rolled `pointedAtKeys` / `nonHeadKeys` sets: a bindings-layer encoding of chain structure | chain-structure query |
+| S7 | `WordMap.fromWords` rebuilt 4–5× per Player keystroke (banner, clue panel, anagram, `ChainCells.cellsOfChain`, and `solving.ts` in the reducer) | repeated build |
+| S8 | `GridOps.isSelectable` per white cell in `deriveGridVM` — two run scans each (O(N³)) | grid run predicate |
+| S9 | `ChainValidation.validate` — hand-rolled canonical→word map | canonical-lookup duplication |
+| S10 | `reconcileWords.ts` — two hand-rolled canonical→word maps (`oldByCanonical`, `wordsByCanonical`) | canonical-lookup duplication |
+| S11 | `v1.ts` `validateNextWordReferences` — builds a `WordMap` per parse | repeated build (**not** a duplicate encoding: it uses the sanctioned owner) |
+| S12 | `GridOps.isSelectable` as used by `GridInteraction` (1–2 calls per interaction) | grid run predicate — single-cell form, kept |
+
+**S6 is the one that mattered most.** A bindings-layer module was re-implementing "which word is a chain head" — a domain concept — with its own sets. That is a drift surface, not merely a slow path.
+
+### Gate 1 — Coverage
+
+Three buckets, derived from the inventory: **chain-structure queries** (S1–S7), **canonical-lookup duplication** (S9, S10), **grid run predicate** (S8, S12). S11 and S12 are *not* duplicates: S11 already uses the sanctioned owner (`WordMap.fromWords`), and S12 is the single-cell form of the run predicate, which stays because building an O(N²) mask for one or two calls per interaction would be a pessimisation. Every site in the inventory lands in a bucket or carries an explicit decision below.
+
+### Decision
+
+- **A — Accept (the audit's own framing: "scale is not a concern").** Rejected. The cost is not the defect; six owners of one domain concept is the defect, and it is the same shape as #1, #4 and #10. Accepting would leave S6 in place.
+- **B — Memoise the view-models in the bindings layer (the "memoization seam" the audit's title asks for).** **Deferred with a landing site** — see "Not addressed". It does not touch the root defect: a cached view-model still has to be *computed* once, and computing it was the quadratic part. It also carries the only staleness risk in this area (a stale view-model is a user-visible wrong render). Choosing it first would have papered over the shape defect.
+- **C — Pre-compute the derived structures into the state aggregate (`Puzzle` / `BuilderState`).** Rejected, and this is the same decision #10 already made for grid topology ("B — Pre-compute word topology into `Puzzle` … Rejected. Invasively mutates the domain aggregate"). A derived index is not part of the puzzle; it would have to be excluded from persistence, and it would make the aggregate carry a cache.
+- **D — Give the repeated structural queries an owner: a chain-structure index and a bulk run mask.** **Chosen.** Pure domain code, no state, no behaviour change; it removes the duplicate encodings and replaces the scans with lookups.
+- **E — Throttle or debounce the derivation.** Rejected: visible lag and possible tearing on a typing-first application.
+
+### Design as implemented
+
+**`src/domain/chain/ChainIndex.ts` (new) — the single owner of the chain structure of a word list.**
+
+```ts
+export type Chain = { head: WordKey; members: Word[] };
+
+export type ChainIndex = {
+  word(key: WordKey): Word | undefined;
+  has(key: WordKey): boolean;
+  isHead(key: WordKey): boolean;
+  headOf(key: WordKey): WordKey;
+  membersOf(key: WordKey): Word[];
+  fromHead(head: WordKey): Chain;
+};
+
+export const ChainIndex: { build(words: Word[]): ChainIndex };
+```
+
+`build` is **total** — it never throws, whatever the word list contains — and precomputes the canonical-keyed lookup (via `WordMap.fromWords`, the sanctioned owner), the set of pointed-at keys, and the predecessor map (last source wins for a target, matching the reverse map the old `Chain.headOf` built). `isHead` is an O(1) set lookup; `headOf` walks the prebuilt predecessor map instead of rebuilding one per call; `fromHead` / `membersOf` keep the forward walk, and therefore keep the old throw sites and messages exactly: `cycle detected in chain at: <canonical>` and `dangling nextWord in chain at: <canonical>`. The `Chain` value type moved here with the module that owns it.
+
+**`src/domain/grid/WordTopology.ts` — `partOfRunMask(grid): boolean[][]`.** The bulk form of the existing single-cell `partOfRun` predicate: a mask aligned with the grid, true where the cell lies in a maximal white run of length ≥ 2 on either axis. It is derived from the existing `runs` primitive — no second run-scanning algorithm was written — so there is one rule in two forms. `GridOps.isSelectable` (the single-cell form, used by `GridInteraction`) is unchanged.
+
+**Consumer migration.** Every consumer of "which word is this word's chain head" now goes through the index: `DisplayClue.forWord(index, w)`, `LengthPattern.forWord(grid, index, w)` and `forActiveClueBanner(grid, index, w)`, `ChainCells.cellsOfChain` (builds the index internally; its signature did not change), `CompletenessCheck.clueViolations` (one index, `isHead` computed once per word — it was computed twice), the three player-state handlers in `anagram.ts`, `anagramAfterCursorChange` in `solving.ts`, `handleEditClue` in `fillMode.ts`, and the three view-model derivations (`cluePanelVM`, `playerVM`'s banner, `anagramVM`). `cluePanelVM`'s two hand-rolled sets are deleted: `isChainHead` is `index.isHead(w.key)` and `isLinkableFromJoinSource` is `!index.isHead(w.key)` — equivalent, because `pointedAt` was exactly the set of `nextWord` targets.
+
+**Canonical-lookup duplication closed.** `ChainValidation.validate` and `reconcileWords` now build their canonical→word maps with `WordMap.fromWords` instead of hand-rolling them. `reconcileWords`' two `Map<string, DerivedWord>` maps are deliberately **not** migrated: `DerivedWord` is a different value type, and `WordMap` is typed to `Word`, so those are not duplicates of the `WordMap` concept.
+
+**Retired.** `src/domain/chain/Chain.ts` and `test/domain/chain/Chain.test.ts` are deleted; the chain structure has one owner. `ChainIndex.test.ts` carries every case the old suite had, plus cases the new module needs (a total `build`, an `isHead` that never throws on a cyclic list, `word` / `has`).
+
+### Deliberate behaviour changes
+
+None. Every reducer signature, view-model type, view-model field and value is unchanged; the state model, the intent set, the event set, the persistence format and the component contract are untouched. Specifically verified as unchanged: the clue panel's `isChainHead` / `isSelected` / `isStartableJoinSource` / `isLinkableFromJoinSource` / `isUnjoinable` / `hasOutgoingNextWord` / `displayClue` / `lengthPattern`; the banner's `wordNumber` / `direction` / `displayClue` / `lengthPattern`; the anagram modal's closed-baseline cases and chain-total sanitisation; the non-head-clue-edit toast text; `CompletenessCheck`'s violation kinds and order; `ChainValidation`'s violation kinds and order; the grid cell's `selectable` value for every cell of every fixture grid.
+
+### Files
+
+Created: `src/domain/chain/ChainIndex.ts`; `test/domain/chain/ChainIndex.test.ts`.
+
+Deleted: `src/domain/chain/Chain.ts`; `test/domain/chain/Chain.test.ts`.
+
+Modified: `src/domain/chain/ChainCells.ts`; `src/domain/chain/ChainValidation.ts`; `src/domain/chain/DisplayClue.ts`; `src/domain/chain/LengthPattern.ts`; `src/domain/puzzle/CompletenessCheck.ts`; `src/builder/state/internal/fillMode.ts`; `src/builder/state/internal/reconcileWords.ts`; `src/player/state/internal/anagram.ts`; `src/player/state/internal/solving.ts`; `src/domain/grid/WordTopology.ts`; `src/ui/bindings/viewmodels/anagramVM.ts`; `src/ui/bindings/viewmodels/cluePanelVM.ts`; `src/ui/bindings/viewmodels/gridVM.ts`; `src/ui/bindings/viewmodels/playerVM.ts`; the corresponding files under `test/`; `llmworkspace/architecture.md` (§3 Layer 0, §13); `llmworkspace/architecture_smells.md` (inventory corrections and status line); `llmworkspace/architecture_smell_resolutions.md` (this entry).
+
+No intent, event, state type or domain concept was renamed.
+
+### Verification
+
+- `npm run ci` — eslint and `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **93 test files / 1381 tests green**; the production build succeeded.
+- New tests cover: `ChainIndex.build` never throwing on a cyclic word list; `isHead` true / false / never-throws; `headOf` for a head, a mid-chain word and a tail, plus its dangling and cycle throws; `membersOf` for a suffix and for a tail; `fromHead` for a clean chain, a single word, a cycle and a dangling link; `word` / `has`; `partOfRunMask`'s alignment, its agreement with `partOfRun` on every cell of three fixture grids, its marking of a length-2 run, and its treatment of black and isolated cells; and the grid view-model's `selectable` matching `GridOps.isSelectable` for every cell.
+- Measured cost of one derivation (vite-node, plain objects, `n=300–500` per measurement, same harness before and after):
+
+  | | 15×15 real puzzle (28 words) | | dense 25×25 (162 words) | |
+  |---|---|---|---|---|
+  | | before | after | before | after |
+  | Builder shell VM | 0.380 ms | **0.266 ms** | 2.087 ms | **1.245 ms** |
+  | Player shell VM | 0.324 ms | **0.198 ms** | 1.906 ms | **1.138 ms** |
+  | grid VM | 0.167 ms | **0.076 ms** | 0.911 ms | **0.184 ms** |
+  | clue-panel VM | 0.087 ms | 0.091 ms | 0.916 ms | 0.870 ms |
+  | completeness check | 0.021 ms | 0.016 ms | 0.126 ms | 0.077 ms |
+
+  The grid view-model — the O(N³) site — drops by 5×. The clue-panel view-model barely moves, and that is the honest reading of its remaining cost: what is left there is the chain length-pattern *construction* (inherent work, linear in the letters of the chains), not a scan. The remaining per-dispatch cost is now spread across linear work: one view-model object allocated per cell, the completeness letter scan, and the length patterns. Nothing quadratic remains in the derivation path.
+
+### Consequence (change cost after)
+
+"Which word is this word's chain head" has one owner (`ChainIndex`), and every consumer — view-models, reducers, the completeness check, the parser — asks it the same way. "Is this cell part of a word" has one owner (`WordTopology`) in two forms (single-cell `partOfRun` / `isSelectable`, bulk `partOfRunMask`), with a conformance test proving the forms equal. The canonical→word lookup has one owner (`WordMap`) and is no longer hand-rolled. The next feature that asks a per-cell or per-word structural question now has an index to ask, and the cost of asking is O(1) per cell instead of O(N) per cell — which is the inheritance the audit was worried about, removed at the level where it was created.
+
+### Not addressed
+
+| Site | Why not | Landing site |
+|---|---|---|
+| The frequency half of #14: the whole view-model tree is still rebuilt on every dispatch, and the rebuilt objects have fresh identities, so Svelte still re-evaluates every cell (measured: 625 of 625 cell items per keystroke). Splitting the shell's single `$derived` into per-leaf deriveds does **not** help on its own — the reducer replaces the state root on every dispatch, so every derived that reads it is invalidated regardless (verified with a scratch Svelte 5.56 experiment). What would help is retaining a projection and returning **stable identities** for unchanged facts. | It does not touch the root defect (the cost shape), it carries the only staleness risk in this area, and it is worth nothing at the application's stated ceiling (25×25 = 625 cells, single user, "scale is not a concern"). | **Open item — #14 (frequency half).** To be closed when a feature adds per-cell work to the derivation path, or when a measurement shows the render side dominating. Tracked, not silently closed. |
+| `ChainValidation.validate` (reports a broken chain) vs. `ChainIndex.fromHead` (throws on one) — two behaviours of one broken-chain concept. | Different contracts: a validator reports, a traversal throws. Unifying them would change the parser's failure messages. | Recorded for a future finding; not touched here. |
+| `WordMap.set` / `WordMap.remove` — dead public API, used only by their own tests. | Outside this finding's scope; deleting public API is a separate decision. | `architecture_smells.md` Appendix A (dead public API). |
+| `LengthPattern.forActiveClueBanner` — public but uncalled; migrated rather than deleted, because deletion is a separate decision. | As above. | `architecture_smells.md` Appendix A (dead public API). |
+
+
+---
+
 ## Appendix — Resolution process (gates)
 
 Added 2026-10-24, after the #10 resolution closed a hole that its own entry had concealed. This appendix records how a resolution entry in this document is produced, so that an exception cannot hide inside one. It is the project-side counterpart of the lead agent's spec gates; the gates are enforced in the agent spec and recorded here as project practice, so the practice survives the agent.

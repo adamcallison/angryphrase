@@ -319,6 +319,16 @@ Each shell mounts a single `$derived` over its whole VM tree (`BuilderShell.svel
 
 At 25×25 this is milliseconds and the doc accepts it. The structural point: the bindings layer has no seam where derivation cost could be bounded independently of dispatch frequency, so any future feature that multiplies per-cell or per-word derivation work (overlays, chain visualizations, search) inherits full-tree recompute on every keystroke by default.
 
+**Corrections to this finding's evidence (added 2026-10-24, when work on it began).**
+
+- The line anchors had drifted: `builderVM.ts:60` → `builderVM.ts:84`; `playerVM.ts:119` → `playerVM.ts:84`; `anagramVM.ts:60` → `anagramVM.ts:57`; `gridVM.ts:111` → `gridVM.ts:112`; `CompletenessCheck.ts:21-44` → `26-46`. The named symbols are correct.
+- The reducer hit is `fillMode.ts:125`, inside `handleEditClue` — it runs per **clue edit**, not per keystroke.
+- The anagram view-model's word-map rebuild only happens while the anagram modal is open, so it is not part of every keystroke.
+- One site was missed: `domain/chain/ChainCells.ts:22` rebuilt the word map on **every dispatch in both shells** (it feeds the grid's highlighted-word cell set), so the per-keystroke rebuild count is higher than stated.
+- The finding names the *symptom* (full-tree recompute) where the *cause* is narrower and fixable: the domain answers structural questions by re-deriving structure per question — "is this word a chain head?" scans every word, once per word; "is this cell selectable?" scans runs, once per cell — which makes the per-dispatch work quadratic in words and cubic in cells. The recompute is what makes that cost visible. The frequency half of the finding stands on its own and is tracked separately below.
+
+**Status (2026-10-24): the cost shape is addressed; the frequency half remains open** — resolution in `architecture_smell_resolutions.md` (entry: "VM derivation is a full recompute per dispatch, with no memoization seam"). The chain structure of a word list now has one owner (`src/domain/chain/ChainIndex.ts`), the grid run predicate has a bulk form (`WordTopology.partOfRunMask`), and the per-cell and per-word scans are gone; the grid view-model derivation dropped 5× and the whole Builder shell derivation 40% on a dense 25×25 fixture. **Still open:** the whole view-model tree is still rebuilt on every dispatch, and the rebuilt objects carry fresh identities, so the renderer still re-evaluates every cell (measured: 625 of 625 cell items per keystroke). Splitting the shell's single `$derived` does **not** fix that on its own — the reducer replaces the state root on every dispatch, so every derived that reads it is invalidated regardless. That half is carried as an open item in the resolution's "Not addressed" table, to be closed when a feature adds per-cell work to the derivation path or when a measurement shows the render side dominating.
+
 ---
 
 ## Verified sound (checked, not smells)
