@@ -1,6 +1,5 @@
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
-import type { PlayerState } from '../../player/state/state';
 import { derivePlayerShellVM } from './viewmodels/playerVM';
 import type { PlayerShellVM } from './viewmodels/playerVM';
 import type { AppStore } from './appStore.svelte';
@@ -44,7 +43,6 @@ export type PlayerAnagramActions = {
 export type PlayerFacade = {
   dispatch(intent: PlayerIntent): void;
   playerShellVM(): PlayerShellVM;
-  getPlayerState(): PlayerState;
   pickFile(): Promise<string | null>;
   actions: {
     toolbar: PlayerToolbarActions;
@@ -119,9 +117,6 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     dispatch,
     playerShellVM() {
       return derivePlayerShellVM(appStore.getPlayer());
-    },
-    getPlayerState() {
-      return appStore.getPlayer();
     },
     async pickFile() {
       return filePick.pickFile();

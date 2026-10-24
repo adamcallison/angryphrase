@@ -15,10 +15,7 @@
 
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    // Filter to A-Z, uppercase, clamp to the word length.
-    let s = target.value.toUpperCase().replace(/[^A-Z]/g, '');
-    if (s.length > vm.wordLength) s = s.slice(0, vm.wordLength);
-    actions.input(s);
+    actions.input(target.value);
   }
 
   function onBackdropClick(event: MouseEvent): void {
@@ -95,7 +92,7 @@
       <div class="mt-3 text-xs text-gray-500">
         Expected letters:
         {#each vm.expectedUniqueLetterCounts as c}
-          <span class="mx-1 font-mono">{String(c.letter)}×{c.count}</span>
+          <span class="mx-1 font-mono">{c.letter}×{c.count}</span>
         {/each}
       </div>
 

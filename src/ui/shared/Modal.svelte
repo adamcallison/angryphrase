@@ -1,14 +1,11 @@
 <script lang="ts">
   import type { ModalVM, ModalActions } from '../bindings/modalFacade';
-  import type { ConfirmableIntent } from '../../domain/notifications/Event';
 
   let {
     vm,
-    confirmIntent,
     actions,
   }: {
     vm: ModalVM;
-    confirmIntent: ConfirmableIntent | null;
     actions: ModalActions;
   } = $props();
 
@@ -20,9 +17,7 @@
   }
 
   function onConfirmClick(): void {
-    if (confirmIntent !== null) {
-      actions.confirm();
-    }
+    actions.confirm();
   }
 
   function onCancelClick(): void {

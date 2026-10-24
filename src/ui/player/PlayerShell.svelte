@@ -41,7 +41,7 @@
         <ActiveClueBanner vm={vm.topBanner} />
         <div class="relative overflow-x-auto">
           <Grid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.phase === 'solving' && !vm.anagram.open} cursor={vm.grid.cursor} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
+          <TypingSurface enabled={!vm.anagram.open} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
         </div>
         <ActiveClueBanner vm={vm.bottomBanner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
@@ -52,7 +52,7 @@
         <PlayerCluePanel vm={vm.cluePanel} actions={playerFacade.actions.cluePanel} />
       </section>
     </div>
+
+    <AnagramModal vm={vm.anagram} actions={playerFacade.actions.anagram} />
   </div>
 {/if}
-
-<AnagramModal vm={vm.anagram} actions={playerFacade.actions.anagram} />

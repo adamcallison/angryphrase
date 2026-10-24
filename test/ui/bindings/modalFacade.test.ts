@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppState } from '../../../src/app/state/state';
 import type { AppState as AppStateType } from '../../../src/app/state/state';
 import { createAppStore, type AppPorts, type AppStore } from '../../../src/ui/bindings/appStore.svelte';
@@ -78,19 +78,10 @@ describe('modalFacade.ts', () => {
     });
   });
 
-  it('modalFacade: getPendingConfirm() returns AppState.pendingConfirmIntent (null by default)', () => {
-    expect(store.getState().pendingConfirmIntent).toBeNull();
-    expect(modalFacade.getPendingConfirm()).toBeNull();
-
-    populateDesignSwitchModal();
-
-    expect(modalFacade.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
-  });
-
   it('modalFacade: confirmModal() with pending confirm intent dispatches the corresponding confirm-* intent; verify modal cleared after', () => {
     populateDesignSwitchModal();
     expect(store.getState().modal).not.toBeNull();
-    expect(modalFacade.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
+    expect(store.getState().pendingConfirmIntent).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
 
     modalFacade.actions.confirm();
 
@@ -98,14 +89,17 @@ describe('modalFacade.ts', () => {
     expect(store.getState().pendingConfirmIntent).toBeNull();
   });
 
-  it('modalFacade: confirmModal() when no pending confirm intent is a no-op (modal stays null, no throw)', () => {
+  it('modalFacade: confirm does nothing when no confirm intent is pending', () => {
     expect(store.getState().modal).toBeNull();
     expect(store.getState().pendingConfirmIntent).toBeNull();
+    const dispatchSpy = vi.spyOn(store, 'dispatch');
 
-    expect(() => modalFacade.actions.confirm()).not.toThrow();
+    modalFacade.actions.confirm();
 
+    expect(dispatchSpy).not.toHaveBeenCalled();
     expect(store.getState().modal).toBeNull();
     expect(store.getState().pendingConfirmIntent).toBeNull();
+    dispatchSpy.mockRestore();
   });
 
   it('modalFacade: cancelModal() dispatches { kind: "cancel-modal" }; modal cleared, pendingConfirm null', () => {
@@ -165,6 +159,5 @@ describe('modalFacade.ts', () => {
 
     expect(a.modalVM()).toBeNull();
     expect(b.modalVM()).not.toBeNull();
-    expect(b.getPendingConfirm()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
   });
 });

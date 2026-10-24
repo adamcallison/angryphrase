@@ -1,6 +1,5 @@
 import type { Grid } from '../../../domain/grid/Grid';
 import type { Word } from '../../../domain/word/Word';
-import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
 import type { BuilderSubMode } from '../../../builder/state/state';
 import { WordMap } from '../../../domain/word/WordMap';
@@ -12,8 +11,9 @@ import { Chain } from '../../../domain/chain/Chain';
 export type { LengthPattern };
 
 export type ClueEntryVM = {
+  id: string;
   wordKey: WordKey;
-  number: WordNumber;
+  number: number;
   direction: Direction;
   displayClue: string;
   lengthPattern: LengthPattern | null;
@@ -28,7 +28,7 @@ export type ClueEntryVM = {
 export type CluePanelVM = {
   across: ClueEntryVM[];
   down: ClueEntryVM[];
-  highlightedWordKey: WordKey | null;
+  highlightedId: string | null;
 };
 
 export function deriveCluePanelVM(input: {
@@ -82,8 +82,9 @@ export function deriveCluePanelVM(input: {
     }
 
     const entry: ClueEntryVM = {
+      id: WordKey.toCanonical(w.key),
       wordKey: w.key,
-      number: w.number,
+      number: Number(w.number),
       direction: w.key.direction,
       displayClue: DisplayClue.forWord(wordMap, w),
       lengthPattern: isChainHead ? LengthPattern.forWord(grid, wordMap, w) : null,
@@ -102,9 +103,13 @@ export function deriveCluePanelVM(input: {
     }
   }
 
-  const byNumber = (a: ClueEntryVM, b: ClueEntryVM) => Number(a.number) - Number(b.number);
+  const byNumber = (a: ClueEntryVM, b: ClueEntryVM) => a.number - b.number;
   across.sort(byNumber);
   down.sort(byNumber);
 
-  return { across, down, highlightedWordKey };
+  return {
+    across,
+    down,
+    highlightedId: highlightedWordKey === null ? null : WordKey.toCanonical(highlightedWordKey),
+  };
 }

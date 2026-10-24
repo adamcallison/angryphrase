@@ -99,6 +99,19 @@ describe('reduceApp', () => {
     });
   });
 
+  it('report-grid-size-failure: returns a toast event with the domain message and leaves the state unchanged', () => {
+    const state = makeState();
+    const deps = makeDeps();
+    const result = reduceApp(state, { kind: 'report-grid-size-failure' }, deps);
+    expect(result.state).toBe(state);
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0]).toEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      message: GridSize.invalidMessage(),
+    });
+  });
+
   it('switch-to-fill (a BuilderIntent) dispatches to reduceBuilder and folds result', () => {
     const state = makeState();
     const deps = makeDeps();

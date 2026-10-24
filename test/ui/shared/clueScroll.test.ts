@@ -1,17 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canonicalWordKeyId, scrollRowIntoView } from '../../../src/ui/shared/clueScroll';
-import type { WordKey } from '../../../src/domain/word/WordKey';
-
-describe('canonicalWordKeyId', () => {
-  it('produces "<row>_<col>_<direction>"', () => {
-    const key: WordKey = {
-      startRow: 2 as never,
-      startCol: 5 as never,
-      direction: 'across',
-    };
-    expect(canonicalWordKeyId(key)).toBe('2_5_across');
-  });
-});
+import { scrollRowIntoView } from '../../../src/ui/shared/clueScroll';
 
 describe('scrollRowIntoView', () => {
   it('does nothing when panelEl is null', () => {

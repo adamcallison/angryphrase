@@ -88,7 +88,7 @@ describe('builderFacade.ts', () => {
     expect(vm).toBeDefined();
     expect(vm.toolbar).toBeDefined();
     expect(vm.grid).toBeDefined();
-    expect(vm.grid.size).toBe(GridSize.of(15));
+    expect(vm.grid.size).toBe(15);
     expect(vm.grid.cells).toHaveLength(15);
     expect(vm.cluePanel).toBeDefined();
     expect(vm.cluePanel.across).toBeDefined();
@@ -105,19 +105,33 @@ describe('builderFacade.ts', () => {
     expect(builderFacade.builderShellVM().toolbar.mode).toBe('design');
   });
 
+  it('builderFacade: getBuilderState is not exposed on the facade', () => {
+    expect('getBuilderState' in builderFacade).toBe(false);
+  });
+
   it('builderFacade: dispatchBuilder change-grid-size intent mutates state.builder.puzzle.gridSize', () => {
     builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
 
-    expect(builderFacade.getBuilderState().puzzle.gridSize).toBe(GridSize.of(12));
+    expect(store.getBuilder().puzzle.gridSize).toBe(GridSize.of(12));
     expect(builderFacade.builderShellVM().toolbar.gridSizeInput).toBe(12);
+  });
+
+  it('builderFacade: clickCell ignores an out-of-range row without dispatching', () => {
+    const dispatchSpy = vi.spyOn(store, 'dispatch');
+    const before = store.getBuilder();
+
+    expect(() => builderFacade.actions.grid.clickCell(-1, 0)).not.toThrow();
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(store.getBuilder()).toBe(before);
+    dispatchSpy.mockRestore();
   });
 
   it('builderFacade: dispatchBuilder select-cell intent mutates state.builder.cursor', () => {
     builderFacade.dispatch({ target: 'builder', kind: 'switch-to-fill' });
     builderFacade.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
 
-    expect(builderFacade.getBuilderState().cursor).not.toBeNull();
-    expect(builderFacade.builderShellVM().grid.cursor).not.toBeNull();
+    expect(store.getBuilder().cursor).not.toBeNull();
+    expect(builderFacade.builderShellVM().grid.cursorRow).not.toBeNull();
   });
 
   it('builderFacade: dispatchBuilder then builderShellVM() reflects the new state ladder', () => {
@@ -129,19 +143,8 @@ describe('builderFacade.ts', () => {
     const vm = builderFacade.builderShellVM();
     expect(vm.toolbar.gridSizeInput).toBe(12);
     expect(vm.toolbar.mode).toBe('fill');
-    expect(vm.grid.cursor).not.toBeNull();
+    expect(vm.grid.cursorRow).not.toBeNull();
     expect(vm.grid.cells[0]![0]!.letter).toBe('A');
-  });
-
-  it('builderFacade: getBuilderState() returns the live BuilderState reference', () => {
-    const before = builderFacade.getBuilderState();
-    expect(before.puzzle.gridSize).toBe(GridSize.of(15));
-
-    builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
-
-    const after = builderFacade.getBuilderState();
-    expect(after.puzzle.gridSize).toBe(GridSize.of(12));
-    expect(after).toBe(builderFacade.getBuilderState());
   });
 
   describe('primitive dispatch helpers', () => {
@@ -149,25 +152,36 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.toolbar.switchToFill();
       builderFacade.actions.grid.selectCell(0, 0);
 
-      const state = builderFacade.getBuilderState();
+      const state = store.getBuilder();
       expect(state.cursor).not.toBeNull();
       expect(state.cursor!.row).toBe(Row.of(0));
       expect(state.cursor!.col).toBe(Col.of(0));
     });
 
-    it('dispatchToggleDesignCell(0,0) toggles cell (0,0) black/white', () => {
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.black).toBe(false);
+    it('builderFacade: clickCell toggles the design cell in design mode', () => {
+      expect(store.getBuilder().puzzle.grid[0]![0]!.black).toBe(false);
 
-      builderFacade.actions.grid.toggleDesignCell(0, 0);
+      builderFacade.actions.grid.clickCell(0, 0);
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.black).toBe(true);
+      expect(store.getBuilder().puzzle.grid[0]![0]!.black).toBe(true);
+    });
+
+    it('builderFacade: clickCell selects the cell in fill mode', () => {
+      builderFacade.actions.toolbar.switchToFill();
+
+      builderFacade.actions.grid.clickCell(0, 0);
+
+      const state = store.getBuilder();
+      expect(state.cursor).not.toBeNull();
+      expect(state.cursor!.row).toBe(Row.of(0));
+      expect(state.cursor!.col).toBe(Col.of(0));
     });
 
     it('dispatchChangeGridSize(12) updates gridSizeInput to 12', () => {
       builderFacade.actions.toolbar.changeGridSize(12);
 
       expect(builderFacade.builderShellVM().toolbar.gridSizeInput).toBe(12);
-      expect(builderFacade.getBuilderState().puzzle.gridSize).toBe(GridSize.of(12));
+      expect(store.getBuilder().puzzle.gridSize).toBe(GridSize.of(12));
     });
 
     it('builderFacade: changeGridSize dispatches change-grid-size with the branded size for a valid value', () => {
@@ -180,37 +194,78 @@ describe('builderFacade.ts', () => {
       dispatchSpy.mockRestore();
     });
 
-    it('builderFacade: changeGridSize ignores a size below the minimum', () => {
+    it('builderFacade: changeGridSize rejects a size below the minimum', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
-      const before = builderFacade.getBuilderState();
+      const before = store.getBuilder();
 
-      builderFacade.actions.toolbar.changeGridSize(1);
+      const result = builderFacade.actions.toolbar.changeGridSize(1);
 
-      expect(dispatchSpy).not.toHaveBeenCalled();
-      expect(builderFacade.getBuilderState()).toBe(before);
+      expect(result).toBe(false);
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
+      expect(store.getBuilder()).toBe(before);
+      expect(store.getToasts()).toHaveLength(1);
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
       dispatchSpy.mockRestore();
     });
 
-    it('builderFacade: changeGridSize ignores a size above the maximum', () => {
+    it('builderFacade: changeGridSize rejects a size above the maximum', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
-      const before = builderFacade.getBuilderState();
+      const before = store.getBuilder();
 
-      builderFacade.actions.toolbar.changeGridSize(26);
+      const result = builderFacade.actions.toolbar.changeGridSize(26);
 
-      expect(dispatchSpy).not.toHaveBeenCalled();
-      expect(builderFacade.getBuilderState()).toBe(before);
+      expect(result).toBe(false);
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
+      expect(store.getBuilder()).toBe(before);
+      expect(store.getToasts()).toHaveLength(1);
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
       dispatchSpy.mockRestore();
     });
 
-    it('builderFacade: changeGridSize ignores a non-integer size', () => {
+    it('builderFacade: changeGridSize rejects a non-integer size', () => {
       const dispatchSpy = vi.spyOn(store, 'dispatch');
-      const before = builderFacade.getBuilderState();
+      const before = store.getBuilder();
 
-      builderFacade.actions.toolbar.changeGridSize(15.5);
+      const result = builderFacade.actions.toolbar.changeGridSize(15.5);
 
-      expect(dispatchSpy).not.toHaveBeenCalled();
-      expect(builderFacade.getBuilderState()).toBe(before);
+      expect(result).toBe(false);
+      expect(dispatchSpy).toHaveBeenCalledTimes(1);
+      expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
+      expect(store.getBuilder()).toBe(before);
+      expect(store.getToasts()).toHaveLength(1);
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
       dispatchSpy.mockRestore();
+    });
+
+    it('builderFacade: changeGridSize accepts a valid size and dispatches change-grid-size', () => {
+      const result = builderFacade.actions.toolbar.changeGridSize(12);
+
+      expect(result).toBe(true);
+      expect(store.getBuilder().puzzle.gridSize).toBe(GridSize.of(12));
+    });
+
+    it('builderFacade: changeGridSize rejects an out-of-range size, reports the failure and changes nothing', () => {
+      const before = store.getBuilder();
+
+      const result = builderFacade.actions.toolbar.changeGridSize(0);
+
+      expect(result).toBe(false);
+      expect(store.getBuilder()).toBe(before);
+      expect(store.getToasts()).toHaveLength(1);
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+    });
+
+    it('builderFacade: changeGridSize rejects a non-integer size the same way', () => {
+      const before = store.getBuilder();
+
+      const result = builderFacade.actions.toolbar.changeGridSize(12.7);
+
+      expect(result).toBe(false);
+      expect(store.getBuilder()).toBe(before);
+      expect(store.getToasts()).toHaveLength(1);
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
     });
 
     it('dispatchTypeLetter("A") sets letter A on selected cell', () => {
@@ -218,7 +273,7 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.grid.selectCell(0, 0);
       builderFacade.actions.grid.typeLetter('A');
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.answerLetter).toEqual(Letter.try('A'));
+      expect(store.getBuilder().puzzle.grid[0]![0]!.answerLetter).toEqual(Letter.try('A'));
       expect(builderFacade.builderShellVM().grid.cells[0]![0]!.letter).toBe('A');
     });
 
@@ -227,7 +282,7 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.grid.selectCell(0, 0);
       builderFacade.actions.grid.typeLetter('1');
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.answerLetter).toBeNull();
+      expect(store.getBuilder().puzzle.grid[0]![0]!.answerLetter).toBeNull();
     });
 
     it('dispatchBackspace dispatches backspace on selected cell', () => {
@@ -236,7 +291,7 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.grid.typeLetter('A');
       builderFacade.actions.grid.backspace();
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.answerLetter).toBeNull();
+      expect(store.getBuilder().puzzle.grid[0]![0]!.answerLetter).toBeNull();
     });
 
     it('dispatchSwitchToFill flips toolbar.mode to "fill"', () => {
@@ -252,7 +307,7 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.grid.selectCell(0, 0);
       builderFacade.actions.toolbar.setMarker('right', 'space');
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.marker.right).toBe('space');
+      expect(store.getBuilder().puzzle.grid[0]![0]!.marker.right).toBe('space');
     });
 
     it('dispatchSetMarker with the current separator clears it to none', () => {
@@ -261,20 +316,20 @@ describe('builderFacade.ts', () => {
       builderFacade.actions.toolbar.setMarker('right', 'space');
       builderFacade.actions.toolbar.setMarker('right', 'space');
 
-      expect(builderFacade.getBuilderState().puzzle.grid[0]![0]!.marker.right).toBe('none');
+      expect(store.getBuilder().puzzle.grid[0]![0]!.marker.right).toBe('none');
     });
 
     it('dispatchEditTitle("Hello") sets puzzle title to "Hello"', () => {
       builderFacade.actions.toolbar.editTitle('Hello');
 
-      expect(builderFacade.getBuilderState().puzzle.title).toEqual(Title.try('Hello'));
+      expect(store.getBuilder().puzzle.title).toEqual(Title.try('Hello'));
       expect(builderFacade.builderShellVM().title).toBe('Hello');
     });
 
     it('dispatchEditAuthor("Anonymous") sets puzzle author to "Anonymous"', () => {
       builderFacade.actions.toolbar.editAuthor('Anonymous');
 
-      expect(builderFacade.getBuilderState().puzzle.author).toEqual(Author.try('Anonymous'));
+      expect(store.getBuilder().puzzle.author).toEqual(Author.try('Anonymous'));
       expect(builderFacade.builderShellVM().author).toBe('Anonymous');
     });
 
@@ -340,7 +395,7 @@ describe('builderFacade.ts', () => {
     storeWithPick.dispatch({ kind: 'navigate', route: 'build' });
     const builderWithPick = createBuilderFacade(storeWithPick);
     const dispatchSpy = vi.spyOn(storeWithPick, 'dispatch');
-    const builderBefore = builderWithPick.getBuilderState();
+    const builderBefore = storeWithPick.getBuilder();
 
     const result = await builderWithPick.pickFile();
 
@@ -351,7 +406,7 @@ describe('builderFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
     expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not open or read that file. Please try again.' });
-    expect(builderWithPick.getBuilderState()).toBe(builderBefore);
+    expect(storeWithPick.getBuilder()).toBe(builderBefore);
     warnSpy.mockRestore();
   });
 
@@ -388,7 +443,7 @@ describe('builderFacade.ts', () => {
     const builderWithDrop = createBuilderFacade(storeWithDrop);
     storeWithDrop.dispatch({ kind: 'navigate', route: 'build' });
     const dispatchSpy = vi.spyOn(storeWithDrop, 'dispatch');
-    const builderBefore = builderWithDrop.getBuilderState();
+    const builderBefore = storeWithDrop.getBuilder();
 
     await builderWithDrop.actions.toolbar.importDroppedFile(file);
 
@@ -398,7 +453,7 @@ describe('builderFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
     expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
-    expect(builderWithDrop.getBuilderState()).toBe(builderBefore);
+    expect(storeWithDrop.getBuilder()).toBe(builderBefore);
     warnSpy.mockRestore();
   });
 
@@ -418,6 +473,6 @@ describe('builderFacade.ts', () => {
 
     a.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
 
-    expect(b.getBuilderState().puzzle.gridSize).toBe(GridSize.of(15));
+    expect(b.builderShellVM().grid.size).toBe(15);
   });
 });

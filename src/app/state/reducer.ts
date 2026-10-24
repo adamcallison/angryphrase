@@ -7,6 +7,7 @@ import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
+import { GridSize } from '../../domain/grid/GridSize';
 
 export function reduceApp(
   state: AppState,
@@ -28,6 +29,8 @@ export function reduceApp(
       return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.' }] };
     case 'report-player-save-failure':
       return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your solving progress is not being kept.' }] };
+    case 'report-grid-size-failure':
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: GridSize.invalidMessage() }] };
   }
 
   // Builder or Player intent: dispatch by target.

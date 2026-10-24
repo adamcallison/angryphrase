@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { PlayerToolbarVM, PlayerShellVM } from '../bindings/viewmodels/playerVM';
+  import type { PlayerToolbarVM, PlayerCheckResultVM } from '../bindings/viewmodels/playerVM';
   import type { PlayerToolbarActions } from '../bindings/playerFacade';
 
   let { vm, checkResult, actions }: {
     vm: PlayerToolbarVM;
-    checkResult: PlayerShellVM['checkResult'];
+    checkResult: PlayerCheckResultVM;
     actions: PlayerToolbarActions;
   } = $props();
 </script>

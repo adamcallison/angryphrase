@@ -13,13 +13,7 @@
   const vm: BuilderShellVM = $derived(builderFacade.builderShellVM());
 
   function onCellClick(row: number, col: number): void {
-    // Design mode toggles the cell; Fill mode selects it (the reducer chooses the direction).
-    const state = builderFacade.getBuilderState();
-    if (state.mode === 'design') {
-      builderFacade.actions.grid.toggleDesignCell(row, col);
-    } else {
-      builderFacade.actions.grid.selectCell(row, col);
-    }
+    builderFacade.actions.grid.clickCell(row, col);
   }
 
 </script>
@@ -35,8 +29,8 @@
     <!-- left column: grid + displaced clues panel -->
     <section class="flex flex-col gap-4">
       <div class="relative overflow-x-auto">
-        <Grid vm={vm.grid} allCellsClickable={builderFacade.getBuilderState().mode === 'design'} onCellClick={onCellClick} />
-        <TypingSurface enabled={builderFacade.getBuilderState().mode === 'fill'} cursor={vm.grid.cursor} onDispatch={(intent) => applyTypingIntent(intent, builderFacade.actions.grid)} />
+        <Grid vm={vm.grid} allCellsClickable={vm.toolbar.mode === 'design'} onCellClick={onCellClick} />
+        <TypingSurface enabled={vm.toolbar.mode === 'fill'} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, builderFacade.actions.grid)} />
       </div>
       <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
     </section>

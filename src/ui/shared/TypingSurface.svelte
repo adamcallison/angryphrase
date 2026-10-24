@@ -1,23 +1,30 @@
 <script lang="ts">
-  import type { Cursor } from '../../domain/grid/Cursor';
+  import type { Direction } from '../../domain/word/Direction';
   import type { TypingIntent } from './typingIntent';
 
   let {
     enabled,
-    cursor,
+    cursorRow,
+    cursorCol,
+    cursorDirection,
     onDispatch,
   }: {
     enabled: boolean;
-    cursor: Cursor;
+    cursorRow: number | null;
+    cursorCol: number | null;
+    cursorDirection: Direction | null;
     onDispatch: (intent: TypingIntent) => void;
   } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
 
-  // Focus the hidden input when enabled; blur when disabled. Reading `cursor`
-  // re-runs this effect whenever the active typing position changes.
+  // Focus the hidden input when enabled; blur when disabled. Reading the three
+  // cursor fields re-runs this effect whenever the active typing position changes.
   $effect(() => {
-    void cursor;
+    void cursorRow;
+    void cursorCol;
+    void cursorDirection;
+    void enabled;
     if (enabled) {
       inputEl?.focus({ preventScroll: true });
     } else {
@@ -68,7 +75,7 @@
 
     if (isLetter(event.key)) {
       event.preventDefault();
-      onDispatch({ kind: 'type-letter', letter: event.key.toUpperCase() });
+      onDispatch({ kind: 'type-letter', letter: event.key });
       return;
     }
 
@@ -84,7 +91,7 @@
     // Take only the LAST character (typing one letter at a time):
     const lastChar = target.value.slice(-1);
     if (isLetter(lastChar)) {
-      onDispatch({ kind: 'type-letter', letter: lastChar.toUpperCase() });
+      onDispatch({ kind: 'type-letter', letter: lastChar });
     }
     // Clear the input so the next input event reports only the new keystroke cleanly.
     target.value = '';
@@ -94,10 +101,10 @@
     if (!enabled) return;
     if (typeof event.data !== 'string' || event.data.length === 0) return;
     // For an IME composition, take the LAST character of the composed string.
-    // Only A-Z letters are valid; anything else is ignored by the parent via Letter.try.
+    // Letter casing and validation are owned by the facade action via Letter.try.
     const lastChar = event.data.slice(-1);
     if (isLetter(lastChar)) {
-      onDispatch({ kind: 'type-letter', letter: lastChar.toUpperCase() });
+      onDispatch({ kind: 'type-letter', letter: lastChar });
     }
     // Clear any pending value so onInput doesn't double-fire.
     if (inputEl !== null) inputEl.value = '';

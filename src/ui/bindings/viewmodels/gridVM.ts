@@ -1,5 +1,4 @@
 import type { Grid } from '../../../domain/grid/Grid';
-import { GridSize } from '../../../domain/grid/GridSize';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import type { Cell } from '../../../domain/grid/Cell';
@@ -7,19 +6,19 @@ import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import { GridOps } from '../../../domain/grid/GridOps';
 import type { Word } from '../../../domain/word/Word';
-import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Cursor } from '../../../domain/grid/Cursor';
+import type { Direction } from '../../../domain/word/Direction';
 
 export type { CellSeparator };
 
 export type CellHilite = 'none' | 'selected' | 'in-word';
 
 export type GridCellVM = {
-  row: Row;
-  col: Col;
+  row: number;
+  col: number;
   black: boolean;
   letter: string | null;
-  number: WordNumber | null;
+  number: number | null;
   hilite: CellHilite;
   separatorRight: CellSeparator;
   separatorBottom: CellSeparator;
@@ -27,9 +26,11 @@ export type GridCellVM = {
 };
 
 export type GridVM = {
-  size: GridSize;
+  size: number;
   cells: GridCellVM[][];
-  cursor: Cursor;
+  cursorRow: number | null;
+  cursorCol: number | null;
+  cursorDirection: Direction | null;
 };
 
 function cellKey(r: number, c: number): string {
@@ -52,11 +53,14 @@ export function deriveGridVM(input: {
   selectedWordCells: ReadonlySet<string>;
 }): GridVM {
   const { grid, cursor, words, whichLetter, selectedWordCells } = input;
-  const size = GridSize.of(grid.length);
-  const wordStartNumber = new Map<string, WordNumber>();
+  const size = grid.length;
+  const cursorRow = cursor ? Number(cursor.row) : null;
+  const cursorCol = cursor ? Number(cursor.col) : null;
+  const cursorDirection = cursor ? cursor.direction : null;
+  const wordStartNumber = new Map<string, number>();
   for (const word of words) {
     const key = cellKey(Number(word.key.startRow), Number(word.key.startCol));
-    wordStartNumber.set(key, word.number);
+    wordStartNumber.set(key, Number(word.number));
   }
 
   const cells: GridCellVM[][] = [];
@@ -68,8 +72,8 @@ export function deriveGridVM(input: {
       const cell = GridOps.cellAt(grid, row, col);
       if (cell.black) {
         rowVms.push({
-          row,
-          col,
+          row: r,
+          col: c,
           black: true,
           letter: null,
           number: null,
@@ -97,8 +101,8 @@ export function deriveGridVM(input: {
         }
 
         rowVms.push({
-          row,
-          col,
+          row: r,
+          col: c,
           black: false,
           letter,
           number,
@@ -112,5 +116,5 @@ export function deriveGridVM(input: {
     cells.push(rowVms);
   }
 
-  return { size, cells, cursor };
+  return { size, cells, cursorRow, cursorCol, cursorDirection };
 }

@@ -22,7 +22,7 @@ describe('deriveToastVM', () => {
     expect(vm.id).toBe(toast.id);
     expect(vm.kind).toBe('info');
     expect(vm.message).toBe('hello world');
-    expect(vm.ttlMs).toBe(toast.ttlMs);
+    expect(vm.ttlMs).toBe(3500);
     expect(vm).not.toHaveProperty('createdAt');
   });
 

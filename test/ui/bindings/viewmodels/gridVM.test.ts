@@ -54,8 +54,8 @@ describe('deriveGridVM', () => {
       expect(vm.cells[r]).toHaveLength(2);
       for (let c = 0; c < 2; c++) {
         const cell = vm.cells[r]![c]!;
-        expect(cell.row).toBe(Row.of(r));
-        expect(cell.col).toBe(Col.of(c));
+        expect(cell.row).toBe(r);
+        expect(cell.col).toBe(c);
         expect(cell.black).toBe(true);
         expect(cell.letter).toBeNull();
         expect(cell.number).toBeNull();
@@ -107,7 +107,7 @@ describe('deriveGridVM', () => {
     const grid = GridOps.blank(GridSize.of(3));
     const words: Word[] = [wordAt0(), downWordAt0()];
     const vm = deriveGridVM({ grid, cursor: null, words, whichLetter: 'answer', selectedWordCells: new Set() });
-    expect(vm.cells[0]![0]!.number).toBe(WordNumber.of(1));
+    expect(vm.cells[0]![0]!.number).toBe(1);
     expect(vm.cells[0]![1]!.number).toBeNull();
     expect(vm.cells[1]![0]!.number).toBeNull();
     expect(vm.cells[1]![1]!.number).toBeNull();
@@ -190,15 +190,28 @@ describe('deriveGridVM', () => {
     }
   });
 
-  it('deriveGridVM: cursor echoed unchanged in returned VM (null, and a non-null sample)', () => {
+  it('deriveGridVM: the cursor fields are plain numbers and null when there is no cursor', () => {
     const grid = GridOps.blank(GridSize.of(2));
-    const nullCursor: Cursor = null;
-    const vm1 = deriveGridVM({ grid, cursor: nullCursor, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
-    expect(vm1.cursor).toBeNull();
+    const vm1 = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm1.cursorRow).toBeNull();
+    expect(vm1.cursorCol).toBeNull();
+    expect(vm1.cursorDirection).toBeNull();
 
     const cursor: Cursor = { row: Row.of(1), col: Col.of(0), direction: 'down' };
     const vm2 = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
-    expect(vm2.cursor).toEqual(cursor);
+    expect(vm2.cursorRow).toBe(1);
+    expect(vm2.cursorCol).toBe(0);
+  });
+
+  it('deriveGridVM: the cursor direction is carried through as a plain value', () => {
+    const grid = GridOps.blank(GridSize.of(2));
+    const across: Cursor = { row: Row.of(0), col: Col.of(0), direction: 'across' };
+    const vmAcross = deriveGridVM({ grid, cursor: across, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmAcross.cursorDirection).toBe('across');
+
+    const down: Cursor = { row: Row.of(0), col: Col.of(0), direction: 'down' };
+    const vmDown = deriveGridVM({ grid, cursor: down, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmDown.cursorDirection).toBe('down');
   });
 
   it('deriveGridVM: selectable matches GridOps.isSelectable for white cells', () => {

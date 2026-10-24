@@ -21,7 +21,7 @@
     }
     for (const vm of vms) {
       if (!timers.has(vm.id)) {
-        timers.set(vm.id, setTimeout(() => actions.dismiss(vm.id), Number(vm.ttlMs)));
+        timers.set(vm.id, setTimeout(() => actions.dismiss(vm.id), vm.ttlMs));
       }
     }
   });

@@ -86,6 +86,8 @@ export function createAppStore(
         const next = activeQueue.shift();
         if (next === undefined) break;
         const modalWasOpen = s.modal !== null;
+        const previousBuilder = state.builder;
+        const previousPlayer = state.player;
         const result = reduceApp(s, next, d);
         const folded = applyEventsToApp(result.state, result.events, d);
         s = folded.state;
@@ -97,6 +99,15 @@ export function createAppStore(
           s = { ...s, modal: null, pendingConfirmIntent: null };
         }
         state = s;
+        // Autosave: schedule before processing leftover external events so that
+        // a clear-builder-storage / clear-player-storage event cancels the
+        // pending save deterministically (architecture.md §8).
+        if (state.builder !== previousBuilder) {
+          scheduler.scheduleBuilderSave(state.builder);
+        }
+        if (state.player !== previousPlayer) {
+          scheduler.schedulePlayerSave(state.player);
+        }
         for (const event of folded.leftoverEvents) {
           const followup = performExternalEvent(event);
           if (followup !== null) {

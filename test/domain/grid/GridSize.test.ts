@@ -28,4 +28,11 @@ describe('GridSize', () => {
     expect(Number(GridSize.MAX)).toBe(25);
     expect(Number(GridSize.DEFAULT)).toBe(15);
   });
+
+  it('invalidMessage names the whole-number range from MIN and MAX', () => {
+    const message = GridSize.invalidMessage();
+    expect(message).toMatch(/whole number/i);
+    expect(message).toContain(String(Number(GridSize.MIN)));
+    expect(message).toContain(String(Number(GridSize.MAX)));
+  });
 });

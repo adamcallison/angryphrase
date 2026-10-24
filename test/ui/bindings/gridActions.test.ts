@@ -30,6 +30,14 @@ describe('gridActions.ts', () => {
     expect(dispatched).toEqual([{ target: 'builder', kind: 'type-letter', letter: Letter.try('Z')! }]);
   });
 
+  it('gridActions: typeLetter uppercases a lowercase letter before dispatching', () => {
+    const { actions, dispatched } = makeActions();
+
+    actions.typeLetter('a');
+
+    expect(dispatched).toEqual([{ target: 'builder', kind: 'type-letter', letter: Letter.try('A') }]);
+  });
+
   it('typeLetter silently drops invalid input', () => {
     const { actions, dispatched } = makeActions();
 
@@ -60,5 +68,19 @@ describe('gridActions.ts', () => {
     actions.escape();
 
     expect(dispatched).toEqual([{ target: 'builder', kind: 'escape' }]);
+  });
+
+  it('gridActions: selectCell ignores a negative row without dispatching', () => {
+    const { actions, dispatched } = makeActions();
+
+    expect(() => actions.selectCell(-1, 0)).not.toThrow();
+    expect(dispatched).toEqual([]);
+  });
+
+  it('gridActions: selectCell ignores a non-integer column without dispatching', () => {
+    const { actions, dispatched } = makeActions();
+
+    expect(() => actions.selectCell(0, 1.5)).not.toThrow();
+    expect(dispatched).toEqual([]);
   });
 });

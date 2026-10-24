@@ -1239,7 +1239,115 @@ Adding a branded type, a layer, a permitted path, a banned global or a banned pa
 
 | Site | Reason | Landing site |
 |---|---|---|
-| S14-adjacent work: the VM-contract erosion — `BuilderShell` reading raw state through the facade, two canonical word-key encodings, `AnagramModal` re-implementing the reducer's sanitisation, `playerVM`'s import-phase placeholder view-models, `App.svelte`'s autosave effects | These are intra-layer contract erosion, not import-boundary matters: no import rule can see them. They belong to the open finding "The VM contract erodes at the leaf edges", which stays open with the approach for each instance already chosen. | architecture_smells.md §13 (note dated 2026-10-24) |
+| S14-adjacent work: the VM-contract erosion — `BuilderShell` reading raw state through the facade, two canonical word-key encodings, `AnagramModal` re-implementing the reducer's sanitisation, `playerVM`'s import-phase placeholder view-models, `App.svelte`'s autosave effects | These are intra-layer contract erosion, not import-boundary matters: no import rule can see them. They belonged to the open finding "The VM contract erodes at the leaf edges", which was closed by the resolution entry for that finding. | architecture_smell_resolutions.md (entry "The VM contract erodes at the leaf edges") |
+
+
+---
+
+## 13. The VM contract erodes at the leaf edges — resolved 2026-10-24
+
+### The smell (recap)
+
+The audit recorded five instances in which the component layer does work the logic layer owns: a UI-side re-encoding of a word key, an input-sanitisation rule implemented in a component, a component reading raw state through a facade getter, import-phase placeholder view-models derived at module load, and the autosave orchestration living in a component. Working the finding at implementation start turned up three more instances of the same class (the letter-casing rule, the branded types carried in view-models, and the throwing constructors in the facade's grid actions). The audit's text for the first instance had by then drifted from the code: the grid-interaction resolution had extracted a single shared UI helper, so the duplication was UI-versus-domain rather than UI-versus-UI.
+
+### Site inventory (Gate 0)
+
+| # | Site | Symbol / location |
+|---|---|---|
+| S1 | UI-side word-key encoding | `canonicalWordKeyId` in `src/ui/shared/clueScroll.ts`; used by `src/ui/builder/BuilderCluePanel.svelte` and `src/ui/player/PlayerCluePanel.svelte` |
+| S2 | Component-side anagram input sanitisation | `onInput` in `src/ui/player/AnagramModal.svelte` |
+| S3 | Component reads raw state | `builderFacade.getBuilderState()` in `src/ui/builder/BuilderShell.svelte` (three call sites) |
+| S4 | Import-phase placeholder view-models | module-level constants and derivation calls in `src/ui/bindings/viewmodels/playerVM.ts` (`IMPORT_GRID_VM`, `IMPORT_BANNER`, `IMPORT_CLUE_PANEL`, `IMPORT_ANAGRAM`, `IMPORT_TOOLBAR`) |
+| S5 | Autosave orchestration in a component | the two `$effect`s in `src/ui/app/App.svelte` |
+| S6 | Throwing constructors in facade actions | `Row.of` / `Col.of` in `src/ui/bindings/gridActions.ts` and `src/ui/bindings/builderFacade.ts` |
+| S7 | Component-side letter casing | `src/ui/shared/TypingSurface.svelte` (three dispatch sites) |
+| S8 | Branded domain types in view-models | `GridVM` / `GridCellVM` (`viewmodels/gridVM.ts`), `ClueEntryVM.number` (`viewmodels/cluePanelVM.ts`), `ActiveClueBannerVM.wordNumber` (`viewmodels/playerVM.ts`), `BuilderSubModeBannerVM.sourceNumber` (`viewmodels/builderVM.ts`), `ToastVM.ttlMs` (`viewmodels/toastVM.ts`), `AnagramModalVM.expectedUniqueLetterCounts` (`viewmodels/anagramVM.ts`), and the `ConfirmableIntent` prop of `src/ui/shared/Modal.svelte`; nine unwrap sites across seven components |
+| S9 | Raw-state getters on the facade API | `getBuilderState()` (`builderFacade.ts`), `getPlayerState()` (`playerFacade.ts`) |
+| S10 | Duplicated clue-panel view-model shape | `PlayerCluePanelVM` (`viewmodels/playerVM.ts`) vs `CluePanelVM` (`viewmodels/cluePanelVM.ts`) |
+| S11 | Dead re-export | `export type { CellSeparator, Letter };` in `src/ui/bindings/viewmodels/anagramVM.ts` |
+| S12 | Dead facade method | `getPendingConfirm()` in `src/ui/bindings/modalFacade.ts` |
+| S13 | Grid-size validity evaluated in three places | the literal bounds `2` / `25` in `src/ui/bindings/viewmodels/builderVM.ts`; the clamp in `src/ui/builder/GridSizeControl.svelte`; the guard in `src/ui/bindings/builderFacade.ts` |
+
+`LengthPattern` needed no work: it is already a plain string alias (`export type LengthPattern = string`). One further duplication — the grid-size clamp in `GridSizeControl.svelte` — was considered and accepted by an earlier decision and is recorded in the "Not addressed" table.
+
+### Decision
+
+- **S1 — word identity.** (A) Let the component import the domain encoder: rejected — it weakens the layer rule in `architecture.md` §3 for a one-line gain. (B) Keep the UI-side encoding and stop using the domain one: rejected — leaves two encodings of one concept. (C) **Chosen:** the view-model carries a stable `id` per clue entry, derived by the bindings layer from `WordKey.toCanonical`, and the UI-side encoder is deleted. The domain owns the encoding; the leaf receives a ready value.
+- **S2 — anagram input rule.** (A) Leave the rule duplicated: rejected — the two implementations can drift, and the component's copy would be the one that drifts. (B) Dispatch raw input and keep the sanitisation inline in the reducer: acceptable, but the rule stays unnamed and untested in the domain. (C) **Chosen:** dispatch raw input, and name the rule in the domain as `Anagram.sanitizeInput(raw, maxLength)`; the reducer calls it and the view-model carries the sanitised string.
+- **S3 + S9 — raw state at the leaf.** (A) Keep the getters and document them: rejected — the bypass is the finding. (B) Delete the getters and let the shell branch on the view-model: acceptable, but the shell still decides which intent a click means. (C) **Chosen:** delete both raw-state getters, move the mode-dependent click into the facade as a mode-aware `clickCell` action, and let the shell read the mode from the toolbar view-model.
+- **S4 — import-phase placeholders.** (A) Derive the placeholders lazily inside the derivation function: rejected — the fake grid and empty panels still exist. (B) **Chosen:** make `PlayerShellVM` phase-discriminated, so the import variant carries only the import error and the placeholder view-models cannot be represented at all.
+- **S5 — autosave.** (A) Keep the component effects: rejected — orchestration stays in the component layer. (B) Emit `*-changed` events from the reducers: rejected — a bindings concern would enter the domain event vocabulary. (C) **Chosen:** the store schedules a save for each slice whose reference changed during a dispatch, before the leftover external events are performed.
+- **S6 — throwing facade actions.** **Chosen:** `Row.try` / `Col.try`, as the grid-size action already does; an invalid coordinate yields no intent.
+- **S7 — letter casing.** **Chosen:** the typing surface dispatches the raw character; casing and validation belong to `Letter.try` in the facade action. The component's character-class test stays — it is input-edge work that decides whether the keystroke is consumed.
+- **S8 — branded types in view-models.** **Chosen:** display values become plain primitives in the view-model; identifiers that action calls need (`WordKey`, `DisplacedClueId`, `ToastId`) stay branded. The modal's `ConfirmableIntent` prop is removed — the facade owns the pending intent.
+- **S13 — grid-size validity.** (A) Keep the clamp in the control — the framing used when the grid-size action was made total ("the component's clamp stays as presentation"): rejected on review. The clamp is not presentation; it evaluates the domain's predicate ("is this a valid grid size?") and acts on the verdict, so the rule had two implementations — the domain's `GridSize.try` and the control's comparisons. (B) Move the coercion into the domain (`GridSize.clamp`) and have the action return the applied size: rejected — the domain validates here, it does not coerce, and it would not remove the range's shape from the widget. (C) **Chosen:** the facade is the only evaluator (`GridSize.try`); the control submits the typed value unchanged and restores the authoritative size when the action reports rejection; the domain owns the invalid-size message and the app explains itself through a `report-grid-size-failure` toast. The view-model's literal bounds are replaced by the domain's `GridSize.MIN` / `GridSize.MAX`.
+
+### Design as implemented
+
+**`src/ui/bindings/viewmodels/cluePanelVM.ts`** — `ClueEntryVM` gains `id: string`, set to `WordKey.toCanonical(w.key)`. `CluePanelVM.highlightedWordKey` is replaced by `highlightedId: string | null`. The derivation's *input* is unchanged; only the output shape changed.
+
+**`src/ui/bindings/viewmodels/playerVM.ts`** — `PlayerCluePanelVM` is now an alias of `CluePanelVM`, so one declaration owns the shape. `PlayerShellVM` is a discriminated union: the import variant is `{ phase: 'import'; importError: string | null }`; the solving variant carries title, author, grid, banners, clue panel, toolbar, anagram and check result. The check-result shape is extracted into the exported `PlayerCheckResultVM`. `derivePlayerToolbarVM` accepts only the solving phase. The five module-level placeholder constants are gone, so no derivation runs at module load.
+
+**`src/ui/shared/clueScroll.ts`** — keeps `scrollRowIntoView` only; `canonicalWordKeyId` and the file's `domain/**` import are deleted.
+
+**`src/ui/builder/BuilderCluePanel.svelte`, `src/ui/player/PlayerCluePanel.svelte`** — use `entry.id` for the draft map, the `li` refs and the keyed `{#each}` blocks; the scroll effect reads `vm.highlightedId`. Both panels now key their lists by `entry.id`.
+
+**`src/ui/bindings/builderFacade.ts`** — `getBuilderState()` is deleted; `BuilderGridActions.toggleDesignCell` is replaced by `clickCell(row, col)`, which dispatches `toggle-design-cell` in design mode and `select-cell` in fill mode, reusing the shared grid actions for the latter. `Row.of` / `Col.of` become `Row.try` / `Col.try`.
+
+**`src/ui/bindings/playerFacade.ts`** — `getPlayerState()` is deleted.
+
+**`src/ui/builder/BuilderShell.svelte`** — reads `vm.toolbar.mode` for grid clickability and typing-surface enablement and calls `builderFacade.actions.grid.clickCell(row, col)`; it reads no state of its own.
+
+**`src/ui/bindings/viewmodels/gridVM.ts`** — `GridVM.size` and `GridCellVM.row` / `col` / `number` are plain numbers; the brands stay inside the bindings layer, where `GridOps` still needs them.
+
+**`src/ui/bindings/viewmodels/toastVM.ts`, `viewmodels/anagramVM.ts`, `viewmodels/builderVM.ts`** — `ToastVM.ttlMs`, `AnagramModalVM.expectedUniqueLetterCounts[].letter`, `BuilderSubModeBannerVM.sourceNumber` and `ActiveClueBannerVM.wordNumber` are plain values. The dead `export type { CellSeparator, Letter };` re-export is deleted.
+
+**`src/ui/shared/Modal.svelte`, `src/ui/app/App.svelte`, `src/ui/bindings/modalFacade.ts`** — the modal no longer receives the pending confirm intent: the Confirm button calls `actions.confirm()`, and the facade's existing null check makes that a no-op when nothing is pending. `ModalFacade.getPendingConfirm()` is deleted.
+
+**`src/ui/bindings/viewmodels/gridVM.ts`, `src/ui/shared/TypingSurface.svelte`, `src/ui/builder/BuilderShell.svelte`, `src/ui/player/PlayerShell.svelte`** — the grid cursor leaves the view-model as plain values: `GridVM` carries `cursorRow` / `cursorCol` / `cursorDirection` instead of a domain `Cursor`, and the typing surface takes those three primitives as props. They are three separate primitives on purpose: the refocus effect must re-run exactly when a cursor value changes — a same-cell re-click changes the direction without moving the cursor — and must not depend on an object identity that changes on every view-model derivation, because an identity dependency would refocus the hidden input on every dispatch, stealing focus from toolbar buttons and disturbing IME composition. The shells pass the three fields through unchanged.
+
+**`src/ui/bindings/viewmodels/builderVM.ts`** — the toolbar's grid-size bounds are read from the domain (`GridSize.MIN` / `GridSize.MAX`) instead of being restated as literals, so the 2..25 range has one owner.
+
+**Grid-size validity — one evaluator, one message, one explanation.** `src/domain/grid/GridSize.ts` gains `invalidMessage()`, deriving its wording from `MIN` / `MAX` ("Grid size must be a whole number between 2 and 25."). `src/app/state/intents.ts` gains the app-level `report-grid-size-failure` intent, and `src/app/state/reducer.ts` turns it into a toast event carrying the domain's message — the same shape as the existing `report-*` failures. `src/ui/bindings/builderFacade.ts`'s `changeGridSize(size: number): boolean` becomes the only evaluator: it validates with `GridSize.try`, dispatches the failure report and returns `false` when the size is invalid, and dispatches `change-grid-size` and returns `true` when it is valid. `src/ui/builder/GridSizeControl.svelte` stops evaluating the rule: it parses the draft through the new `src/ui/builder/gridSizeInput.ts` helper (`parseGridSizeDraft` — the number as typed, or `null` for an empty field), submits it unchanged, and restores the authoritative size when the action reports rejection. No truncation, no clamping, no range comparison remains in the control.
+
+**`src/domain/anagram/Anagram.ts`** — gains `sanitizeInput(raw: string, maxLength: number): string`: A–Z only, uppercased, clamped. **`src/player/state/internal/anagram.ts`** — `handleAnagramInput` calls it instead of filtering inline. **`src/ui/player/AnagramModal.svelte`** — dispatches the raw typed value.
+
+**`src/ui/shared/TypingSurface.svelte`** — dispatches the raw character in all three input paths; the component's character-class test, the `preventDefault()` calls and the IME last-character handling are unchanged.
+
+**`src/ui/bindings/appStore.svelte.ts`** — the dispatch loop captures the builder and player slice references before reducing, stores the next state, and schedules a debounced save for each slice whose reference changed — before the leftover external events are performed, so a clear event cancels the pending save deterministically. **`src/ui/app/App.svelte`** — the two autosave `$effect`s are deleted; the component holds no persistence logic.
+
+### Deliberate behaviour changes
+
+1. **Nothing is written at boot.** A fresh session writes its first builder snapshot only after the first change to the builder slice; a blank builder snapshot is no longer written on mount. Reloading still restores the last saved snapshot; an absent snapshot still yields a fresh blank builder.
+2. **A builder reset no longer leaves a pending save.** The scheduled save is cancelled by the `clear-builder-storage` event, so storage stays empty until the next edit (previously the component effect re-armed a save of the blank state after the reset).
+3. **The modal no longer receives the confirm intent.** Clicking Confirm with no pending intent was already a no-op; it still is — the check now lives only in the facade.
+4. **The anagram input is sanitised by the reducer, not the component.** The stored and displayed value is unchanged; the component no longer normalises what it dispatches.
+5. **Facade grid actions ignore invalid coordinates** instead of throwing `RangeError`. Unreachable through the UI; observable only to a direct caller.
+6. **The typing surface dispatches raw characters.** The letter that reaches the grid is still uppercase — the facade's `Letter.try` applies the casing.
+7. **An invalid grid size is refused and explained, not silently clamped.** Typing `99` or `12.7` and blurring used to clamp the value to the nearest bound (the grid silently became 25). Now the size is rejected by the logic layer, the field returns to the current size, and a toast states the rule ("Grid size must be a whole number between 2 and 25."). A non-integer is an invalid size, exactly like an out-of-range one. Clearing the field and blurring restores the current size silently — nothing is submitted, so there is no wrong size to report.
+
+### Files
+
+Modified: `src/domain/anagram/Anagram.ts`; `src/domain/grid/GridSize.ts`; `src/app/state/intents.ts`; `src/app/state/reducer.ts`; `src/player/state/internal/anagram.ts`; `src/ui/app/App.svelte`; `src/ui/builder/BuilderCluePanel.svelte`; `src/ui/builder/BuilderShell.svelte`; `src/ui/builder/BuilderToolbar.svelte`; `src/ui/builder/GridSizeControl.svelte`; `src/ui/player/AnagramModal.svelte`; `src/ui/player/PlayerCluePanel.svelte`; `src/ui/player/PlayerShell.svelte`; `src/ui/player/PlayerToolbar.svelte`; `src/ui/shared/Grid.svelte`; `src/ui/shared/Modal.svelte`; `src/ui/shared/ToastHost.svelte`; `src/ui/shared/TypingSurface.svelte`; `src/ui/shared/clueScroll.ts`; `src/ui/bindings/appStore.svelte.ts`; `src/ui/bindings/builderFacade.ts`; `src/ui/bindings/gridActions.ts`; `src/ui/bindings/modalFacade.ts`; `src/ui/bindings/playerFacade.ts`; `src/ui/bindings/viewmodels/anagramVM.ts`; `src/ui/bindings/viewmodels/builderVM.ts`; `src/ui/bindings/viewmodels/cluePanelVM.ts`; `src/ui/bindings/viewmodels/gridVM.ts`; `src/ui/bindings/viewmodels/playerVM.ts`; `src/ui/bindings/viewmodels/toastVM.ts`; the corresponding files under `test/`; `llmworkspace/architecture.md` (§3, §5, §7, §8, §9, §11, §13); `llmworkspace/architecture_smells.md` (supplementary findings and status line); `llmworkspace/architecture_smell_resolutions.md` (this entry, and the "Not addressed" pointer of the preceding entry).
+
+Created: `src/ui/builder/gridSizeInput.ts`; `test/ui/builder/gridSizeInput.test.ts`; `test/domain/grid/GridSize.test.ts`.
+
+No intent, event, state type or domain concept was renamed; no module was added or deleted.
+
+### Verification
+
+- `npm run ci` — eslint and `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **93 test files / 1372 tests green**; the single-file production build succeeded.
+- New tests cover: the facade's total grid actions; the mode-aware `clickCell` in both modes; the absence of both raw-state getters; the clue entry ids and `highlightedId`; the plain display values in the grid, clue, banner, toast and anagram view-models; the plain cursor fields and their null case; the grid-size bounds coming from the domain `GridSize`; `GridSize.invalidMessage` naming the range from `MIN`/`MAX`; `report-grid-size-failure` producing a toast with that message; the facade accepting a valid size and rejecting an out-of-range or non-integer one (state unchanged, failure toast raised); the grid-size draft parser submitting the number as typed (no rounding, no clamping); the modal's confirm no-op with no pending intent; `Anagram.sanitizeInput`; the reducer's use of it; the facade's uppercasing of a lowercase letter; the phase-discriminated shell view-model; and the store's autosave scheduling — including that nothing is scheduled before the first dispatch, that an unrelated change schedules nothing, and that a builder reset leaves no pending save.
+
+### Consequence (change cost after)
+
+A component can no longer reach past the view-model: there is no raw-state getter on either facade, the facade's grid actions are total, and every value a leaf receives is plain — numbers, strings, and the identifiers an action call needs. The word-key encoding has one owner (`WordKey.toCanonical`); the anagram input rule has one owner (`Anagram.sanitizeInput`); the letter rule has one owner (`Letter.try`); the grid-size range has one owner (`GridSize.MIN` / `GridSize.MAX`). The import phase can no longer be given a fake grid, fake panels or a fake toolbar — the view-model's type forbids them, and nothing runs at import time. Autosave has one owner (the store), and the component layer holds no persistence logic. Adding a new view-model field now has an obvious home: the view-model, in plain form, or the action bag that needs it.
+
+**Known constraint (not an open instance).** The store's autosave trigger compares slice references, so it depends on the project's immutability convention (`architecture.md` §2, principle 2): a reducer that mutated a slice in place would make the change invisible to the comparison. The previous implementation carried the same dependency — its `$effect` comment named it — so this is a standing precondition of the architecture rather than work left undone. It becomes compiler-checkable only if a type-level immutability rule is ever added.
+
+### Not addressed
+
+None. Every site in the inventory was migrated. The grid-size clamp this finding originally recorded as accepted — the control clamping its own draft while the facade guarded the state — was re-examined, found to be a second evaluation of the domain's predicate, and closed as well (S13): the control no longer evaluates the rule, the facade is the single evaluator, and the domain owns the message the app shows.
 
 
 ---

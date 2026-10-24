@@ -60,8 +60,8 @@ describe('deriveCluePanelVM', () => {
       isBuilder: false,
     });
     expect(vm.across).toHaveLength(2);
-    expect(vm.across[0]!.number).toBe(WordNumber.of(1));
-    expect(vm.across[1]!.number).toBe(WordNumber.of(3));
+    expect(vm.across[0]!.number).toBe(1);
+    expect(vm.across[1]!.number).toBe(3);
   });
 
   it('deriveCluePanelVM: down list sorted by WordNumber ascending', () => {
@@ -72,7 +72,7 @@ describe('deriveCluePanelVM', () => {
       isBuilder: false,
     });
     expect(vm.down).toHaveLength(1);
-    expect(vm.down[0]!.number).toBe(WordNumber.of(1));
+    expect(vm.down[0]!.number).toBe(1);
   });
 
   it('deriveCluePanelVM: head word has displayClue = w.clue, lengthPattern = LengthPattern.forWord', () => {
@@ -260,13 +260,35 @@ describe('deriveCluePanelVM', () => {
     }
   });
 
-  it('deriveCluePanelVM: highlightedWordKey passed through unchanged (null and a non-null sample)', () => {
+  it('deriveCluePanelVM: each clue entry carries the canonical word id', () => {
+    const words = [across1(), across2(), down1()];
+    const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
+    for (const entry of [...vm.across, ...vm.down]) {
+      expect(entry.id).toBe(WordKey.toCanonical(entry.wordKey));
+    }
+  });
+
+  it('deriveCluePanelVM: highlightedId matches the highlighted entry id', () => {
+    const words = [across1(), across2(), down1()];
+    const key = across2().key;
+    const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: key, isBuilder: false });
+    const entry = findEntry(vm, key)!;
+    expect(vm.highlightedId).toBe(entry.id);
+  });
+
+  it('deriveCluePanelVM: highlightedId is null when no word is highlighted', () => {
+    const words = [across1(), across2(), down1()];
+    const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
+    expect(vm.highlightedId).toBeNull();
+  });
+
+  it('deriveCluePanelVM: highlightedId is the canonical id of the highlighted word key (null and a non-null sample)', () => {
     const words = [across1(), across2(), down1()];
     const vmNull = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
-    expect(vmNull.highlightedWordKey).toBeNull();
+    expect(vmNull.highlightedId).toBeNull();
 
     const key = across2().key;
     const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: key, isBuilder: false });
-    expect(vm.highlightedWordKey).toEqual(key);
+    expect(vm.highlightedId).toBe(WordKey.toCanonical(key));
   });
 });

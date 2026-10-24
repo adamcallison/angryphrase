@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { parseGridSizeDraft } from './gridSizeInput';
+
   let {
     value,
     min,
@@ -10,23 +12,25 @@
     min: number;
     max: number;
     disabled: boolean;
-    onCommit: (newValue: number) => void;
+    onCommit: (newValue: number) => boolean;
   } = $props();
 
   // svelte-ignore state_referenced_locally
-  let draft = $state(value);
+  let draft = $state<number | null>(value);
   $effect(() => {
     draft = value;
   });
 
   function onBlur(): void {
-    let n = Number(draft);
-    if (!Number.isFinite(n)) n = min;
-    n = Math.trunc(n);
-    if (n < min) n = min;
-    if (n > max) n = max;
-    draft = n;
-    onCommit(n);
+    const n = parseGridSizeDraft(draft);
+    if (n === null) {
+      draft = value;
+      return;
+    }
+    const accepted = onCommit(n);
+    if (!accepted) {
+      draft = value;
+    }
   }
 </script>
 

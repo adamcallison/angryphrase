@@ -9,7 +9,7 @@
   <div class="rounded bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800 flex items-center justify-between gap-4">
     <div class="flex-1">
       <strong>Join sub-mode:</strong>
-      Click the next clue-list entry to link it after #{Number(vm.sourceNumber)} {vm.sourceDirection}.
+      Click the next clue-list entry to link it after #{vm.sourceNumber} {vm.sourceDirection}.
       Press Escape or click Cancel to abort.
     </div>
     <button class="text-xs text-blue-700 underline" onclick={() => actions.escape()}>Cancel</button>

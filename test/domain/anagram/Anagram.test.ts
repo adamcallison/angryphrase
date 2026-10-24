@@ -505,4 +505,18 @@ describe('Anagram', () => {
       reason: 'Input letters do not cover the fixed-position letters.',
     });
   });
+
+  describe('sanitizeInput', () => {
+    it('sanitizeInput keeps only A-Z letters and uppercases them', () => {
+      expect(Anagram.sanitizeInput('aB1!c', 10)).toBe('ABC');
+    });
+
+    it('sanitizeInput clamps to the maximum length', () => {
+      expect(Anagram.sanitizeInput('ABCDEFGHIJ', 5)).toBe('ABCDE');
+    });
+
+    it('sanitizeInput returns an empty string when the input has no letters', () => {
+      expect(Anagram.sanitizeInput('123!@#', 5)).toBe('');
+    });
+  });
 });

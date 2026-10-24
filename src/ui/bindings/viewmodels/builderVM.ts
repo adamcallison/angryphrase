@@ -1,6 +1,7 @@
 import { BuilderState } from '../../../builder/state/state';
 import type { BuilderMode } from '../../../builder/state/state';
 import { GridOps } from '../../../domain/grid/GridOps';
+import { GridSize } from '../../../domain/grid/GridSize';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import {
   CompletenessCheck,
@@ -12,7 +13,6 @@ import { WordKey } from '../../../domain/word/WordKey';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import type { Direction } from '../../../domain/word/Direction';
 import { ChainCells } from '../../../domain/chain/ChainCells';
-import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { deriveGridVM, type GridVM } from './gridVM';
 import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
@@ -39,8 +39,8 @@ export type BuilderToolbarVM = {
   canSwitchToDesignWithoutConfirm: boolean;
   canChangeGridSize: boolean;
   gridSizeInput: number;
-  minGridSize: 2;
-  maxGridSize: 25;
+  minGridSize: number;
+  maxGridSize: number;
   cellSelected: boolean;
   markerFlags: CellMarker;
   canExportComplete: boolean;
@@ -63,7 +63,7 @@ export type DisplacedCluesPanelVM = {
 
 export type BuilderSubModeBannerVM =
   | { kind: 'none' }
-  | { kind: 'join'; sourceNumber: WordNumber; sourceDirection: Direction }
+  | { kind: 'join'; sourceNumber: number; sourceDirection: Direction }
   | { kind: 'reattach'; cluePreview: string; clueDirection: Direction };
 
 export type BuilderShellVM = {
@@ -89,8 +89,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     canSwitchToDesignWithoutConfirm: isBlank,
     canChangeGridSize: isBlank,
     gridSizeInput: Number(state.puzzle.gridSize),
-    minGridSize: 2,
-    maxGridSize: 25,
+    minGridSize: Number(GridSize.MIN),
+    maxGridSize: Number(GridSize.MAX),
     cellSelected: state.cursor !== null,
     markerFlags,
     canExportComplete: exportCompleteViolations.length === 0,
@@ -120,7 +120,7 @@ export function deriveBuilderSubModeBannerVM(state: BuilderState): BuilderSubMod
     if (sourceWord === undefined) {
       return { kind: 'none' };
     }
-    return { kind: 'join', sourceNumber: sourceWord.number, sourceDirection: sourceWord.key.direction };
+    return { kind: 'join', sourceNumber: Number(sourceWord.number), sourceDirection: sourceWord.key.direction };
   }
   const displacedClue = state.displacedClues.find((dc) => dc.id === subMode.displacedClueId);
   if (displacedClue === undefined) {

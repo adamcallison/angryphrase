@@ -19,7 +19,10 @@ export function createGridActions(
 ): GridActions {
   return {
     selectCell(row: number, col: number) {
-      dispatch({ target, kind: 'select-cell', row: Row.of(row), col: Col.of(col) });
+      const r = Row.try(row);
+      const c = Col.try(col);
+      if (r === null || c === null) return;
+      dispatch({ target, kind: 'select-cell', row: r, col: c });
     },
     typeLetter(letter: string) {
       const l = Letter.try(letter);

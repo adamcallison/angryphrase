@@ -1,14 +1,11 @@
 import type { Grid } from '../../../domain/grid/Grid';
 import type { Word } from '../../../domain/word/Word';
-import type { Letter } from '../../../domain/letter/Letter';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import type { AnagramModalState } from '../../../player/state/state';
 import { Anagram } from '../../../domain/anagram/Anagram';
 import { WordKey as WordKeyCtor } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
 import { Chain } from '../../../domain/chain/Chain';
-
-export type { CellSeparator, Letter };
 
 export type AnagramTileVM = {
   position: number;
@@ -23,7 +20,7 @@ export type AnagramModalVM = {
   separators: CellSeparator[];
   input: string;
   inputLength: number;
-  expectedUniqueLetterCounts: { letter: Letter; count: number }[];
+  expectedUniqueLetterCounts: { letter: string; count: number }[];
   inputValid: boolean;
   scrambleEnabled: boolean;
   errorMessage: string | null;
@@ -67,13 +64,13 @@ export function deriveAnagramModalVM(input: {
   const errorMessage = validation.ok ? null : validation.reason;
   const inputLength = anagramModal.input.length;
 
-  const counts = new Map<string, { letter: Letter; count: number }>();
+  const counts = new Map<string, { letter: string; count: number }>();
   for (const e of entries) {
     if (e.fixed && e.letter !== null) {
       const key = String(e.letter);
       const cur = counts.get(key);
       if (cur) cur.count++;
-      else counts.set(key, { letter: e.letter, count: 1 });
+      else counts.set(key, { letter: key, count: 1 });
     }
   }
 

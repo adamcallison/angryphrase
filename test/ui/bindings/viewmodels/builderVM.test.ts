@@ -141,12 +141,19 @@ describe('deriveBuilderToolbarVM', () => {
     expect(deriveBuilderToolbarVM(fillState).mode).toBe('fill');
   });
 
-  it('deriveBuilderToolbarVM: gridSizeInput === Number(state.puzzle.gridSize); minGridSize=2; maxGridSize=25', () => {
+  it('deriveBuilderToolbarVM: gridSizeInput === Number(state.puzzle.gridSize); minGridSize=Number(GridSize.MIN); maxGridSize=Number(GridSize.MAX)', () => {
     const state = makeBlankState(7);
     const vm = deriveBuilderToolbarVM(state);
     expect(vm.gridSizeInput).toBe(Number(state.puzzle.gridSize));
-    expect(vm.minGridSize).toBe(2);
-    expect(vm.maxGridSize).toBe(25);
+    expect(vm.minGridSize).toBe(Number(GridSize.MIN));
+    expect(vm.maxGridSize).toBe(Number(GridSize.MAX));
+  });
+
+  it('deriveBuilderToolbarVM: the grid-size bounds come from the domain GridSize', () => {
+    const state = makeBlankState(7);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.minGridSize).toBe(Number(GridSize.MIN));
+    expect(vm.maxGridSize).toBe(Number(GridSize.MAX));
   });
 
   it('deriveBuilderToolbarVM: cursor null → cellSelected=false, markerFlags=CellMarker.EMPTY', () => {
@@ -314,7 +321,7 @@ describe('deriveBuilderSubModeBannerVM', () => {
     state = stateWithWords(state, [source]);
     state = stateWithSubMode(state, { kind: 'join', source: source.key });
     const vm = deriveBuilderSubModeBannerVM(state);
-    expect(vm).toEqual({ kind: 'join', sourceNumber: WordNumber.of(5), sourceDirection: 'down' });
+    expect(vm).toEqual({ kind: 'join', sourceNumber: 5, sourceDirection: 'down' });
   });
 
   it('deriveBuilderSubModeBannerVM: join sub-mode with missing source word → fallback { kind: "none" } (defensive)', () => {
@@ -405,13 +412,15 @@ describe('deriveBuilderShellVM', () => {
   it('deriveBuilderShellVM: cursor null → selectedWordCells empty, highlightedWordKey null, cluePanel has no isSelected entries', () => {
     const state = makeBlankState(3);
     const vm = deriveBuilderShellVM(state);
-    expect(vm.grid.cursor).toBeNull();
+    expect(vm.grid.cursorRow).toBeNull();
+    expect(vm.grid.cursorCol).toBeNull();
+    expect(vm.grid.cursorDirection).toBeNull();
     for (const row of vm.grid.cells) {
       for (const cell of row) {
         expect(cell.hilite).toBe('none');
       }
     }
-    expect(vm.cluePanel.highlightedWordKey).toBeNull();
+    expect(vm.cluePanel.highlightedId).toBeNull();
     for (const entry of [...vm.cluePanel.across, ...vm.cluePanel.down]) {
       expect(entry.isSelected).toBe(false);
     }

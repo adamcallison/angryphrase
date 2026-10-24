@@ -47,6 +47,7 @@ function validateAgainst(
 export const Anagram: {
   buildWordModel(grid: Grid, word: Word): { entries: AnagramEntry[]; separators: CellSeparator[] };
   buildChainModel(grid: Grid, members: Word[]): { entries: AnagramEntry[]; separators: CellSeparator[] };
+  sanitizeInput(raw: string, maxLength: number): string;
   validateInput(
     word: Word,
     entries: AnagramEntry[],
@@ -114,6 +115,12 @@ export const Anagram: {
     }
 
     return { entries, separators };
+  },
+
+  sanitizeInput(raw: string, maxLength: number): string {
+    const filtered = Letter.from(raw);
+    const clamped = filtered.slice(0, maxLength);
+    return clamped.map((l) => String(l)).join('');
   },
 
   validateInput(

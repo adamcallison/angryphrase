@@ -1,6 +1,5 @@
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
-import type { BuilderState } from '../../builder/state/state';
 import { deriveBuilderShellVM } from './viewmodels/builderVM';
 import type { BuilderShellVM } from './viewmodels/builderVM';
 import type { AppStore } from './appStore.svelte';
@@ -23,7 +22,7 @@ export type { BuilderShellVM };
 export type BuilderToolbarActions = {
   switchToFill(): void;
   requestSwitchToDesign(): void;
-  changeGridSize(size: number): void;
+  changeGridSize(size: number): boolean;
   setMarker(axis: CellMarkerAxis, separator: CellSeparator): void;
   exportIncomplete(): void;
   exportComplete(): void;
@@ -36,7 +35,7 @@ export type BuilderToolbarActions = {
 
 export type BuilderGridActions = {
   selectCell(row: number, col: number): void;
-  toggleDesignCell(row: number, col: number): void;
+  clickCell(row: number, col: number): void;
   typeLetter(letter: string): void;
   backspace(): void;
   moveCursor(direction: 'across' | 'down', sign: -1 | 1): void;
@@ -62,7 +61,6 @@ export type BuilderBannerActions = {
 export type BuilderFacade = {
   dispatch(intent: BuilderIntent): void;
   builderShellVM(): BuilderShellVM;
-  getBuilderState(): BuilderState;
   pickFile(): Promise<string | null>;
   actions: {
     toolbar: BuilderToolbarActions;
@@ -95,8 +93,12 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     },
     changeGridSize(size: number) {
       const s = GridSize.try(size);
-      if (s === null) return;
+      if (s === null) {
+        appStore.dispatch({ kind: 'report-grid-size-failure' });
+        return false;
+      }
       dispatch({ target: 'builder', kind: 'change-grid-size', size: s });
+      return true;
     },
     setMarker(axis: CellMarkerAxis, separator: CellSeparator) {
       const state = appStore.getBuilder();
@@ -137,10 +139,19 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     },
   };
 
+  const sharedGrid = createGridActions('builder', dispatch);
   const grid: BuilderGridActions = {
-    ...createGridActions('builder', dispatch),
-    toggleDesignCell(row: number, col: number) {
-      dispatch({ target: 'builder', kind: 'toggle-design-cell', row: Row.of(row), col: Col.of(col) });
+    ...sharedGrid,
+    clickCell(row: number, col: number) {
+      const mode = appStore.getBuilder().mode;
+      if (mode === 'design') {
+        const r = Row.try(row);
+        const c = Col.try(col);
+        if (r === null || c === null) return;
+        dispatch({ target: 'builder', kind: 'toggle-design-cell', row: r, col: c });
+      } else {
+        sharedGrid.selectCell(row, col);
+      }
     },
   };
 
@@ -178,9 +189,6 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     dispatch,
     builderShellVM() {
       return deriveBuilderShellVM(appStore.getBuilder());
-    },
-    getBuilderState() {
-      return appStore.getBuilder();
     },
     async pickFile() {
       return filePick.pickFile();

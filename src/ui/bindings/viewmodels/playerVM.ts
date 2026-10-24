@@ -1,11 +1,8 @@
 import type { Puzzle } from '../../../domain/puzzle/Puzzle';
 import type { WordKey } from '../../../domain/word/WordKey';
-import type { WordNumber } from '../../../domain/word/WordNumber';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerState, CheckResult, CheckClassification } from '../../../player/state/state';
-import { GridOps } from '../../../domain/grid/GridOps';
-import { GridSize } from '../../../domain/grid/GridSize';
 import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
 import { Chain } from '../../../domain/chain/Chain';
@@ -13,26 +10,21 @@ import { ChainCells } from '../../../domain/chain/ChainCells';
 import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { deriveGridVM, type GridVM } from './gridVM';
-import { deriveCluePanelVM } from './cluePanelVM';
+import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
 import { deriveAnagramModalVM, type AnagramModalVM } from './anagramVM';
-import type { ClueEntryVM } from './cluePanelVM';
 import type { LengthPattern as LengthPatternType } from '../../../domain/chain/LengthPattern';
 
 export type { LengthPatternType as LengthPattern };
 
 export type ActiveClueBannerVM = {
   visible: true;
-  wordNumber: WordNumber | null;
+  wordNumber: number | null;
   direction: Direction | null;
   displayClue: string | null;
   lengthPattern: LengthPattern | null;
 };
 
-export type PlayerCluePanelVM = {
-  across: ClueEntryVM[];
-  down: ClueEntryVM[];
-  highlightedWordKey: WordKey | null;
-};
+export type PlayerCluePanelVM = CluePanelVM;
 
 export type PlayerToolbarVM = {
   canCheck: boolean;
@@ -42,25 +34,28 @@ export type PlayerToolbarVM = {
   canImportNew: boolean;
 };
 
-export type PlayerShellVM = {
-  phase: 'import' | 'solving';
-  importError: string | null;
-  title: string;
-  author: string;
-  grid: GridVM;
-  topBanner: ActiveClueBannerVM;
-  bottomBanner: ActiveClueBannerVM;
-  cluePanel: PlayerCluePanelVM;
-  toolbar: PlayerToolbarVM;
-  anagram: AnagramModalVM;
-  checkResult: {
-    classification: CheckClassification;
-    incorrectCount: number;
-    emptyCount: number;
-    message: string;
-    colorClass: string;
-  } | null;
-};
+export type PlayerCheckResultVM = {
+  classification: CheckClassification;
+  incorrectCount: number;
+  emptyCount: number;
+  message: string;
+  colorClass: string;
+} | null;
+
+export type PlayerShellVM =
+  | { phase: 'import'; importError: string | null }
+  | {
+      phase: 'solving';
+      title: string;
+      author: string;
+      grid: GridVM;
+      topBanner: ActiveClueBannerVM;
+      bottomBanner: ActiveClueBannerVM;
+      cluePanel: PlayerCluePanelVM;
+      toolbar: PlayerToolbarVM;
+      anagram: AnagramModalVM;
+      checkResult: PlayerCheckResultVM;
+    };
 
 function emptyBanner(): ActiveClueBannerVM {
   return {
@@ -71,36 +66,6 @@ function emptyBanner(): ActiveClueBannerVM {
     lengthPattern: null,
   };
 }
-
-const IMPORT_GRID_VM: GridVM = deriveGridVM({
-  grid: GridOps.blank(GridSize.of(2)),
-  cursor: null,
-  words: [],
-  whichLetter: 'player',
-  selectedWordCells: new Set<string>(),
-});
-
-const IMPORT_BANNER: ActiveClueBannerVM = emptyBanner();
-
-const IMPORT_CLUE_PANEL: PlayerCluePanelVM = {
-  across: [],
-  down: [],
-  highlightedWordKey: null,
-};
-
-const IMPORT_ANAGRAM: AnagramModalVM = deriveAnagramModalVM({
-  anagramModal: null,
-  grid: GridOps.blank(GridSize.of(2)),
-  words: [],
-});
-
-const IMPORT_TOOLBAR: PlayerToolbarVM = {
-  canCheck: false,
-  canClearErrors: false,
-  canReset: false,
-  canOpenAnagram: false,
-  canImportNew: false,
-};
 
 export function deriveActiveClueBannerVM(input: {
   puzzle: Puzzle | null;
@@ -124,7 +89,7 @@ export function deriveActiveClueBannerVM(input: {
 
   return {
     visible: true,
-    wordNumber: word.number,
+    wordNumber: Number(word.number),
     direction: word.key.direction,
     displayClue,
     lengthPattern,
@@ -143,11 +108,9 @@ export function derivePlayerCluePanelVM(input: {
   });
 }
 
-export function derivePlayerToolbarVM(state: PlayerState): PlayerToolbarVM {
-  if (state.phase === 'import') {
-    return IMPORT_TOOLBAR;
-  }
-
+export function derivePlayerToolbarVM(
+  state: Extract<PlayerState, { phase: 'solving' }>,
+): PlayerToolbarVM {
   const hasIncorrect =
     state.checkResult !== null && state.checkResult.incorrectCells.length > 0;
   const cursorOnWord =
@@ -164,7 +127,7 @@ export function derivePlayerToolbarVM(state: PlayerState): PlayerToolbarVM {
 
 export function deriveCheckResultVM(
   checkResult: CheckResult | null,
-): PlayerShellVM['checkResult'] {
+): PlayerCheckResultVM {
   if (checkResult === null) {
     return null;
   }
@@ -202,25 +165,9 @@ export function deriveCheckResultVM(
   };
 }
 
-function deriveImportShellVM(state: Extract<PlayerState, { phase: 'import' }>): PlayerShellVM {
-  return {
-    phase: 'import',
-    importError: state.lastImportError,
-    title: '',
-    author: '',
-    grid: IMPORT_GRID_VM,
-    topBanner: IMPORT_BANNER,
-    bottomBanner: IMPORT_BANNER,
-    cluePanel: IMPORT_CLUE_PANEL,
-    toolbar: IMPORT_TOOLBAR,
-    anagram: IMPORT_ANAGRAM,
-    checkResult: null,
-  };
-}
-
 export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   if (state.phase === 'import') {
-    return deriveImportShellVM(state);
+    return { phase: 'import', importError: state.lastImportError };
   }
 
   const cursorWord = state.cursor
@@ -255,7 +202,6 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
 
   return {
     phase: 'solving',
-    importError: null,
     title: String(state.puzzle.title),
     author: String(state.puzzle.author),
     grid,

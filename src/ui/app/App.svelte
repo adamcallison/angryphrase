@@ -30,20 +30,7 @@
 
   const route = $derived(appStore.getRoute());
   const modalVm = $derived(modalFacade.modalVM());
-  const confirmIntent = $derived(modalFacade.getPendingConfirm());
   const toastVms = $derived(toastFacade.toastVMs());
-
-  // Autosave: observe each state slice independently and schedule debounced persistence.
-  // Reading inside each $effect registers that slice's reactive subscription; the
-  // scheduler coalesces multiple rapid changes into one save (400ms default).
-  // Split per-slice so a builder keystroke does not re-arm the player timer, and vice versa.
-  // Relies on reducers preserving sibling substate refs (spreads copy the other ref unchanged).
-  $effect(() => {
-    appStore.getScheduler().scheduleBuilderSave(appStore.getBuilder());
-  });
-  $effect(() => {
-    appStore.getScheduler().schedulePlayerSave(appStore.getPlayer());
-  });
 </script>
 
 <div class="flex min-h-screen flex-col">
@@ -58,6 +45,6 @@
     {/if}
   </main>
   <ToastHost vms={toastVms} actions={toastFacade.actions} />
-  <Modal vm={modalVm} confirmIntent={confirmIntent} actions={modalFacade.actions} />
+  <Modal vm={modalVm} actions={modalFacade.actions} />
   <VersionStamp />
 </div>

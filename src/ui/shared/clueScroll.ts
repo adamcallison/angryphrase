@@ -1,9 +1,3 @@
-import type { WordKey } from '../../domain/word/WordKey';
-
-export function canonicalWordKeyId(wordKey: WordKey): string {
-  return `${wordKey.startRow}_${wordKey.startCol}_${wordKey.direction}`;
-}
-
 export function scrollRowIntoView(
   panelEl: HTMLElement | null,
   liRefs: Record<string, HTMLElement>,

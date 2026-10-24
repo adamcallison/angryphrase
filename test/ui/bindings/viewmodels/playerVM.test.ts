@@ -96,7 +96,7 @@ function makeSolvingState(opts: {
   cursor?: Cursor;
   checkResult?: CheckResult | null;
   anagram?: AnagramModalState | null;
-}): PlayerState {
+}): Extract<PlayerState, { phase: 'solving' }> {
   return {
     phase: 'solving',
     puzzle: opts.puzzle,
@@ -167,7 +167,7 @@ describe('deriveActiveClueBannerVM', () => {
     puzzle = puzzleWithWords(puzzle, [word]);
     const cursor = makeCursor(0, 1, 'across');
     const vm = deriveActiveClueBannerVM({ puzzle, cursor });
-    expect(vm.wordNumber).toBe(WordNumber.of(1));
+    expect(vm.wordNumber).toBe(1);
     expect(vm.direction).toBe('across');
     expect(vm.displayClue).toBe('Head clue');
     expect(vm.lengthPattern).toBe('3');
@@ -194,7 +194,7 @@ describe('deriveActiveClueBannerVM', () => {
     puzzle = puzzleWithWords(puzzle, [{ ...head, nextWord: tail.key }, tail]);
     const cursor = makeCursor(0, 0, 'down');
     const vm = deriveActiveClueBannerVM({ puzzle, cursor });
-    expect(vm.wordNumber).toBe(WordNumber.of(2));
+    expect(vm.wordNumber).toBe(2);
     expect(vm.direction).toBe('down');
     expect(vm.displayClue).toBe('See 1 Across');
     expect(vm.lengthPattern).toBeNull();
@@ -237,25 +237,13 @@ describe('derivePlayerCluePanelVM', () => {
     const puzzle = puzzleWithWords(makeBlankPuzzle(3), [across2, down2, across1, down1]);
     const highlighted = across1.key;
     const vm = derivePlayerCluePanelVM({ puzzle, highlightedWordKey: highlighted });
-    expect(vm.highlightedWordKey).toEqual(highlighted);
-    expect(vm.across.map((e) => Number(e.number))).toEqual([1, 3]);
-    expect(vm.down.map((e) => Number(e.number))).toEqual([1, 4]);
+    expect(vm.highlightedId).toBe(WordKey.toCanonical(highlighted));
+    expect(vm.across.map((e) => e.number)).toEqual([1, 3]);
+    expect(vm.down.map((e) => e.number)).toEqual([1, 4]);
   });
 });
 
 describe('derivePlayerToolbarVM', () => {
-  it('derivePlayerToolbarVM: import phase → all flags false', () => {
-    const state = makeImportState();
-    const vm = derivePlayerToolbarVM(state);
-    expect(vm).toEqual({
-      canCheck: false,
-      canClearErrors: false,
-      canReset: false,
-      canOpenAnagram: false,
-      canImportNew: false,
-    });
-  });
-
   it('derivePlayerToolbarVM: solving phase with cursor on a word → canCheck/canReset/canImportNew=true, canOpenAnagram=true', () => {
     const word = makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 3 });
     const puzzle = puzzleWithWords(makeBlankPuzzle(3), [word]);
@@ -361,39 +349,39 @@ describe('deriveCheckResultVM', () => {
 });
 
 describe('derivePlayerShellVM', () => {
-  it('derivePlayerShellVM: import phase → phase="import"; title=""; author=""; anagram.open=false; checkResult=null; toolbar.* all false', () => {
+  it('derivePlayerShellVM: import phase returns a view-model with only phase and importError', () => {
     const state = makeImportState('bad import');
     const vm = derivePlayerShellVM(state);
+    expect(Object.keys(vm)).toEqual(['phase', 'importError']);
     expect(vm.phase).toBe('import');
+    if (vm.phase !== 'import') throw new Error('unreachable');
     expect(vm.importError).toBe('bad import');
-    expect(vm.title).toBe('');
-    expect(vm.author).toBe('');
-    expect(vm.anagram.open).toBe(false);
-    expect(vm.checkResult).toBeNull();
-    expect(vm.toolbar).toEqual({
-      canCheck: false,
-      canClearErrors: false,
-      canReset: false,
-      canOpenAnagram: false,
-      canImportNew: false,
+  });
+
+  it('derivePlayerShellVM: solving phase returns the full view-model', () => {
+    let puzzle = puzzleWithMetadata(makeBlankPuzzle(3), 'Test Title', 'Test Author');
+    const word = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 3,
+      clue: 'Head clue',
     });
-  });
-
-  it('derivePlayerShellVM: import phase bottomBanner === topBanner (same shared instance)', () => {
-    const state = makeImportState();
+    puzzle = puzzleWithWords(puzzle, [word]);
+    const state = makeSolvingState({ puzzle });
     const vm = derivePlayerShellVM(state);
-    expect(vm.bottomBanner).toBe(vm.topBanner);
-  });
-
-  it('derivePlayerShellVM: import phase grid + anagram + toolbar identical across two calls (module-level constants); only importError tracks state.lastImportError', () => {
-    const vmA = derivePlayerShellVM(makeImportState('err one'));
-    const vmB = derivePlayerShellVM(makeImportState('err two'));
-    expect(vmA.grid).toBe(vmB.grid);
-    expect(vmA.anagram).toBe(vmB.anagram);
-    expect(vmA.toolbar).toBe(vmB.toolbar);
-    expect(vmA.cluePanel).toBe(vmB.cluePanel);
-    expect(vmA.importError).toBe('err one');
-    expect(vmB.importError).toBe('err two');
+    expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
+    expect(vm.title).toBe('Test Title');
+    expect(vm.author).toBe('Test Author');
+    expect(vm.grid).toBeDefined();
+    expect(vm.topBanner).toBeDefined();
+    expect(vm.bottomBanner).toBeDefined();
+    expect(vm.cluePanel).toBeDefined();
+    expect(vm.toolbar).toBeDefined();
+    expect(vm.anagram).toBeDefined();
+    expect(vm.checkResult).toBeDefined();
   });
 
   it('derivePlayerShellVM: solving phase empty cursor → phase="solving"; grid empty cursor reflected; topBanner nulls; bottomBanner === topBanner (same instance)', () => {
@@ -410,10 +398,12 @@ describe('derivePlayerShellVM', () => {
     const state = makeSolvingState({ puzzle });
     const vm = derivePlayerShellVM(state);
     expect(vm.phase).toBe('solving');
-    expect(vm.importError).toBeNull();
+    if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.title).toBe('Test Title');
     expect(vm.author).toBe('Test Author');
-    expect(vm.grid.cursor).toBeNull();
+    expect(vm.grid.cursorRow).toBeNull();
+    expect(vm.grid.cursorCol).toBeNull();
+    expect(vm.grid.cursorDirection).toBeNull();
     expect(vm.topBanner).toEqual({
       visible: true,
       wordNumber: null,
@@ -437,7 +427,9 @@ describe('derivePlayerShellVM', () => {
     puzzle = puzzleWithWords(puzzle, [word]);
     const state = makeSolvingState({ puzzle, cursor: makeCursor(0, 1, 'across') });
     const vm = derivePlayerShellVM(state);
-    expect(vm.topBanner.wordNumber).toBe(WordNumber.of(1));
+    expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
+    expect(vm.topBanner.wordNumber).toBe(1);
     expect(vm.topBanner.displayClue).toBe('Head clue');
     expect(vm.bottomBanner).toBe(vm.topBanner);
   });
@@ -450,6 +442,8 @@ describe('derivePlayerShellVM', () => {
     puzzle = puzzleWithGrid(puzzle, grid);
     const state = makeSolvingState({ puzzle, cursor: makeCursor(0, 0, 'across') });
     const vm = derivePlayerShellVM(state);
+    expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.grid.cells[0]![0]!.letter).toBe('Z');
   });
 
@@ -474,6 +468,8 @@ describe('derivePlayerShellVM', () => {
       anagram: makeAnagramModal(word.key, 'ABC'),
     });
     const vm = derivePlayerShellVM(state);
+    expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.anagram.open).toBe(true);
     expect(vm.anagram.wordLength).toBe(3);
   });
@@ -499,6 +495,8 @@ describe('derivePlayerShellVM', () => {
     puzzle = puzzleWithWords(puzzle, [{ ...head, nextWord: tail.key }, tail]);
     const state = makeSolvingState({ puzzle, cursor: makeCursor(2, 0, 'across') });
     const vm = derivePlayerShellVM(state);
+    expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
 
     const cell = (r: number, c: number) => vm.grid.cells[r]![c]!;
     expect(cell(0, 0).hilite).toBe('in-word');

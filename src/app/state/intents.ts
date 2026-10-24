@@ -6,4 +6,5 @@ export type AppIntent =
   | { kind: 'dismiss-toast'; id: ToastId }
   | { kind: 'report-download-failure' }
   | { kind: 'report-builder-save-failure' }
-  | { kind: 'report-player-save-failure' };
+  | { kind: 'report-player-save-failure' }
+  | { kind: 'report-grid-size-failure' };

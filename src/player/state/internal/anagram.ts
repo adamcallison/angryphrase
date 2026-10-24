@@ -5,7 +5,7 @@ import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { WordMap } from '../../../domain/word/WordMap';
 import { WordSelection } from '../../../domain/word/WordSelection';
-import { Letter } from '../../../domain/letter/Letter';
+import type { Letter } from '../../../domain/letter/Letter';
 import { Result } from '../../../domain/notifications/Event';
 import { Anagram } from '../../../domain/anagram/Anagram';
 import { Chain } from '../../../domain/chain/Chain';
@@ -44,14 +44,12 @@ export function handleAnagramInput(
   }
   const members = Chain.fromHead(wordMap, head.key).members;
   const total = members.reduce((s, m) => s + m.length, 0);
-  const filtered = Letter.from(intent.input);
-  const clamped = filtered.slice(0, total);
-  const clampedInput = clamped.map((l) => String(l)).join('');
+  const sanitised = Anagram.sanitizeInput(intent.input, total);
   return Result.ok({
     ...state,
     anagram: {
       ...state.anagram,
-      input: clampedInput,
+      input: sanitised,
       scrambledArrangement: null,
     },
   });

@@ -89,18 +89,17 @@ describe('playerFacade.ts', () => {
     expect(vm.phase).toBe('import');
   });
 
-  it('playerFacade: playerShellVM() import phase: title="", author="", anagram.open=false, checkResult=null, toolbar.* all false', () => {
+  it('playerFacade: playerShellVM() import phase carries only the import error', () => {
     const vm = playerFacade.playerShellVM();
 
-    expect(vm.title).toBe('');
-    expect(vm.author).toBe('');
-    expect(vm.anagram.open).toBe(false);
-    expect(vm.checkResult).toBeNull();
-    expect(vm.toolbar.canCheck).toBe(false);
-    expect(vm.toolbar.canClearErrors).toBe(false);
-    expect(vm.toolbar.canReset).toBe(false);
-    expect(vm.toolbar.canOpenAnagram).toBe(false);
-    expect(vm.toolbar.canImportNew).toBe(false);
+    expect(Object.keys(vm)).toEqual(['phase', 'importError']);
+    expect(vm.phase).toBe('import');
+    if (vm.phase !== 'import') throw new Error('unreachable');
+    expect(vm.importError).toBeNull();
+  });
+
+  it('playerFacade: getPlayerState is not exposed on the facade', () => {
+    expect('getPlayerState' in playerFacade).toBe(false);
   });
 
   it('playerFacade: playerShellVM() solving phase (after fresh createAppStore): phase="solving", title/author populated from puzzle', () => {
@@ -125,6 +124,7 @@ describe('playerFacade.ts', () => {
     const vm = freshPlayerFacade.playerShellVM();
 
     expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.title).toBe('Test Title');
     expect(vm.author).toBe('Test Author');
   });
@@ -138,6 +138,7 @@ describe('playerFacade.ts', () => {
     const vm = playerFacade.playerShellVM();
 
     expect(vm.phase).toBe('solving');
+    if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.toolbar.canCheck).toBe(true);
   });
 
@@ -149,7 +150,7 @@ describe('playerFacade.ts', () => {
 
     playerFacade.dispatch({ kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) });
 
-    const player = playerFacade.getPlayerState();
+    const player = store.getPlayer();
     expect(player.phase).toBe('solving');
     if (player.phase !== 'solving') throw new Error('unreachable');
     expect(player.cursor).not.toBeNull();
@@ -167,22 +168,10 @@ describe('playerFacade.ts', () => {
     const vm = playerFacade.playerShellVM();
 
     expect(vm.phase).toBe('solving');
-    expect(vm.grid.cursor).not.toBeNull();
-    expect(vm.grid.cursor!.row).toBe(Row.of(1));
-    expect(vm.grid.cursor!.col).toBe(Col.of(1));
-  });
-
-  it('playerFacade: getPlayerState() returns the live PlayerState reference', () => {
-    const before = playerFacade.getPlayerState();
-    expect(before.phase).toBe('import');
-
-    const puzzle = makeCompletePuzzle(5, 3);
-    const fileContent = serializeComplete(puzzle);
-    playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
-
-    const after = playerFacade.getPlayerState();
-    expect(after.phase).toBe('solving');
-    expect(after).toBe(playerFacade.getPlayerState());
+    if (vm.phase !== 'solving') throw new Error('unreachable');
+    expect(vm.grid.cursorRow).not.toBeNull();
+    expect(vm.grid.cursorRow).toBe(1);
+    expect(vm.grid.cursorCol).toBe(1);
   });
 
   describe('primitive dispatch helpers', () => {
@@ -197,7 +186,7 @@ describe('playerFacade.ts', () => {
       enterSolvingPhase();
       playerFacade.actions.grid.selectCell(0, 0);
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.cursor).not.toBeNull();
@@ -210,7 +199,7 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.grid.selectCell(0, 0);
       playerFacade.actions.grid.typeLetter('A');
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.puzzle.grid[0]![0]!.playerLetter).toEqual(Letter.try('A'));
@@ -221,7 +210,7 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.grid.selectCell(0, 0);
       playerFacade.actions.grid.typeLetter('!');
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.puzzle.grid[0]![0]!.playerLetter).toBeNull();
@@ -233,7 +222,7 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.grid.typeLetter('A');
       playerFacade.actions.grid.backspace();
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.puzzle.grid[0]![0]!.playerLetter).toBeNull();
@@ -244,17 +233,18 @@ describe('playerFacade.ts', () => {
       const fileContent = serializeComplete(puzzle);
       playerFacade.actions.importScreen.importPuzzle(fileContent);
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
-      expect(playerFacade.playerShellVM().importError).toBeNull();
+      const vm = playerFacade.playerShellVM();
+      expect(vm.phase).toBe('solving');
     });
 
     it('playerFacade: dispatchCheck sets checkResult with no emptyCells and no incorrectCells when grid empty/unanswered', () => {
       enterSolvingPhase();
       playerFacade.actions.toolbar.check();
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.checkResult).not.toBeNull();
@@ -267,7 +257,10 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.grid.selectCell(0, 0);
       playerFacade.actions.toolbar.openAnagramHelper();
 
-      expect(playerFacade.playerShellVM().anagram.open).toBe(true);
+      const vm = playerFacade.playerShellVM();
+      expect(vm.phase).toBe('solving');
+      if (vm.phase !== 'solving') throw new Error('unreachable');
+      expect(vm.anagram.open).toBe(true);
     });
 
     it('playerFacade: dispatchCloseAnagramHelper closes anagram modal', () => {
@@ -276,7 +269,10 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.toolbar.openAnagramHelper();
       playerFacade.actions.anagram.close();
 
-      expect(playerFacade.playerShellVM().anagram.open).toBe(false);
+      const vm = playerFacade.playerShellVM();
+      expect(vm.phase).toBe('solving');
+      if (vm.phase !== 'solving') throw new Error('unreachable');
+      expect(vm.anagram.open).toBe(false);
     });
 
     it('playerFacade: dispatchAnagramInput updates anagram modal input', () => {
@@ -285,7 +281,10 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.toolbar.openAnagramHelper();
       playerFacade.actions.anagram.input('CBA');
 
-      expect(playerFacade.playerShellVM().anagram.input).toBe('CBA');
+      const vm = playerFacade.playerShellVM();
+      expect(vm.phase).toBe('solving');
+      if (vm.phase !== 'solving') throw new Error('unreachable');
+      expect(vm.anagram.input).toBe('CBA');
     });
 
     it('playerFacade: dispatchAnagramScramble populates scrambledArrangement', () => {
@@ -295,7 +294,7 @@ describe('playerFacade.ts', () => {
       playerFacade.actions.anagram.input('CBA');
       playerFacade.actions.anagram.scramble();
 
-      const player = playerFacade.getPlayerState();
+      const player = store.getPlayer();
       expect(player.phase).toBe('solving');
       if (player.phase !== 'solving') throw new Error('unreachable');
       expect(player.anagram).not.toBeNull();
@@ -368,7 +367,7 @@ describe('playerFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
     expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not open or read that file. Please try again.' });
-    expect(playerWithPick.getPlayerState()).toEqual({ phase: 'import', lastImportError: 'Could not open or read that file. Please try again.' });
+    expect(storeWithPick.getPlayer()).toEqual({ phase: 'import', lastImportError: 'Could not open or read that file. Please try again.' });
     warnSpy.mockRestore();
   });
 
@@ -413,7 +412,7 @@ describe('playerFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
     expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
-    expect(playerWithDrop.getPlayerState()).toEqual({ phase: 'import', lastImportError: 'Could not read that file. Please try again.' });
+    expect(storeWithDrop.getPlayer()).toEqual({ phase: 'import', lastImportError: 'Could not read that file. Please try again.' });
     warnSpy.mockRestore();
   });
 
@@ -434,6 +433,6 @@ describe('playerFacade.ts', () => {
     const puzzle = makeCompletePuzzle(99, 3);
     a.actions.importScreen.importPuzzle(serializeComplete(puzzle));
 
-    expect(b.getPlayerState().phase).toBe('import');
+    expect(b.playerShellVM().phase).toBe('import');
   });
 });

@@ -323,6 +323,20 @@ describe('handleAnagramInput', () => {
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.anagram?.input).toBe('ABCDEF');
   });
+
+  it('anagram-input: stores the sanitised string produced by Anagram.sanitizeInput', () => {
+    let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
+    const key = findWordKey(state, 0, 0, 'across');
+    state = withAnagram(state, key);
+    const intent: PlayerIntent = {
+      kind: 'anagram-input',
+      target: 'player',
+      input: 'a1B!c2D@e#f',
+    };
+    const result = handleAnagramInput(state, intent);
+    if (result.state.phase !== 'solving') throw new Error('expected solving');
+    expect(result.state.anagram?.input).toBe('ABCDE');
+  });
 });
 
 describe('handleAnagramScramble', () => {

@@ -530,4 +530,61 @@ describe('appStore.svelte.ts', () => {
     expect(store.getBuilder()).toBe(state.builder);
     expect(store.getPlayer()).toBe(state.player);
   });
+
+  it('appStore: no save is scheduled before the first dispatch', () => {
+    const initial = makeBlankAppState(42);
+    const freshStore = createAppStore(
+      initial,
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+
+    vi.advanceTimersByTime(1000);
+
+    expect(freshStore.getState()).toBe(initial);
+    expect(inMemoryStorage.getBuilderBlob()).toBeNull();
+    expect(inMemoryStorage.getPlayerProgressMap().size).toBe(0);
+  });
+
+  it('appStore: a builder change schedules a builder save', () => {
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+
+    expect(inMemoryStorage.getBuilderBlob()).toBeNull();
+
+    vi.advanceTimersByTime(400);
+
+    expect(inMemoryStorage.getBuilderBlob()).not.toBeNull();
+  });
+
+  it('appStore: a player change schedules a player save', () => {
+    const puzzle = makeCompletePuzzle(7, 3);
+    store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
+
+    expect(inMemoryStorage.getPlayerProgressMap().has(String(puzzle.key))).toBe(false);
+
+    vi.advanceTimersByTime(400);
+
+    const saved = inMemoryStorage.getPlayerProgressMap().get(String(puzzle.key));
+    expect(saved).not.toBeUndefined();
+  });
+
+  it('appStore: an unrelated change schedules no save', () => {
+    store.dispatch({ kind: 'navigate', route: 'play' });
+
+    vi.advanceTimersByTime(1000);
+
+    expect(inMemoryStorage.getBuilderBlob()).toBeNull();
+    expect(inMemoryStorage.getPlayerProgressMap().size).toBe(0);
+  });
+
+  it('appStore: a builder reset clears storage and leaves no pending builder save', () => {
+    store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
+    store.dispatch({ target: 'builder', kind: 'confirm-reset-builder' });
+
+    expect(inMemoryStorage.getBuilderBlob()).toBeNull();
+
+    vi.advanceTimersByTime(1000);
+
+    expect(inMemoryStorage.getBuilderBlob()).toBeNull();
+  });
 });
