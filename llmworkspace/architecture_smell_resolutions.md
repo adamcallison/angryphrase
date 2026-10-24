@@ -1466,6 +1466,42 @@ No intent, event, state type or domain concept was renamed.
 | `WordMap.set` / `WordMap.remove` — dead public API, used only by their own tests. | Outside this finding's scope; deleting public API is a separate decision. | `architecture_smells.md` Appendix A (dead public API). |
 | `LengthPattern.forActiveClueBanner` — public but uncalled; migrated rather than deleted, because deletion is a separate decision. | As above. | `architecture_smells.md` Appendix A (dead public API). |
 
+### Post-resolution follow-up (2026-10-24)
+
+**Why the finding was re-read.** The entry above was closed on measurements, and one measurement did not move: the clue-panel view-model derivation went from 0.916 ms to 0.870 ms on the dense 25×25 fixture — a 5% improvement, where the grid view-model (the same finding's O(N³) site) improved 5×. A clue panel that barely moved while its sibling collapsed is not a clue panel that is already cheap; it is a clue panel whose cost is somewhere else. Probing the remainder found a site the inventory had classified correctly but not *diagnosed*: the entry treated "the chain walk with per-cell `GridOps.cellAt`" (S3) as inherent work. It was not.
+
+**The site (S13).** `LengthPattern.separatorAt` — the module-private per-cell accessor — called `WordGeometry.cells(w)` internally. `WordGeometry.cells` allocates a fresh array of `length` coordinate objects, each with two branded `Row.of` / `Col.of` constructions. `singleWordPattern` calls `separatorAt` once per offset, and `chainPattern` once per cell of every chain member — so a word of length *L* derived its cell list *L* times: **O(L²) allocations per word**. It is the same defect shape the index work had just removed elsewhere ("a per-cell query that re-derives its input per cell"), one layer over: not a scan of the word list, but a scan of the word's own cells.
+
+Measured on the dense 25×25 fixture (162 words): deriving every head word's pattern cost **0.845 ms** with the cell list re-derived per cell, and **0.093 ms** with it derived once per word — a 9× difference, and ~96% of the entire clue-panel derivation.
+
+**Decision.** Derive the cell list once per word and pass it to the per-cell accessor.
+
+- **Accepted — hoist the cell list out of the accessor.** `separatorAt` takes the already-derived cells (`separatorAt(grid, w, cells, offset)`); `singleWordPattern` derives them once per word and `chainPattern` once per member. Same reads, same axis rule, same run arithmetic, same error message, same throw behaviour; the public surface (`LengthPattern.forWord`, `forActiveClueBanner`, `LengthPattern` as a `string`) is untouched.
+- **Rejected — change `WordGeometry.cells` to be lazy or iterator-shaped.** `cells` is the *owner* of word extent (`architecture.md` §3 Layer 0) and its array form is what `ChainCells.cellsOfWord` and `Anagram.buildWordModel` consume correctly. Reshaping the owner to serve one caller's inefficiency would have moved a well-behaved owner to accommodate a bad call site.
+- **Rejected — cache the cells in the domain.** A domain-level cache would need an owner, a lifetime and an invalidation rule for a value that is cheap to compute — and it would have introduced the first mutable state in `domain/`, whose purity is a stated principle.
+- **Rejected — leave it, and record the cost.** The argument was "out of scope". The cost was a live quadratic on the per-keystroke path and a doc claim ("nothing quadratic remains in the derivation path") that was false.
+
+**Deliberate behaviour changes.** None. The produced pattern strings are byte-identical: a head word with no markers returns `String(length)`; a space marker yields `"2, 2"`; a hyphen `"2-2"`; mixed `"2, 2-2"`; across words read the right axis and down words the bottom axis; chains join member patterns with `", "`; boundary markers between members behave as before (`5-9-7`, `21`, `5, 9-7`, `7, 7, 7`). The 24-case `LengthPattern` suite passes with **zero edits**.
+
+**Files.** Modified: `src/domain/chain/LengthPattern.ts` (one module-private helper's signature and its two call sites). No test file changed; no public type, intent, event, state shape or wire format changed; no new module.
+
+**Verification.** `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **93 test files / 1381 tests green**; the single-file production build succeeded.
+
+**Cumulative measurement** (same harness throughout; vite-node, plain objects, `n=300–500` per measurement). "Before" is the state before any of this work; "index" is after the `ChainIndex` + run-mask resolution above; "index + pattern" is after this follow-up.
+
+| | 15×15 real puzzle (28 words) | | dense 25×25 (162 words) | | | |
+|---|---|---|---|---|---|---|
+| | before | index | index + pattern | before | index | index + pattern |
+| Builder shell VM | 0.380 ms | 0.266 ms | **0.216 ms** | 2.087 ms | 1.245 ms | **0.522 ms** |
+| Player shell VM | 0.324 ms | 0.198 ms | **0.169 ms** | 1.906 ms | 1.138 ms | **0.400 ms** |
+| grid VM | 0.167 ms | 0.076 ms | 0.075 ms | 0.911 ms | 0.184 ms | 0.201 ms |
+| clue-panel VM | 0.087 ms | 0.091 ms | **0.034 ms** | 0.916 ms | 0.870 ms | **0.154 ms** |
+| completeness check | 0.021 ms | 0.016 ms | 0.017 ms | 0.126 ms | 0.077 ms | 0.086 ms |
+
+The whole Builder shell derivation on the dense fixture is **4× cheaper** than it was before this work, and the clue-panel derivation **5.9×**. What remains per keystroke is linear work: one view-model object allocated per cell, the completeness letter scan, and the chain length-pattern construction.
+
+**What this does not change.** The frequency half of the finding is untouched by both this entry and this follow-up: the view-model tree is still rebuilt on every dispatch, and the rebuilt objects still carry fresh identities, so the renderer still re-evaluates every cell. The cost *shape* is now linear everywhere; the *frequency* is unchanged. The open item, its landing condition and the two mechanisms considered for it (a store-derived change description, or a fine-grained reactive derivation) are recorded in the "Not addressed" table above.
+
 
 ---
 

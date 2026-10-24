@@ -4,12 +4,12 @@ import { GridOps } from '../grid/GridOps';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import { WordGeometry } from '../word/WordGeometry';
+import type { WordCell } from '../word/WordGeometry';
 import type { ChainIndex } from './ChainIndex';
 
 export type LengthPattern = string;
 
-function separatorAt(grid: Grid, w: Word, offset: number): CellSeparator {
-  const cells = WordGeometry.cells(w);
+function separatorAt(grid: Grid, w: Word, cells: readonly WordCell[], offset: number): CellSeparator {
   const cell = cells[offset];
   if (cell === undefined) {
     throw new Error('LengthPattern.separatorAt: offset out of range');
@@ -33,9 +33,10 @@ function appendSeparator(pieces: string[], run: number, separator: CellSeparator
 function singleWordPattern(grid: Grid, w: Word): LengthPattern {
   let run = 1;
   const pieces: string[] = [];
+  const cells = WordGeometry.cells(w);
 
   for (let i = 0; i < w.length - 1; i++) {
-    run = appendSeparator(pieces, run, separatorAt(grid, w, i));
+    run = appendSeparator(pieces, run, separatorAt(grid, w, cells, i));
   }
 
   pieces.push(String(run));
@@ -49,14 +50,15 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
   for (let memberIndex = 0; memberIndex < members.length; memberIndex++) {
     const w = members[memberIndex];
     if (w === undefined) continue;
+    const cells = WordGeometry.cells(w);
     const lastIndex = Number(w.length) - 1;
 
     for (let i = 0; i < lastIndex; i++) {
-      run = appendSeparator(pieces, run, separatorAt(grid, w, i));
+      run = appendSeparator(pieces, run, separatorAt(grid, w, cells, i));
     }
 
     if (memberIndex < members.length - 1) {
-      run = appendSeparator(pieces, run, separatorAt(grid, w, lastIndex));
+      run = appendSeparator(pieces, run, separatorAt(grid, w, cells, lastIndex));
     }
   }
 
