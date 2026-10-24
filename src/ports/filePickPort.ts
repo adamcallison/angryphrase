@@ -6,7 +6,7 @@ function coerceError(err: unknown): Error {
 
 // Click-pick path + drag-and-drop reads. Drag-and-drop EVENTS cannot drive a
 // Promise API, so the component extracts the File from the DragEvent and passes
-// it to ondropfile; the port performs the read. Silent adapter (P4): failures
+// it to ondropfile; the port performs the read. Silent adapter: failures
 // travel as data (PickResult / DroppedFileResult); the bindings facades warn.
 export function createFilePickPort(): FilePickPort {
   return {

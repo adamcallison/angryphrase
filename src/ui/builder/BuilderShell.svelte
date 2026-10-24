@@ -13,7 +13,7 @@
   const vm: BuilderShellVM = $derived(builderFacade.builderShellVM());
 
   function onCellClick(row: number, col: number): void {
-    // §7.2: Design → toggle-design-cell; Fill → select-cell (auto-direction per FR-10/11 reducer).
+    // Design mode toggles the cell; Fill mode selects it (the reducer chooses the direction).
     const state = builderFacade.getBuilderState();
     if (state.mode === 'design') {
       builderFacade.actions.grid.toggleDesignCell(row, col);

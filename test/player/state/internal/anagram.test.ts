@@ -162,7 +162,7 @@ describe('handleOpenAnagramHelper', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('open-anagram-helper: opens modal with openedForWord set to the cursor-direction word containing the cell (FR-81)', () => {
+  it('open-anagram-helper: opens modal with openedForWord set to the cursor-direction word containing the cell', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const result = handleOpenAnagramHelper(state);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
@@ -240,7 +240,7 @@ describe('handleAnagramInput', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('anagram-input: writes the filtered input (A-Z, uppercased) to anagram.input (FR-83)', () => {
+  it('anagram-input: writes the filtered input (A-Z, uppercased) to anagram.input', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
@@ -250,7 +250,7 @@ describe('handleAnagramInput', () => {
     expect(result.state.anagram?.input).toBe('ABC');
   });
 
-  it('anagram-input: clamps the input to the word length (FR-83)', () => {
+  it('anagram-input: clamps the input to the word length', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
@@ -281,7 +281,7 @@ describe('handleAnagramInput', () => {
     expect(result.state.anagram?.input).toBe('ABCDE');
   });
 
-  it('anagram-input: resets scrambledArrangement to null when input changes (FR-87)', () => {
+  it('anagram-input: resets scrambledArrangement to null when input changes', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key, 'ABCDE', [
@@ -350,7 +350,7 @@ describe('handleAnagramScramble', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('anagram-scramble: sets scrambledArrangement from Anagram.scramble result (FR-86)', () => {
+  it('anagram-scramble: sets scrambledArrangement from Anagram.scramble result', () => {
     const state = scrambleState('ABCDE');
     const expectedRng = new SeededRng(1);
     const resultRng = new SeededRng(1);
@@ -401,7 +401,7 @@ describe('handleAnagramScramble', () => {
     expect(result.state.anagram?.scrambledArrangement?.every((l) => l !== null)).toBe(true);
   });
 
-  it('anagram-scramble: does not mutate the grid (FR-87 scratchpad only)', () => {
+  it('anagram-scramble: does not mutate the grid (scratchpad only)', () => {
     const state = scrambleState('ABCDE');
     const rng = new SeededRng(1);
     const originalGrid = state.puzzle.grid;
@@ -443,7 +443,7 @@ describe('handleAnagramScramble', () => {
     expect(arrangement?.[3]).toEqual(Letter.try('B')!);
   });
 
-  it('anagram-scramble: scrambledArrangement is entries-aligned when input is short (E3 structural contract)', () => {
+  it('anagram-scramble: scrambledArrangement is entries-aligned when input is short (structural contract)', () => {
     // 3-letter across word at row 0, cols 0..2; fix A at col 2; input 'BA' (1 fixed + 1 pool).
     let state = withCursor(solvingState(3), { row: 0, col: 0, direction: 'across' });
     state = withPlayerLetter(state, 0, 2, 'A');
@@ -475,7 +475,7 @@ describe('handleCloseAnagramHelper', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('close-anagram-helper: sets anagram to null when open (FR-89)', () => {
+  it('close-anagram-helper: sets anagram to null when open', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);
@@ -519,7 +519,7 @@ describe('handleEscape', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('escape: closes anagram modal when open (FR-89)', () => {
+  it('escape: closes anagram modal when open', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const key = findWordKey(state, 0, 0, 'across');
     state = withAnagram(state, key);

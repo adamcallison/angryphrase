@@ -87,7 +87,7 @@ describe('handleBeginReattach', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('begin-reattach: enters reattach sub-mode with displacedClueId (FR-41)', () => {
+  it('begin-reattach: enters reattach sub-mode with displacedClueId', () => {
     const state = withDisplacedClues(
       blankState('fill'),
       [DisplacedClue.create(rng, 'clue', 'across')],
@@ -165,7 +165,7 @@ describe('handleDeleteDisplacedClue', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('delete-displaced-clue: removes the matching clue from state.displacedClues (FR-40)', () => {
+  it('delete-displaced-clue: removes the matching clue from state.displacedClues', () => {
     const state = withDisplacedClues(
       blankState('fill'),
       [DisplacedClue.create(rng, 'clue', 'across')],
@@ -190,7 +190,7 @@ describe('handleDeleteDisplacedClue', () => {
     expect(result.state.displacedClues).toEqual([clue2]);
   });
 
-  it('delete-displaced-clue: no confirmation, single intent (FR-40)', () => {
+  it('delete-displaced-clue: no confirmation, single intent', () => {
     const state = withDisplacedClues(
       blankState('fill'),
       [DisplacedClue.create(rng, 'clue', 'across')],
@@ -204,7 +204,7 @@ describe('handleDeleteDisplacedClue', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('delete-displaced-clue: cancels reattach sub-mode when the deleted clue is the one referenced (FR-44)', () => {
+  it('delete-displaced-clue: cancels reattach sub-mode when the deleted clue is the one referenced', () => {
     const clue = DisplacedClue.create(rng, 'clue', 'across');
     const state = withSubMode(
       withDisplacedClues(blankState('fill'), [clue]),
@@ -219,7 +219,7 @@ describe('handleDeleteDisplacedClue', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('delete-displaced-clue: leaves reattach sub-mode intact when a different displaced clue is deleted (FR-44 "adjusted accordingly" — id-based reference, no index adjustment needed)', () => {
+  it('delete-displaced-clue: leaves reattach sub-mode intact when a different displaced clue is deleted — id-based reference, no index adjustment needed', () => {
     const clue1 = DisplacedClue.create(rng, 'first', 'across');
     const clue2 = DisplacedClue.create(rng, 'second', 'down');
     const state = withSubMode(
@@ -327,7 +327,7 @@ describe('resolveReattach', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('resolveReattach: reject when target clue is non-empty (FR-42b) — error toast', () => {
+  it('resolveReattach: reject when target clue is non-empty — error toast', () => {
     const clue = DisplacedClue.create(rng, 'clue', 'across');
     const state = withDisplacedClues(withClues(withWords(blankState('fill')), [[0, 'Existing']]), [clue]);
     const target = state.puzzle.words[0]!.key;
@@ -348,7 +348,7 @@ describe('resolveReattach', () => {
     ]);
   });
 
-  it('resolveReattach: reject when target is a non-head chain word (FR-42c) — error toast', () => {
+  it('resolveReattach: reject when target is a non-head chain word — error toast', () => {
     const clue = DisplacedClue.create(rng, 'clue', 'across');
     const state = withDisplacedClues(withChain(withWords(blankState('fill')), 0, 1), [clue]);
     const target = state.puzzle.words[1]!.key;
@@ -364,12 +364,12 @@ describe('resolveReattach', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Target is a non-head chain word and cannot be given a clue (FR-31).',
+        message: 'Target is a non-head chain word and cannot be given a clue.',
       },
     ]);
   });
 
-  it('resolveReattach: success copies clue text to target word (FR-43)', () => {
+  it('resolveReattach: success copies clue text to target word', () => {
     const clue = DisplacedClue.create(rng, 'displaced clue', 'across');
     const state = withDisplacedClues(withWords(blankState('fill')), [clue]);
     const target = state.puzzle.words[0]!.key;
@@ -384,7 +384,7 @@ describe('resolveReattach', () => {
     expect(targetAfter!.clue).toBe('displaced clue');
   });
 
-  it('resolveReattach: success removes displaced clue from list (FR-43)', () => {
+  it('resolveReattach: success removes displaced clue from list', () => {
     const clue1 = DisplacedClue.create(rng, 'first', 'across');
     const clue2 = DisplacedClue.create(rng, 'second', 'down');
     const state = withDisplacedClues(withWords(blankState('fill')), [clue1, clue2]);

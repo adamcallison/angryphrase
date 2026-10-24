@@ -411,7 +411,7 @@ describe('reducePlayer', () => {
       expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
     });
 
-    it('apply-loaded-progress: silently drops saved letters targeting now-black cells (FR-80)', () => {
+    it('apply-loaded-progress: silently drops saved letters targeting now-black cells', () => {
       const state = loadedFromFixture();
       const result = reducePlayer(
         state,

@@ -58,7 +58,7 @@ describe('ChainAdmission', () => {
       });
     });
 
-    it('canLink: returns source-has-link when source already has a nextWord (FR-35b)', () => {
+    it('canLink: returns source-has-link when source already has a nextWord', () => {
       const tail = makeWord(0, 2, 'across', 2, 'tail clue');
       const source = makeWord(0, 0, 'across', 1, 'source clue', tail.key);
       const target = makeWord(1, 0, 'down', 3, 'target clue');
@@ -69,7 +69,7 @@ describe('ChainAdmission', () => {
       });
     });
 
-    it('canLink: returns target-already-linked when another word points to target (FR-35c)', () => {
+    it('canLink: returns target-already-linked when another word points to target', () => {
       const target = makeWord(0, 2, 'across', 2, 'target clue');
       const other = makeWord(0, 0, 'across', 1, 'other clue', target.key);
       const source = makeWord(1, 0, 'down', 3, 'source clue');
@@ -135,7 +135,7 @@ describe('ChainAdmission', () => {
       });
     });
 
-    it('canReattach: returns target-has-clue when target clue is non-empty (FR-42b)', () => {
+    it('canReattach: returns target-has-clue when target clue is non-empty', () => {
       const rng = new SeededRng(4);
       const target = makeWord(0, 0, 'across', 1, 'already has clue');
       const clue = DisplacedClue.create(rng, 'clue', 'across');
@@ -146,7 +146,7 @@ describe('ChainAdmission', () => {
       });
     });
 
-    it('canReattach: returns target-non-head when target is pointed to by another word (FR-42c)', () => {
+    it('canReattach: returns target-non-head when target is pointed to by another word', () => {
       const rng = new SeededRng(5);
       const target = makeWord(1, 0, 'down', 2, '');
       const head = makeWord(0, 0, 'across', 1, 'head clue', target.key);
@@ -207,7 +207,7 @@ describe('ChainAdmission', () => {
 
     it('message: returns exact string for target-non-head', () => {
       expect(ChainAdmission.message({ ok: false, reason: 'target-non-head' })).toBe(
-        'Target is a non-head chain word and cannot be given a clue (FR-31).',
+        'Target is a non-head chain word and cannot be given a clue.',
       );
     });
 

@@ -34,7 +34,7 @@ describe('AppState', () => {
     expect(state.builder.cursor).toBeNull();
   });
 
-  it('AppState fields are the shape required by design §4.1', () => {
+  it('AppState fields are the shape required by architecture.md §7 (AppState)', () => {
     const rng = new SeededRng(3);
     const state = AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));
 

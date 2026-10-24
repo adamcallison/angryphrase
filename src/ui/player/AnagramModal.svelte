@@ -15,7 +15,7 @@
 
   function onInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    // FR-83: filter A-Z, uppercase, clamp to wordLength
+    // Filter to A-Z, uppercase, clamp to the word length.
     let s = target.value.toUpperCase().replace(/[^A-Z]/g, '');
     if (s.length > vm.wordLength) s = s.slice(0, vm.wordLength);
     actions.input(s);
@@ -48,7 +48,7 @@
         </button>
       </div>
 
-      <!-- Tile row (FR-82) -->
+      <!-- Tile row -->
       <div class="mb-4 flex flex-wrap items-center gap-1">
         {#each vm.tiles as tile, i}
           {#if i > 0}
@@ -69,7 +69,7 @@
         {/each}
       </div>
 
-      <!-- Input (FR-83) -->
+      <!-- Input -->
       <label for="anagram-input" class="mb-1 block text-sm font-semibold text-gray-700">Your attempt:</label>
       <input
         id="anagram-input"
@@ -91,7 +91,7 @@
         <div class="mt-2 text-xs text-red-600">{vm.errorMessage}</div>
       {/if}
 
-      <!-- Expected unique letter counts (FR-85) -->
+      <!-- Expected unique letter counts -->
       <div class="mt-3 text-xs text-gray-500">
         Expected letters:
         {#each vm.expectedUniqueLetterCounts as c}
@@ -99,7 +99,7 @@
         {/each}
       </div>
 
-      <!-- Actions (FR-86) -->
+      <!-- Actions -->
       <div class="mt-4 flex justify-end gap-2">
         <button
           type="button"

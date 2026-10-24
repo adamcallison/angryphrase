@@ -264,13 +264,13 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: false
 	},
 	{
-		description: 'src/ports/** allows domain/puzzle/PuzzleKey (StoragePort key type, DRN item 6)',
+		description: 'src/ports/** allows domain/puzzle/PuzzleKey (StoragePort key type)',
 		filename: 'src/ports/foo.ts',
 		code: 'import type { PuzzleKey } from "../domain/puzzle/PuzzleKey"',
 		expectError: false
 	},
 
-	// Block — domain/brand import boundary (H1)
+	// Block — domain/brand import boundary
 	{
 		description: 'src/domain/grid/Row.ts (brand owner) allows brand import',
 		filename: 'src/domain/grid/Row.ts',
@@ -278,25 +278,25 @@ const fixtures: { description: string; filename: string; code: string; expectErr
 		expectError: false
 	},
 	{
-		description: 'src/domain/word/WordLength.ts (brand owner, H4) allows brand import',
+		description: 'src/domain/word/WordLength.ts (brand owner) allows brand import',
 		filename: 'src/domain/word/WordLength.ts',
 		code: "import { brand } from '../brand'",
 		expectError: false
 	},
 	{
-		description: 'src/domain/anagram/Position.ts (brand owner, H4) allows brand import',
+		description: 'src/domain/anagram/Position.ts (brand owner) allows brand import',
 		filename: 'src/domain/anagram/Position.ts',
 		code: "import { brand } from '../brand'",
 		expectError: false
 	},
 	{
-		description: 'src/domain/time/EpochMs.ts (brand owner, H4) allows brand import',
+		description: 'src/domain/time/EpochMs.ts (brand owner) allows brand import',
 		filename: 'src/domain/time/EpochMs.ts',
 		code: "import { brand } from '../brand'",
 		expectError: false
 	},
 	{
-		description: 'src/domain/time/DurationMs.ts (brand owner, H4) allows brand import',
+		description: 'src/domain/time/DurationMs.ts (brand owner) allows brand import',
 		filename: 'src/domain/time/DurationMs.ts',
 		code: "import { brand } from '../brand'",
 		expectError: false

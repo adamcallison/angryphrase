@@ -95,7 +95,7 @@ describe('toggle-design-cell', () => {
     expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(false);
   });
 
-  it('cursor is cleared (FR-21)', () => {
+  it('cursor is cleared', () => {
     const state = {
       ...blankState(),
       cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },

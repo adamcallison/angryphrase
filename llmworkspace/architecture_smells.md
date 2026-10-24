@@ -238,6 +238,17 @@ The active doc set is `architecture.md` + `future_considerations.md` ("This docu
 
 An auditor (or a future maintainer, or an LLM agent — this repo's doc set is clearly written for all three) cannot resolve any of these references without the archive the project told them to ignore. Scaffolding leftovers (`.gitkeep` in `app/state`, `builder/state`, `domain`, `player/state`, `ports`, `ui/bindings`) are the same rot in miniature.
 
+*(Audit correction, 2026-10-24.)* The bullet above understates and mis-describes the finding in three ways, and omits one category outright. The verified inventory at resolution time:
+
+- **Scale.** 122 occurrences of retired requirement identifiers, not "dozens": 25 in `src/`, 97 in `test/`, across 36 distinct identifiers (`FR-9`…`FR-99`, `NFR-9`). 89 of the 97 test-side occurrences sit inside `it(...)` titles, so the vocabulary was woven into the test suite's naming, not only into comments.
+- **Two retired vocabularies, not one.** The requirement identifiers (`FR-*` / `NFR-*`) are one; the archived code-smell log's identifiers (`P1`–`P4`, `G7`, `W1`, `F6`, `H1`, `H3`, `H4`, `C5`, `C6`, `B5`) are a second, with 13 further sites. The audit listed a few of the second vocabulary's tokens inline with the first, as though they were one space.
+- **A third category, missed entirely: position and section anchors.** Sixteen sites cite a *position* rather than a concept — `§830`, `§908` (×8), `§4.5`, `§7.2`, `§4.1`, `§6.1`, `§6.2`, `§8.9a` (section numbers in the archived design document) and `architecture.md §187` (a line number in a live document that no longer has one). This is the same rot as the identifiers, and the one that had already produced a wrong claim inside this very document: the audit asserted the `eslint.config.js` anchor had drifted to line 87; by resolution time the referenced assertion had moved again, to line 30.
+- **The vocabulary had leaked into product output.** Two identifiers appeared inside *user-visible* strings — the `edit-clue` rejection toast and `ChainAdmission`'s `target-non-head` message both ended "(FR-31)" — and a third inside a `console.warn`. The audit read them as comments.
+
+The audit's own file list is also stale: it named `lifecycle.ts` (both), `anagram.ts` and `importExport.ts` as citation sites, none of which carries a retired identifier at resolution time.
+
+**Status (2026-10-24): addressed** — resolution in `architecture_smell_resolutions.md`. The requirement identifier space is retired (the project has no specification layer; behavioural rules live in the code that implements them), the second vocabulary is retired with it, every position and section anchor is re-homed to a live named section or dropped, and `architecture.md` §14 now states the doc-set and citation rules as a convention.
+
 ---
 
 ## 12. Boundary enforcement config is triplicated and slightly overclaims

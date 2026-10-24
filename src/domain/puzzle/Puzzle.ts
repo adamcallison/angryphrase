@@ -38,7 +38,7 @@ export const Puzzle: {
   },
 
   isBlank(p: Puzzle): boolean {
-    // FR-22: blank = no answer letters, no non-empty clues, no chains
+    // blank = no answer letters, no non-empty clues, no chains
     const noAnswerLetters = p.grid.every((row) =>
       row.every((cell) => cell.answerLetter === null),
     );

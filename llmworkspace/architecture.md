@@ -2,7 +2,7 @@
 
 This document describes the system **as it is built**. Where it disagrees with the code, the code wins. It is a map for navigating the codebase, not a specification to implement.
 
-This document is self-contained. Its companion is `llmworkspace/future_considerations.md` — extension points and anticipated future work.
+This document is self-contained. Its companion is `llmworkspace/future_considerations.md` — extension points and anticipated future work. Two sibling documents — `llmworkspace/architecture_smells.md` and `llmworkspace/architecture_smell_resolutions.md` — are *audit records* describing how the architecture reached its current shape; they are not part of the live set and are never cited from it. The rules governing the doc set and the citations that may point into it are in §14.
 
 ---
 
@@ -471,9 +471,36 @@ angryphrase/
 │                     ui/bindings/ fakes/ boundary/imports.test.ts
 ├─ puzzles/           7 sample files, version 2, unreferenced by code
 └─ llmworkspace/      architecture.md (this file),
-                      future_considerations.md
+                      future_considerations.md,
+                      architecture_smells.md, architecture_smell_resolutions.md
+                      (audit records — not part of the live set, §14),
+                      archive/ (historical; nothing live may cite it — §14)
 ```
 
 **Naming conventions.** `PascalCase.ts` for type+helper bundles (`Grid.ts`, `Letter.ts`); `camelCase.ts` for pure-function modules (`reducer.ts`, `reconcileWords.ts`); `*.svelte` PascalCase; intent kinds are kebab-case string literals; VM types suffixed `VM`; no `I` prefix on interfaces (`StoragePort`, not `IStoragePort`).
 
 **Cycle policy.** See §4 — `domain/` acyclic with `format/` at the bottom; the bindings seam is the only place that can cycle, and `madge` guards it.
+
+---
+
+## 14. Doc Set & Citation Policy
+
+The **live doc set** is this file and `llmworkspace/future_considerations.md`. Two sibling documents sit beside them and are *audit records*, not part of the live set: `llmworkspace/architecture_smells.md` (a ranked audit of the architecture as built) and `llmworkspace/architecture_smell_resolutions.md` (how each ranked finding was resolved). Both describe history; neither is a citation target.
+
+**No requirement layer.** This project has no specification document and no requirement identifier space. Behavioural rules live in the code that implements them — as code, as comments, and as test names. The `FR-*` / `NFR-*` identifiers from the project's original requirements draft are **retired**: they scaffolded the initial design and are not part of the live doc set. Do not reintroduce them. The same holds for every other identifier minted by an archived document — the archived code-smell log's, the archived design-review notes' — and for any citation of an audit record by its finding number.
+
+**`llmworkspace/archive/` is historical.** It holds material that informed the original design and is kept for reference only. Nothing live may cite it. Archiving a document that a live artefact still cites is a **breaking change to the doc set**: the citation must be re-homed in the same commit.
+
+**Citation rules.** A citation — a comment, a doc comment, or a test title — must resolve to something live:
+
+1. A module, symbol, or path **inside this repository** (e.g. `ChainAdmission`, `domain/grid/WordTopology.ts`). This is the preferred form, and the right one whenever the cited rule is implemented near the citation.
+2. A **named section** of this file or of `future_considerations.md` (e.g. `architecture.md §7 (Polysemous click intents)`).
+
+Never cite:
+
+- a path into `llmworkspace/` — the doc set is addressed by document name, never by workspace path;
+- a **position**: a line number, with or without a section sign (a `file.ext:` followed by digits, or a `§` followed by three or more digits). Section numbers in this document have at most two digits, so a `§` with three or more digits is a line number;
+- an identifier from a retired vocabulary.
+
+These rules are conventions, not compiler-enforced. Comment text is read by people and by agents working on the code, and it is worth keeping resolvable — but nothing depends on it mechanically, so no checker polices it. The project's mechanical checks are reserved for the layer import edges, where a violation actually breaks the architecture. A citation that breaks the rules above is a review finding, not a build failure.
+

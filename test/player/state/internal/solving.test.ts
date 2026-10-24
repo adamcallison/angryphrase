@@ -167,7 +167,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: no-op on black cell (FR-9)', () => {
+  it('select-cell: no-op on black cell', () => {
     const state = solvingState(5, [[0, 0]]);
     const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) };
 
@@ -190,7 +190,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: on selectable cell that is part of only across word → direction across (FR-10)', () => {
+  it('select-cell: on selectable cell that is part of only across word → direction across', () => {
     const state = solvingState(5, [
       [1, 2],
       [3, 2],
@@ -207,7 +207,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: on selectable cell that is part of only down word → direction down (FR-10)', () => {
+  it('select-cell: on selectable cell that is part of only down word → direction down', () => {
     const state = solvingState(5, [
       [2, 1],
       [2, 3],
@@ -224,7 +224,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: on selectable cell part of both words → direction defaults across (FR-10)', () => {
+  it('select-cell: on selectable cell part of both words → direction defaults across', () => {
     const state = solvingState(5);
     const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
 
@@ -238,7 +238,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clicking already-selected cell that is in both words → toggles direction (FR-11)', () => {
+  it('select-cell: clicking already-selected cell that is in both words → toggles direction', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
     const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
 
@@ -252,7 +252,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clicking already-selected cell that is in only one word → state unchanged, checkResult preserved (§908)', () => {
+  it('select-cell: clicking already-selected cell that is in only one word → state unchanged, checkResult preserved', () => {
     let state = solvingState(5, [
       [1, 2],
       [3, 2],
@@ -268,7 +268,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clears checkResult (§908)', () => {
+  it('select-cell: clears checkResult', () => {
     let state = solvingState(5);
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
@@ -279,7 +279,7 @@ describe('handleSelectCell', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: closes anagram modal when cursor moves to a cell whose word differs (FR-88)', () => {
+  it('select-cell: closes anagram modal when cursor moves to a cell whose word differs', () => {
     const state = solvingState(5, [
       [1, 0],
       [1, 1],
@@ -302,7 +302,7 @@ describe('handleSelectCell', () => {
     expect(assertSolving(result.state).anagram).toBe(null);
   });
 
-  it('select-cell: keeps anagram modal open when cursor moves to a cell in the same word (FR-88)', () => {
+  it('select-cell: keeps anagram modal open when cursor moves to a cell in the same word', () => {
     const state = solvingState(5, [
       [1, 0],
       [1, 1],
@@ -415,7 +415,7 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('move-cursor: target selectable → cursor moves and direction updates (FR-14)', () => {
+  it('move-cursor: target selectable → cursor moves and direction updates', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', target: 'player', direction: 'across', sign: 1 };
 
@@ -429,7 +429,7 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('move-cursor: target not selectable (next cell black) → cursor stays but direction updates (FR-14)', () => {
+  it('move-cursor: target not selectable (next cell black) → cursor stays but direction updates', () => {
     const state = withCursor(solvingState(5, [[2, 3]]), { row: 2, col: 2, direction: 'down' });
     const intent: PlayerIntent = { kind: 'move-cursor', target: 'player', direction: 'across', sign: 1 };
 
@@ -513,7 +513,7 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('move-cursor: clears checkResult (§908)', () => {
+  it('move-cursor: clears checkResult', () => {
     let state = solvingState(5);
     state = withCursor(state, { row: 2, col: 2, direction: 'across' });
     state = withCheckResult(state);
@@ -539,7 +539,7 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('move-cursor: closes anagram modal when cursor moves to a word that differs (FR-88)', () => {
+  it('move-cursor: closes anagram modal when cursor moves to a word that differs', () => {
     const state = solvingState(5, [
       [1, 0],
       [1, 1],
@@ -563,7 +563,7 @@ describe('handleMoveCursor', () => {
     expect(assertSolving(result.state).anagram).toBe(null);
   });
 
-  it('move-cursor: keeps anagram modal open when cursor moves within the same word (FR-88)', () => {
+  it('move-cursor: keeps anagram modal open when cursor moves within the same word', () => {
     const state = solvingState(5, [
       [1, 0],
       [1, 1],
@@ -587,7 +587,7 @@ describe('handleMoveCursor', () => {
     expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
   });
 
-  it('move-cursor: cursor staying in place but changing direction (FR-14 boundary case) keeps anagram modal open if cell is in same word', () => {
+  it('move-cursor: cursor staying in place but changing direction (boundary case) keeps anagram modal open if cell is in same word', () => {
     const state = solvingState(3);
     const downWord = state.puzzle.words.find(
       (w) => w.key.direction === 'down' && Number(w.key.startRow) === 0 && Number(w.key.startCol) === 0,
@@ -683,7 +683,7 @@ describe('handleClickCluePanelWord', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('click-clue-panel-word: clears checkResult (§908)', () => {
+  it('click-clue-panel-word: clears checkResult', () => {
     let state = solvingState(5);
     state = withCheckResult(state);
     const word = state.puzzle.words[0];
@@ -696,7 +696,7 @@ describe('handleClickCluePanelWord', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('click-clue-panel-word: closes anagram modal if word differs from openedForWord (FR-88)', () => {
+  it('click-clue-panel-word: closes anagram modal if word differs from openedForWord', () => {
     const state = solvingState(5, [
       [1, 0],
       [1, 1],
@@ -801,7 +801,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: writes playerLetter to selected cell (FR-12 / FR-50)', () => {
+  it('type-letter: writes playerLetter to selected cell', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
 
@@ -818,7 +818,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: overwrites existing playerLetter (FR-12)', () => {
+  it('type-letter: overwrites existing playerLetter', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
@@ -830,7 +830,7 @@ describe('handleTypeLetter', () => {
     );
   });
 
-  it('type-letter: does not modify answerLetter (FR-50 — Player writes player field only)', () => {
+  it('type-letter: does not modify answerLetter — Player writes player field only', () => {
     let state = solvingState(5);
     const g = state.puzzle.grid;
     const cell = GridOps.cellAt(g, Row.of(0), Col.of(0));
@@ -854,7 +854,7 @@ describe('handleTypeLetter', () => {
     );
   });
 
-  it('type-letter: advances cursor to next selectable cell in current direction (FR-12)', () => {
+  it('type-letter: advances cursor to next selectable cell in current direction', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
 
@@ -867,7 +867,7 @@ describe('handleTypeLetter', () => {
     });
   });
 
-  it('type-letter: stays on current cell when next is black (FR-12)', () => {
+  it('type-letter: stays on current cell when next is black', () => {
     const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
 
@@ -883,7 +883,7 @@ describe('handleTypeLetter', () => {
     );
   });
 
-  it('type-letter: stays on current cell at grid boundary (FR-12)', () => {
+  it('type-letter: stays on current cell at grid boundary', () => {
     const state = withCursor(solvingState(5), { row: 0, col: 4, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
 
@@ -899,7 +899,7 @@ describe('handleTypeLetter', () => {
     );
   });
 
-  it('type-letter: letter still written when cursor stays (FR-12)', () => {
+  it('type-letter: letter still written when cursor stays', () => {
     const state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 0, direction: 'across' });
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
 
@@ -938,7 +938,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: clears checkResult (§908 clear-on-change)', () => {
+  it('type-letter: clears checkResult (clear-on-change)', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     state = withCheckResult(state);
     const intent: PlayerIntent = { kind: 'type-letter', target: 'player', letter: Letter.try('A')! };
@@ -1006,7 +1006,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: deletes playerLetter and keeps cursor when current cell has a letter (FR-13)', () => {
+  it('backspace: deletes playerLetter and keeps cursor when current cell has a letter', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const result = handleBackspace(state);
@@ -1020,7 +1020,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty, retreats and deletes previous cell playerLetter (FR-13)', () => {
+  it('backspace: when current cell empty, retreats and deletes previous cell playerLetter', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 1, direction: 'across' });
     const result = handleBackspace(state);
@@ -1033,7 +1033,7 @@ describe('handleBackspace', () => {
     });
   });
 
-  it('backspace: when current cell empty and previous is at grid start, state unchanged, checkResult preserved (FR-13)', () => {
+  it('backspace: when current cell empty and previous is at grid start, state unchanged, checkResult preserved', () => {
     let state = withCursor(solvingState(5), { row: 0, col: 0, direction: 'across' });
     state = withCheckResult(state);
     const result = handleBackspace(state);
@@ -1043,7 +1043,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty and previous is black, state unchanged, checkResult preserved (FR-13)', () => {
+  it('backspace: when current cell empty and previous is black, state unchanged, checkResult preserved', () => {
     let state = withCursor(solvingState(5, [[0, 1]]), { row: 0, col: 2, direction: 'across' });
     state = withCheckResult(state);
     const result = handleBackspace(state);
@@ -1066,7 +1066,7 @@ describe('handleBackspace', () => {
     });
   });
 
-  it('backspace: does not modify answerLetter (FR-50)', () => {
+  it('backspace: does not modify answerLetter', () => {
     let state = solvingState(5);
     const g = state.puzzle.grid;
     const cell = GridOps.cellAt(g, Row.of(0), Col.of(0));
@@ -1087,7 +1087,7 @@ describe('handleBackspace', () => {
     expect(GridOps.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
   });
 
-  it('backspace: clears checkResult (§908 clear-on-change)', () => {
+  it('backspace: clears checkResult (clear-on-change)', () => {
     let state = withPlayerLetter(solvingState(5), 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     state = withCheckResult(state);
@@ -1367,7 +1367,7 @@ describe('handleClearErrors', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('clear-errors: no-op when checkResult.incorrectCells is empty (FR-75 only-offered-if-incorrect)', () => {
+  it('clear-errors: no-op when checkResult.incorrectCells is empty (only-offered-if-incorrect)', () => {
     let state = solvingState(2);
     state = withCheckResult(state, 'complete-correct');
 
@@ -1377,7 +1377,7 @@ describe('handleClearErrors', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('clear-errors: clears playerLetter to null on every incorrect cell (FR-75)', () => {
+  it('clear-errors: clears playerLetter to null on every incorrect cell', () => {
     let state = solvingState(2);
     state = withAnswerLetter(state, 0, 0, 'A');
     state = withAnswerLetter(state, 0, 1, 'B');
@@ -1449,7 +1449,7 @@ describe('handleClearErrors', () => {
     expect(GridOps.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).answerLetter).toBe(Letter.try('D'));
   });
 
-  it('clear-errors: clears checkResult to null after clearing (§908 clear-on-change)', () => {
+  it('clear-errors: clears checkResult to null after clearing (clear-on-change)', () => {
     let state = solvingState(2);
     state = withAnswerLetter(state, 0, 0, 'A');
     state = withAnswerLetter(state, 0, 1, 'B');

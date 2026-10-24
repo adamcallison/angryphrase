@@ -90,7 +90,7 @@ export function createAppStore(
         const folded = applyEventsToApp(result.state, result.events, d);
         s = folded.state;
         // Any dispatch while a modal is open closes it. The UI invariant from
-        // architecture.md §187 says other guarded controls are disabled while a
+        // architecture.md §5 (Confirmation modals as state) says other guarded controls are disabled while a
         // modal is open, so the only legal dispatches are cancel-modal or the
         // stashed confirm intent — both of which must clear the modal state.
         if (modalWasOpen) {
@@ -140,12 +140,12 @@ export function createAppStore(
     const result = ports.storage.loadPlayerProgress(key);
     if (result.kind !== 'loaded') {
       // 'absent' is silent. 'failed' was already warned once by localStoragePort;
-      // user-visible behaviour stays silent (NFR-9 silent drop).
+      // user-visible behaviour stays silent (corrupt progress is dropped silently).
       return null;
     }
     const parsed = parsePlayerProgress(result.value);
     if (parsed === null) {
-      console.warn('appStore: parsePlayerProgress returned null (NFR-9 silent drop)');
+      console.warn('appStore: parsePlayerProgress returned null (corrupt progress dropped)');
       return null;
     }
     const intent: PlayerIntent = {

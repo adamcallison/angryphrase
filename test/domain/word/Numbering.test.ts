@@ -155,7 +155,7 @@ describe('Numbering', () => {
     expect(wordNumberOf(result[0]!)).toBe(1);
   });
 
-  it('Numbering.assign overwrites any existing number with the re-derived value (FR-98a)', () => {
+  it('Numbering.assign overwrites any existing number with the re-derived value', () => {
     const grid = blank(3);
     const words: DerivedWord[] = [
       makeUnnumberedWord(0, 0, 'across', 3),

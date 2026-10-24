@@ -83,7 +83,7 @@ describe('persistenceCodec.ts', () => {
       expect(parsed.subMode).toBeUndefined();
     });
 
-    it('serializeBuilderSnapshot: cursor field is omitted (C6 — not persisted)', () => {
+    it('serializeBuilderSnapshot: cursor field is omitted (not persisted)', () => {
       const state = makeBuilderState(2, {
         cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' },
       });

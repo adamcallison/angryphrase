@@ -178,7 +178,7 @@ describe('deriveAnagramModalVM', () => {
     expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
   });
 
-  it('deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (E3 — short input does not desync)', () => {
+  it('deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (short input does not desync)', () => {
     let grid = grid3x3();
     grid = setPlayerLetter(grid, 0, 2, 'A');   // fix A at position 2
     const word = word3Across();

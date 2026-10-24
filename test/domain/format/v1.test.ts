@@ -355,7 +355,7 @@ describe('parsePuzzle', () => {
     );
   });
 
-  it('rejects complete file with a non-empty clue on a non-head chain word (C5)', () => {
+  it('rejects complete file with a non-empty clue on a non-head chain word', () => {
     const data = makeValidComplete();
     data.gridSize = 5;
     data.grid = [
@@ -465,7 +465,7 @@ describe('parsePuzzle', () => {
     expect(result.failures[0]!.message).toMatch(/length/);
   });
 
-  it('rejects word carrying a number field (DRN5 — number dropped from v1 format, strict)', () => {
+  it('rejects word carrying a number field (number dropped from v1 format, strict)', () => {
     const data = makeValidIncomplete();
     (data.words[0] as Record<string, unknown>).number = 42;
     const result = parsePuzzle(JSON.stringify(data));
@@ -668,7 +668,7 @@ describe('parsePuzzle', () => {
 });
 
 describe('serializeIncomplete', () => {
-  it('serializeIncomplete produces exactly the field set specified in §6.1', () => {
+  it('serializeIncomplete produces exactly the field set specified in architecture.md §10 (JSON shape)', () => {
     const p = buildPuzzle('incomplete', [null, null], '');
     const displaced = [{ id: UUID_A, clue: 'Displaced clue', direction: 'across' as Direction }] as DisplacedClue[];
     const json = serializeIncomplete(p, displaced);
@@ -738,7 +738,7 @@ describe('serializeIncomplete', () => {
 });
 
 describe('serializeComplete', () => {
-  it('serializeComplete produces exactly the field set specified in §6.2 (no displacedClues)', () => {
+  it('serializeComplete produces exactly the field set specified in architecture.md §10 (JSON shape) — no displacedClues', () => {
     const p = buildPuzzle('complete', ['A', 'B'], 'Head clue');
     const json = serializeComplete(p);
     const parsed = JSON.parse(json);

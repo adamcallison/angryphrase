@@ -115,7 +115,7 @@ describe('handleBeginJoin', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('begin-join: enters join sub-mode with source set (FR-34)', () => {
+  it('begin-join: enters join sub-mode with source set', () => {
     const state = makeStateWithWords(5, []);
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { target: 'builder', kind: 'begin-join', source };
@@ -198,7 +198,7 @@ describe('handleUnjoin', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('unjoin: clears source.nextWord link (FR-37)', () => {
+  it('unjoin: clears source.nextWord link', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const source = state.puzzle.words[0]!.key;
     const intent: BuilderIntent = { target: 'builder', kind: 'unjoin', source };
@@ -210,7 +210,7 @@ describe('handleUnjoin', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('unjoin: resets downstream word clue to empty (FR-37)', () => {
+  it('unjoin: resets downstream word clue to empty', () => {
     const state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream clue']]);
     const source = state.puzzle.words[0]!.key;
     const downstreamKey = state.puzzle.words[0]!.nextWord!;
@@ -245,7 +245,7 @@ describe('handleUnjoin', () => {
     expect(downstreamAfter.nextWord).toEqual(downstreamBefore.nextWord);
   });
 
-  it('unjoin: chain A→B→C, unjoin A; B retains nextWord→C (FR-37)', () => {
+  it('unjoin: chain A→B→C, unjoin A; B retains nextWord→C', () => {
     const base = makeStateWithWords(4, []);
     const words = base.puzzle.words;
     const chainedWords = words.map((w, i) => {
@@ -371,7 +371,7 @@ describe('handleUnjoin', () => {
 });
 
 describe('resolveJoin', () => {
-  it('resolveJoin: source === target cancels the join (FR-34)', () => {
+  it('resolveJoin: source === target cancels the join', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };
@@ -417,7 +417,7 @@ describe('resolveJoin', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('resolveJoin: reject when source already has nextWord (FR-35b) — emits error toast', () => {
+  it('resolveJoin: reject when source already has nextWord — emits error toast', () => {
     const state = withClues(withChain(makeStateWithWords(4, []), 0, 1), [[1, 'Downstream']]);
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[2]!.key;
@@ -435,7 +435,7 @@ describe('resolveJoin', () => {
     ]);
   });
 
-  it('resolveJoin: reject when target is already pointed to by another word (FR-35c) — emits error toast with specific reason', () => {
+  it('resolveJoin: reject when target is already pointed to by another word — emits error toast with specific reason', () => {
     const base = makeStateWithWords(4, []);
     const words = base.puzzle.words.map((w, i) => {
       if (i === 0) return { ...w, nextWord: base.puzzle.words[2]!.key };
@@ -458,7 +458,7 @@ describe('resolveJoin', () => {
     ]);
   });
 
-  it('resolveJoin: success sets source.nextWord = target.key (FR-35)', () => {
+  it('resolveJoin: success sets source.nextWord = target.key', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[1]!.key;
@@ -482,7 +482,7 @@ describe('resolveJoin', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('resolveJoin: success with target having non-empty clue → displaces clue (FR-36) — appended to displacedClues with target direction', () => {
+  it('resolveJoin: success with target having non-empty clue → displaces clue — appended to displacedClues with target direction', () => {
     const state = withClues(makeStateWithWords(4, []), [[1, 'Target clue']]);
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[1]!.key;
@@ -495,7 +495,7 @@ describe('resolveJoin', () => {
     expect(result.state.displacedClues[0]!.direction).toBe(target.direction);
   });
 
-  it('resolveJoin: success with target having non-empty clue → target.clue becomes empty (FR-36/FR-31)', () => {
+  it('resolveJoin: success with target having non-empty clue → target.clue becomes empty', () => {
     const state = withClues(makeStateWithWords(4, []), [[1, 'Target clue']]);
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[1]!.key;
@@ -507,7 +507,7 @@ describe('resolveJoin', () => {
     expect(targetAfter!.clue).toBe('');
   });
 
-  it('resolveJoin: success with target having empty clue → no displaced clue added (FR-36)', () => {
+  it('resolveJoin: success with target having empty clue → no displaced clue added', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
     const target = state.puzzle.words[1]!.key;
@@ -558,7 +558,7 @@ function withMarkerAt(
   return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) };
 }
 
-describe('join boundary markers (FR-36)', () => {
+describe('join boundary markers', () => {
   it('join materializes default space marker on source last cell (across)', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
@@ -603,7 +603,7 @@ describe('join boundary markers (FR-36)', () => {
   });
 });
 
-describe('unjoin boundary markers (FR-37)', () => {
+describe('unjoin boundary markers', () => {
   it('unjoin clears the boundary marker pair on source last cell', () => {
     let state = withChain(makeStateWithWords(4, []), 0, 1);
     state = withMarkerAt(state, 0, 3, 'space-right');

@@ -72,7 +72,7 @@ export function resolveReattach(
     }]);
   }
 
-  // FR-43: success. Move text; remove displaced clue from list; reset sub-mode.
+  // Success. Move text; remove displaced clue from list; reset sub-mode.
   const displacedClue = state.displacedClues.find(d =>
     DisplacedClueId.equals(d.id, displacedClueId),
   );

@@ -118,7 +118,7 @@ export function resolveJoin(
   rng: Rng,
 ): ReducerResult<BuilderState> {
   if (WordKey.equals(sourceKey, targetKey)) {
-    // FR-34: clicking the source again cancels the join.
+    // Clicking the source again cancels the join.
     return Result.ok({ ...state, subMode: { kind: 'none' } });
   }
 
@@ -135,7 +135,7 @@ export function resolveJoin(
     }]);
   }
 
-  // FR-36: success. Set source.nextWord = target.key; if target had a non-empty clue, displace it.
+  // Success. Set source.nextWord = target.key; if target had a non-empty clue, displace it.
   const source = words.find(w => WordKey.equals(w.key, sourceKey));
   const target = words.find(w => WordKey.equals(w.key, targetKey));
   if (source === undefined || target === undefined) {

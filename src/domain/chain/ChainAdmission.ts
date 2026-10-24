@@ -102,7 +102,7 @@ export const ChainAdmission: {
       case 'target-has-clue':
         return 'Target already has a clue.';
       case 'target-non-head':
-        return 'Target is a non-head chain word and cannot be given a clue (FR-31).';
+        return 'Target is a non-head chain word and cannot be given a clue.';
     }
   },
 };

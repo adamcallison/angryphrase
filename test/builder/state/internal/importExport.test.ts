@@ -208,7 +208,7 @@ describe('request-import-puzzle', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('when blank, accepts a complete file too (FR-57)', () => {
+  it('when blank, accepts a complete file too', () => {
     const state = blankState();
     const json = validCompleteJson();
     const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
@@ -297,7 +297,7 @@ describe('request-import-puzzle', () => {
     expect(result.state.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
   });
 
-  it('emits no "download" / "clear-storage" / "load-progress" events (FR-99 / §8.9a step 4)', () => {
+  it('emits no "download" / "clear-storage" / "load-progress" events on import', () => {
     const state = blankState();
     const json = validIncompleteJson();
     const intent = { target: 'builder' as const, kind: 'request-import-puzzle' as const, fileContent: json };
@@ -343,7 +343,7 @@ describe('confirm-import-puzzle', () => {
     });
   });
 
-  it('imports a complete file (FR-57) — displacedClues = []', () => {
+  it('imports a complete file — displacedClues = []', () => {
     const state = nonBlankState();
     const json = validCompleteJson();
     const intent = { target: 'builder' as const, kind: 'confirm-import-puzzle' as const, fileContent: json };
@@ -597,7 +597,7 @@ describe('report-pick-failure', () => {
   });
 });
 
-describe('export/import round-trip (smell #2)', () => {
+describe('export/import round-trip', () => {
   it('export-complete output of a gate-passing chained puzzle re-parses cleanly as a complete file', () => {
     const state = completeStateWithChain();
 

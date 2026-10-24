@@ -26,7 +26,7 @@ const store = createAppStore(initial, deps, ports);
 
 installTeardown(store);
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- B5: strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess. See H3 in llmworkspace/code_smells.md.
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess.
 const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });
 
 export default app;

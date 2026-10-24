@@ -112,7 +112,7 @@ function makeState(
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: no-op on black cell (FR-9)', () => {
+  it('select-cell: no-op on black cell', () => {
     const state = makeState(5, [[0, 0]]);
     const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
 
@@ -158,7 +158,7 @@ function makeState(
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: on selectable cell part of both → direction defaults across (FR-10)', () => {
+  it('select-cell: on selectable cell part of both → direction defaults across', () => {
     const state = makeState(5, []);
     const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
@@ -172,7 +172,7 @@ function makeState(
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clicking already-selected cell that is in both words → toggles direction (FR-11)', () => {
+  it('select-cell: clicking already-selected cell that is in both words → toggles direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
 
@@ -186,7 +186,7 @@ function makeState(
     expect(result.events).toEqual([]);
   });
 
-  it('select-cell: clicking already-selected cell that is in only one word → cursor unchanged (FR-11)', () => {
+  it('select-cell: clicking already-selected cell that is in only one word → cursor unchanged', () => {
     const state = makeState(
       5,
       [
@@ -258,7 +258,7 @@ describe('handleMoveCursor', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('move-cursor: target not selectable (next cell is black) → cursor stays, direction updates (FR-14)', () => {
+  it('move-cursor: target not selectable (next cell is black) → cursor stays, direction updates', () => {
     const state = makeState(5, [[2, 3]], { row: 2, col: 2, direction: 'down' });
     const intent: BuilderIntent = { target: 'builder', kind: 'move-cursor', direction: 'across', sign: 1 };
 
@@ -364,7 +364,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: writes letter to selected cell answerLetter (FR-12)', () => {
+  it('type-letter: writes letter to selected cell answerLetter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
@@ -381,7 +381,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: overwrites existing letter (FR-12)', () => {
+  it('type-letter: overwrites existing letter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [
       [0, 0, 'B'],
     ]);
@@ -394,7 +394,7 @@ describe('handleTypeLetter', () => {
     );
   });
 
-  it('type-letter: advances cursor to next selectable cell in current direction (FR-12)', () => {
+  it('type-letter: advances cursor to next selectable cell in current direction', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
@@ -407,7 +407,7 @@ describe('handleTypeLetter', () => {
     });
   });
 
-  it('type-letter: stays on current cell when next cell is black (FR-12)', () => {
+  it('type-letter: stays on current cell when next cell is black', () => {
     const state = makeState(5, [[0, 1]], { row: 0, col: 0, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
@@ -421,7 +421,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: stays on current cell when at grid boundary (FR-12)', () => {
+  it('type-letter: stays on current cell when at grid boundary', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
@@ -435,7 +435,7 @@ describe('handleTypeLetter', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('type-letter: letter still written when cursor stays (FR-12)', () => {
+  it('type-letter: letter still written when cursor stays', () => {
     const state = makeState(5, [], { row: 0, col: 4, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! };
 
@@ -489,7 +489,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: deletes letter and keeps cursor when current cell has a letter (FR-13)', () => {
+  it('backspace: deletes letter and keeps cursor when current cell has a letter', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' }, 'fill', [
       [0, 0, 'A'],
     ]);
@@ -504,7 +504,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty, retreats and deletes previous cell letter (FR-13)', () => {
+  it('backspace: when current cell empty, retreats and deletes previous cell letter', () => {
     const state = makeState(5, [], { row: 0, col: 1, direction: 'across' }, 'fill', [
       [0, 0, 'A'],
     ]);
@@ -519,7 +519,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty and previous is at grid start, stays and nothing deleted (FR-13)', () => {
+  it('backspace: when current cell empty and previous is at grid start, stays and nothing deleted', () => {
     const state = makeState(5, [], { row: 0, col: 0, direction: 'across' });
     const result = handleBackspace(state);
 
@@ -527,7 +527,7 @@ describe('handleBackspace', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('backspace: when current cell empty and previous is black, stays and nothing deleted (FR-13)', () => {
+  it('backspace: when current cell empty and previous is black, stays and nothing deleted', () => {
     const state = makeState(5, [[0, 0]], { row: 0, col: 1, direction: 'across' });
     const result = handleBackspace(state);
 
@@ -690,7 +690,7 @@ describe('handleEditClue', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('edit-clue: rejects edit on non-head chain word with error toast (FR-31)', () => {
+  it('edit-clue: rejects edit on non-head chain word with error toast', () => {
     const state = withChain(makeStateWithWords(4, []), 0, 1);
     const targetKey = state.puzzle.words[1]!.key;
     const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey: targetKey, clue: 'Bad clue' };
@@ -702,7 +702,7 @@ describe('handleEditClue', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Cannot edit clue of a non-head chain word (FR-31).',
+        message: 'Cannot edit clue of a non-head chain word.',
       },
     ]);
   });
@@ -832,7 +832,7 @@ describe('handleClickWord', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('click-word: subMode=join, source === target triggers join cancel (FR-34) — subMode becomes none', () => {
+  it('click-word: subMode=join, source === target triggers join cancel — subMode becomes none', () => {
     const state = makeStateWithWords(4, []);
     const source = state.puzzle.words[0]!.key;
     const stateWithJoin = { ...state, subMode: { kind: 'join' as const, source } };

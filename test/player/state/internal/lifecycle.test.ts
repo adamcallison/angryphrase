@@ -275,7 +275,7 @@ describe('handleApplyLoadedProgress', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('apply-loaded-progress: applies saved non-null letters to white cells of matching gridSize (FR-80)', () => {
+  it('apply-loaded-progress: applies saved non-null letters to white cells of matching gridSize', () => {
     const state = solving();
     const result = handleApplyLoadedProgress(
       state,
@@ -336,7 +336,7 @@ describe('handleApplyLoadedProgress', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('apply-loaded-progress: silently drops saved letters for now-black cells (FR-80)', () => {
+  it('apply-loaded-progress: silently drops saved letters for now-black cells', () => {
     const state = solving();
     const result = handleApplyLoadedProgress(
       state,
@@ -498,7 +498,7 @@ describe('report-pick-failure', () => {
 });
 
 describe('handleImportNewPuzzle', () => {
-  it('import-new-puzzle: from solving phase, returns to import screen (FR-78)', () => {
+  it('import-new-puzzle: from solving phase, returns to import screen', () => {
     const result = handleImportNewPuzzle();
 
     expect(result.state.phase).toBe('import');
@@ -514,7 +514,7 @@ describe('handleImportNewPuzzle', () => {
     expect(result.state.lastImportError).toBe(null);
   });
 
-  it('import-new-puzzle: emits no events (FR-78 — autosave retained via key, no storage clear)', () => {
+  it('import-new-puzzle: emits no events — autosave retained via key, no storage clear', () => {
     const result = handleImportNewPuzzle();
 
     expect(result.events).toEqual([]);
@@ -575,7 +575,7 @@ describe('handleRequestResetPlayer', () => {
     });
   });
 
-  it('request-reset-player: solving phase with no player letters typed still emits modal (FR-77 unconditional confirmation)', () => {
+  it('request-reset-player: solving phase with no player letters typed still emits modal (unconditional confirmation)', () => {
     const state = solving();
     if (state.phase !== 'solving') throw new Error('expected solving');
     expect(GridOps.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
@@ -600,7 +600,7 @@ describe('handleConfirmResetPlayer', () => {
     expect(result.events).toEqual([]);
   });
 
-  it('confirm-reset-player: solving phase clears all white cells playerLetter to null (FR-77)', () => {
+  it('confirm-reset-player: solving phase clears all white cells playerLetter to null', () => {
     const state = withPlayerLetters(solving(), [
       [0, 0, 'X'],
       [0, 1, 'Y'],
@@ -621,7 +621,7 @@ describe('handleConfirmResetPlayer', () => {
     expect(cellIsBlack(result.state, 1, 1)).toBe(true);
   });
 
-  it('confirm-reset-player: solving phase leaves answerLetter intact (FR-77 "answer letters intact")', () => {
+  it('confirm-reset-player: solving phase leaves answerLetter intact ', () => {
     const state = solving();
     const result = handleConfirmResetPlayer(state);
 
@@ -646,7 +646,7 @@ describe('handleConfirmResetPlayer', () => {
     expect(result.state.cursor).toBe(null);
   });
 
-  it('confirm-reset-player: clears checkResult to null (§908 clear-on-change)', () => {
+  it('confirm-reset-player: clears checkResult to null (clear-on-change)', () => {
     const state = {
       ...withPlayerLetters(solving(), [[0, 0, 'X']]),
       checkResult: {

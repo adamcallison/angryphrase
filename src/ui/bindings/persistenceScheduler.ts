@@ -11,7 +11,7 @@ export interface PersistenceScheduler {
   scheduleBuilderSave(state: BuilderState): void;
   /** Queue a debounced Player save; if another save is pending, the latest state wins. 400 ms default. */
   schedulePlayerSave(state: PlayerState): void;
-  /** Synchronously clear Builder storage AND cancel any pending Builder save (FR-55 / §4.5 event-driven clears). */
+  /** Synchronously clear Builder storage AND cancel any pending Builder save (event-driven clears — architecture.md §8 (Persistence)). */
   clearBuilder(): void;
   /** Synchronously clear one player's progress AND cancel any pending Player save for that key. */
   clearPlayer(key: PuzzleKey): void;

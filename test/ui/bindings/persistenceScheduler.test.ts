@@ -210,7 +210,7 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid letter in playerLetters returns null (NFR-9 corrupt-drop, codec is silent)', () => {
+    it('parsePlayerProgress: invalid letter in playerLetters returns null (corrupt-drop, codec is silent)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: '00000000-0000-4000-8000-000000000000', gridSize: 2, playerLetters: [['@', null], [null, null]] });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress(json)).toBeNull();
@@ -218,7 +218,7 @@ describe('persistenceScheduler.ts', () => {
       warnSpy.mockRestore();
     });
 
-    it('parsePlayerProgress: invalid non-UUID key returns null (H1 corrupt-drop, codec is silent)', () => {
+    it('parsePlayerProgress: invalid non-UUID key returns null (corrupt-drop, codec is silent)', () => {
       const json = JSON.stringify({ version: 1, kind: 'player-progress', key: 'not-a-uuid', gridSize: 2, playerLetters: [[null, null], [null, null]] });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       expect(parsePlayerProgress(json)).toBeNull();

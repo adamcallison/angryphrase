@@ -29,5 +29,5 @@ export type DroppedFileResult =
 
 export interface FilePickPort {
   pickFile(): Promise<PickResult>;
-  readDroppedFile(file: File): Promise<DroppedFileResult>; // drag-and-drop read; re-baselined P4 onto a 2-way union — a drop has no cancel path
+  readDroppedFile(file: File): Promise<DroppedFileResult>; // drag-and-drop read; a 2-way union — a drop has no cancel path
 }

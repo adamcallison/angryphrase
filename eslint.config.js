@@ -351,7 +351,7 @@ export default [
       ]
     }
   },
-  // src/ui/bindings/**: brand import banned (H1) — not covered by the src/ui/** block above (ignored)
+  // src/ui/bindings/**: brand import banned — not covered by the src/ui/** block above (ignored)
   {
     files: ['src/ui/bindings/**/*.ts'],
     rules: {
@@ -396,7 +396,7 @@ export default [
   // Regression guard: ban non-null assertions in production code.
   // Sanctioned exception: src/domain/grid/GridAccess.ts (raw-indexing leaf) and
   // src/domain/grid/GridOps.ts (legacy equals non-nulls).
-  // Two intentional retains: src/main.ts:84 (strict-null on DOM API -- not noUncheckedIndexedAccess)
+  // Intentional retain: src/main.ts uses a non-null assertion on the DOM API return (strict-null -- not noUncheckedIndexedAccess)
   {
     files: ['src/**/*.ts', 'src/**/*.svelte'],
     ignores: ['src/domain/grid/GridAccess.ts', 'src/domain/grid/GridOps.ts'],

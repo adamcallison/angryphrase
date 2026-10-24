@@ -6,7 +6,7 @@ Conventions: no line-number references (they rot — see smell #11); functions, 
 
 Each entry is produced through the gates in the Appendix ("Resolution process"), added 2026-10-24. Entries written before that appendix are grandfathered; where one of their reasonings was later found unsound, the entry carries a dated note rather than being rewritten (§2's "Post-resolution correction"; §10's "Post-resolution follow-up" and "How the deferral happened").
 
-Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways).
+Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways). #11 (traceability rot: live code cites an archived requirements vocabulary).
 
 ---
 
@@ -1040,6 +1040,104 @@ Recorded because the entry above reads as though the exclusion of `WordSelection
 6. **It was filed as an exception because a deferral here requires a destination.** Compare §1, which deferred two constants to §3 and left the pointer in `architecture_smells.md` §3; the constants landed there. This entry's note closed with "Not a smell-#10 item" and named no destination, so the item dropped out of every subsequent queue and sat unnoticed until 2026-10-24.
 
 The closure is the "Post-resolution follow-up" above. The process lesson is recorded as Gates 0–5 in the Appendix below; the two structural changes that make the closure possible — `WordGeometry.contains` and `WordGeometry.lastCell` — are now the single owner of word extent.
+
+---
+
+## 11. Traceability rot: live code cites an archived requirements vocabulary — resolved 2026-10-24
+
+### The smell (recap)
+
+The live doc set (`architecture.md` + `future_considerations.md`) is the project's only sanctioned map, and `architecture.md` declares itself self-contained. The code nevertheless cited three vocabularies that resolve nowhere in that set: the requirement identifiers of the original requirements draft (`FR-*` / `NFR-*`), the identifiers of the archived code-smell log and design-review notes (`P1`–`P4`, `G7`, `W1`, `F6`, `H1`, `H3`, `H4`, `C5`, `C6`, `B5`, `E3`, `DRN5`, `DRN item 6`), and *positions* — line numbers and section numbers belonging to documents that had been archived or had since moved. See `architecture_smells.md` §11 for the audit's account and its corrections.
+
+**Inventory (verified at HEAD, 2026-10-24 — the audit's own counts were not trusted).** 31 files, 160 occurrences, in six categories:
+
+| # | Category | Occurrences | Files |
+|---|---|---|---|
+| C1 | `FR-*` / `NFR-*` identifiers in `src/**` | 25 | 10 |
+| C2 | `FR-*` / `NFR-*` identifiers in `test/**` | 97 | 15 (89 of the 97 sit inside `it(...)` titles) |
+| C3 | code-smell-log identifiers (`P4`, `G7`, `W1`, `F6`, `H1`, `H3`, `H4`, `C5`, `C6`, `B5`) | 13 | 8 |
+| C4 | paths into `llmworkspace/` (pointing at archived documents) | 2 | 2 |
+| C5 | position anchors — `file.ext:` + digits, `§` + three-or-more digits, and section numbers belonging to the archived design document | 18 | 11 |
+| C6 | shorthands for archived documents and audit records (`DRN5`, `DRN item 6`, `E3` ×2, `smell #2`) | 5 | 5 |
+
+C6 was found by the implementation, not the audit: it is invisible to a scan for `FR-*`-shaped tokens, and the audit's own list had missed it. So had the first inventory pass.
+
+Two of the retired identifiers had escaped comments into **product output**: the `edit-clue` rejection toast and `ChainAdmission`'s `target-non-head` message both ended "(FR-31)", and one `console.warn` carried "(NFR-9 silent drop)". Seven tracked `.gitkeep` files sat in directories that all contain real content.
+
+### Decision
+
+The concept behind the smell is **a behavioural rule with two owners** — the code that implements it, and an identifier that names it elsewhere. That is the same shape as smells #1, #2, #4, #6 and #10, each of which was closed by giving the concept one owner. Three end-states were considered for the identifier space:
+
+- **A — re-admit the requirements document as a live companion** (curate `archive/requirements.md` down to the 36 cited identifiers, restate each "as built", make it a third doc, keep the identifiers). **Rejected.** A hand-maintained normative document describing behaviour the code also embodies is a second owner per rule, and the code's comments would then depend on a document nothing checks — the same "citation to an independently-maintained artefact" pattern that produced this smell, with a live target instead of an archived one. It also would have dragged in 76 uncited requirements, or left the archive holding a partial copy of a live document.
+- **B — keep the identifiers, but move their definitions into the code** (each rule in its owning module's header comment; the cross-reference index generated from the code). **Rejected as disproportionate.** It is the rot-proof shape, but it asks 36 rule statements to be authored and kept in step with code for a project that has no specification layer and no intention of growing one. It also requires a generator — a new moving part in a repository that currently has none.
+- **C — retire the identifier space; behavioural rules live in the code that implements them** — **chosen.** The requirements document informed the initial design and was never meant to outlive it; the system has continued to evolve since, and a numbered identifier minted against a 2026-07 draft has no claim on the code that followed it. Retiring the space removes the second owner outright. The rules themselves were never lost: every site that carried an identifier already carried the behaviour in prose, and every rule that mattered was already owned by a module.
+
+The audit's framing — "traceability rot" — was accepted but narrowed: the traceability being lost was traceability to a document the project had declared out of scope, which no auditor could follow anyway. What was actually worth keeping was the *prose* at each site, and that was kept.
+
+Two sub-decisions:
+
+- **Behavioural output.** Two user-visible strings carried the identifier. They were changed, not preserved: a toast reading "Cannot edit clue of a non-head chain word (FR-31)." tells a user nothing that the identifier does not, and no identifier resolves any more. Recorded as a deliberate behaviour change below.
+- **Enforcement.** Retiring a vocabulary is worth little if it can be reintroduced silently, so `architecture.md` §14 now states the doc-set and citation rules. A mechanical check of those rules was specified, built, and then **cut** — see "Not addressed" below.
+
+### Design as implemented
+
+**The doc set.** `architecture.md` §14 ("Doc Set & Citation Policy") states, for the first time, what the live doc set is, what the audit records are, that the project has **no requirement layer**, that `llmworkspace/archive/` is historical and may not be cited, and what a citation may point at. The header paragraph and the §13 file map were amended to match.
+
+**Citation rules (architecture.md §14).** A citation — a comment, a doc comment, or a test title — must resolve to (1) a module, symbol, or path inside the repository, or (2) a named section of `architecture.md` / `future_considerations.md`. It may not point at a path into `llmworkspace/`, at a position (a line number, with or without a section sign), at an identifier minted by an archived document, or at an audit record by its finding number. Where the cited rule is implemented near the citation, no citation is needed at all — the preferred form is a sentence that carries the rule.
+
+**Migration.** All 160 occurrences were re-homed or deleted. The rule of thumb: a parenthetical that carried only an identifier was deleted; a parenthetical that mixed an identifier with content kept its content; a trailing comment that was nothing but an identifier kept its explanatory remainder. The eighteen position anchors were either re-pointed to a live named section — `architecture.md §3 Layer 0 (domain/rng/)`, `§5 (Confirmation modals as state)`, `§7 (AppState)`, `§8 (Persistence)`, `§10 (JSON shape)`, `§12 (Testing & CI)` — or dropped where the rule was implemented at the citing site and needed no anchor. Six §-anchors remain in the live artefacts; every one now names a live section.
+
+**Dead scaffolding.** The seven tracked `.gitkeep` files — in `src/app/state`, `src/builder/state`, `src/domain`, `src/player/state`, `src/ports`, `src/ui/bindings` and `test/` — were deleted; every one of those directories holds real content.
+
+### Deliberate behaviour changes
+
+1. The Builder's `edit-clue` rejection toast now reads `Cannot edit clue of a non-head chain word.` (was `... (FR-31).`).
+2. `ChainAdmission.message()`'s `target-non-head` message now reads `Target is a non-head chain word and cannot be given a clue.` (was `... (FR-31).`).
+3. The `appStore`'s corrupt-player-progress warning now reads `appStore: parsePlayerProgress returned null (corrupt progress dropped)` (was `... (NFR-9 silent drop)`). Console-only; not asserted by any test.
+
+No other observable behaviour changed. The identifier text carried no information a user could act on.
+
+### Files
+
+**Deleted:** seven `.gitkeep` files (`src/app/state/`, `src/builder/state/`, `src/domain/`, `src/player/state/`, `src/ports/`, `src/ui/bindings/`, `test/`).
+
+**Modified — source (14):** `src/main.ts`, `src/domain/rng/Rng.ts`, `src/domain/ports/ports.ts`, `src/ports/filePickPort.ts`, `src/domain/chain/ChainAdmission.ts`, `src/domain/puzzle/Puzzle.ts`, `src/builder/state/internal/fillMode.ts`, `src/builder/state/internal/joinSubMode.ts`, `src/builder/state/internal/reattachSubMode.ts`, `src/player/state/intents.ts`, `src/ui/bindings/appStore.svelte.ts`, `src/ui/bindings/persistenceScheduler.ts`, `src/ui/builder/BuilderShell.svelte`, `src/ui/player/AnagramModal.svelte`.
+
+**Modified — config (2):** `eslint.config.js`, `vitest.config.ts`.
+
+**Modified — tests (17):** `test/app/state/state.test.ts`, `test/boundary/imports.test.ts`, `test/builder/state/internal/{designMode,fillMode,importExport,joinSubMode,reattachSubMode}.test.ts`, `test/domain/chain/ChainAdmission.test.ts`, `test/domain/format/v1.test.ts`, `test/domain/word/Numbering.test.ts`, `test/player/state/reducer.test.ts`, `test/player/state/internal/{anagram,lifecycle,solving}.test.ts`, `test/ui/bindings/{persistenceCodec,persistenceScheduler}.test.ts`, `test/ui/bindings/viewmodels/anagramVM.test.ts`.
+
+**Modified — docs (3):** `llmworkspace/architecture.md` (§14, header, §13), `llmworkspace/architecture_smells.md` (§11 status + inventory correction), this file.
+
+### Verification
+
+All four CI legs green at landing:
+
+```
+npm run lint       eslint (227 files) clean; madge — "No circular dependency found!"
+npm run typecheck  svelte-check found 0 errors and 0 warnings
+npm run test       Test Files 92 passed (92) | Tests 1340 passed (1340)
+npm run build      dist/index.html 236.62 kB │ gzip: 103.35 kB — built in 1.24s
+```
+
+Plus a whole-repo scan of the live artefacts (`src/**`, `test/**`, and the root config files) for every retired shape — `FR-*`/`NFR-*`, uppercase-letter-plus-digit identifiers, `llmworkspace` paths, `smell #n`, `file.ext:` + digits, and `§` + three-or-more digits — returning nothing. The six surviving §-anchors were each read back and confirmed to name a live section of `architecture.md`.
+
+### Consequence (change cost after)
+
+A rule that lives in the module that implements it has exactly one owner by construction, so there is nothing left to keep in step: the identifier space is gone, and with it every cross-reference that could have rotted. The cost is that a behaviour is no longer addressable by a short stable handle — the audit question "which requirement does this test cover?" becomes "which behaviour does this test cover?", answered by the test's name, which is descriptive anyway. That is a deliberate trade: this project has no specification document to be addressable *against*.
+
+Adding a behavioural rule now means writing it in the owning module. It does not mean minting an identifier, and nothing has to be registered anywhere.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| **A mechanical check of the §14 citation rules.** A `test/docset/docCoherence.test.ts` was specified (five rules over `src/**`, `test/**`, the root config files and the live doc set, each with a positive control) and then cut on the human's instruction that it was overkill. | The rules guard *comment text*, which nothing compiles or executes. A violation is unreadable prose, not a broken build. The project's mechanical checks are reserved for the layer import edges, where a violation actually breaks the architecture. The rules live in `architecture.md` §14, where any reader or agent working in the repository will meet them. | Re-open if a retired vocabulary reappears in live code. |
+| The archived documents themselves (`llmworkspace/archive/requirements.md`, `code_smells.md`, `design_review_notes.md`, `architecture_design.md`, and the rest) | Historical record. The requirements draft informed the initial design; the code-smell log records decisions that were folded into `architecture.md`. Neither is a citation target, and both are kept for reference. | — (closed by the archive policy in architecture.md §14) |
+| `architecture_smells.md` and `architecture_smell_resolutions.md` retain line-number anchors, retired identifiers and archive paths | They are audit records describing history, not part of the live set. architecture.md §14 exempts them explicitly. | — (closed by the exemption in architecture.md §14) |
+| A citation whose *content* is a requirement statement, with no identifier | Not a smell: this is the chosen end-state — the rule lives in the code. | — |
+| `tsconfig.json`'s `"exclude": [..., "llmworkspace"]` | A build exclusion, not a citation. It names the workspace directory without pointing at a document. | — |
+| Section numbers of the archived design document below 100 (`§4.1`, `§6.1`, `§6.2`, `§8.9a`) | Indistinguishable in shape from a live section anchor, so no mechanical rule could have caught them. All four were re-homed by hand; the rule in architecture.md §14 forbids the practice going forward. | — |
 
 ---
 

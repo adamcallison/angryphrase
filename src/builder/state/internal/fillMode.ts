@@ -128,7 +128,7 @@ export function handleEditClue(
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Cannot edit clue of a non-head chain word (FR-31).',
+        message: 'Cannot edit clue of a non-head chain word.',
       },
     ]);
   }
@@ -156,7 +156,7 @@ export function handleClickWord(
   }
 
   if (state.subMode.kind === 'none') {
-    // §830: navigate cursor to word's start cell + word's direction.
+    // Navigate the cursor to the word's start cell and set its direction.
     return Result.ok({
       ...state,
       cursor: {
