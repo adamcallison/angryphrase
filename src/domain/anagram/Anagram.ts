@@ -1,6 +1,5 @@
 import { GridOps } from '../grid/GridOps';
 import type { Grid } from '../grid/Grid';
-import { Direction } from '../word/Direction';
 import { WordGeometry } from '../word/WordGeometry';
 import type { Word } from '../word/Word';
 import { Letter } from '../letter/Letter';
@@ -107,14 +106,8 @@ export const Anagram: {
       }
 
       if (i < members.length - 1) {
-        const member = members[i];
-        if (member === undefined) throw new Error('Anagram.buildChainModel: members[i] undefined');
-        const lastCoord = Direction.advance(
-          { row: member.key.startRow, col: member.key.startCol },
-          member.key.direction,
-          Number(member.length) - 1
-        );
-        const lastCell = GridOps.cellAt(grid, lastCoord.row, lastCoord.col);
+        const last = WordGeometry.lastCell(member);
+        const lastCell = GridOps.cellAt(grid, last.row, last.col);
         const axis = member.key.direction === 'across' ? 'right' : 'bottom';
         separators.push(CellMarker.read(lastCell.marker, axis));
       }

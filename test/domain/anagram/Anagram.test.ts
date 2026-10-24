@@ -423,6 +423,29 @@ describe('Anagram', () => {
     expect(chainModel.separators).toEqual(wordModel.separators);
   });
 
+  it('buildChainModel takes the chain separator from the last cell of each member word', () => {
+    let grid = blankGrid(5);
+    grid = setMarkerFlag(grid, 0, 2, 'hyphen-right');
+    grid = setMarkerFlag(grid, 1, 1, 'space-right');
+
+    const member1 = buildWord({
+      length: 3,
+      key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
+    });
+    const member2 = buildWord({
+      length: 2,
+      key: { startRow: Row.of(1), startCol: Col.of(0), direction: 'across' },
+    });
+    const member3 = buildWord({
+      length: 2,
+      key: { startRow: Row.of(2), startCol: Col.of(0), direction: 'across' },
+    });
+
+    const model = Anagram.buildChainModel(grid, [member1, member2, member3]);
+
+    expect(model.separators).toEqual(['none', 'none', 'hyphen', 'none', 'space', 'none']);
+  });
+
   it('validateChainInput ok when input length === total length and superset of fixed', () => {
     let grid = blankGrid(5);
     grid = setPlayerLetter(grid, 0, 0, 'A');

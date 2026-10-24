@@ -101,4 +101,127 @@ describe('WordGeometry', () => {
       expect(cell.offset).toBe(index);
     });
   });
+
+  it('contains returns true for a cell inside an across word', () => {
+    const word = makeWord(2, 1, 'across', 3);
+
+    expect(WordGeometry.contains(word, Row.of(2), Col.of(2))).toBe(true);
+  });
+
+  it('contains returns true for a cell inside a down word', () => {
+    const word = makeWord(1, 4, 'down', 4);
+
+    expect(WordGeometry.contains(word, Row.of(3), Col.of(4))).toBe(true);
+  });
+
+  it('contains returns false for the cell just before the word start', () => {
+    const across = makeWord(2, 1, 'across', 3);
+    const down = makeWord(1, 4, 'down', 4);
+
+    expect(WordGeometry.contains(across, Row.of(2), Col.of(0))).toBe(false);
+    expect(WordGeometry.contains(down, Row.of(0), Col.of(4))).toBe(false);
+  });
+
+  it('contains returns false for the cell just past the word end', () => {
+    const across = makeWord(2, 1, 'across', 3);
+    const down = makeWord(1, 4, 'down', 4);
+
+    expect(WordGeometry.contains(across, Row.of(2), Col.of(4))).toBe(false);
+    expect(WordGeometry.contains(down, Row.of(5), Col.of(4))).toBe(false);
+  });
+
+  it('contains returns false for a cell on the parallel axis of an across word', () => {
+    const word = makeWord(2, 1, 'across', 3);
+
+    expect(WordGeometry.contains(word, Row.of(1), Col.of(2))).toBe(false);
+    expect(WordGeometry.contains(word, Row.of(3), Col.of(2))).toBe(false);
+  });
+
+  it('contains returns false for a cell on the parallel axis of a down word', () => {
+    const word = makeWord(1, 4, 'down', 4);
+
+    expect(WordGeometry.contains(word, Row.of(2), Col.of(3))).toBe(false);
+    expect(WordGeometry.contains(word, Row.of(2), Col.of(5))).toBe(false);
+  });
+
+  it('contains agrees with cells: every cell emitted by cells(word) is contained, and the cells just outside are not', () => {
+    const across = makeWord(2, 1, 'across', 3);
+    const down = makeWord(1, 4, 'down', 4);
+
+    for (const word of [across, down]) {
+      for (const cell of WordGeometry.cells(word)) {
+        expect(WordGeometry.contains(word, cell.row, cell.col)).toBe(true);
+      }
+    }
+
+    expect(WordGeometry.contains(across, Row.of(2), Col.of(0))).toBe(false);
+    expect(WordGeometry.contains(across, Row.of(2), Col.of(4))).toBe(false);
+    expect(WordGeometry.contains(across, Row.of(1), Col.of(2))).toBe(false);
+    expect(WordGeometry.contains(across, Row.of(3), Col.of(2))).toBe(false);
+
+    expect(WordGeometry.contains(down, Row.of(0), Col.of(4))).toBe(false);
+    expect(WordGeometry.contains(down, Row.of(5), Col.of(4))).toBe(false);
+    expect(WordGeometry.contains(down, Row.of(2), Col.of(3))).toBe(false);
+    expect(WordGeometry.contains(down, Row.of(2), Col.of(5))).toBe(false);
+  });
+
+  it('lastCell returns the final cell of an across word', () => {
+    const word = makeWord(2, 1, 'across', 3);
+
+    expect(WordGeometry.lastCell(word)).toEqual({
+      row: Row.of(2),
+      col: Col.of(3),
+      offset: 2,
+    });
+  });
+
+  it('lastCell returns the final cell of a down word', () => {
+    const word = makeWord(1, 4, 'down', 4);
+
+    expect(WordGeometry.lastCell(word)).toEqual({
+      row: Row.of(4),
+      col: Col.of(4),
+      offset: 3,
+    });
+  });
+
+  it('lastCell rejects an invalid start coordinate exactly as cells does (across)', () => {
+    const malformed = {
+      key: { startRow: -1 as unknown as Row, startCol: Col.of(0), direction: 'across' as Direction },
+      number: WordNumber.of(1),
+      length: WordLength.of(3),
+      clue: '',
+      nextWord: null,
+    } as Word;
+
+    expect(() => WordGeometry.cells(malformed)).toThrow(RangeError);
+    expect(() => WordGeometry.lastCell(malformed)).toThrow(RangeError);
+  });
+
+  it('lastCell rejects an invalid start coordinate exactly as cells does (down)', () => {
+    const malformed = {
+      key: { startRow: Row.of(0), startCol: -1 as unknown as Col, direction: 'down' as Direction },
+      number: WordNumber.of(1),
+      length: WordLength.of(3),
+      clue: '',
+      nextWord: null,
+    } as Word;
+
+    expect(() => WordGeometry.cells(malformed)).toThrow(RangeError);
+    expect(() => WordGeometry.lastCell(malformed)).toThrow(RangeError);
+  });
+
+  it('lastCell returns the same coordinate as the last cell of cells() for an across word', () => {
+    const word = makeWord(2, 1, 'across', 3);
+    const cells = WordGeometry.cells(word);
+
+    expect(WordGeometry.lastCell(word)).toEqual(cells[cells.length - 1]);
+  });
+
+  it('lastCell returns the same coordinate as the last cell of cells() for a down word', () => {
+    const word = makeWord(1, 4, 'down', 4);
+    const cells = WordGeometry.cells(word);
+
+    expect(WordGeometry.lastCell(word)).toEqual(cells[cells.length - 1]);
+  });
 });

@@ -4,6 +4,8 @@ Companion to `architecture_smells.md`. Each entry records how a ranked smell was
 
 Conventions: no line-number references (they rot — see smell #11); functions, modules, and test names are the anchors.
 
+Each entry is produced through the gates in the Appendix ("Resolution process"), added 2026-10-24. Entries written before that appendix are grandfathered; where one of their reasonings was later found unsound, the entry carries a dated note rather than being rewritten (§2's "Post-resolution correction"; §10's "Post-resolution follow-up" and "How the deferral happened").
+
 Resolved so far: #1 (grid-interaction duplication), #2 (duplicate "complete puzzle" definitions), #3 (intent identity collision), #4 (chain-boundary marker semantics + link admission), #5 (event-fold pipeline had two owners and a redundant stage), #6 (confirm-intent contract declared twice, checked in only one direction), #7 (port consumers do not trust the port contract), #8 (persistence lifecycle incomplete: `flush()` dead, boot-time data-loss window unwired, reload invariants duplicated, `main.ts` re-constructs `BuilderState`), #9 (persistence blob couples two formats through JSON string round-trips), #10 (word-membership and white-run semantics implemented four ways).
 
 ---
@@ -955,7 +957,7 @@ Iterates a `Word`'s coordinates in order (offset 0 = start, offset length-1 = en
 
 ### Deliberate behaviour changes
 
-None. All 1324 pre-existing tests passed unchanged except the redistribution of the moved cases between `GridOps.test.ts` (14 tests, was 51) → `GridAccess.test.ts` (13 tests, new) + `WordTopology.test.ts` (24 tests, re-created). Zero test edits in any consumer test file: `WordDerivation.test.ts`, `GridInteraction.test.ts`, `ChainCells.test.ts`, `LengthPattern.test.ts`, `Anagram.test.ts`, `fillMode.test.ts`, `solving.test.ts` all retained their assertion bodies byte-for-byte.
+None. All 1290 pre-existing tests passed unchanged except the redistribution of the moved cases between `GridOps.test.ts` (14 tests, was 27) → `GridAccess.test.ts` (13 tests, new) + `WordTopology.test.ts` (24 tests, re-created). The suite total moved 1290 → 1324 (+13 `GridAccess` +24 `WordTopology` +10 `WordGeometry` −13 moved out of `GridOps`); the test-file count moved 89 → 92. Zero test edits in any consumer test file: `WordDerivation.test.ts`, `GridInteraction.test.ts`, `ChainCells.test.ts`, `LengthPattern.test.ts`, `Anagram.test.ts`, `fillMode.test.ts`, `solving.test.ts` all retained their assertion bodies byte-for-byte.
 
 ### Files
 
@@ -989,7 +991,7 @@ Under the user's framing — "we are not trying to get it fixed asap, we are try
 - `npx vitest run test/domain/chain/ChainCells.test.ts` → 8 passed.
 - `npx vitest run test/domain/chain/LengthPattern.test.ts` → 21 passed.
 - `npx vitest run test/domain/anagram/Anagram.test.ts` → 27 passed.
-- `npm run test` → 1324 passed (90 files).
+- `npm run test` → 1324 passed (92 files).
 - `npm run build` → built.
 - `npm run ci` → exit 0.
 
@@ -1002,4 +1004,65 @@ The `WordTopology` suite exercises both directions of `runs` (all-white, all-bla
 - A change to word-walk semantics (e.g. cells() gains an `Orientation` discriminator, or returns iterators instead of arrays) touches `WordGeometry` + its tests; `ChainCells`, `LengthPattern`, `Anagram` pick up the change automatically.
 - The architectural separation is now real, not aspirational: `GridAccess` is a leaf, `WordTopology` depends on the leaf, `GridOps` depends on both (for neighbours/isSelectable). A cycle cannot be reintroduced without structural change to the dependency graph.
 
-The `#10`-adjacent leftover is exactly what was deliberately deferred: `WordSelection.findContainingWord` is the only remaining O(n) word-membership query over a derived word list, and it is a different operation (which-word-contains-cursor) than the four topologies this smell named. Not a smell-#10 item. The next ranked smell in the audit is #11 (traceability rot: live code cites archived requirements vocabulary).
+The `#10`-adjacent leftover was `WordSelection.findContainingWord`, deliberately deferred at the time of this resolution — it was judged a different operation (which-word-contains-cursor) than the four topologies this smell named. A follow-up on 2026-10-24 re-read that judgement and closed it; see "Post-resolution follow-up" below. The next ranked smell in the audit is #11 (traceability rot: live code cites archived requirements vocabulary).
+
+### Post-resolution follow-up (2026-10-24)
+
+**Why the deferral was re-read.** The deferral rested on one distinction: `findContainingWord` *queries* a word list, whereas `WordTopology` *derives* runs from a grid — different queries. True at the query level, but not at the predicate level. The per-word test the deferral left in place — "does this word cover this cell", computed from `key.startRow` / `key.startCol` / `length` — is the same concept the resolution gave an owner: `WordGeometry` enumerates exactly that set of cells. Two owners of one concept is the smell's own shape, one level down. A second site was found during the same re-read: `Anagram.buildChainModel` still derived a member word's final cell with `Direction.advance(start, direction, length - 1)` — word-extent arithmetic outside the owner. Three consumers of a word's extent took it from `WordGeometry` (`ChainCells.cellsOfWord`, `LengthPattern.separatorAt`, `Anagram.buildWordModel`); two did not. Any change to "what a word covers" (length semantics, a new direction, a new word shape) would have moved the three and silently left the two — the exact drift the smell predicts, in the shape the resolution had just closed elsewhere.
+
+**Decision.** Extend the existing owner; do not create a new module and do not fold `WordSelection` into `WordGeometry`.
+
+- **Accepted — extend `WordGeometry`.** It gains `contains(word, row, col)` (O(1) "does this word cover this cell") and `lastCell(word)` (the word's final cell), both derived from one module-private `extentOf(word)` — a single encoding of "where a word starts and how far it runs" behind all three public queries (`cells`, `contains`, `lastCell`). `WordSelection` keeps the list scan, the null-cursor guard, and the `direction` filter (it selects *which* word, not whether the cell is covered); only its per-word predicate moved. `Anagram.buildChainModel` takes the last cell from `WordGeometry.lastCell`; the now-unused `Direction` import is dropped from `Anagram.ts`.
+- **Rejected — fold `WordSelection` into `WordGeometry`/`WordTopology`.** Absorption: the list search is a different responsibility from extent arithmetic, and `WordTopology` is grid-level (it has no `Word` at all). This is the same decomposition-not-absorption rule the resolution itself applied when it extracted the `GridAccess` leaf.
+- **Rejected — implement `contains` via `cells(word).some(...)`.** Turns an O(words) scan into O(words × length) with an array allocation per word, on a hot path: `findContainingWord` has six call sites (`player/state/internal/anagram.ts`, `player/state/internal/solving.ts`, `builderVM.ts`, `playerVM.ts` ×3) and runs per keystroke and per VM derivation (see smell #14).
+- **Rejected — leave the two sites as they were.** The only argument for it was "out of scope". The cost was a doc claim ("word-coordinate walking has one owner") that was not true, plus a live desync hazard between the word the cursor is in and the cells that word occupies.
+
+**Deliberate behaviour changes.** None. `contains` reproduces the old per-word test exactly: for an `across` word, `row === startRow && col ∈ [startCol, startCol + length)`; for a `down` word, `col === startCol && row ∈ [startRow, startRow + length)`. Every pre-existing test assertion is unchanged — the nine `WordSelection` cases and the whole `Anagram` suite pass with zero edits.
+
+**Files.** Modified: `src/domain/word/WordGeometry.ts` (the owner gains `contains` + `lastCell` + the private `extentOf`); `src/domain/word/WordSelection.ts` (predicate delegated); `src/domain/anagram/Anagram.ts` (last-cell lookup delegated; `Direction` import removed); `test/domain/word/WordGeometry.test.ts` (+13 cases: 9 for `contains`, 4 for `lastCell`); `test/domain/word/WordSelection.test.ts` (+2 cases); `test/domain/anagram/Anagram.test.ts` (+1 case). No new modules; no new intent, event, or port variants; no layer-boundary change (all three modules are in `domain/`).
+
+**Verification.** `npm run ci` at close: eslint + `madge --circular` clean; `svelte-check` 0 errors / 0 warnings; **92 test files / 1340 tests green** (from 92 / 1324 — +16: 13 `WordGeometry`, 2 `WordSelection`, 1 `Anagram`); the single-file production build succeeded (`dist/index.html` 236.63 kB, gzip 103.37 kB).
+
+Two deviations from the implementation spec are worth recording:
+
+- `contains` was specified as allocation-free, and the implementation allocates one small `Extent` object per candidate word. It was accepted rather than corrected — the intermediate is precisely what keeps a word's extent single-encoded inside the owner, and the cost is a few tens of short-lived objects per call on a path that already does O(words) work.
+- The first cut of `lastCell` minted only the *advanced* axis and passed the start axis straight through from the input word, while `cells` mints both axes. `Row`/`Col` are branded numbers, so this was not an identity or mutation problem; it was a second coordinate-minting convention inside the owner, with a different failure mode (`cells` rejects a malformed start coordinate with `RangeError: Invalid Row`, the mixed version returned it unvalidated and let the error surface later as `RangeError: cellAt out of bounds` from `GridAccess.cellAt`). `lastCell` now mints both axes exactly as `cells` does, and two new tests pin the uniformity — they were verified to fail against the pre-fix implementation (2 failed / 21 passed) and pass after it.
+
+### How the deferral happened (added 2026-10-24)
+
+Recorded because the entry above reads as though the exclusion of `WordSelection.findContainingWord` had been considered and judged, and it had not. The mechanism, reconstructed from the artifacts of this entry and the diff of the fix:
+
+1. **The finding's own enumeration was loose.** Its title said "four ways"; its fourth item called itself "a fifth encoding of the same geometry" and then named three further sites in a parenthetical. Distinct sites: three grid-level encodings, `WordSelection.findContainingWord`, and three word-walking sites — seven, presented as four. There was no clean inventory for a fix to be checked against, so no check was possible.
+2. **The chosen option's taxonomy had no bucket for the site.** Option C partitioned the work into "grid-level topology" and "word-coordinate walking". `WordSelection.findContainingWord` is neither: it never touches the grid (it scans a pre-derived `Word[]`) and it does not walk coordinates (it does bounds arithmetic).
+3. **A counting slip hid the gap.** Option C read "Each of the **four grid-level sites** either delegates or is removed." Only three of the enumerated sites are grid-level. The count reached four by counting `WordSelection` as grid-level — a category slip — and it was then not migrated. Deriving the buckets from the option rather than from the finding's site list is what made the omission invisible: the finding's numbering had already been renumbered into "4 + 3", and the fourth slot silently changed category.
+4. **No option ever weighed it.** Options A–E do not mention `WordSelection`. The task list was built from the option's buckets, so the site never reached a task; the mid-flight cycle crisis (the `GridOps` ↔ `WordTopology` fold, revert, and `GridAccess` leaf extraction) consumed the re-scoping attention.
+5. **The disposition was made in the write-up.** This document is written after the fact, so a disposition introduced during writing bypasses option-weighing by construction. The first mention of the exclusion is in "Design as implemented" — "`WordSelection.findContainingWord` was **not** changed … it stays in its own file untouched" — and the rationale it offers ("a different query … not a derivation") is true at the operation level and silent at the concept level: the concept "which cells does this word cover" is exactly what `WordGeometry` was created to own.
+6. **It was filed as an exception because a deferral here requires a destination.** Compare §1, which deferred two constants to §3 and left the pointer in `architecture_smells.md` §3; the constants landed there. This entry's note closed with "Not a smell-#10 item" and named no destination, so the item dropped out of every subsequent queue and sat unnoticed until 2026-10-24.
+
+The closure is the "Post-resolution follow-up" above. The process lesson is recorded as Gates 0–5 in the Appendix below; the two structural changes that make the closure possible — `WordGeometry.contains` and `WordGeometry.lastCell` — are now the single owner of word extent.
+
+---
+
+## Appendix — Resolution process (gates)
+
+Added 2026-10-24, after the #10 resolution closed a hole that its own entry had concealed. This appendix records how a resolution entry in this document is produced, so that an exception cannot hide inside one. It is the project-side counterpart of the lead agent's spec gates; the gates are enforced in the agent spec and recorded here as project practice, so the practice survives the agent.
+
+Entries §1–§10 were written before this appendix and are grandfathered. Where an entry's reasoning was later found unsound, the entry carries a dated note rather than being rewritten (§2's "Post-resolution correction"; §10's "Post-resolution follow-up" and "How the deferral happened").
+
+### The gates
+
+**Gate 0 — Site inventory.** Before choosing an approach, the finding's evidence is turned into a numbered inventory of concrete sites (`S1 … Sn`), each with file and symbol. Nested enumerations are expanded; mixed items are split; the finding's own count is not trusted. The inventory is the unit of coverage for everything below.
+
+**Gate 1 — Coverage against the inventory, not against the option.** Every site ends up migrated or carrying an explicit decision. A site that fits no bucket of the chosen approach's taxonomy is an unexamined gap, not "out of scope". If a bucket's count only works by re-classifying a site, the taxonomy is wrong — derive the buckets from the inventory, never the reverse.
+
+**Gate 2 — A deferral names its landing site.** A deferral names its destination (a numbered finding, a named follow-up task) and leaves a pointer in `architecture_smells.md`. No destination ⇒ an open item: tracked until closed, and named in the status line.
+
+**Gate 3 — Disclosure is a decision.** "X was not changed" is not a rationale. The entry carries a decision block for X — options considered, what was chosen, why — and the rationale names the *concept*, not merely the operation the site performs. A difference in operation is not sufficient grounds to exclude a site that implements the concept the change gives an owner.
+
+**Gate 4 — Closure audit.** Before the status line is written, every site in the inventory is confirmed to be migrated (citing the file that now owns the concept), decided out with a landing site, or accepted out with the human's agreement on record. Verified by diff or grep, not from memory.
+
+**Gate 5 — Entry shape.** Every entry carries, in order: the recap (with the inventory attached), Decision (options per site), Design as implemented, Deliberate behaviour changes, Files, Verification, Consequence, and a closing **Not addressed** table — every site not migrated, with reason and landing site. An empty table is the normal case and is the evidence that Gate 4 was run.
+
+### The status line is the closure record
+
+`architecture_smells.md` carries the status line for each finding: date, pointer to the resolution entry, and the leftover list — empty or named. A finding is not addressed until that line says so, and a named leftover stays open until the line says it is closed. A leftover with no destination is not a deferral; it is an unclosed item, and it is tracked like any other open work.

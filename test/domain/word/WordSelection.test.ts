@@ -87,4 +87,18 @@ describe('WordSelection', () => {
 
     expect(WordSelection.findContainingWord([first, second], cursor)).toBe(first);
   });
+
+  it('cursor on the second cell of an across word returns that word', () => {
+    const word = makeWord(0, 0, 'across', 3);
+    const cursor = { row: Row.of(0), col: Col.of(1), direction: 'across' as Direction };
+
+    expect(WordSelection.findContainingWord([word], cursor)).toBe(word);
+  });
+
+  it('does not return a word whose extent ends before the cursor', () => {
+    const word = makeWord(0, 0, 'across', 3);
+    const cursor = { row: Row.of(0), col: Col.of(3), direction: 'across' as Direction };
+
+    expect(WordSelection.findContainingWord([word], cursor)).toBeNull();
+  });
 });
