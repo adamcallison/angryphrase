@@ -109,7 +109,7 @@ describe('persistenceScheduler.ts', () => {
       expect(snap.displacedClues[0]?.clue).toBe('round-trip clue');
       expect(snap.puzzle.key).toBe(state.puzzle.key);
       expect(snap.puzzle.gridSize).toBe(state.puzzle.gridSize);
-      expect(GridOps.equals(snap.puzzle.grid, state.puzzle.grid)).toBe(true);
+      expect(snap.puzzle.grid).toEqual(state.puzzle.grid);
     });
 
     it('parseBuilderSnapshot: returns null on shape mismatch (wrong kind)', () => {

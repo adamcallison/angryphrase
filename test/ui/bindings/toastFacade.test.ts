@@ -31,7 +31,7 @@ function makeToast(id: string, kind: Toast['kind'], message: string): Toast {
     kind,
     message,
     createdAt: EpochMs.of(1000),
-    ttlMs: DurationMs.of(3500),
+    ttlMs: DurationMs.DEFAULT,
   };
 }
 
@@ -40,6 +40,7 @@ describe('toastFacade.ts', () => {
   let stubDownload: StubDownloadPort;
   let seededRng: SeededRng;
   let fakeClock: FakeClock;
+  let initial: AppStateType;
   let store: AppStore;
   let toastFacade: ToastFacade;
 
@@ -53,7 +54,7 @@ describe('toastFacade.ts', () => {
     seededRng = makeRng(42);
     fakeClock = new FakeClock(0);
 
-    const initial = makeBlankAppState(42);
+    initial = makeBlankAppState(42);
     store = createAppStore(
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
@@ -69,7 +70,7 @@ describe('toastFacade.ts', () => {
   it('toastFacade: toastVMs() projects toasts into ToastVMs (id, kind, message)', () => {
     const toast = makeToast('toast-1', 'success', 'saved');
     const freshStore = createAppStore(
-      { ...store.getState(), toasts: [toast] },
+      { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );
@@ -88,7 +89,7 @@ describe('toastFacade.ts', () => {
   it('toastFacade: toastVMs() reflects updates after fresh createAppStore changes state.toasts', () => {
     const first = makeToast('first', 'info', 'first message');
     const firstStore = createAppStore(
-      { ...store.getState(), toasts: [first] },
+      { ...initial, toasts: [first] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );
@@ -98,7 +99,7 @@ describe('toastFacade.ts', () => {
 
     const second = makeToast('second', 'warning', 'second message');
     const secondStore = createAppStore(
-      { ...firstStore.getState(), toasts: [first, second] },
+      { ...initial, toasts: [first, second] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );
@@ -113,22 +114,22 @@ describe('toastFacade.ts', () => {
   it('toastFacade: dismissToast(id) dispatches { kind: "dismiss-toast", id } — verify it is removed from getToasts()', () => {
     const toast = makeToast('dismiss-me', 'info', 'dismissible');
     const freshStore = createAppStore(
-      { ...store.getState(), toasts: [toast] },
+      { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );
     const freshToastFacade = createToastFacade(freshStore);
-    expect(freshStore.getState().toasts).toHaveLength(1);
+    expect(freshStore.getToasts()).toHaveLength(1);
 
     freshToastFacade.actions.dismiss(toast.id);
 
-    expect(freshStore.getState().toasts).toHaveLength(0);
+    expect(freshStore.getToasts()).toHaveLength(0);
   });
 
   it('toastFacade: dismissToast on a non-existent id is a no-op (no throw, toasts unchanged)', () => {
     const toast = makeToast('existing', 'info', 'still here');
     const freshStore = createAppStore(
-      { ...store.getState(), toasts: [toast] },
+      { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );
@@ -136,8 +137,8 @@ describe('toastFacade.ts', () => {
 
     const missingId: ToastId = brand<'ToastId', string>('missing');
     expect(() => freshToastFacade.actions.dismiss(missingId)).not.toThrow();
-    expect(freshStore.getState().toasts).toHaveLength(1);
-    expect(freshStore.getState().toasts[0]!.id).toBe(toast.id);
+    expect(freshStore.getToasts()).toHaveLength(1);
+    expect(freshStore.getToasts()[0]!.id).toBe(toast.id);
   });
 
   it('toastFacade: two createToastFacade instances over two appStores are independent', () => {

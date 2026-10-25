@@ -11,7 +11,7 @@ function fixture(kind: Toast['kind'], message: string): Toast {
     kind,
     message,
     createdAt: EpochMs.of(1000),
-    ttlMs: DurationMs.of(3500),
+    ttlMs: DurationMs.DEFAULT,
   };
 }
 

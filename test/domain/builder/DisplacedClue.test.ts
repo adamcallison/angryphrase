@@ -22,25 +22,6 @@ describe('DisplacedClue', () => {
     expect(calls).toBe(16);
   });
 
-  it('DisplacedClue.withText returns a new DisplacedClue with the replaced clue; original unchanged', () => {
-    let n = 0;
-    const rng: Rng = { nextInt: () => n++ };
-    const original = DisplacedClue.create(rng, 'Original', 'across');
-    const updated = DisplacedClue.withText(original, 'Updated');
-    expect(updated).not.toBe(original);
-    expect(updated.clue).toBe('Updated');
-    expect(original.clue).toBe('Original');
-  });
-
-  it('DisplacedClue.withText preserves id and direction', () => {
-    let n = 0;
-    const rng: Rng = { nextInt: () => n++ };
-    const original = DisplacedClue.create(rng, 'Original', 'down');
-    const updated = DisplacedClue.withText(original, 'Updated');
-    expect(updated.id).toBe(original.id);
-    expect(updated.direction).toBe(original.direction);
-  });
-
   it('DisplacedClue.create accepts an empty clue', () => {
     const rng: Rng = { nextInt: () => 0 };
     const clue = DisplacedClue.create(rng, '', 'across');

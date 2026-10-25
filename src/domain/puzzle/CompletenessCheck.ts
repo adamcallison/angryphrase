@@ -17,7 +17,6 @@ export type CompletenessViolationCounts = Readonly<Record<CompletenessViolationK
 
 export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[];
-  isComplete(p: Puzzle): boolean;
   clueViolations(words: Word[]): CompletenessViolation[];
   message(v: CompletenessViolation): string;
   groupByKind(violations: CompletenessViolation[]): CompletenessViolationCounts;
@@ -42,10 +41,6 @@ export const CompletenessCheck: {
     violations.push(...CompletenessCheck.clueViolations(p.words));
 
     return violations;
-  },
-
-  isComplete(p: Puzzle): boolean {
-    return CompletenessCheck.check(p).length === 0;
   },
 
   clueViolations(words: Word[]): CompletenessViolation[] {

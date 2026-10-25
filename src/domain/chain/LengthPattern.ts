@@ -68,16 +68,11 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
 
 export const LengthPattern: {
   forWord(grid: Grid, index: ChainIndex, w: Word): LengthPattern;
-  forActiveClueBanner(grid: Grid, index: ChainIndex, w: Word): LengthPattern | null;
 } = {
   forWord(grid, index, w): LengthPattern {
     if (w.nextWord !== null) {
       return chainPattern(grid, index.membersOf(w.key));
     }
     return singleWordPattern(grid, w);
-  },
-
-  forActiveClueBanner(grid, index, w): LengthPattern | null {
-    return index.isHead(w.key) ? LengthPattern.forWord(grid, index, w) : null;
   },
 };

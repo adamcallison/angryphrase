@@ -45,7 +45,7 @@ describe('Puzzle', () => {
 
     expect(p.key).toBe(key);
     expect(p.gridSize).toBe(size);
-    expect(GridOps.equals(p.grid, GridOps.blank(size))).toBe(true);
+    expect(p.grid).toEqual(GridOps.blank(size));
     const expected = Numbering.assign(p.grid, WordDerivation.derive(p.grid));
     expect(p.words).toStrictEqual(expected);
     expect(p.title).toBe(Title.try(''));

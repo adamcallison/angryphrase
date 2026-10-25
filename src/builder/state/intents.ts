@@ -49,9 +49,9 @@ export type BuilderIntent =
   // import / export
   | { target: 'builder'; kind: 'request-import-puzzle'; fileContent: string }
   | { target: 'builder'; kind: 'confirm-import-puzzle'; fileContent: string }
-  // dispatched by the Builder toolbar facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
+  // dispatched by the Builder toolbar facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routed by the target discriminator)
   | { target: 'builder'; kind: 'report-import-read-failure' }
-  // dispatched by the Builder toolbar facade when FilePickPort.pickFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routes via AMBIGUOUS_INTENT_KINDS)
+  // dispatched by the Builder toolbar facade when FilePickPort.pickFile returns { kind: 'failed' }; emits error toast, state unchanged (kind shared with PlayerIntent — routed by the target discriminator)
   | { target: 'builder'; kind: 'report-pick-failure' }
   | { target: 'builder'; kind: 'export-incomplete' }
   | { target: 'builder'; kind: 'export-complete' }

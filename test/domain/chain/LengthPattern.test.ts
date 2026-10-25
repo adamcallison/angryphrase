@@ -148,34 +148,6 @@ describe('LengthPattern', () => {
     expect(LengthPattern.forWord(grid, index, a)).toBe('3, 4, 5');
   });
 
-  it('forActiveClueBanner returns forWord result when w is a chain head', () => {
-    let grid = GridOps.blank(GridSize.of(7));
-    const b = makeWord(1, 1, 'across', null, 4);
-    const a = makeWord(0, 0, 'across', b.key, 3);
-    grid = applyBoundaryMarker(grid, a, 'space-right');
-    const index = buildIndex([a, b]);
-
-    expect(LengthPattern.forActiveClueBanner(grid, index, a)).toBe('3, 4');
-  });
-
-  it('forActiveClueBanner returns null when w is a non-head', () => {
-    let grid = GridOps.blank(GridSize.of(7));
-    const b = makeWord(1, 1, 'across', null, 4);
-    const a = makeWord(0, 0, 'across', b.key, 3);
-    grid = applyBoundaryMarker(grid, a, 'space-right');
-    const index = buildIndex([a, b]);
-
-    expect(LengthPattern.forActiveClueBanner(grid, index, b)).toBeNull();
-  });
-
-  it('forActiveClueBanner returns forWord result for a single-word chain (head with nextWord null)', () => {
-    const grid = GridOps.blank(GridSize.of(5));
-    const w = makeWord(0, 0, 'across', null, 5);
-    const index = buildIndex([w]);
-
-    expect(LengthPattern.forActiveClueBanner(grid, index, w)).toBe('5');
-  });
-
   it('chain head enumeration splits a non-head member on its space marker', () => {
     let grid = GridOps.blank(GridSize.of(9));
     const tail = makeWord(2, 0, 'across', null, 7);
@@ -223,19 +195,6 @@ describe('LengthPattern', () => {
     const index = buildIndex([head, tail]);
 
     expect(LengthPattern.forWord(grid, index, head)).toBe('2, 2, 5');
-  });
-
-  it('forActiveClueBanner returns separator-aware chain pattern for a head with a marked tail', () => {
-    let grid = GridOps.blank(GridSize.of(9));
-    const tail = makeWord(2, 0, 'across', null, 7);
-    const middle = makeWord(1, 0, 'across', tail.key, 9);
-    const head = makeWord(0, 0, 'across', middle.key, 5);
-    grid = applyMarker(grid, 2, 1, markerFlag('space-right'));
-    grid = applyBoundaryMarker(grid, head, 'space-right');
-    grid = applyBoundaryMarker(grid, middle, 'space-right');
-    const index = buildIndex([head, middle, tail]);
-
-    expect(LengthPattern.forActiveClueBanner(grid, index, head)).toBe('5, 9, 2, 5');
   });
 
   it('chain with hyphen boundary markers renders 5-9-7', () => {

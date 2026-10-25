@@ -213,7 +213,7 @@ describe('deriveAnagramModalVM', () => {
     expect(result.inputLength).toBe(3);
   });
 
-  it('deriveAnagramModalVM: inputValid = Anagram.validateInput result; errorMessage = reason on invalid', () => {
+  it('deriveAnagramModalVM: inputValid = Anagram.validateChainInput result; errorMessage = reason on invalid', () => {
     let grid = grid3x3();
     grid = setPlayerLetter(grid, 0, 0, 'A');
     grid = setPlayerLetter(grid, 0, 2, 'C');

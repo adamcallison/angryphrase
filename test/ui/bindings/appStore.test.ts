@@ -85,14 +85,16 @@ describe('appStore.svelte.ts', () => {
     vi.useRealTimers();
   });
 
-  it('appStore: getAppState returns the createAppStore initialState', () => {
+  it('appStore: the store exposes the initial state slices it was created with', () => {
     const initial = makeBlankAppState(42);
     const store = createAppStore(
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
       ports,
     );
-    expect(store.getState()).toBe(initial);
+    expect(store.getBuilder()).toBe(initial.builder);
+    expect(store.getPlayer()).toBe(initial.player);
+    expect(store.getRoute()).toBe(initial.route);
   });
 
   it('appStore: dispatch navigate route → getRoute() reflects "build" / "play" / "landing"', () => {
@@ -380,7 +382,9 @@ describe('appStore.svelte.ts', () => {
       ports,
     );
 
-    expect(store.getState()).toBe(initial);
+    expect(store.getBuilder()).toBe(initial.builder);
+    expect(store.getPlayer()).toBe(initial.player);
+    expect(store.getRoute()).toBe(initial.route);
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
     expect(inMemoryStorage.getBuilderBlob()).not.toBeNull();
@@ -526,9 +530,10 @@ describe('appStore.svelte.ts', () => {
   });
 
   it('appStore: getBuilder() / getPlayer() return the live state slices (referential checks after no dispatch)', () => {
-    const state = store.getState();
-    expect(store.getBuilder()).toBe(state.builder);
-    expect(store.getPlayer()).toBe(state.player);
+    const builder = store.getBuilder();
+    const player = store.getPlayer();
+    expect(store.getBuilder()).toBe(builder);
+    expect(store.getPlayer()).toBe(player);
   });
 
   it('appStore: no save is scheduled before the first dispatch', () => {
@@ -541,7 +546,9 @@ describe('appStore.svelte.ts', () => {
 
     vi.advanceTimersByTime(1000);
 
-    expect(freshStore.getState()).toBe(initial);
+    expect(freshStore.getBuilder()).toBe(initial.builder);
+    expect(freshStore.getPlayer()).toBe(initial.player);
+    expect(freshStore.getRoute()).toBe(initial.route);
     expect(inMemoryStorage.getBuilderBlob()).toBeNull();
     expect(inMemoryStorage.getPlayerProgressMap().size).toBe(0);
   });

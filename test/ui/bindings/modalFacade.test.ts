@@ -29,6 +29,7 @@ describe('modalFacade.ts', () => {
   let stubDownload: StubDownloadPort;
   let seededRng: SeededRng;
   let fakeClock: FakeClock;
+  let initial: AppStateType;
   let store: AppStore;
   let modalFacade: ModalFacade;
 
@@ -49,7 +50,7 @@ describe('modalFacade.ts', () => {
     seededRng = makeRng(42);
     fakeClock = new FakeClock(0);
 
-    const initial = makeBlankAppState(42);
+    initial = makeBlankAppState(42);
     store = createAppStore(
       initial,
       { rng: seededRng, now: () => fakeClock.now() },
@@ -60,7 +61,7 @@ describe('modalFacade.ts', () => {
   });
 
   it('modalFacade: modalVM() returns null when AppState.modal is null', () => {
-    expect(store.getState().modal).toBeNull();
+    expect(store.getModal()).toBeNull();
     expect(modalFacade.modalVM()).toBeNull();
   });
 
@@ -80,37 +81,37 @@ describe('modalFacade.ts', () => {
 
   it('modalFacade: confirmModal() with pending confirm intent dispatches the corresponding confirm-* intent; verify modal cleared after', () => {
     populateDesignSwitchModal();
-    expect(store.getState().modal).not.toBeNull();
-    expect(store.getState().pendingConfirmIntent).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
+    expect(store.getModal()).not.toBeNull();
+    expect(store.getPendingConfirmIntent()).toEqual({ target: 'builder', kind: 'confirm-switch-to-design' });
 
     modalFacade.actions.confirm();
 
-    expect(store.getState().modal).toBeNull();
-    expect(store.getState().pendingConfirmIntent).toBeNull();
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
   });
 
   it('modalFacade: confirm does nothing when no confirm intent is pending', () => {
-    expect(store.getState().modal).toBeNull();
-    expect(store.getState().pendingConfirmIntent).toBeNull();
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
     const dispatchSpy = vi.spyOn(store, 'dispatch');
 
     modalFacade.actions.confirm();
 
     expect(dispatchSpy).not.toHaveBeenCalled();
-    expect(store.getState().modal).toBeNull();
-    expect(store.getState().pendingConfirmIntent).toBeNull();
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
     dispatchSpy.mockRestore();
   });
 
   it('modalFacade: cancelModal() dispatches { kind: "cancel-modal" }; modal cleared, pendingConfirm null', () => {
     populateDesignSwitchModal();
-    expect(store.getState().modal).not.toBeNull();
-    expect(store.getState().pendingConfirmIntent).not.toBeNull();
+    expect(store.getModal()).not.toBeNull();
+    expect(store.getPendingConfirmIntent()).not.toBeNull();
 
     modalFacade.actions.cancel();
 
-    expect(store.getState().modal).toBeNull();
-    expect(store.getState().pendingConfirmIntent).toBeNull();
+    expect(store.getModal()).toBeNull();
+    expect(store.getPendingConfirmIntent()).toBeNull();
   });
 
   it('modalFacade: modalVM reflects changes after fresh createAppStore mutates state.modal', () => {
@@ -118,7 +119,7 @@ describe('modalFacade.ts', () => {
 
     const modal: ModalRequest = { kind: 'confirm-reset-player' };
     const freshStore = createAppStore(
-      { ...store.getState(), modal },
+      { ...initial, modal },
       { rng: seededRng, now: () => fakeClock.now() },
       makePorts(),
     );

@@ -2,21 +2,6 @@ import { EpochMs } from '../../../src/domain/time/EpochMs';
 import type { EpochMs as EpochMsType } from '../../../src/domain/time/EpochMs';
 
 describe('EpochMs', () => {
-  it('EpochMs.try returns EpochMs for valid input', () => {
-    expect(EpochMs.try(0)).toBe(0);
-    expect(EpochMs.try(1000)).toBe(1000);
-    expect(EpochMs.try(1700000000000)).toBe(1700000000000);
-  });
-
-  it('EpochMs.try returns null for invalid input', () => {
-    expect(EpochMs.try(-1)).toBeNull();
-    expect(EpochMs.try(-0.5)).toBeNull();
-    expect(EpochMs.try(1.5)).toBeNull();
-    expect(EpochMs.try(Number.NaN)).toBeNull();
-    expect(EpochMs.try(Number.POSITIVE_INFINITY)).toBeNull();
-    expect(EpochMs.try(Number.NEGATIVE_INFINITY)).toBeNull();
-  });
-
   it('EpochMs.of returns EpochMs for valid input', () => {
     expect(EpochMs.of(0)).toBe(0);
     expect(EpochMs.of(1)).toBe(1);

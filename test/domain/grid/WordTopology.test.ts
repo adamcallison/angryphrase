@@ -4,7 +4,6 @@ import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
 import type { Grid } from '../../../src/domain/grid/Grid';
 import { GridAccess } from '../../../src/domain/grid/GridAccess';
-import { GridOps } from '../../../src/domain/grid/GridOps';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import type { WordRun } from '../../../src/domain/grid/WordTopology';
@@ -198,9 +197,10 @@ describe('WordTopology', () => {
       it('does not mutate the input grid or its row arrays', () => {
         const g = blankGrid(3);
         const rows = g.map((row) => row);
+        const snapshot = structuredClone(g);
         WordTopology.runs(g, 'across');
         WordTopology.runs(g, 'down');
-        expect(GridOps.equals(g, g)).toBe(true);
+        expect(g).toEqual(snapshot);
         for (let i = 0; i < g.length; i++) {
           expect(g[i]).toBe(rows[i]);
         }

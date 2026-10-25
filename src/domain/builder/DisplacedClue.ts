@@ -10,7 +10,6 @@ export type DisplacedClue = {
 
 export const DisplacedClue: {
   create(rng: Rng, clue: string, direction: Direction): DisplacedClue;
-  withText(d: DisplacedClue, clue: string): DisplacedClue;
 } = {
   create(rng: Rng, clue: string, direction: Direction): DisplacedClue {
     return {
@@ -18,9 +17,5 @@ export const DisplacedClue: {
       clue,
       direction,
     };
-  },
-
-  withText(d: DisplacedClue, clue: string): DisplacedClue {
-    return { ...d, clue };
   },
 };

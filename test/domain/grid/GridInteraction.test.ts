@@ -198,11 +198,11 @@ describe('GridInteraction', () => {
         const grid = blankGrid(5);
         const cursor = cursorAt(0, 0, 'across');
         const letter = Letter.try('A')!;
-        const gridBefore = GridOps.clone(grid);
+        const gridBefore = structuredClone(grid);
         const cursorBefore = { ...cursor };
         const outcome = GridInteraction.typeLetter(grid, cursor, letter, slot);
 
-        expect(GridOps.equals(grid, gridBefore)).toBe(true);
+        expect(grid).toEqual(gridBefore);
         expect(grid).not.toBe(outcome!.grid);
         expect(cursor).toEqual(cursorBefore);
       });
@@ -262,11 +262,11 @@ describe('GridInteraction', () => {
         const letter = Letter.try('D')!;
         grid = setCell(grid, 1, 1, slot.set(GridOps.cellAt(grid, Row.of(1), Col.of(1)), letter));
         const cursor = cursorAt(1, 1, 'across');
-        const gridBefore = GridOps.clone(grid);
+        const gridBefore = structuredClone(grid);
         const cursorBefore = { ...cursor };
         const outcome = GridInteraction.backspace(grid, cursor, slot);
 
-        expect(GridOps.equals(grid, gridBefore)).toBe(true);
+        expect(grid).toEqual(gridBefore);
         expect(grid).not.toBe(outcome!.grid);
         expect(cursor).toEqual(cursorBefore);
       });

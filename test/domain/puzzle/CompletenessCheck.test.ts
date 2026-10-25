@@ -153,40 +153,6 @@ describe('CompletenessCheck', () => {
     ]);
   });
 
-  it('isComplete returns true when check returns []', () => {
-    const p = Puzzle.blank(GridSize.of(2), makeKey());
-    const grid = fillGrid(p.grid);
-    const words = [makeWord(0, 0, 'across', 1, 'clue')];
-    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
-
-    expect(CompletenessCheck.isComplete(puzzle)).toBe(true);
-  });
-
-  it('isComplete returns false when check returns any violations', () => {
-    const p = Puzzle.blank(GridSize.of(2), makeKey());
-    let grid = GridOps.setCell(
-      p.grid,
-      Row.of(0),
-      Col.of(1),
-      Cell.setAnswerLetter(GridOps.cellAt(p.grid, Row.of(0), Col.of(1)), Letter.try('A')),
-    );
-    grid = GridOps.setCell(
-      grid,
-      Row.of(1),
-      Col.of(0),
-      Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('B')),
-    );
-    grid = GridOps.setCell(
-      grid,
-      Row.of(1),
-      Col.of(1),
-      Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('C')),
-    );
-    const puzzle = Puzzle.withGrid(p, grid);
-
-    expect(CompletenessCheck.isComplete(puzzle)).toBe(false);
-  });
-
   it('check reports non-head-clue for a non-head chain word with a non-empty clue', () => {
     const p = Puzzle.blank(GridSize.of(3), makeKey());
     const grid = fillGrid(p.grid);
@@ -240,17 +206,6 @@ describe('CompletenessCheck', () => {
       { kind: 'missing-clue', wordNumber: WordNumber.of(1), direction: 'across' },
       { kind: 'non-head-clue', wordNumber: WordNumber.of(2), direction: 'across' },
     ]);
-  });
-
-  it('isComplete returns false when a non-head-clue violation exists', () => {
-    const p = Puzzle.blank(GridSize.of(3), makeKey());
-    const grid = fillGrid(p.grid);
-    const tail = makeWord(0, 2, 'across', 2, 'stowaway');
-    const head = makeWord(0, 0, 'across', 1, 'head clue', tail.key);
-    const words = [head, tail];
-    const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
-
-    expect(CompletenessCheck.isComplete(puzzle)).toBe(false);
   });
 
   it('message returns the exact user-facing string for each violation kind', () => {

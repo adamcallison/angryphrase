@@ -32,13 +32,7 @@ export function handleImportPuzzle(
     );
   }
 
-  const newState: PlayerState = {
-    phase: 'solving',
-    puzzle: result.puzzle,
-    cursor: null,
-    checkResult: null,
-    anagram: null,
-  };
+  const newState: PlayerState = PlayerState.loaded(result.puzzle);
 
   return Result.withEvents(newState, [
     { kind: 'load-player-progress', key: result.puzzle.key },

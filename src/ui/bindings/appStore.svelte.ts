@@ -23,7 +23,6 @@ export type AppPorts = { storage: StoragePort; download: DownloadPort; filePick:
 export type LandingActions = { build(): void; play(): void };
 
 export type AppStore = {
-  getState(): AppState;
   getRoute(): AppState['route'];
   getToasts(): Toast[];
   getModal(): ModalRequest | null;
@@ -175,9 +174,6 @@ export function createAppStore(
   );
 
   const store: AppStore = {
-    getState() {
-      return state;
-    },
     getRoute() {
       return state.route;
     },

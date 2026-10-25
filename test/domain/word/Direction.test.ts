@@ -4,16 +4,6 @@ import { Col } from '../../../src/domain/grid/Col';
 import { brand } from '../../../src/domain/brand';
 
 describe('Direction', () => {
-  it('Direction.opposite across ↔ down', () => {
-    expect(Direction.opposite('across')).toBe('down');
-    expect(Direction.opposite('down')).toBe('across');
-  });
-
-  it('Direction.isAcross returns true only for across', () => {
-    expect(Direction.isAcross('across')).toBe(true);
-    expect(Direction.isAcross('down')).toBe(false);
-  });
-
   it('Direction.advance across advances col by n', () => {
     const coord = { row: Row.of(0), col: Col.of(2) };
     const result = Direction.advance(coord, 'across', 3);

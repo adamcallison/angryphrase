@@ -15,7 +15,6 @@ describe('filePickActions.ts', () => {
     readDroppedFile: (file: File) => Promise<DroppedFileResult>;
   }): AppStore {
     return {
-      getState: () => null as never,
       getRoute: () => 'landing',
       getToasts: () => [],
       getModal: () => null,

@@ -1,7 +1,6 @@
 import { Toast } from '../../../src/domain/notifications/Toast';
 import type { Rng } from '../../../src/domain/rng/Rng';
 import { EpochMs } from '../../../src/domain/time/EpochMs';
-import { DurationMs } from '../../../src/domain/time/DurationMs';
 
 describe('Toast', () => {
   it('Toast.create sets all fields and a fresh id', () => {
@@ -13,12 +12,6 @@ describe('Toast', () => {
     expect(toast.ttlMs).toBe(3500);
     expect(toast.id).toHaveLength(32);
     expect(toast.id).toMatch(/^[0-9a-f]{32}$/);
-  });
-
-  it('Toast.create accepts a custom ttlMs', () => {
-    const rng: Rng = { nextInt: () => 0 };
-    const toast = Toast.create(rng, 'success', 'saved', () => EpochMs.of(0), DurationMs.of(5000));
-    expect(toast.ttlMs).toBe(5000);
   });
 
   it('Toast.create default ttlMs is 3500', () => {

@@ -41,5 +41,5 @@ Forward-looking material, not a description of the current system. Companion to 
 
 The application is single-user, single-device by design; scale is not a concern. If forced:
 
-- **Large grids.** 25×25 is the max. `GridOps.clone` on every edit is fine at this size; a much larger max grid would need a structural-sharing grid (e.g. row-vector immutable structure).
+- **Large grids.** 25×25 is the max. Copying the grid on every edit is fine at this size (edits already copy only the touched row — `GridAccess.setCell` / `updateCells`); a much larger max grid would need a structural-sharing grid (e.g. row-vector immutable structure).
 - **Many puzzles in localStorage.** Per-key progress keys can grow unbounded; no GC exists. If needed, a sweep on Player import could prune progress for keys no longer in any imported file.

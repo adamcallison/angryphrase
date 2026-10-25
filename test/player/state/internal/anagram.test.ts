@@ -422,7 +422,7 @@ describe('handleAnagramScramble', () => {
     const result = handleAnagramScramble(state, rng);
     if (result.state.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.puzzle.grid).toBe(originalGrid);
-    expect(GridOps.equals(result.state.puzzle.grid, originalGrid)).toBe(true);
+    expect(result.state.puzzle.grid).toEqual(originalGrid);
   });
 
   it('anagram-scramble: does not modify cursor, checkResult, or puzzle', () => {

@@ -14,15 +14,15 @@ export type Toast = {
 };
 
 export const Toast: {
-  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs, ttlMs?: DurationMs): Toast;
+  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs): Toast;
 } = {
-  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs, ttlMs?: DurationMs): Toast {
+  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs): Toast {
     return {
       id: ToastIdFactory.generate(rng),
       kind,
       message,
       createdAt: now(),
-      ttlMs: ttlMs ?? DurationMs.DEFAULT,
+      ttlMs: DurationMs.DEFAULT,
     };
   },
 };
