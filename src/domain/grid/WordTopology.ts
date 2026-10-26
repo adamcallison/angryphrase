@@ -1,8 +1,7 @@
-import type { Grid } from './Grid';
 import type { Row } from './Row';
 import type { Col } from './Col';
 import type { Direction } from '../word/Direction';
-import { GridAccess } from './GridAccess';
+import { Grid } from './Grid';
 import { Cell as CellCtor } from './Cell';
 import { Row as RowCtor } from './Row';
 import { Col as ColCtor } from './Col';
@@ -20,7 +19,7 @@ function isRunStart(
   col: Col,
   direction: Direction
 ): boolean {
-  if (!CellCtor.isWhite(GridAccess.cellAt(grid, row, col))) {
+  if (!CellCtor.isWhite(Grid.cellAt(grid, row, col))) {
     return false;
   }
 
@@ -30,12 +29,12 @@ function isRunStart(
   if (direction === 'across') {
     if (c === 0) return true;
     const prevCol = ColCtor.of(c - 1);
-    return !CellCtor.isWhite(GridAccess.cellAt(grid, row, prevCol));
+    return !CellCtor.isWhite(Grid.cellAt(grid, row, prevCol));
   }
 
   if (r === 0) return true;
   const prevRow = RowCtor.of(r - 1);
-  return !CellCtor.isWhite(GridAccess.cellAt(grid, prevRow, col));
+  return !CellCtor.isWhite(Grid.cellAt(grid, prevRow, col));
 }
 
 function measureRun(
@@ -53,8 +52,8 @@ function measureRun(
     let c = sc;
     while (c < size) {
       const col = ColCtor.of(c);
-      if (!GridAccess.withinBounds(grid, startRow, col)) break;
-      if (!CellCtor.isWhite(GridAccess.cellAt(grid, startRow, col))) break;
+      if (!Grid.withinBounds(grid, startRow, col)) break;
+      if (!CellCtor.isWhite(Grid.cellAt(grid, startRow, col))) break;
       length++;
       c++;
     }
@@ -62,8 +61,8 @@ function measureRun(
     let r = sr;
     while (r < size) {
       const row = RowCtor.of(r);
-      if (!GridAccess.withinBounds(grid, row, startCol)) break;
-      if (!CellCtor.isWhite(GridAccess.cellAt(grid, row, startCol))) break;
+      if (!Grid.withinBounds(grid, row, startCol)) break;
+      if (!CellCtor.isWhite(Grid.cellAt(grid, row, startCol))) break;
       length++;
       r++;
     }
@@ -104,10 +103,10 @@ export const WordTopology: {
   },
 
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean {
-    if (!GridAccess.withinBounds(grid, row, col)) {
+    if (!Grid.withinBounds(grid, row, col)) {
       return false;
     }
-    if (!CellCtor.isWhite(GridAccess.cellAt(grid, row, col))) {
+    if (!CellCtor.isWhite(Grid.cellAt(grid, row, col))) {
       return false;
     }
 
@@ -121,8 +120,8 @@ export const WordTopology: {
       while (scan >= 0) {
         const scanCol = ColCtor.try(scan);
         if (scanCol === null) break;
-        if (!GridAccess.withinBounds(grid, row, scanCol)) break;
-        if (!CellCtor.isWhite(GridAccess.cellAt(grid, row, scanCol))) break;
+        if (!Grid.withinBounds(grid, row, scanCol)) break;
+        if (!CellCtor.isWhite(Grid.cellAt(grid, row, scanCol))) break;
         stepsBefore++;
         scan--;
       }
@@ -131,8 +130,8 @@ export const WordTopology: {
       while (scan >= 0) {
         const scanRow = RowCtor.try(scan);
         if (scanRow === null) break;
-        if (!GridAccess.withinBounds(grid, scanRow, col)) break;
-        if (!CellCtor.isWhite(GridAccess.cellAt(grid, scanRow, col))) break;
+        if (!Grid.withinBounds(grid, scanRow, col)) break;
+        if (!CellCtor.isWhite(Grid.cellAt(grid, scanRow, col))) break;
         stepsBefore++;
         scan--;
       }
@@ -146,8 +145,8 @@ export const WordTopology: {
       let scan = startIndex;
       while (scan < size) {
         const scanCol = ColCtor.of(scan);
-        if (!GridAccess.withinBounds(grid, row, scanCol)) break;
-        if (!CellCtor.isWhite(GridAccess.cellAt(grid, row, scanCol))) break;
+        if (!Grid.withinBounds(grid, row, scanCol)) break;
+        if (!CellCtor.isWhite(Grid.cellAt(grid, row, scanCol))) break;
         length++;
         scan++;
       }
@@ -155,8 +154,8 @@ export const WordTopology: {
       let scan = startIndex;
       while (scan < size) {
         const scanRow = RowCtor.of(scan);
-        if (!GridAccess.withinBounds(grid, scanRow, col)) break;
-        if (!CellCtor.isWhite(GridAccess.cellAt(grid, scanRow, col))) break;
+        if (!Grid.withinBounds(grid, scanRow, col)) break;
+        if (!CellCtor.isWhite(Grid.cellAt(grid, scanRow, col))) break;
         length++;
         scan++;
       }

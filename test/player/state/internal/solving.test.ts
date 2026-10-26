@@ -13,7 +13,7 @@ import type { PlayerIntent } from '../../../../src/player/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { WordTopology } from '../../../../src/domain/grid/WordTopology';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Letter } from '../../../../src/domain/letter/Letter';
@@ -32,10 +32,10 @@ function assertSolving(state: PlayerState): SolvingPlayerState {
   return state;
 }
 
-function makeGrid(size: number, blackCells: [number, number][]): ReturnType<typeof GridAccess.blank> {
-  let grid = GridAccess.blank(GridSize.of(size));
+function makeGrid(size: number, blackCells: [number, number][]): ReturnType<typeof Grid.blank> {
+  let grid = Grid.blank(GridSize.of(size));
   for (const [r, c] of blackCells) {
-    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+    grid = Grid.setCell(grid, Row.of(r), Col.of(c), Cell.black());
   }
   return grid;
 }
@@ -101,8 +101,8 @@ function withPlayerLetter(
   letter: string,
 ): SolvingPlayerState {
   const g = state.puzzle.grid;
-  const cell = GridAccess.cellAt(g, Row.of(row), Col.of(col));
-  const newG = GridAccess.setCell(
+  const cell = Grid.cellAt(g, Row.of(row), Col.of(col));
+  const newG = Grid.setCell(
     g,
     Row.of(row),
     Col.of(col),
@@ -118,8 +118,8 @@ function withAnswerLetter(
   letter: string,
 ): SolvingPlayerState {
   const g = state.puzzle.grid;
-  const cell = GridAccess.cellAt(g, Row.of(row), Col.of(col));
-  const newG = GridAccess.setCell(
+  const cell = Grid.cellAt(g, Row.of(row), Col.of(col));
+  const newG = Grid.setCell(
     g,
     Row.of(row),
     Col.of(col),
@@ -808,7 +808,7 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
     expect(assertSolving(result.state).cursor).toEqual({
@@ -826,7 +826,7 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
   });
@@ -834,12 +834,12 @@ describe('handleTypeLetter', () => {
   it('type-letter: does not modify answerLetter — Player writes player field only', () => {
     let state = solvingState(5);
     const g = state.puzzle.grid;
-    const cell = GridAccess.cellAt(g, Row.of(0), Col.of(0));
+    const cell = Grid.cellAt(g, Row.of(0), Col.of(0));
     state = {
       ...state,
       puzzle: Puzzle.withGrid(
         state.puzzle,
-        GridAccess.setCell(g, Row.of(0), Col.of(0), Cell.setAnswerLetter(cell, Letter.try('Z')!)),
+        Grid.setCell(g, Row.of(0), Col.of(0), Cell.setAnswerLetter(cell, Letter.try('Z')!)),
       ),
     };
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
@@ -847,10 +847,10 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
       Letter.try('Z'),
     );
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
   });
@@ -879,7 +879,7 @@ describe('handleTypeLetter', () => {
       col: Col.of(0),
       direction: 'across',
     });
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
   });
@@ -895,7 +895,7 @@ describe('handleTypeLetter', () => {
       col: Col.of(4),
       direction: 'across',
     });
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(4)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(4)).playerLetter).toBe(
       Letter.try('A'),
     );
   });
@@ -911,7 +911,7 @@ describe('handleTypeLetter', () => {
       col: Col.of(0),
       direction: 'across',
     });
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
   });
@@ -1012,7 +1012,7 @@ describe('handleBackspace', () => {
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -1026,7 +1026,7 @@ describe('handleBackspace', () => {
     state = withCursor(state, { row: 0, col: 1, direction: 'across' });
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -1059,7 +1059,7 @@ describe('handleBackspace', () => {
     state = withCursor(state, { row: 1, col: 0, direction: 'down' });
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -1070,22 +1070,22 @@ describe('handleBackspace', () => {
   it('backspace: does not modify answerLetter', () => {
     let state = solvingState(5);
     const g = state.puzzle.grid;
-    const cell = GridAccess.cellAt(g, Row.of(0), Col.of(0));
+    const cell = Grid.cellAt(g, Row.of(0), Col.of(0));
     state = {
       ...state,
       puzzle: Puzzle.withGrid(
         state.puzzle,
-        GridAccess.setCell(g, Row.of(0), Col.of(0), Cell.setAnswerLetter(cell, Letter.try('Z')!)),
+        Grid.setCell(g, Row.of(0), Col.of(0), Cell.setAnswerLetter(cell, Letter.try('Z')!)),
       ),
     };
     state = withPlayerLetter(state, 0, 0, 'X');
     state = withCursor(state, { row: 0, col: 0, direction: 'across' });
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(
       Letter.try('Z'),
     );
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
   });
 
   it('backspace: clears checkResult (clear-on-change)', () => {
@@ -1109,7 +1109,7 @@ describe('handleBackspace', () => {
 
     const result = handleBackspace(stateWithAnagram);
 
-    expect(GridAccess.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(assertSolving(result.state).puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
     expect(assertSolving(result.state).cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -1393,8 +1393,8 @@ describe('handleClearErrors', () => {
     const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
   });
 
   it('clear-errors: leaves correct cells untouched (playerLetter of correct cells preserved)', () => {
@@ -1411,8 +1411,8 @@ describe('handleClearErrors', () => {
     const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(Letter.try('A'));
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(Letter.try('D'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(Letter.try('A'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(Letter.try('D'));
   });
 
   it('clear-errors: leaves empty cells untouched (playerLetter stays null)', () => {
@@ -1427,9 +1427,9 @@ describe('handleClearErrors', () => {
     const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(null);
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(null);
   });
 
   it('clear-errors: leaves answerLetter intact on all cells', () => {
@@ -1444,10 +1444,10 @@ describe('handleClearErrors', () => {
     const result = handleClearErrors(checked.state);
 
     const next = assertSolving(result.state);
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(Letter.try('A'));
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(0), Col.of(1)).answerLetter).toBe(Letter.try('B'));
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).answerLetter).toBe(Letter.try('C'));
-    expect(GridAccess.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).answerLetter).toBe(Letter.try('D'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(Letter.try('A'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(0), Col.of(1)).answerLetter).toBe(Letter.try('B'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(0)).answerLetter).toBe(Letter.try('C'));
+    expect(Grid.cellAt(next.puzzle.grid, Row.of(1), Col.of(1)).answerLetter).toBe(Letter.try('D'));
   });
 
   it('clear-errors: clears checkResult to null after clearing (clear-on-change)', () => {
@@ -1475,7 +1475,7 @@ describe('handleClearErrors', () => {
 
     const next = assertSolving(result.state);
     expect(next.puzzle.grid).not.toBe(originalGrid);
-    expect(GridAccess.cellAt(originalGrid, Row.of(0), Col.of(1)).playerLetter).toBe(Letter.try('X'));
+    expect(Grid.cellAt(originalGrid, Row.of(0), Col.of(1)).playerLetter).toBe(Letter.try('X'));
   });
 
   it('clear-errors: preserves puzzle.key, gridSize, words, cursor, and anagram state unchanged', () => {
@@ -1519,7 +1519,7 @@ describe('handleClearErrors', () => {
     const next = assertSolving(result.state);
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 2; c++) {
-        expect(GridAccess.cellAt(next.puzzle.grid, Row.of(r), Col.of(c)).playerLetter).toBe(null);
+        expect(Grid.cellAt(next.puzzle.grid, Row.of(r), Col.of(c)).playerLetter).toBe(null);
       }
     }
   });

@@ -3,7 +3,7 @@ import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { CompletenessCheck, type CompletenessViolation } from '../../../src/domain/puzzle/CompletenessCheck';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridAccess } from '../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
@@ -12,7 +12,6 @@ import { WordLength } from '../../../src/domain/word/WordLength';
 import { WordNumber } from '../../../src/domain/word/WordNumber';
 import type { Direction } from '../../../src/domain/word/Direction';
 import type { Word } from '../../../src/domain/word/Word';
-import type { Grid } from '../../../src/domain/grid/Grid';
 import { SeededRng } from '../../fakes/SeededRng';
 
 function makeKey() {
@@ -43,7 +42,7 @@ function fillGrid(grid: Grid) {
     for (let c = 0; c < row.length; c++) {
       const cell = row[c]!;
       if (!cell.black) {
-        g = GridAccess.setCell(g, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, Letter.try('A')));
+        g = Grid.setCell(g, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, Letter.try('A')));
       }
     }
   }
@@ -62,11 +61,11 @@ describe('CompletenessCheck', () => {
 
   it('check reports missing-answer-letter for each empty white cell, plus missing-clue for derived heads with empty clue', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    const grid = GridAccess.setCell(
+    const grid = Grid.setCell(
       p.grid,
       Row.of(0),
       Col.of(0),
-      Cell.setAnswerLetter(GridAccess.cellAt(p.grid, Row.of(0), Col.of(0)), Letter.try('A')),
+      Cell.setAnswerLetter(Grid.cellAt(p.grid, Row.of(0), Col.of(0)), Letter.try('A')),
     );
     const partial = Puzzle.withGrid(p, grid);
 
@@ -83,10 +82,10 @@ describe('CompletenessCheck', () => {
 
   it('check does not report black cells as missing', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    let grid = GridAccess.setCell(p.grid, Row.of(0), Col.of(0), Cell.black());
-    grid = GridAccess.setCell(grid, Row.of(0), Col.of(1), Cell.black());
-    grid = GridAccess.setCell(grid, Row.of(1), Col.of(0), Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('A')));
-    grid = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('B')));
+    let grid = Grid.setCell(p.grid, Row.of(0), Col.of(0), Cell.black());
+    grid = Grid.setCell(grid, Row.of(0), Col.of(1), Cell.black());
+    grid = Grid.setCell(grid, Row.of(1), Col.of(0), Cell.setAnswerLetter(Grid.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('A')));
+    grid = Grid.setCell(grid, Row.of(1), Col.of(1), Cell.setAnswerLetter(Grid.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('B')));
     const words = [makeWord(1, 0, 'across', 1, 'clue')];
     const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
 
@@ -126,23 +125,23 @@ describe('CompletenessCheck', () => {
 
   it('violations are ordered: missing-answer letters first (row-major), then missing-clue', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    let grid = GridAccess.setCell(
+    let grid = Grid.setCell(
       p.grid,
       Row.of(0),
       Col.of(1),
-      Cell.setAnswerLetter(GridAccess.cellAt(p.grid, Row.of(0), Col.of(1)), Letter.try('A')),
+      Cell.setAnswerLetter(Grid.cellAt(p.grid, Row.of(0), Col.of(1)), Letter.try('A')),
     );
-    grid = GridAccess.setCell(
+    grid = Grid.setCell(
       grid,
       Row.of(1),
       Col.of(0),
-      Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('B')),
+      Cell.setAnswerLetter(Grid.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('B')),
     );
-    grid = GridAccess.setCell(
+    grid = Grid.setCell(
       grid,
       Row.of(1),
       Col.of(1),
-      Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('C')),
+      Cell.setAnswerLetter(Grid.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('C')),
     );
     const words = [makeWord(0, 0, 'across', 1, '')];
     const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);

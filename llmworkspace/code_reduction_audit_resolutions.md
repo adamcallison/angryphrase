@@ -402,6 +402,13 @@ Test-side sites — a production change is not complete until the tree that cons
 
 ## O4 — Dissolve the `GridOps` wrapper layer; array-iteration rewrite of the grid scan sites — resolved 2026-10-26
 
+> **Subsequent change (2026-10-26).** After this entry was written, the human decided to give the
+> surviving accessor a friendlier name: `GridAccess` became `Grid`, and the accessors moved into
+> `src/domain/grid/Grid.ts` beside the `Grid` type, leaving `src/domain/grid/GridAccess.ts` deleted.
+> That is the convention every other value object here already follows — a type and its same-named
+> constructor namespace in one file (`Cell.ts`, `Row.ts`, `Col.ts`, `CellMarker.ts`, `GridSize.ts`).
+> This entry is left as the record of what O4 did: at O4's close the target was `GridAccess`.
+
 ### The item (recap)
 
 `code_reduction_audit.md` O4 has two parts (est. −150 LOC):
@@ -541,4 +548,4 @@ The item's own counts are not trusted; the inventory below is what coverage is m
 | `GridInteraction.move` / `typeLetter` / `backspace` — `isSelectable` at a cursor-derived coordinate | the same kind: a point predicate at an externally-driven coordinate. Migrated to `WordTopology.isSelectable` | — (closed by decision, not deferred) |
 | `builderFacade.setMarker`, `builderVM`'s marker flags, `fillMode`'s letter write, `designMode`'s toggle | the same kind: point reads at cursor- or intent-derived coordinates. All migrated to `GridAccess.cellAt` | — (closed by decision, not deferred) |
 | `WordTopology.partOfRun`'s own O(n) scan implementation, and `partOfRunMask`'s per-direction variant | out of this item's scope: O9 owns `partOfRun`'s implementation. The bulk mask is deliberately left as the source of `selectable` in the view-model | audit O9 |
-| the `GridOps` name itself — a friendlier name for the surviving accessor | deliberately deferred by the human; `GridAccess` stands as the single grid-accessor name | — (open, for a future decision) |
+| the `GridOps` name itself — a friendlier name for the surviving accessor | closed: after this entry, the accessor namespace was renamed `GridAccess` → `Grid` and moved into `src/domain/grid/Grid.ts` beside the `Grid` type (2026-10-26) | — (closed, not deferred) |

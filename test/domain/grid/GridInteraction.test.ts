@@ -4,19 +4,18 @@ import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
 import type { Cursor } from '../../../src/domain/grid/Cursor';
 import { GridInteraction, type LetterSlot } from '../../../src/domain/grid/GridInteraction';
-import { GridAccess } from '../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
-import type { Grid } from '../../../src/domain/grid/Grid';
 
 describe('GridInteraction', () => {
   function blankGrid(size: number): Grid {
-    return GridAccess.blank(GridSize.of(size));
+    return Grid.blank(GridSize.of(size));
   }
 
   function setCell(g: Grid, row: number, col: number, cell: CellType): Grid {
-    return GridAccess.setCell(g, Row.of(row), Col.of(col), cell);
+    return Grid.setCell(g, Row.of(row), Col.of(col), cell);
   }
 
   function setBlack(g: Grid, row: number, col: number): Grid {
@@ -166,7 +165,7 @@ describe('GridInteraction', () => {
         const outcome = GridInteraction.typeLetter(grid, cursor, letter, slot);
 
         expect(outcome).not.toBeNull();
-        expect(slot.read(GridAccess.cellAt(outcome!.grid, Row.of(0), Col.of(0)))).toBe(letter);
+        expect(slot.read(Grid.cellAt(outcome!.grid, Row.of(0), Col.of(0)))).toBe(letter);
         expect(outcome!.cursor).toEqual({ row: Row.of(0), col: Col.of(1), direction: 'across' });
       });
 
@@ -177,7 +176,7 @@ describe('GridInteraction', () => {
         const outcome = GridInteraction.typeLetter(grid, cursor, letter, slot);
 
         expect(outcome).not.toBeNull();
-        expect(slot.read(GridAccess.cellAt(outcome!.grid, Row.of(0), Col.of(4)))).toBe(letter);
+        expect(slot.read(Grid.cellAt(outcome!.grid, Row.of(0), Col.of(4)))).toBe(letter);
         expect(outcome!.cursor).toBe(cursor);
       });
 
@@ -212,24 +211,24 @@ describe('GridInteraction', () => {
       it('clears the current cell letter and leaves cursor unchanged', () => {
         let grid = blankGrid(5);
         const letter = Letter.try('B')!;
-        grid = setCell(grid, 1, 1, slot.set(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), letter));
+        grid = setCell(grid, 1, 1, slot.set(Grid.cellAt(grid, Row.of(1), Col.of(1)), letter));
         const cursor = cursorAt(1, 1, 'across');
         const outcome = GridInteraction.backspace(grid, cursor, slot);
 
         expect(outcome).not.toBeNull();
-        expect(slot.read(GridAccess.cellAt(outcome!.grid, Row.of(1), Col.of(1)))).toBeNull();
+        expect(slot.read(Grid.cellAt(outcome!.grid, Row.of(1), Col.of(1)))).toBeNull();
         expect(outcome!.cursor).toBe(cursor);
       });
 
       it('retreats and clears the previous cell when current cell is empty', () => {
         let grid = blankGrid(5);
         const letter = Letter.try('C')!;
-        grid = setCell(grid, 1, 0, slot.set(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), letter));
+        grid = setCell(grid, 1, 0, slot.set(Grid.cellAt(grid, Row.of(1), Col.of(0)), letter));
         const cursor = cursorAt(1, 1, 'across');
         const outcome = GridInteraction.backspace(grid, cursor, slot);
 
         expect(outcome).not.toBeNull();
-        expect(slot.read(GridAccess.cellAt(outcome!.grid, Row.of(1), Col.of(0)))).toBeNull();
+        expect(slot.read(Grid.cellAt(outcome!.grid, Row.of(1), Col.of(0)))).toBeNull();
         expect(outcome!.cursor).toEqual({ row: Row.of(1), col: Col.of(0), direction: 'across' });
       });
 
@@ -260,7 +259,7 @@ describe('GridInteraction', () => {
       it('does not mutate the input grid or cursor', () => {
         let grid = blankGrid(5);
         const letter = Letter.try('D')!;
-        grid = setCell(grid, 1, 1, slot.set(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), letter));
+        grid = setCell(grid, 1, 1, slot.set(Grid.cellAt(grid, Row.of(1), Col.of(1)), letter));
         const cursor = cursorAt(1, 1, 'across');
         const gridBefore = structuredClone(grid);
         const cursorBefore = { ...cursor };

@@ -6,7 +6,7 @@ import {
   deriveCheckResultVM,
   derivePlayerShellVM,
 } from '../../../../src/ui/bindings/viewmodels/playerVM';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -25,7 +25,6 @@ import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { PlayerState, CheckResult, AnagramModalState } from '../../../../src/player/state/state';
-import type { Grid } from '../../../../src/domain/grid/Grid';
 
 function makeKey(): PuzzleKey {
   return PuzzleKey.try('00000000-0000-4000-8000-000000000000')!;
@@ -50,19 +49,19 @@ function puzzleWithMetadata(p: Puzzle, title: string, author: string): Puzzle {
 function setAnswerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridAccess.cellAt(grid, r, c);
+  const cell = Grid.cellAt(grid, r, c);
   const l = Letter.try(letter);
   if (l === null) throw new Error(`Invalid letter: ${letter}`);
-  return GridAccess.setCell(grid, r, c, Cell.setAnswerLetter(cell, l));
+  return Grid.setCell(grid, r, c, Cell.setAnswerLetter(cell, l));
 }
 
 function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridAccess.cellAt(grid, r, c);
+  const cell = Grid.cellAt(grid, r, c);
   const l = Letter.try(letter);
   if (l === null) throw new Error(`Invalid letter: ${letter}`);
-  return GridAccess.setCell(grid, r, c, Cell.setPlayerLetter(cell, l));
+  return Grid.setCell(grid, r, c, Cell.setPlayerLetter(cell, l));
 }
 
 function makeWord(opts: {
@@ -264,7 +263,7 @@ describe('derivePlayerToolbarVM', () => {
   it('derivePlayerToolbarVM: solving phase with cursor on a stray cell (no word) → canOpenAnagram=false', () => {
     let puzzle = makeBlankPuzzle(3);
     let grid = puzzle.grid;
-    grid = GridAccess.setCell(grid, Row.of(2), Col.of(1), Cell.black());
+    grid = Grid.setCell(grid, Row.of(2), Col.of(1), Cell.black());
     const words = Numbering.assign(grid, WordDerivation.derive(grid));
     puzzle = puzzleWithWords(puzzleWithGrid(puzzle, grid), words);
     const state = makeSolvingState({

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveCluePanelVM } from '../../../../src/ui/bindings/viewmodels/cluePanelVM';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -14,7 +14,7 @@ import { LengthPattern } from '../../../../src/domain/chain/LengthPattern';
 import { ChainIndex } from '../../../../src/domain/chain/ChainIndex';
 
 function blankGrid() {
-  return GridAccess.blank(GridSize.of(3));
+  return Grid.blank(GridSize.of(3));
 }
 
 function across1(): Word {

@@ -12,7 +12,7 @@ import { SeededRng } from '../../../fakes/SeededRng';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { Row } from '../../../../src/domain/grid/Row';
@@ -117,7 +117,7 @@ function invalidJson() {
 
 function nonBlankState() {
   const base = blankState();
-  const grid = GridAccess.setCell(
+  const grid = Grid.setCell(
     base.puzzle.grid,
     Row.of(0),
     Col.of(0),
@@ -136,11 +136,11 @@ function fillAllAnswerLetters(state: BuilderState): BuilderState {
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       const letter = LETTERS[(r * size + c) % LETTERS.length]!;
-      newGrid = GridAccess.setCell(
+      newGrid = Grid.setCell(
         newGrid,
         Row.of(r),
         Col.of(c),
-        Cell.setAnswerLetter(GridAccess.cellAt(newGrid, Row.of(r), Col.of(c)), letter),
+        Cell.setAnswerLetter(Grid.cellAt(newGrid, Row.of(r), Col.of(c)), letter),
       );
     }
   }
@@ -468,7 +468,7 @@ describe('export-complete', () => {
 
   it('missing-answer-letter violation emits a relevant toast message (includes row and col)', () => {
     const base = completeState(2);
-    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.white());
+    const grid = Grid.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.white());
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
     const result = handleExportComplete(state);

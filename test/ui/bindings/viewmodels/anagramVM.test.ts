@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveAnagramModalVM } from '../../../../src/ui/bindings/viewmodels/anagramVM';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -9,7 +9,6 @@ import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import { WordLength } from '../../../../src/domain/word/WordLength';
-import type { Grid } from '../../../../src/domain/grid/Grid';
 import type { Word } from '../../../../src/domain/word/Word';
 
 import type { AnagramModalState } from '../../../../src/player/state/state';
@@ -28,11 +27,11 @@ const CLOSED_BASELINE = {
 };
 
 function grid3x3(): Grid {
-  return GridAccess.blank(GridSize.of(3));
+  return Grid.blank(GridSize.of(3));
 }
 
 function grid4x4(): Grid {
-  return GridAccess.blank(GridSize.of(4));
+  return Grid.blank(GridSize.of(4));
 }
 
 function word3Across(): Word {
@@ -78,19 +77,19 @@ function word4DownTail(): Word {
 function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridAccess.cellAt(grid, r, c);
+  const cell = Grid.cellAt(grid, r, c);
   const l = Letter.try(letter);
   expect(l).not.toBeNull();
-  return GridAccess.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
+  return Grid.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
 }
 
 function setMarker(grid: Grid, row: number, col: number, flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridAccess.cellAt(grid, r, c);
+  const cell = Grid.cellAt(grid, r, c);
   const axis = flag.endsWith('right') ? 'right' : 'bottom';
   const separator = flag.startsWith('space') ? 'space' : 'hyphen';
-  return GridAccess.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
+  return Grid.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
 }
 
 function makeLetters(s: string): Letter[] {

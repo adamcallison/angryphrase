@@ -19,7 +19,7 @@ Forward-looking material, not a description of the current system. Companion to 
 
 **The real fix — the shape is settled, the placement is not.** The reuse decision belongs **inside the derivation**, because only the derivation knows what feeds it, and it can answer that from its own inputs by identity — with no change-description layer at all:
 
-- the state already carries the structure this needs: `GridAccess.setCell` copies one row and keeps the rest by reference, and `Puzzle.withGrid` keeps the `words` array, so "did this row change?" is a reference comparison, not a diff;
+- the state already carries the structure this needs: `Grid.setCell` copies one row and keeps the rest by reference, and `Puzzle.withGrid` keeps the `words` array, so "did this row change?" is a reference comparison, not a diff;
 - so a derivation that has its **previous input and output** can reuse a part when its own inputs are unchanged: for a grid row, the row's cells reference-equal, the word list reference-equal, the topology mask for that row equal, and no cell in the row able to have a different highlight. Copying the previous part preserves its object identity, so the renderer skips it — the identity-preserving merge is not needed for what is copied, only for what is genuinely re-derived (and that is a small part);
 - the scope is every view-model with a large tree, by the same pattern: the grid's rows, and the clue panel's entries (which depend on the words, the cell markers, the builder sub-mode and the highlight).
 
@@ -41,5 +41,5 @@ Forward-looking material, not a description of the current system. Companion to 
 
 The application is single-user, single-device by design; scale is not a concern. If forced:
 
-- **Large grids.** 25×25 is the max. Copying the grid on every edit is fine at this size (edits already copy only the touched row — `GridAccess.setCell` / `updateCells`); a much larger max grid would need a structural-sharing grid (e.g. row-vector immutable structure).
+- **Large grids.** 25×25 is the max. Copying the grid on every edit is fine at this size (edits already copy only the touched row — `Grid.setCell` / `updateCells`); a much larger max grid would need a structural-sharing grid (e.g. row-vector immutable structure).
 - **Many puzzles in localStorage.** Per-key progress keys can grow unbounded; no GC exists. If needed, a sweep on Player import could prune progress for keys no longer in any imported file.

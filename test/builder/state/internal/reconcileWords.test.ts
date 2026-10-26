@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { reconcileWords } from '../../../../src/builder/state/internal/reconcileWords';
 import { SeededRng } from '../../../fakes/SeededRng';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Row } from '../../../../src/domain/grid/Row';
@@ -13,7 +13,6 @@ import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { DerivedWord } from '../../../../src/domain/word/DerivedWord';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
-import type { Grid } from '../../../../src/domain/grid/Grid';
 
 function k(row: number, col: number, direction: Direction) {
   return { startRow: Row.of(row), startCol: Col.of(col), direction };
@@ -39,11 +38,11 @@ function derivedWord(
 }
 
 function blank(size = GridSize.DEFAULT): Grid {
-  return GridAccess.blank(size);
+  return Grid.blank(size);
 }
 
 function withBlack(grid: Grid, row: number, col: number): Grid {
-  return GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.black());
+  return Grid.setCell(grid, Row.of(row), Col.of(col), Cell.black());
 }
 
 function withBlacks(grid: Grid, cells: [number, number][]): Grid {
@@ -55,11 +54,11 @@ function withBlacks(grid: Grid, cells: [number, number][]): Grid {
 }
 
 function markerAt(grid: Grid, row: number, col: number): CellMarker {
-  return GridAccess.cellAt(grid, Row.of(row), Col.of(col)).marker;
+  return Grid.cellAt(grid, Row.of(row), Col.of(col)).marker;
 }
 
 function withMarker(grid: Grid, row: number, col: number, marker: CellMarker): Grid {
-  return GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(GridAccess.cellAt(grid, Row.of(row), Col.of(col)), marker));
+  return Grid.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(Grid.cellAt(grid, Row.of(row), Col.of(col)), marker));
 }
 
 function withRightFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
@@ -390,7 +389,7 @@ describe('reconcileWords', () => {
       'space',
     );
     const oldWords: Word[] = [w(aKey, 1, 2, 'A clue', bKey), w(bKey, 2, 2, 'B clue', null)];
-    const newGrid = GridAccess.setCell(oldGrid, Row.of(0), Col.of(2), Cell.white());
+    const newGrid = Grid.setCell(oldGrid, Row.of(0), Col.of(2), Cell.white());
     const newWords: DerivedWord[] = [derivedWord(aKey, 3, '', null), derivedWord(bKey, 2, '', null)];
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
@@ -409,7 +408,7 @@ describe('reconcileWords', () => {
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
-    expect(GridAccess.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(true);
+    expect(Grid.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(true);
     expect(markerAt(reconciledGrid, 0, 1).right).toBe('space');
   });
 
@@ -458,7 +457,7 @@ describe('reconcileWords', () => {
 
     const { grid: reconciledGrid } = reconcileWords(newGrid, oldWords, newWords, [], new SeededRng(1));
 
-    expect(GridAccess.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(false);
+    expect(Grid.cellAt(reconciledGrid, Row.of(0), Col.of(2)).black).toBe(false);
     expect(markerAt(reconciledGrid, 0, 2).right).toBe('none');
   });
 

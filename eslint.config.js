@@ -79,11 +79,11 @@ const config = [
     },
   },
   // Regression guard: ban non-null assertions in production code.
-  // Sanctioned exception: src/domain/grid/GridAccess.ts (raw-indexing leaf).
+  // Sanctioned exception: src/domain/grid/Grid.ts (raw-indexing leaf).
   // Intentional retain: src/main.ts uses a non-null assertion on the DOM API return (strict-null -- not noUncheckedIndexedAccess)
   {
     files: ['src/**/*.ts', 'src/**/*.svelte'],
-    ignores: ['src/domain/grid/GridAccess.ts'],
+    ignores: ['src/domain/grid/Grid.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'error'
     }

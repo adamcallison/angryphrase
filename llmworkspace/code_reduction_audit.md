@@ -278,7 +278,7 @@ dissolution added back the `isSelectable` implementation and its manifest lines.
 *quality* claim — one accessor module, one owner for the selectability rule — is met; its
 *quantity* claim was not. Leftovers: none; the sites not migrated are listed in the resolution's
 "Not addressed" table with their reasons, and the "friendlier name for the surviving accessor"
-question is recorded there as open.
+question is recorded there — closed by the later rename of `GridAccess` to `Grid` on 2026-10-26.
 
 ---
 

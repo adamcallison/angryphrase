@@ -6,7 +6,7 @@ import { CompletenessCheck } from '../puzzle/CompletenessCheck';
 import { GridSize } from '../grid/GridSize';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
-import { GridAccess } from '../grid/GridAccess';
+import { Grid } from '../grid/Grid';
 import { Cell } from '../grid/Cell';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellMarker as CellMarkerType } from '../grid/CellMarker';
@@ -22,7 +22,6 @@ import { ChainValidation } from '../chain/ChainValidation';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
 import { DisplacedClueId } from '../builder/DisplacedClueId';
-import type { Grid } from '../grid/Grid';
 
 export type PuzzleFileType = 'incomplete' | 'complete';
 
@@ -564,7 +563,7 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
       w.key.direction,
       Number(w.length) - 1,
     );
-    const cell = GridAccess.cellAt(grid, end.row, end.col);
+    const cell = Grid.cellAt(grid, end.row, end.col);
     if (!Cell.isWhite(cell)) continue;
 
     const axis = w.key.direction === 'across' ? 'right' : 'bottom';
@@ -574,7 +573,7 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
     }
   }
 
-  return GridAccess.updateCells(grid, updates);
+  return Grid.updateCells(grid, updates);
 }
 
 export const parsePuzzleShape = (

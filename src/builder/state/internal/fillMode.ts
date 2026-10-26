@@ -3,7 +3,7 @@ import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
-import { GridAccess } from '../../../domain/grid/GridAccess';
+import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
@@ -94,14 +94,14 @@ export function handleSetMarker(
   }
 
   const g = state.puzzle.grid;
-  const c = GridAccess.cellAt(g, state.cursor.row, state.cursor.col);
+  const c = Grid.cellAt(g, state.cursor.row, state.cursor.col);
   if (c.black) {
     return Result.ok(state);
   }
 
   const newMarker = CellMarker.write(c.marker, intent.axis, intent.separator);
   const newCell = Cell.setMarker(c, newMarker);
-  const newGrid = GridAccess.setCell(g, state.cursor.row, state.cursor.col, newCell);
+  const newGrid = Grid.setCell(g, state.cursor.row, state.cursor.col, newCell);
   const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
 
   return Result.ok({ ...state, puzzle: newPuzzle });

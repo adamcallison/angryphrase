@@ -3,7 +3,7 @@ import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
 import { parsePuzzle } from '../../../domain/format/v1Json';
-import { GridAccess } from '../../../domain/grid/GridAccess';
+import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { Row } from '../../../domain/grid/Row';
@@ -63,7 +63,7 @@ export function handleApplyLoadedProgress(
       const saved = savedRow[c];
       if (saved == null) continue;
 
-      const cell = GridAccess.cellAt(g, Row.of(r), Col.of(c));
+      const cell = Grid.cellAt(g, Row.of(r), Col.of(c));
       if (cell.black) continue;
 
       updates.push({ row: Row.of(r), col: Col.of(c), cell: Cell.setPlayerLetter(cell, saved) });
@@ -74,7 +74,7 @@ export function handleApplyLoadedProgress(
     return Result.ok(state);
   }
 
-  const newGrid = GridAccess.updateCells(g, updates);
+  const newGrid = Grid.updateCells(g, updates);
   return Result.ok({ ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) });
 }
 
@@ -131,7 +131,7 @@ export function handleConfirmResetPlayer(
   }
 
   const newPuzzle =
-    updates.length === 0 ? state.puzzle : Puzzle.withGrid(state.puzzle, GridAccess.updateCells(g, updates));
+    updates.length === 0 ? state.puzzle : Puzzle.withGrid(state.puzzle, Grid.updateCells(g, updates));
 
   return Result.withEvents(
     {

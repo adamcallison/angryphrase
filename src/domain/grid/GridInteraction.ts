@@ -1,11 +1,10 @@
-import type { Grid } from './Grid';
 import type { Row } from './Row';
 import type { Col } from './Col';
 import type { Cursor } from './Cursor';
 import type { Direction } from '../word/Direction';
 import type { Letter } from '../letter/Letter';
 import type { WordKey } from '../word/WordKey';
-import { GridAccess } from './GridAccess';
+import { Grid } from './Grid';
 import { WordTopology } from './WordTopology';
 import { Cell } from './Cell';
 import { Row as RowCtor } from './Row';
@@ -85,7 +84,7 @@ export const GridInteraction: {
     if (
       newRow !== null &&
       newCol !== null &&
-      GridAccess.withinBounds(grid, newRow, newCol) &&
+      Grid.withinBounds(grid, newRow, newCol) &&
       WordTopology.isSelectable(grid, newRow, newCol)
     ) {
       return { row: newRow, col: newCol, direction };
@@ -104,20 +103,20 @@ export const GridInteraction: {
       return null;
     }
 
-    const cell = GridAccess.cellAt(grid, cursor.row, cursor.col);
+    const cell = Grid.cellAt(grid, cursor.row, cursor.col);
     if (cell.black) {
       return null;
     }
 
     const newCell = slot.set(cell, letter);
-    const newGrid = GridAccess.setCell(grid, cursor.row, cursor.col, newCell);
+    const newGrid = Grid.setCell(grid, cursor.row, cursor.col, newCell);
 
     const { dr, dc } = DELTA[cursor.direction];
     const nextRow = RowCtor.of(Number(cursor.row) + dr);
     const nextCol = ColCtor.of(Number(cursor.col) + dc);
     let nextCursor: Cursor = cursor;
     if (
-      GridAccess.withinBounds(newGrid, nextRow, nextCol) &&
+      Grid.withinBounds(newGrid, nextRow, nextCol) &&
       WordTopology.isSelectable(newGrid, nextRow, nextCol)
     ) {
       nextCursor = { row: nextRow, col: nextCol, direction: cursor.direction };
@@ -131,13 +130,13 @@ export const GridInteraction: {
       return null;
     }
 
-    const cell = GridAccess.cellAt(grid, cursor.row, cursor.col);
+    const cell = Grid.cellAt(grid, cursor.row, cursor.col);
     if (cell.black) {
       return null;
     }
 
     if (slot.read(cell) !== null) {
-      const newGrid = GridAccess.setCell(
+      const newGrid = Grid.setCell(
         grid,
         cursor.row,
         cursor.col,
@@ -153,7 +152,7 @@ export const GridInteraction: {
     if (
       prevRow === null ||
       prevCol === null ||
-      !GridAccess.withinBounds(grid, prevRow, prevCol)
+      !Grid.withinBounds(grid, prevRow, prevCol)
     ) {
       return null;
     }
@@ -162,8 +161,8 @@ export const GridInteraction: {
       return null;
     }
 
-    const prevCell = GridAccess.cellAt(grid, prevRow, prevCol);
-    const newGrid = GridAccess.setCell(grid, prevRow, prevCol, slot.set(prevCell, null));
+    const prevCell = Grid.cellAt(grid, prevRow, prevCol);
+    const newGrid = Grid.setCell(grid, prevRow, prevCol, slot.set(prevCell, null));
     return { grid: newGrid, cursor: { row: prevRow, col: prevCol, direction: cursor.direction } };
   },
 };

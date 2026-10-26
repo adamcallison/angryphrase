@@ -3,7 +3,7 @@ import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { GridAccess } from '../../../domain/grid/GridAccess';
+import { Grid } from '../../../domain/grid/Grid';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
@@ -187,8 +187,8 @@ export function handleClearErrors(state: PlayerState): ReducerResult<PlayerState
   const incorrectCells = state.checkResult.incorrectCells;
   let newGrid = state.puzzle.grid;
   for (const { row, col } of incorrectCells) {
-    const cell = GridAccess.cellAt(newGrid, row, col);
-    newGrid = GridAccess.setCell(newGrid, row, col, Cell.setPlayerLetter(cell, null));
+    const cell = Grid.cellAt(newGrid, row, col);
+    newGrid = Grid.setCell(newGrid, row, col, Cell.setPlayerLetter(cell, null));
   }
   const newPuzzle = newGrid === state.puzzle.grid
     ? state.puzzle

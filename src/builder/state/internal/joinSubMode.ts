@@ -8,11 +8,10 @@ import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordKey } from '../../../domain/word/WordKey';
 import { DisplacedClue } from '../../../domain/builder/DisplacedClue';
 import { Direction } from '../../../domain/word/Direction';
-import { GridAccess } from '../../../domain/grid/GridAccess';
+import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellMarkerAxis } from '../../../domain/grid/CellMarker';
-import type { Grid } from '../../../domain/grid/Grid';
 import { ChainAdmission } from '../../../domain/chain/ChainAdmission';
 import type { Row } from '../../../domain/grid/Row';
 import type { Col } from '../../../domain/grid/Col';
@@ -35,19 +34,19 @@ function isBoundaryPairEmpty(marker: CellMarker, direction: Direction): boolean 
 
 function materializeJoinMarker(grid: Grid, source: Word): Grid {
   const { row, col } = sourceLastCell(source);
-  const cell = GridAccess.cellAt(grid, row, col);
+  const cell = Grid.cellAt(grid, row, col);
   if (!Cell.isWhite(cell)) return grid;
   if (!isBoundaryPairEmpty(cell.marker, source.key.direction)) return grid;
   const newMarker = CellMarker.write(cell.marker, directionAxis(source.key.direction), 'space');
-  return GridAccess.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
+  return Grid.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
 }
 
 function clearBoundaryMarker(grid: Grid, source: Word): Grid {
   const { row, col } = sourceLastCell(source);
-  const cell = GridAccess.cellAt(grid, row, col);
+  const cell = Grid.cellAt(grid, row, col);
   if (!Cell.isWhite(cell)) return grid;
   const newMarker = CellMarker.write(cell.marker, directionAxis(source.key.direction), 'none');
-  return GridAccess.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
+  return Grid.setCell(grid, row, col, Cell.setMarker(cell, newMarker));
 }
 
 export function handleBeginJoin(

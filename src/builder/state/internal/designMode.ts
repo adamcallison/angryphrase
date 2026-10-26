@@ -3,7 +3,7 @@ import type { BuilderIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
-import { GridAccess } from '../../../domain/grid/GridAccess';
+import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { WordDerivation } from '../../../domain/word/WordDerivation';
@@ -20,13 +20,13 @@ export function handleToggleDesignCell(
     return Result.ok(state);
   }
 
-  if (!GridAccess.withinBounds(state.puzzle.grid, intent.row, intent.col)) {
+  if (!Grid.withinBounds(state.puzzle.grid, intent.row, intent.col)) {
     return Result.ok(state);
   }
 
-  const currentCell = GridAccess.cellAt(state.puzzle.grid, intent.row, intent.col);
+  const currentCell = Grid.cellAt(state.puzzle.grid, intent.row, intent.col);
   const newCell = currentCell.black ? Cell.white() : Cell.black();
-  const newGrid = GridAccess.setCell(state.puzzle.grid, intent.row, intent.col, newCell);
+  const newGrid = Grid.setCell(state.puzzle.grid, intent.row, intent.col, newCell);
 
   const newDerived = WordDerivation.derive(newGrid);
   const { grid: reconciledGrid, words, displacedClues, events } = reconcileWords(
@@ -62,7 +62,7 @@ export function handleChangeGridSize(
     return Result.ok(state);
   }
 
-  const newGrid = GridAccess.blank(intent.size);
+  const newGrid = Grid.blank(intent.size);
   const newWords = Numbering.assign(newGrid, WordDerivation.derive(newGrid));
   const newPuzzle = Puzzle.withWords(Puzzle.withGrid(state.puzzle, newGrid), newWords);
 

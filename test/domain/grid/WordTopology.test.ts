@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
-import type { Grid } from '../../../src/domain/grid/Grid';
-import { GridAccess } from '../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import type { WordRun } from '../../../src/domain/grid/WordTopology';
@@ -12,11 +11,11 @@ import type { Direction } from '../../../src/domain/word/Direction';
 
 describe('WordTopology', () => {
   function blankGrid(size: number): Grid {
-    return GridAccess.blank(GridSize.of(size));
+    return Grid.blank(GridSize.of(size));
   }
 
   function setCell(g: Grid, row: number, col: number, cell: CellType): Grid {
-    return GridAccess.setCell(g, Row.of(row), Col.of(col), cell);
+    return Grid.setCell(g, Row.of(row), Col.of(col), cell);
   }
 
   function setBlack(g: Grid, row: number, col: number): Grid {
@@ -120,23 +119,23 @@ describe('WordTopology', () => {
         for (const r of runs) {
           expect(r.direction).toBe('across');
           expect(r.length).toBeGreaterThanOrEqual(1);
-          expect(Cell.isWhite(GridAccess.cellAt(g, r.startRow, r.startCol))).toBe(true);
+          expect(Cell.isWhite(Grid.cellAt(g, r.startRow, r.startCol))).toBe(true);
           const leftCol = Number(r.startCol) - 1;
           if (leftCol >= 0) {
-            expect(Cell.isWhite(GridAccess.cellAt(g, r.startRow, Col.of(leftCol)))).toBe(false);
+            expect(Cell.isWhite(Grid.cellAt(g, r.startRow, Col.of(leftCol)))).toBe(false);
           }
           let whites = 0;
           let c = Number(r.startCol);
           while (
             c < g.length &&
-            Cell.isWhite(GridAccess.cellAt(g, r.startRow, Col.of(c)))
+            Cell.isWhite(Grid.cellAt(g, r.startRow, Col.of(c)))
           ) {
             whites++;
             c++;
           }
           expect(r.length).toBe(whites);
           if (c < g.length) {
-            expect(Cell.isWhite(GridAccess.cellAt(g, r.startRow, Col.of(c)))).toBe(false);
+            expect(Cell.isWhite(Grid.cellAt(g, r.startRow, Col.of(c)))).toBe(false);
           }
         }
       });
@@ -351,7 +350,7 @@ describe('WordTopology', () => {
       g = setBlack(g, 2, 1);
       g = setBlack(g, 2, 2);
 
-      expect(Cell.isWhite(GridAccess.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
+      expect(Cell.isWhite(Grid.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
       expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(false);
     });
 
@@ -378,7 +377,7 @@ describe('WordTopology', () => {
       g = setBlack(g, 1, 2);
       g = setBlack(g, 2, 1);
 
-      expect(Cell.isWhite(GridAccess.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
+      expect(Cell.isWhite(Grid.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
       expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(false);
     });
 

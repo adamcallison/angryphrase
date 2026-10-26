@@ -6,7 +6,7 @@ import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
 
 import { Col } from '../../../src/domain/grid/Col';
-import { GridAccess } from '../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import { Letter } from '../../../src/domain/letter/Letter';
@@ -17,14 +17,14 @@ import { SeededRng } from '../../fakes/SeededRng';
 
 describe('Anagram', () => {
   function blankGrid(size: number): CellType[][] {
-    return GridAccess.blank(GridSize.of(size));
+    return Grid.blank(GridSize.of(size));
   }
 
   function setPlayerLetter(grid: CellType[][], row: number, col: number, ch: string): CellType[][] {
-    const cell = GridAccess.cellAt(grid, Row.of(row), Col.of(col));
+    const cell = Grid.cellAt(grid, Row.of(row), Col.of(col));
     const letter = Letter.try(ch);
     if (letter === null) throw new Error(`Invalid letter: ${ch}`);
-    return GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setPlayerLetter(cell, letter));
+    return Grid.setCell(grid, Row.of(row), Col.of(col), Cell.setPlayerLetter(cell, letter));
   }
 
   function setMarkerFlag(
@@ -35,8 +35,8 @@ describe('Anagram', () => {
   ): CellType[][] {
     const axis = flag.endsWith('right') ? 'right' : 'bottom';
     const separator = flag.startsWith('space') ? 'space' : 'hyphen';
-    const cell = GridAccess.cellAt(grid, Row.of(row), Col.of(col));
-    return GridAccess.setCell(
+    const cell = Grid.cellAt(grid, Row.of(row), Col.of(col));
+    return Grid.setCell(
       grid,
       Row.of(row),
       Col.of(col),
@@ -107,7 +107,7 @@ describe('Anagram', () => {
 
   it('buildWordModel throws when a word cell is black', () => {
     let grid = blankGrid(5);
-    grid = GridAccess.setCell(grid, Row.of(0), Col.of(2), Cell.black());
+    grid = Grid.setCell(grid, Row.of(0), Col.of(2), Cell.black());
 
     const word = buildWord({ length: 5 });
     expect(() => Anagram.buildWordModel(grid, word)).toThrow(

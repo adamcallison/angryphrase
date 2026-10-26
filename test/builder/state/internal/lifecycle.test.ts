@@ -4,7 +4,7 @@ import { BuilderState } from '../../../../src/builder/state/state';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -22,7 +22,7 @@ function blankState() {
 
 function nonBlankState() {
   const base = blankState();
-  const grid = GridAccess.setCell(
+  const grid = Grid.setCell(
     base.puzzle.grid,
     Row.of(0),
     Col.of(0),
@@ -31,7 +31,7 @@ function nonBlankState() {
   return { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 }
 
-function isBlankGrid(grid: ReturnType<typeof GridAccess.blank>): boolean {
+function isBlankGrid(grid: ReturnType<typeof Grid.blank>): boolean {
   return grid.every((row) => row.every((cell) => Cell.isWhite(cell)));
 }
 

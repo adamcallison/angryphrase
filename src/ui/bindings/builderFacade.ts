@@ -6,7 +6,7 @@ import type { AppStore } from './appStore.svelte';
 import { Row } from '../../domain/grid/Row';
 import { Col } from '../../domain/grid/Col';
 import { GridSize } from '../../domain/grid/GridSize';
-import { GridAccess } from '../../domain/grid/GridAccess';
+import { Grid } from '../../domain/grid/Grid';
 import { Title } from '../../domain/puzzle/Title';
 import { Author } from '../../domain/puzzle/Author';
 import { CellMarker } from '../../domain/grid/CellMarker';
@@ -107,7 +107,7 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
         dispatch({ target: 'builder', kind: 'set-marker', axis, separator: 'none' });
         return;
       }
-      const cell = GridAccess.cellAt(state.puzzle.grid, cursor.row, cursor.col);
+      const cell = Grid.cellAt(state.puzzle.grid, cursor.row, cursor.col);
       const current = CellMarker.read(cell.marker, axis);
       const newSeparator = current === separator ? 'none' : separator;
       dispatch({ target: 'builder', kind: 'set-marker', axis, separator: newSeparator });

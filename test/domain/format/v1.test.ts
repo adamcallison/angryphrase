@@ -16,7 +16,7 @@ import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { Title } from '../../../src/domain/puzzle/Title';
 import { Author } from '../../../src/domain/puzzle/Author';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridAccess } from '../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
@@ -126,10 +126,10 @@ function buildPuzzle(
   const key = PuzzleKey.try(VALID_UUID)!;
   let p = Puzzle.blank(size, key);
   let grid = p.grid;
-  grid = GridAccess.setCell(grid, Row.of(0), Col.of(0), setAnswerLetterOrNull(Cell.white(), letters[0]));
-  grid = GridAccess.setCell(grid, Row.of(0), Col.of(1), setAnswerLetterOrNull(Cell.white(), letters[1]));
-  grid = GridAccess.setCell(grid, Row.of(1), Col.of(0), Cell.black());
-  grid = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.black());
+  grid = Grid.setCell(grid, Row.of(0), Col.of(0), setAnswerLetterOrNull(Cell.white(), letters[0]));
+  grid = Grid.setCell(grid, Row.of(0), Col.of(1), setAnswerLetterOrNull(Cell.white(), letters[1]));
+  grid = Grid.setCell(grid, Row.of(1), Col.of(0), Cell.black());
+  grid = Grid.setCell(grid, Row.of(1), Col.of(1), Cell.black());
   p = Puzzle.withGrid(p, grid);
   const word: Word = {
     key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
@@ -608,7 +608,7 @@ describe('parsePuzzle', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const cell = GridAccess.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    const cell = Grid.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
     expect(cell.marker.right).toBe('space');
   });
 
@@ -618,7 +618,7 @@ describe('parsePuzzle', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const cell = GridAccess.cellAt(result.puzzle.grid, Row.of(1), Col.of(0));
+    const cell = Grid.cellAt(result.puzzle.grid, Row.of(1), Col.of(0));
     expect(cell.marker.bottom).toBe('space');
   });
 
@@ -628,7 +628,7 @@ describe('parsePuzzle', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const cell = GridAccess.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    const cell = Grid.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
     expect(cell.marker.right).toBe('hyphen');
   });
 
@@ -638,7 +638,7 @@ describe('parsePuzzle', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const cell = GridAccess.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
+    const cell = Grid.cellAt(result.puzzle.grid, Row.of(0), Col.of(2));
     expect(cell.marker.right).toBe('none');
   });
 
@@ -686,10 +686,10 @@ describe('serializeIncomplete', () => {
     const size = GridSize.of(2);
     let p = Puzzle.blank(size, key);
     let grid = p.grid;
-    grid = GridAccess.setCell(grid, Row.of(0), Col.of(0), Cell.white());
-    grid = GridAccess.setCell(grid, Row.of(0), Col.of(1), Cell.setAnswerLetter(Cell.white(), Letter.try('A')));
-    grid = GridAccess.setCell(grid, Row.of(1), Col.of(0), Cell.black());
-    grid = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.black());
+    grid = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.white());
+    grid = Grid.setCell(grid, Row.of(0), Col.of(1), Cell.setAnswerLetter(Cell.white(), Letter.try('A')));
+    grid = Grid.setCell(grid, Row.of(1), Col.of(0), Cell.black());
+    grid = Grid.setCell(grid, Row.of(1), Col.of(1), Cell.black());
     p = Puzzle.withGrid(p, grid);
     const word: Word = {
       key: { startRow: Row.of(0), startCol: Col.of(0), direction: 'across' },
@@ -732,7 +732,7 @@ describe('serializeIncomplete', () => {
     expect(roundTrip.ok).toBe(true);
     if (!roundTrip.ok) return;
 
-    const cell = GridAccess.cellAt(roundTrip.puzzle.grid, Row.of(0), Col.of(2));
+    const cell = Grid.cellAt(roundTrip.puzzle.grid, Row.of(0), Col.of(2));
     expect(cell.marker.right).toBe('none');
   });
 });
@@ -757,8 +757,8 @@ describe('serializeComplete', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.puzzle.key).toBe(PuzzleKey.try(VALID_UUID));
-    expect(GridAccess.cellAt(result.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(Letter.try('C'));
-    expect(GridAccess.cellAt(result.puzzle.grid, Row.of(0), Col.of(1)).answerLetter).toBe(Letter.try('D'));
+    expect(Grid.cellAt(result.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(Letter.try('C'));
+    expect(Grid.cellAt(result.puzzle.grid, Row.of(0), Col.of(1)).answerLetter).toBe(Letter.try('D'));
     expect(result.puzzle.words[0]!.clue).toBe('Round clue');
   });
 });

@@ -14,7 +14,7 @@ import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
-import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { Grid } from '../../../../src/domain/grid/Grid';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
@@ -41,19 +41,19 @@ function makeState(
   const base = BuilderState.blank(gridSize, PuzzleKey.generate(new SeededRng(1)));
   let grid = base.puzzle.grid;
   for (const [r, c] of blackCells) {
-    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+    grid = Grid.setCell(grid, Row.of(r), Col.of(c), Cell.black());
   }
   for (const [r, c, letter] of letters) {
     const l = Letter.try(letter);
     if (l === null) continue;
-    const cell = GridAccess.cellAt(grid, Row.of(r), Col.of(c));
+    const cell = Grid.cellAt(grid, Row.of(r), Col.of(c));
     if (cell.black) continue;
-    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, l));
+    grid = Grid.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, l));
   }
   for (const [r, c, marker] of markers) {
-    const cell = GridAccess.cellAt(grid, Row.of(r), Col.of(c));
+    const cell = Grid.cellAt(grid, Row.of(r), Col.of(c));
     if (cell.black) continue;
-    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.setMarker(cell, marker));
+    grid = Grid.setCell(grid, Row.of(r), Col.of(c), Cell.setMarker(cell, marker));
   }
   const builtCursor: Cursor = cursor
     ? {
@@ -370,7 +370,7 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
     );
     expect(result.state.cursor).toEqual({
@@ -389,7 +389,7 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
     );
   });
@@ -441,7 +441,7 @@ describe('handleTypeLetter', () => {
 
     const result = handleTypeLetter(state, intent);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(4)).answerLetter).toEqual(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(4)).answerLetter).toEqual(
       Letter.try('A'),
     );
   });
@@ -495,7 +495,7 @@ describe('handleBackspace', () => {
     ]);
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -510,7 +510,7 @@ describe('handleBackspace', () => {
     ]);
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -541,7 +541,7 @@ describe('handleBackspace', () => {
     ]);
     const result = handleBackspace(state);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -587,7 +587,7 @@ describe('handleSetMarker', () => {
 
     const result = handleSetMarker(state, intent);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
       'space',
     );
     expect(result.events).toEqual([]);
@@ -602,7 +602,7 @@ describe('handleSetMarker', () => {
 
     const result = handleSetMarker(state, intent);
 
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
       'space',
     );
     expect(result.events).toEqual([]);
@@ -616,7 +616,7 @@ describe('handleSetMarker', () => {
     const intent: BuilderIntent = { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'hyphen' };
 
     const result = handleSetMarker(state, intent);
-    const newMarker = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
+    const newMarker = Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker;
 
     expect(newMarker.right).toBe('hyphen');
     expect(newMarker.bottom).toBe('space');
@@ -629,7 +629,7 @@ describe('handleSetMarker', () => {
     const result = handleSetMarker(state, intent);
 
     expect(result.state.puzzle.grid).not.toBe(state.puzzle.grid);
-    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+    expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
       'space',
     );
   });

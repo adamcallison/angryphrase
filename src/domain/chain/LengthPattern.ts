@@ -1,6 +1,5 @@
-import type { Grid } from '../grid/Grid';
 import type { Word } from '../word/Word';
-import { GridAccess } from '../grid/GridAccess';
+import { Grid } from '../grid/Grid';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import { WordGeometry } from '../word/WordGeometry';
@@ -15,7 +14,7 @@ function separatorAt(grid: Grid, w: Word, cells: readonly WordCell[], offset: nu
     throw new Error('LengthPattern.separatorAt: offset out of range');
   }
   const axis = w.key.direction === 'across' ? 'right' : 'bottom';
-  return CellMarker.read(GridAccess.cellAt(grid, cell.row, cell.col).marker, axis);
+  return CellMarker.read(Grid.cellAt(grid, cell.row, cell.col).marker, axis);
 }
 
 function appendSeparator(pieces: string[], run: number, separator: CellSeparator): number {
