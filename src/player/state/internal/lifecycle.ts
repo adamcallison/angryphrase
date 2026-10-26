@@ -3,7 +3,7 @@ import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
 import { parsePuzzle } from '../../../domain/format/v1Json';
-import { GridOps } from '../../../domain/grid/GridOps';
+import { GridAccess } from '../../../domain/grid/GridAccess';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { Row } from '../../../domain/grid/Row';
@@ -63,7 +63,7 @@ export function handleApplyLoadedProgress(
       const saved = savedRow[c];
       if (saved == null) continue;
 
-      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
+      const cell = GridAccess.cellAt(g, Row.of(r), Col.of(c));
       if (cell.black) continue;
 
       updates.push({ row: Row.of(r), col: Col.of(c), cell: Cell.setPlayerLetter(cell, saved) });
@@ -74,7 +74,7 @@ export function handleApplyLoadedProgress(
     return Result.ok(state);
   }
 
-  const newGrid = GridOps.updateCells(g, updates);
+  const newGrid = GridAccess.updateCells(g, updates);
   return Result.ok({ ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) });
 }
 
@@ -121,11 +121,9 @@ export function handleConfirmResetPlayer(
   }
 
   const g = state.puzzle.grid;
-  const size = g.length;
   const updates: { row: Row; col: Col; cell: Cell }[] = [];
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
+  for (const [r, row] of g.entries()) {
+    for (const [c, cell] of row.entries()) {
       if (!cell.black && cell.playerLetter !== null) {
         updates.push({ row: Row.of(r), col: Col.of(c), cell: Cell.setPlayerLetter(cell, null) });
       }
@@ -133,7 +131,7 @@ export function handleConfirmResetPlayer(
   }
 
   const newPuzzle =
-    updates.length === 0 ? state.puzzle : Puzzle.withGrid(state.puzzle, GridOps.updateCells(g, updates));
+    updates.length === 0 ? state.puzzle : Puzzle.withGrid(state.puzzle, GridAccess.updateCells(g, updates));
 
   return Result.withEvents(
     {

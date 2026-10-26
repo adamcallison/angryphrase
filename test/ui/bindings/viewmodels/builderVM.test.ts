@@ -9,7 +9,7 @@ import { BuilderState } from '../../../../src/builder/state/state';
 import type { BuilderMode, BuilderSubMode } from '../../../../src/builder/state/state';
 import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
 import { Cell } from '../../../../src/domain/grid/Cell';
@@ -44,17 +44,17 @@ function stateWithGrid(state: BuilderState, grid: Grid): BuilderState {
 
 function stateWithAnswerLetter(state: BuilderState, row: number, col: number, letter: string): BuilderState {
   const grid = state.puzzle.grid;
-  const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
+  const cell = GridAccess.cellAt(grid, Row.of(row), Col.of(col));
   const l = Letter.try(letter);
   if (l === null) throw new Error(`Invalid letter: ${letter}`);
-  const newGrid = GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setAnswerLetter(cell, l));
+  const newGrid = GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setAnswerLetter(cell, l));
   return stateWithGrid(state, newGrid);
 }
 
 function stateWithCellMarker(state: BuilderState, row: number, col: number, marker: CellMarkerType): BuilderState {
   const grid = state.puzzle.grid;
-  const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
-  const newGrid = GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(cell, marker));
+  const cell = GridAccess.cellAt(grid, Row.of(row), Col.of(col));
+  const newGrid = GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(cell, marker));
   return stateWithGrid(state, newGrid);
 }
 

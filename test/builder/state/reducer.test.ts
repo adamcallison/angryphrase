@@ -11,7 +11,7 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { WordKey } from '../../../src/domain/word/WordKey';
@@ -37,7 +37,7 @@ describe('reduceBuilder', () => {
     const base = blank();
     let grid = base.puzzle.grid;
     for (const [r, c] of blackCells) {
-      grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+      grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
     }
     return {
       ...base,
@@ -61,11 +61,11 @@ describe('reduceBuilder', () => {
     let grid = base.puzzle.grid;
     for (let r = 0; r < grid.length; r++) {
       for (let c = 0; c < grid.length; c++) {
-        grid = GridOps.setCell(
+        grid = GridAccess.setCell(
           grid,
           Row.of(r),
           Col.of(c),
-          Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(r), Col.of(c)), Letter.try('A')!),
+          Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(r), Col.of(c)), Letter.try('A')!),
         );
       }
     }
@@ -173,7 +173,7 @@ describe('reduceBuilder', () => {
   it('request-switch-to-design is delegated: emits modal-request when not blank', () => {
     const base = blank();
     const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'request-switch-to-design' }, deps);
@@ -191,7 +191,7 @@ describe('reduceBuilder', () => {
   it('confirm-switch-to-design is delegated: unconditionally switches to design', () => {
     const base = blank();
     const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
     const state = {
       ...base,
       mode: 'fill' as const,
@@ -243,7 +243,7 @@ describe('reduceBuilder', () => {
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'type-letter', letter: Letter.try('A')! }, deps);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toEqual(
       Letter.try('A'),
     );
     expect(result.state.cursor).toEqual({
@@ -256,7 +256,7 @@ describe('reduceBuilder', () => {
 
   it('backspace is delegated to fillMode', () => {
     const base = fillState([], { row: 0, col: 0, direction: 'across' });
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       base.puzzle.grid,
       Row.of(0),
       Col.of(0),
@@ -266,7 +266,7 @@ describe('reduceBuilder', () => {
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'backspace' }, deps);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBeNull();
     expect(result.state.cursor).toEqual({
       row: Row.of(0),
       col: Col.of(0),
@@ -280,7 +280,7 @@ describe('reduceBuilder', () => {
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'set-marker', axis: 'right', separator: 'space' }, deps);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).marker.right).toBe(
       'space',
     );
     expect(result.state.puzzle).not.toBe(state.puzzle);
@@ -478,7 +478,7 @@ describe('reduceBuilder', () => {
   it('request-import-puzzle is delegated: non-blank state emits modal-request', () => {
     const base = blank();
     const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
     const json = validImportJson();
 
@@ -497,7 +497,7 @@ describe('reduceBuilder', () => {
   it('confirm-import-puzzle is delegated: executes unconditionally', () => {
     const base = blank();
     const letter = Letter.try('A')!;
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), letter));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
     const json = validImportJson();
 
@@ -549,7 +549,7 @@ describe('reduceBuilder', () => {
 
   it('request-reset-builder is delegated: non-blank state emits modal-request', () => {
     const base = blank();
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'request-reset-builder' }, deps);
@@ -566,7 +566,7 @@ describe('reduceBuilder', () => {
 
   it('confirm-reset-builder is delegated: executes unconditionally', () => {
     const base = blank();
-    const grid = GridOps.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
+    const grid = GridAccess.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(Cell.white(), Letter.try('A')!));
     const state = { ...base, mode: 'fill' as const, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
     const result = reduceBuilder(state, { target: 'builder', kind: 'confirm-reset-builder' }, deps);

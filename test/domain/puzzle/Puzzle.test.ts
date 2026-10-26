@@ -4,7 +4,7 @@ import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Title } from '../../../src/domain/puzzle/Title';
 import { Author } from '../../../src/domain/puzzle/Author';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
@@ -45,7 +45,7 @@ describe('Puzzle', () => {
 
     expect(p.key).toBe(key);
     expect(p.gridSize).toBe(size);
-    expect(p.grid).toEqual(GridOps.blank(size));
+    expect(p.grid).toEqual(GridAccess.blank(size));
     const expected = Numbering.assign(p.grid, WordDerivation.derive(p.grid));
     expect(p.words).toStrictEqual(expected);
     expect(p.title).toBe(Title.of(''));
@@ -60,8 +60,8 @@ describe('Puzzle', () => {
   it('isBlank returns false when any answer letter is set', () => {
     const p = Puzzle.blank(GridSize.of(3), makeKey());
     const grid = p.grid;
-    const cell = GridOps.cellAt(grid, Row.of(1), Col.of(1));
-    const newGrid = GridOps.setCell(
+    const cell = GridAccess.cellAt(grid, Row.of(1), Col.of(1));
+    const newGrid = GridAccess.setCell(
       grid,
       Row.of(1),
       Col.of(1),
@@ -100,7 +100,7 @@ describe('Puzzle', () => {
 
   it('withGrid returns a new Puzzle with the replaced grid', () => {
     const p = Puzzle.blank(GridSize.of(3), makeKey());
-    const newGrid = GridOps.blank(GridSize.of(4));
+    const newGrid = GridAccess.blank(GridSize.of(4));
     const p2 = Puzzle.withGrid(p, newGrid);
 
     expect(p2.grid).toBe(newGrid);
@@ -114,7 +114,7 @@ describe('Puzzle', () => {
 
   it('withGrid re-syncs gridSize from g.length when grid differs in size from p.gridSize', () => {
     const p = Puzzle.blank(GridSize.of(3), makeKey());
-    const newGrid = GridOps.blank(GridSize.of(5));
+    const newGrid = GridAccess.blank(GridSize.of(5));
     const p2 = Puzzle.withGrid(p, newGrid);
 
     expect(p2.gridSize).toBe(GridSize.of(5));
@@ -151,7 +151,7 @@ describe('Puzzle', () => {
     const originalTitle = p.title;
     const originalAuthor = p.author;
 
-    const newGrid = GridOps.blank(GridSize.of(4));
+    const newGrid = GridAccess.blank(GridSize.of(4));
     const newWords = [makeWord(0, 0, 'across', '')];
     const newTitle = Title.of('T');
     const newAuthor = Author.of('A');

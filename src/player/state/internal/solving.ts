@@ -3,7 +3,7 @@ import type { Cursor } from '../../../domain/grid/Cursor';
 import type { PlayerIntent } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
-import { GridOps } from '../../../domain/grid/GridOps';
+import { GridAccess } from '../../../domain/grid/GridAccess';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
@@ -150,10 +150,8 @@ export function handleCheck(state: PlayerState): ReducerResult<PlayerState> {
   const incorrectCells: { row: Row; col: Col }[] = [];
   const emptyCells: { row: Row; col: Col }[] = [];
 
-  const size = g.length;
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const cell = GridOps.cellAt(g, Row.of(r), Col.of(c));
+  for (const [r, row] of g.entries()) {
+    for (const [c, cell] of row.entries()) {
       if (cell.black) continue;
       if (cell.playerLetter === null) {
         emptyCells.push({ row: Row.of(r), col: Col.of(c) });
@@ -189,8 +187,8 @@ export function handleClearErrors(state: PlayerState): ReducerResult<PlayerState
   const incorrectCells = state.checkResult.incorrectCells;
   let newGrid = state.puzzle.grid;
   for (const { row, col } of incorrectCells) {
-    const cell = GridOps.cellAt(newGrid, row, col);
-    newGrid = GridOps.setCell(newGrid, row, col, Cell.setPlayerLetter(cell, null));
+    const cell = GridAccess.cellAt(newGrid, row, col);
+    newGrid = GridAccess.setCell(newGrid, row, col, Cell.setPlayerLetter(cell, null));
   }
   const newPuzzle = newGrid === state.puzzle.grid
     ? state.puzzle

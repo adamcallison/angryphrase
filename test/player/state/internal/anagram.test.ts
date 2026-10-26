@@ -12,7 +12,7 @@ import type { PlayerIntent } from '../../../../src/player/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
@@ -26,10 +26,10 @@ import type { Direction } from '../../../../src/domain/word/Direction';
 
 type SolvingPlayerState = Extract<PlayerStateType, { phase: 'solving' }>;
 
-function makeGrid(size: number, blackCells: [number, number][]): ReturnType<typeof GridOps.blank> {
-  let grid = GridOps.blank(GridSize.of(size));
+function makeGrid(size: number, blackCells: [number, number][]): ReturnType<typeof GridAccess.blank> {
+  let grid = GridAccess.blank(GridSize.of(size));
   for (const [r, c] of blackCells) {
-    grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
   }
   return grid;
 }
@@ -82,8 +82,8 @@ function withPlayerLetter(
   letter: string,
 ): SolvingPlayerState {
   const g = state.puzzle.grid;
-  const cell = GridOps.cellAt(g, Row.of(row), Col.of(col));
-  const newG = GridOps.setCell(
+  const cell = GridAccess.cellAt(g, Row.of(row), Col.of(col));
+  const newG = GridAccess.setCell(
     g,
     Row.of(row),
     Col.of(col),

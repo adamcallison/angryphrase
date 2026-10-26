@@ -10,7 +10,7 @@ Conventions: no line-number references (they rot); functions, modules, and test 
 The house process for an entry is the one recorded in `archive/architecture_smell_resolutions.md`
 (Appendix — "Resolution process (gates)"), applied to audit items instead of smell findings.
 
-Resolved so far: O2 (brand-type boilerplate), O3 (delete dead / test-only API surface).
+Resolved so far: O2 (brand-type boilerplate), O3 (delete dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the grid scan sites).
 
 ---
 
@@ -241,15 +241,17 @@ list (gone entirely — the unions are the list). Touch costs that change:
 - **Comparing grids** in tests uses `toEqual` plus an independent snapshot (`structuredClone`) rather
   than a production `clone`/`equals` pair; the WordTopology immutability case, which previously compared
   the grid with itself, now compares against a real snapshot.
-- **Unchanged:** the grid's 88 call sites still go through `GridOps` (its dissolution is O4's),
-  `Anagram.validateChainInput` keeps its name (O17.1's). The `Position` brand existed at the time of
-  this change and was removed afterwards by O2 — together with the dead `AnagramEntry.position` field.
+- **Unchanged:** the grid's call sites still went through `GridOps` at the time of this change
+  (its dissolution is O4's, and O4 dissolved it on 2026-10-26 — the "88 call sites" figure quoted
+  here was already stale; the wrapper actually had 381), `Anagram.validateChainInput` keeps its name
+  (O17.1's). The `Position` brand existed at the time of this change and was removed afterwards by
+  O2 — together with the dead `AnagramEntry.position` field.
 
 ### Not addressed
 
 | Site | Reason | Landing site |
 |---|---|---|
-| `GridOps` module dissolution (the 5 leaf-accessor re-exports and `isSelectable`) | O3 removes the dead members only; the module itself is dissolved by O4, which also moves `isSelectable` to `WordTopology` | audit O4 |
+| `GridOps` module dissolution (the 5 leaf-accessor re-exports and `isSelectable`) | O3 removes the dead members only; the module itself is dissolved by O4, which also moves `isSelectable` to `WordTopology` | closed by audit O4 (2026-10-26) |
 | `domain/anagram/Position.ts` deletion (`Position` brand → plain `number`) | O3 removes `Position.try`/`Position.equals`; the brand itself was removed by O2 — together with the dead `AnagramEntry.position` field | closed by audit O2 (2026-10-26) |
 | `Anagram.validateChainInput` → `Anagram.validate` rename | O3 removes the dead word-form entry point; the rename belongs to O17.1 | audit O17.1 |
 | S26 `Anagram.buildWordModel` | retained: live internal caller (`buildChainModel`) and direct test consumers | — (closed by decision, not deferred) |
@@ -393,5 +395,150 @@ Test-side sites — a production change is not complete until the tree that cons
 | S21 `Letter`'s constructor | not an integer brand: it case-folds, validates A–Z, and owns `from`/`equals` — the integer-range factory does not fit it | — (closed by decision, not deferred) |
 | S22 `DurationMs` | the audit lists it as a factory candidate, but it has no constructor — O3 removed its `try`/`of` and only `DEFAULT` remains | — (closed by decision, not deferred) |
 | the audit's O2.1 — deleting the `Title`/`Author` brands | declined: it trades the title/author distinction and architecture.md §2 principle 4 for 14 production lines | — (closed by human decision, recorded in the audit's status line) |
-| S26 `GridOps` module dissolution | out of this item's scope | audit O4 |
+| S26 `GridOps` module dissolution | out of this item's scope | closed by audit O4 (2026-10-26) |
 | `Anagram.validateChainInput` → `Anagram.validate` rename | out of this item's scope | audit O17.1 |
+
+---
+
+## O4 — Dissolve the `GridOps` wrapper layer; array-iteration rewrite of the grid scan sites — resolved 2026-10-26
+
+### The item (recap)
+
+`code_reduction_audit.md` O4 has two parts (est. −150 LOC):
+
+1. **Dissolve the wrapper.** After O3 deleted `neighbours`, `neighboursInDirection`, `equals` and `clone`, the item observes that `src/domain/grid/GridOps.ts` is left with five pure delegations to `GridAccess` (`blank`, `cellAt`, `setCell`, `updateCells`, `withinBounds` — "kept only for 'back-compat with 88 call sites' per architecture.md §3") plus exactly one real function, `isSelectable`. The item proposes moving `isSelectable` into `WordTopology` "beside `partOfRun`/`partOfRunMask` — it is the same rule family", deleting the module, and pointing all call sites at `GridAccess`.
+2. **Kill the per-cell scan ceremony.** Six loops "pay `Row.of(r)`/`Col.of(c)`/`GridOps.cellAt` per cell of loops that are in bounds by construction" and are to be rewritten with array iteration, which "hands over both the element and its indices with no non-null assertions, so the sanctioned-site lint rule is untouched".
+
+Five of the item's premises did not survive verification, and are corrected by this entry:
+
+1. **The site list is incomplete: there are seven scan sites, not six.** `buildSerializedOutput` in `domain/format/v1.ts` — the export serializer — has the identical shape (a `size × size` loop minting `Row.of(r)`/`Col.of(c)` to read the grid it is iterating) and is not named by the item. Gate 0 requires the inventory to be complete, so it was included.
+2. **"Neither relaxes any lint rule" is true of the scan rewrites but not of the deletion.** `eslint.config.js` sanctioned `src/domain/grid/GridOps.ts` for the `@typescript-eslint/no-non-null-assertion` ban, and that file has contained no non-null assertion since O3 deleted `equals` and `clone` — the entry's comment ("legacy equals non-nulls") was already stale. Deleting the module therefore removes a **sanctioned site**: a net tightening, and the only lint-config change in the item. The item does not mention it; it mentions only `tools/boundaries.js`, which in fact does not reference `GridOps` at all.
+3. **The `isSelectable` move hides two redundancies the item does not notice.** (a) `isSelectable` performed `withinBounds` and `isWhite` before delegating to `partOfRun` — which performs **both** itself, so those two checks were duplicates. (b) `GridInteraction.select` called `isSelectable` (two `partOfRun` scans) and then computed `inAcross`/`inDown` itself (two more): **four scans where two suffice**, and the two extra are exactly the two it already had.
+4. **The "88 call sites" figure the item quotes from architecture.md §3 is wrong by a wide margin.** At the item's starting state the wrapper had **381** call sites — 56 production across 17 files, 325 test across 33 files. The doc's "88" was stale before this item.
+5. **The LOC estimate is ~1.6× optimistic.** The landed change is **−93 production lines** (−44 from the module dissolution, −49 from the scan rewrites), not −150.
+
+### Site inventory (Gate 0)
+
+The item's own counts are not trusted; the inventory below is what coverage is measured against.
+
+**Part 1 — the wrapper module.**
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| W1 | `GridOps.blank` — pure delegation | `domain/grid/GridOps.ts` | migrated to `GridAccess.blank`; delegation deleted with the module |
+| W2 | `GridOps.cellAt` — pure delegation | `domain/grid/GridOps.ts` | migrated to `GridAccess.cellAt`; delegation deleted with the module |
+| W3 | `GridOps.setCell` — pure delegation | `domain/grid/GridOps.ts` | migrated to `GridAccess.setCell`; delegation deleted with the module |
+| W4 | `GridOps.updateCells` — pure delegation | `domain/grid/GridOps.ts` | migrated to `GridAccess.updateCells`; delegation deleted with the module |
+| W5 | `GridOps.withinBounds` — pure delegation | `domain/grid/GridOps.ts` | migrated to `GridAccess.withinBounds`; delegation deleted with the module |
+| W6 | `GridOps.isSelectable` — the module's one real function | `domain/grid/GridOps.ts` | **moved** to `WordTopology.isSelectable`; its redundant `withinBounds`/`isWhite` checks dropped |
+| W7 | the module file | `domain/grid/GridOps.ts` | **deleted** |
+| W8 | the non-null-assertion sanction for `GridOps.ts` | `eslint.config.js` | **removed** — one fewer sanctioned site (tightening) |
+
+**Part 2 — the grid scan sites.**
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `buildDomainGrid` | `domain/format/v1.ts` | migrated to array iteration; the `gridSize` parameter dropped |
+| S2 | `buildSerializedOutput` | `domain/format/v1.ts` | migrated to array iteration — **a site the item did not name** |
+| S3 | `CompletenessCheck.check` | `domain/puzzle/CompletenessCheck.ts` | migrated to array iteration |
+| S4 | `handleCheck` | `player/state/internal/solving.ts` | migrated to array iteration |
+| S5 | `handleConfirmResetPlayer` | `player/state/internal/lifecycle.ts` | migrated to array iteration |
+| S6 | `serializePlayerProgress` | `ui/bindings/persistenceCodec.ts` | migrated to array iteration |
+| S7 | `deriveGridVM` | `ui/bindings/viewmodels/gridVM.ts` | migrated to array iteration |
+
+**Sites found by inspection that the item did not name.**
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S8 | `GridInteraction.select` — four `partOfRun` scans where two suffice | `domain/grid/GridInteraction.ts` | fixed: the two axis answers are computed once |
+| S9 | `isSelectable`'s duplicate `withinBounds` + `isWhite` checks | `domain/grid/GridOps.ts` | dropped (folded into W6) |
+| S10 | the `GridOps.ts` entry in the non-null-assertion sanction list | `eslint.config.js` | removed (folded into W8) |
+| S11 | the `GridOps` clause and the `partOfRun` consumer list in the `domain/grid/` module row | `architecture.md` §3 | amended |
+| S12 | "all `GridOps` accessors" in the coverage paragraph | `architecture.md` §12 | amended — **a site the item did not name** |
+
+**Test-side sites** — a production change is not complete until the tree that consumed it is consistent.
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| T1 | the whole file (6 `isSelectable` cases) | `test/domain/grid/GridOps.test.ts` | **deleted** — the 6 cases were exact duplicates of 6 of the 7 now in `WordTopology.test.ts`; the accessor coverage it leaned on already lived in `GridAccess.test.ts` |
+| T2 | `isSelectable` coverage | `test/domain/grid/WordTopology.test.ts` | 7 cases added (the 6 mirrored cases plus an out-of-bounds case) |
+| T3 | 325 call sites across 32 files | `test/**` | re-pointed to `GridAccess` / `WordTopology.isSelectable`; **no assertion, fixture or structural change** — proved by reverse-rename (below) |
+| T4 | 3 test titles citing `GridOps.isSelectable` | `test/ui/bindings/viewmodels/gridVM.test.ts` | retitled to `WordTopology.isSelectable` (architecture.md §14: a test title is a citation and must resolve to something live) |
+
+### Decision
+
+**W6 — the owner of the selectability rule: `WordTopology`.** Options: (a) `WordTopology`; (b) `GridAccess`; (c) keep it in `GridOps`. (c) is the status quo the item dissolves. (b) was rejected: `GridAccess` is the raw-indexing leaf — its documented job is `blank`/`cellAt`/`setCell`/`updateCells`/`withinBounds`, and "is this cell in a length-≥-2 run" is a question about word geometry, not about indexing. (a) was chosen: `WordTopology` is documented as "the single source of grid-level word geometry" and already owns `partOfRun` (the per-axis form) and `partOfRunMask` (the bulk either-axis form); §3 already described the two predicates as one rule. `isSelectable` is the either-axis per-cell form and now sits with them.
+
+**S9 — the redundant checks inside `isSelectable`: dropped.** `partOfRun` performs `withinBounds` and `isWhite` itself and returns `false` for out-of-bounds coordinates without throwing — pinned by an existing case in `WordTopology.test.ts`. The body is therefore exactly `partOfRun(across) || partOfRun(down)`.
+
+**S8 — `GridInteraction.select`: one computation, not four.** Options: (a) leave the four scans; (b) compute the two axis answers once and derive selectability from them. (b) was chosen. Equivalence: `isSelectable` ≡ `withinBounds ∧ isWhite ∧ (acrossRun ∨ downRun)`, and `partOfRun(axis)` ≡ `withinBounds ∧ isWhite ∧ runLength ≥ 2`, so `inAcross ∨ inDown` ≡ `isSelectable` exactly. The two removed calls were not merely redundant — `select` was computing the axis answers twice and using one copy.
+
+**S2 — the seventh scan site: included.** Same kind as the six named ones (a loop whose index *is* the grid coordinate being read). Excluding it would have closed the item with an unexamined same-kind site, which Gate 1 forbids.
+
+**The guard retired at the seven scan sites: `GridAccess.cellAt`'s `RangeError`.** The item's admission criterion is that no guard is traded for line count, so this was checked site by site. At all seven the loop index is the grid coordinate being read and the grid is square by construction (`Puzzle.blank` and `Puzzle.withGrid` both keep `gridSize === grid.length`; `validateGrid` rejects any file whose grid is not `gridSize × gridSize`), so the check was unreachable. The two sites that looped on `gridSize` while reading the grid (`serializePlayerProgress`, `buildSerializedOutput`) now take their bound from the grid itself, so the guard and the data source agree **by construction** rather than by convention.
+
+**W8 / S10 — the ESLint sanction: removed.** `src/domain/grid/GridAccess.ts` remains the only sanctioned site for the non-null-assertion ban, which is what it is for: it is the raw-indexing leaf. Before this item the list had two entries, the second of which had been stale since O3.
+
+**The iteration idiom: `map` for a value per cell, `entries()` for an accumulator.** Chosen so that the two idioms are distinguishable by what the loop *produces* rather than by taste, and so the branded coordinate is minted only where it is emitted.
+
+### Design as implemented
+
+- `WordTopology.isSelectable(grid, row, col): boolean` — `partOfRun(across) || partOfRun(down)`. The single owner of the selectability rule.
+- `GridAccess` is the single grid-accessor module: `blank`, `cellAt`, `setCell`, `updateCells`, `withinBounds`.
+- The seven scan sites read the grid by iterating it. `Row.of`/`Col.of` survive only where a branded coordinate is **emitted** — the `CompletenessViolation` records, the `GridAccess.updateCells` payloads, the `CheckResult` cell lists.
+- `src/domain/grid/GridOps.ts` is deleted; `src/domain/grid/` holds 11 files.
+- `eslint.config.js` sanctions `src/domain/grid/GridAccess.ts` alone for the non-null-assertion ban.
+- `architecture.md` §3 names `WordTopology.isSelectable` as the selectability rule's owner and `GridAccess` as the single accessor module; §12 names the accessor coverage and the new predicate's coverage.
+
+### Deliberate behaviour changes
+
+**None.** No parse-failure message, no `RangeError` message, no emitted JSON, and no view-model field value changed. Two notes, neither a behaviour change:
+
+1. The `GridAccess.cellAt` `RangeError` is no longer *reachable* at the seven scan sites. It was already unreachable there — the indices are in bounds by construction — so no observable difference exists today. What changed is where the invariant lives: it is now carried by the construction sites (`validateGrid`, `Puzzle.blank`, `Puzzle.withGrid`) rather than re-checked per cell.
+2. `serializePlayerProgress` keeps its `String(...)` conversion of each letter, folded into the single mapping pass. `Letter` is `Brand<'Letter', string>` and the runtime value is already a string, so the conversion is a no-op; keeping it costs nothing and leaves the persisted-blob contract explicit.
+
+### Files
+
+18 production modules changed (13 re-pointed, 1 gained `isSelectable`, 1 changed `select`, 1 deleted, plus `v1.ts`, `CompletenessCheck.ts`, `solving.ts`, `lifecycle.ts`, `persistenceCodec.ts`, `gridVM.ts`); 34 test files changed; 1 tooling file changed; 1 doc file changed.
+
+- deleted: `src/domain/grid/GridOps.ts`, `test/domain/grid/GridOps.test.ts`
+- `src/domain/grid/WordTopology.ts` (gains `isSelectable`), `src/domain/grid/GridInteraction.ts` (`select`)
+- `src/domain/format/v1.ts`, `src/domain/puzzle/CompletenessCheck.ts`, `src/domain/puzzle/Puzzle.ts`, `src/domain/anagram/Anagram.ts`, `src/domain/chain/LengthPattern.ts`
+- `src/builder/state/internal/designMode.ts`, `fillMode.ts`, `joinSubMode.ts`, `reconcileWords.ts`
+- `src/player/state/internal/solving.ts`, `src/player/state/internal/lifecycle.ts`
+- `src/ui/bindings/persistenceCodec.ts`, `src/ui/bindings/viewmodels/gridVM.ts`, `src/ui/bindings/viewmodels/builderVM.ts`, `src/ui/bindings/builderFacade.ts`
+- `eslint.config.js`
+- `architecture.md` — §3 (`domain/grid/` module row), §12 (coverage)
+
+### Verification
+
+- `npm run ci` green: `eslint .` + `madge --circular` (**no cycles**) + `svelte-check` (**0 errors, 0 warnings**) + `vitest run` (**91 files / 1343 tests**; the baseline before this item was 92 files / 1342 tests) + `vite build` (`dist/index.html` 232.75 kB, gzip 102.60 kB).
+- **Mechanical-ness proved, not assumed.** Every changed `src/` and `test/` file was mechanically reverse-renamed back to its `HEAD` content and compared byte-for-byte: all 32 re-pointed test files and the pure-rename parts of the 13 re-pointed source files match `HEAD` exactly. No assertion, fixture, control-flow or formatting change exists anywhere in the re-point. The call-site accounting closes exactly — `GridAccess.cellAt` 12 → 33 (11 in `WordTopology.ts` + 1 delegation removed with the module + 23 re-pointed, less the 1 that `isSelectable` stopped making), `withinBounds` 12 → 16, `blank` 1 → 2, `setCell` 1 → 8, `updateCells` 1 → 4, `WordTopology.isSelectable` 0 → 3. Nothing invented, nothing lost.
+- **Behaviour preservation proved empirically, not by assertion.** Two old-vs-new comparisons were run under the item's own code and its `HEAD` code:
+  - the parser and both serializers over all seven canonical `puzzles/*.json` — **558,261 bytes, byte-for-byte identical**;
+  - `deriveGridVM` (three variants: answer letters, player letters, cursor-selected hilite, in-word hilite, null cursor) and `serializePlayerProgress` over a fixture with black cells, both letter kinds and both marker kinds — **byte-for-byte identical**.
+- **The unchanged suites are the proof.** `test/domain/grid/GridInteraction.test.ts`'s `select` suite, `test/domain/format/v1.test.ts`'s byte-equality cases, `test/domain/puzzle/CompletenessCheck.test.ts` and `test/player/state/internal/solving.test.ts`'s ordered `incorrectCells`/`emptyCells` assertions all pass **without a single edit**.
+- **Closure audit.** `grep` for `GridOps` over `src/`, `test/`, `eslint.config.js` and `architecture.md`: **0 references**. The old encoding is gone, not merely unused.
+
+### Consequence
+
+- **−93 production lines** (133 added, 226 deleted across 19 files) and **−13 test lines** (407 added, 420 deleted across 34 files) — **−106 net**, plus this entry and the audit's status line. The item estimated −150 production lines; the landed figure is smaller because the scan rewrites saved ~49 lines rather than the ~100 estimated, and because the module dissolution added back the `isSelectable` implementation and its manifest lines.
+- **One module fewer and one fewer sanctioned lint site.** `src/domain/grid/` holds 11 files; `GridAccess` is the only file exempt from the non-null-assertion ban, which is the exemption it actually needs.
+- **The selectability rule now has one owner and one implementation.** Before this item the rule was expressed three times — `GridOps.isSelectable`, `GridInteraction.select`'s private re-derivation, and `WordTopology.partOfRun` — with `GridOps.isSelectable` duplicating `partOfRun`'s own bounds and whiteness checks. It is now expressed once, in `WordTopology`, and consumed by name.
+- Touch costs that change:
+  - **Reading a grid cell** is `GridAccess.cellAt` — there is no second name for it.
+  - **Reading a grid in a loop** no longer mints brands or re-checks bounds; the loop reads the array it is iterating.
+  - **Emitting a cell coordinate** still mints `Row.of`/`Col.of` — the branding is untouched, and it is only for output.
+- **Unchanged:** `Row`/`Col` branding; `GridAccess` as the raw-indexing leaf; `partOfRun` and `partOfRunMask` (O9 owns those); `WordTopology`'s bulk-mask form, which remains the source of `selectable` in the grid view-model — the scan rewrite did not replace it with a per-cell call.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `handleApplyLoadedProgress` — the grid read at the saved blob's coordinates | **decided out, not overlooked.** Its loop indexes the *saved progress array*, not the grid; the grid read is a point lookup at externally-driven coordinates, exactly like the sites below. It was migrated to `GridAccess.cellAt` (the bounds check is load-bearing there — the saved blob's dimensions are not the grid's) | — (closed by decision, not deferred) |
+| `normalizeV1ChainBoundaries` — the grid read at a word's last cell | a point lookup at a word-derived coordinate, not a scan: the loop iterates words, not cells. Migrated to `GridAccess.cellAt` | — (closed by decision, not deferred) |
+| `Anagram.buildWordModel` / `buildChainModel`, `LengthPattern.separatorAt`, `joinSubMode`'s marker helpers, `reconcileWords`'s end-cell reads | the same kind: point lookups at word-derived coordinates, where the bounds check is the guard. All migrated to `GridAccess.cellAt` | — (closed by decision, not deferred) |
+| `GridInteraction.move` / `typeLetter` / `backspace` — `isSelectable` at a cursor-derived coordinate | the same kind: a point predicate at an externally-driven coordinate. Migrated to `WordTopology.isSelectable` | — (closed by decision, not deferred) |
+| `builderFacade.setMarker`, `builderVM`'s marker flags, `fillMode`'s letter write, `designMode`'s toggle | the same kind: point reads at cursor- or intent-derived coordinates. All migrated to `GridAccess.cellAt` | — (closed by decision, not deferred) |
+| `WordTopology.partOfRun`'s own O(n) scan implementation, and `partOfRunMask`'s per-direction variant | out of this item's scope: O9 owns `partOfRun`'s implementation. The bulk mask is deliberately left as the source of `selectable` in the view-model | audit O9 |
+| the `GridOps` name itself — a friendlier name for the surviving accessor | deliberately deferred by the human; `GridAccess` stands as the single grid-accessor name | — (open, for a future decision) |

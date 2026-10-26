@@ -6,10 +6,7 @@ import type { GridSize } from '../../domain/grid/GridSize';
 import type { Letter } from '../../domain/letter/Letter';
 import type { DisplacedClue } from '../../domain/builder/DisplacedClue';
 
-import { GridOps } from '../../domain/grid/GridOps';
 import { GridSize as GridSizeCtor } from '../../domain/grid/GridSize';
-import { Row as RowCtor } from '../../domain/grid/Row';
-import { Col as ColCtor } from '../../domain/grid/Col';
 import { Letter as LetterCtor } from '../../domain/letter/Letter';
 
 // ----- Builder snapshot -----
@@ -76,21 +73,15 @@ export type PlayerProgressBlob = {
 export function serializePlayerProgress(state: PlayerState): string | null {
   if (state.phase !== 'solving') return null;
   const size = Number(state.puzzle.gridSize);
-  const playerLetters: (Letter | null)[][] = [];
-  for (let r = 0; r < size; r++) {
-    const row: (Letter | null)[] = [];
-    for (let c = 0; c < size; c++) {
-      const cell = GridOps.cellAt(state.puzzle.grid, RowCtor.of(r), ColCtor.of(c));
-      row.push(cell.playerLetter);
-    }
-    playerLetters.push(row);
-  }
+  const playerLetters = state.puzzle.grid.map((row) =>
+    row.map((cell) => (cell.playerLetter === null ? null : String(cell.playerLetter))),
+  );
   return JSON.stringify({
     version: 1,
     kind: 'player-progress',
     key: String(state.puzzle.key),
     gridSize: size,
-    playerLetters: playerLetters.map((row) => row.map((l) => (l === null ? null : String(l)))),
+    playerLetters,
   });
 }
 

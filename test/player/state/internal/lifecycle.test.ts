@@ -10,7 +10,7 @@ import {
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
 import { parsePuzzle } from '../../../../src/domain/format/v1Json';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { Letter } from '../../../../src/domain/letter/Letter';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
@@ -257,7 +257,7 @@ describe('handleApplyLoadedProgress', () => {
 
   function cellPlayerLetter(state: ReturnType<typeof solving>, row: number, col: number) {
     if (state.phase !== 'solving') throw new Error('expected solving');
-    return GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).playerLetter;
+    return GridAccess.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).playerLetter;
   }
 
   it('apply-loaded-progress: no-op when state phase is import (not yet solving)', () => {
@@ -354,7 +354,7 @@ describe('handleApplyLoadedProgress', () => {
     expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 1, 0)).toBe(null);
     expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 1, 1)).toBe(null);
     expect(
-      GridOps.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).black,
+      GridAccess.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).black,
     ).toBe(true);
   });
 
@@ -446,9 +446,9 @@ function withPlayerLetters(
 
   let grid = state.puzzle.grid;
   for (const [r, c, letter] of letters) {
-    const cell = GridOps.cellAt(grid, Row.of(r), Col.of(c));
+    const cell = GridAccess.cellAt(grid, Row.of(r), Col.of(c));
     const newCell = letter == null ? Cell.setPlayerLetter(cell, null) : Cell.setPlayerLetter(cell, Letter.try(letter));
-    grid = GridOps.setCell(grid, Row.of(r), Col.of(c), newCell);
+    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), newCell);
   }
 
   return {
@@ -458,15 +458,15 @@ function withPlayerLetters(
 }
 
 function cellAnswerLetter(state: SolvingState, row: number, col: number) {
-  return GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).answerLetter;
+  return GridAccess.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).answerLetter;
 }
 
 function cellPlayerLetter(state: SolvingState, row: number, col: number) {
-  return GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).playerLetter;
+  return GridAccess.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).playerLetter;
 }
 
 function cellIsBlack(state: SolvingState, row: number, col: number) {
-  return GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).black;
+  return GridAccess.cellAt(state.puzzle.grid, Row.of(row), Col.of(col)).black;
 }
 
 describe('report-import-read-failure', () => {
@@ -578,7 +578,7 @@ describe('handleRequestResetPlayer', () => {
   it('request-reset-player: solving phase with no player letters typed still emits modal (unconditional confirmation)', () => {
     const state = solving();
     if (state.phase !== 'solving') throw new Error('expected solving');
-    expect(GridOps.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+    expect(GridAccess.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
 
     const result = handleRequestResetPlayer(state);
 

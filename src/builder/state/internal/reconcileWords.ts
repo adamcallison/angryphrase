@@ -16,7 +16,7 @@ import { Numbering } from '../../../domain/word/Numbering';
 import { ChainValidation } from '../../../domain/chain/ChainValidation';
 import { DisplacedClue as DisplacedClueCtor } from '../../../domain/builder/DisplacedClue';
 import { Direction as DirectionOps } from '../../../domain/word/Direction';
-import { GridOps } from '../../../domain/grid/GridOps';
+import { GridAccess } from '../../../domain/grid/GridAccess';
 import { Cell } from '../../../domain/grid/Cell';
 
 type LengthChange = {
@@ -157,7 +157,7 @@ function applyBoundaryMarkerRule(
   const updates: { row: Row; col: Col; cell: Cell }[] = [];
 
   function pushMarker(row: Row, col: Col, marker: CellMarker): void {
-    updates.push({ row, col, cell: Cell.setMarker(GridOps.cellAt(grid, row, col), marker) });
+    updates.push({ row, col, cell: Cell.setMarker(GridAccess.cellAt(grid, row, col), marker) });
   }
 
   for (const oldWord of oldWords) {
@@ -169,18 +169,18 @@ function applyBoundaryMarkerRule(
       Number(oldWord.length) - 1,
     );
 
-    if (!GridOps.withinBounds(grid, oldEnd.row, oldEnd.col)) continue;
+    if (!GridAccess.withinBounds(grid, oldEnd.row, oldEnd.col)) continue;
 
     const axis = directionAxis(oldWord.key.direction);
-    const oldEndCell = GridOps.cellAt(grid, oldEnd.row, oldEnd.col);
+    const oldEndCell = GridAccess.cellAt(grid, oldEnd.row, oldEnd.col);
     const kind = Cell.isWhite(oldEndCell)
       ? CellMarker.read(oldEndCell.marker, axis)
       : 'space';
     const canonical = WordKey.toCanonical(oldWord.key);
 
     if (!newByCanonical.has(canonical)) {
-      if (Cell.isWhite(GridOps.cellAt(grid, oldEnd.row, oldEnd.col))) {
-        pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridOps.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
+      if (Cell.isWhite(GridAccess.cellAt(grid, oldEnd.row, oldEnd.col))) {
+        pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridAccess.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
       }
       continue;
     }
@@ -188,8 +188,8 @@ function applyBoundaryMarkerRule(
     const survivor = survivingByCanonical.get(canonical);
     if (survivor === undefined) continue;
 
-    if (Cell.isWhite(GridOps.cellAt(grid, oldEnd.row, oldEnd.col))) {
-      pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridOps.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
+    if (Cell.isWhite(GridAccess.cellAt(grid, oldEnd.row, oldEnd.col))) {
+      pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(GridAccess.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
     }
 
     if (survivor.nextWord !== null) {
@@ -199,16 +199,16 @@ function applyBoundaryMarkerRule(
         Number(survivor.length) - 1,
       );
       if (
-        GridOps.withinBounds(grid, newEnd.row, newEnd.col) &&
-        Cell.isWhite(GridOps.cellAt(grid, newEnd.row, newEnd.col))
+        GridAccess.withinBounds(grid, newEnd.row, newEnd.col) &&
+        Cell.isWhite(GridAccess.cellAt(grid, newEnd.row, newEnd.col))
       ) {
-        pushMarker(newEnd.row, newEnd.col, CellMarker.write(GridOps.cellAt(grid, newEnd.row, newEnd.col).marker, directionAxis(survivor.key.direction), kind));
+        pushMarker(newEnd.row, newEnd.col, CellMarker.write(GridAccess.cellAt(grid, newEnd.row, newEnd.col).marker, directionAxis(survivor.key.direction), kind));
       }
     }
   }
 
   if (updates.length === 0) return grid;
-  return GridOps.updateCells(grid, updates);
+  return GridAccess.updateCells(grid, updates);
 }
 
 function describeViolation(violation: ChainViolation): string {

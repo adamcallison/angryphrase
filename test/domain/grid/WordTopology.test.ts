@@ -334,6 +334,77 @@ describe('WordTopology', () => {
     });
   });
 
+  describe('isSelectable', () => {
+    it('WordTopology.isSelectable returns false for a black cell', () => {
+      const g = setBlack(blankGrid(3), 1, 1);
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(false);
+    });
+
+    it('WordTopology.isSelectable returns false for an isolated white cell (no neighbours)', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 0, 0);
+      g = setBlack(g, 0, 1);
+      g = setBlack(g, 0, 2);
+      g = setBlack(g, 1, 0);
+      g = setBlack(g, 1, 2);
+      g = setBlack(g, 2, 0);
+      g = setBlack(g, 2, 1);
+      g = setBlack(g, 2, 2);
+
+      expect(Cell.isWhite(GridAccess.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(false);
+    });
+
+    it('WordTopology.isSelectable returns true for a white cell in a horizontal run of length 2', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 1, 0);
+      g = setBlack(g, 1, 2);
+
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(true);
+    });
+
+    it('WordTopology.isSelectable returns true for a white cell in a vertical run of length 2', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 0, 1);
+      g = setBlack(g, 2, 1);
+
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(true);
+    });
+
+    it('WordTopology.isSelectable returns false for a white cell only in a 1-length (singleton)', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 0, 1);
+      g = setBlack(g, 1, 0);
+      g = setBlack(g, 1, 2);
+      g = setBlack(g, 2, 1);
+
+      expect(Cell.isWhite(GridAccess.cellAt(g, Row.of(1), Col.of(1)))).toBe(true);
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(1))).toBe(false);
+    });
+
+    it('WordTopology.isSelectable returns true for the end cell of a run (still part of a length-≥2 run)', () => {
+      let g = blankGrid(3);
+      g = setBlack(g, 0, 0);
+      g = setBlack(g, 0, 1);
+      g = setBlack(g, 0, 2);
+      g = setBlack(g, 1, 1);
+      g = setBlack(g, 1, 2);
+      g = setBlack(g, 2, 1);
+      g = setBlack(g, 2, 2);
+
+      expect(WordTopology.isSelectable(g, Row.of(1), Col.of(0))).toBe(true);
+      expect(WordTopology.isSelectable(g, Row.of(2), Col.of(0))).toBe(true);
+    });
+
+    it('WordTopology.isSelectable returns false for out-of-bounds coordinates without throwing', () => {
+      const g = blankGrid(3);
+      expect(WordTopology.isSelectable(g, -1 as Row, Col.of(0))).toBe(false);
+      expect(WordTopology.isSelectable(g, Row.of(0), -1 as Col)).toBe(false);
+      expect(WordTopology.isSelectable(g, Row.of(3), Col.of(0))).toBe(false);
+      expect(WordTopology.isSelectable(g, Row.of(0), Col.of(3))).toBe(false);
+    });
+  });
+
   describe('partOfRunMask', () => {
     it('WordTopology.partOfRunMask returns a mask aligned with the grid', () => {
       const g = blankGrid(3);

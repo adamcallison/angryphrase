@@ -6,7 +6,7 @@ import { CompletenessCheck } from '../puzzle/CompletenessCheck';
 import { GridSize } from '../grid/GridSize';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
-import { GridOps } from '../grid/GridOps';
+import { GridAccess } from '../grid/GridAccess';
 import { Cell } from '../grid/Cell';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellMarker as CellMarkerType } from '../grid/CellMarker';
@@ -357,33 +357,16 @@ function validateWords(
   return hasErrors ? null : result;
 }
 
-function buildDomainGrid(cells: CellJson[][], gridSize: GridSize): Grid {
-  let grid = GridOps.blank(gridSize);
-  const size = cells.length;
-
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const rowData = cells[r];
-      if (rowData === undefined) throw new Error('v1.buildDomainGrid: cells[r] undefined');
-      const cellData = rowData[c];
-      if (cellData === undefined) throw new Error('v1.buildDomainGrid: cells[r][c] undefined');
-      let cell;
-
-      if (cellData.black) {
-        cell = Cell.black();
-      } else {
-        cell = Cell.white();
-        if (cellData.puzzleLetter !== null) {
-          cell = Cell.setAnswerLetter(cell, Letter.try(cellData.puzzleLetter));
-        }
-        cell = Cell.setMarker(cell, cellData.marker);
-      }
-
-      grid = GridOps.setCell(grid, Row.of(r), Col.of(c), cell);
-    }
-  }
-
-  return grid;
+function buildDomainGrid(cells: CellJson[][]): Grid {
+  return cells.map((row) =>
+    row.map((cd) => {
+      if (cd.black) return Cell.black();
+      const cell = Cell.white();
+      const withLetter =
+        cd.puzzleLetter === null ? cell : Cell.setAnswerLetter(cell, Letter.try(cd.puzzleLetter));
+      return Cell.setMarker(withLetter, cd.marker);
+    }),
+  );
 }
 
 function buildDomainWords(parsedWords: ParsedWord[]): DerivedWord[] {
@@ -581,7 +564,7 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
       w.key.direction,
       Number(w.length) - 1,
     );
-    const cell = GridOps.cellAt(grid, end.row, end.col);
+    const cell = GridAccess.cellAt(grid, end.row, end.col);
     if (!Cell.isWhite(cell)) continue;
 
     const axis = w.key.direction === 'across' ? 'right' : 'bottom';
@@ -591,7 +574,7 @@ function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
     }
   }
 
-  return GridOps.updateCells(grid, updates);
+  return GridAccess.updateCells(grid, updates);
 }
 
 export const parsePuzzleShape = (
@@ -657,7 +640,7 @@ export const parsePuzzleShape = (
     return { ok: false, failures };
   }
 
-  let grid = buildDomainGrid(cells, gridSize);
+  let grid = buildDomainGrid(cells);
   const derivedWords = WordDerivation.derive(grid);
 
   if (!crossCheckWords(parsedWords, derivedWords, failures)) {
@@ -707,20 +690,13 @@ function buildSerializedOutput(
   displacedClues: DisplacedClue[],
 ) {
   const size = Number(p.gridSize);
-  const grid: unknown[][] = [];
-
-  for (let r = 0; r < size; r++) {
-    const row: unknown[] = [];
-    for (let c = 0; c < size; c++) {
-      const cell = GridOps.cellAt(p.grid, Row.of(r), Col.of(c));
-      row.push({
-        black: cell.black,
-        puzzleLetter: cell.black ? null : cell.answerLetter ? String(cell.answerLetter) : null,
-        ...markerToJson(cell.marker),
-      });
-    }
-    grid.push(row);
-  }
+  const grid: unknown[][] = p.grid.map((row) =>
+    row.map((cell) => ({
+      black: cell.black,
+      puzzleLetter: cell.black ? null : cell.answerLetter ? String(cell.answerLetter) : null,
+      ...markerToJson(cell.marker),
+    })),
+  );
 
   const words = p.words.map((w) => ({
     startRow: Number(w.key.startRow),

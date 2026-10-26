@@ -253,6 +253,33 @@ sanction stays exactly where it is.
 payload currency — only internal scan ceremony goes away. `tools/boundaries.js` and the
 §3 module table may reference the deleted `GridOps` path and need a mechanical update.
 
+**Status (2026-10-26): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O4 — Dissolve the `GridOps` wrapper layer; array-iteration rewrite of the grid scan sites").
+Corrections to this item, made during the resolution: (a) the site list is **incomplete** —
+there are **seven** scan sites, not six; `buildSerializedOutput` in `domain/format/v1.ts` (the
+export serializer) has the identical shape and was not named, and it is included; (b) "neither
+relaxes any lint rule" holds for the scan rewrites but **not** for the deletion —
+`eslint.config.js` still sanctioned `src/domain/grid/GridOps.ts` for the non-null-assertion ban
+(with a stale comment referring to members O3 had already deleted), so dissolving the module
+**removes a sanctioned site**: a net tightening, and the only lint-config change in the item.
+The item's guess that "`tools/boundaries.js` … may reference the deleted `GridOps` path" is wrong
+— that file never referenced it and needed no change; (c) moving `isSelectable` hid two
+redundancies the item does not notice: its own `withinBounds` + `isWhite` checks duplicate
+`partOfRun`'s, and `GridInteraction.select` was calling `partOfRun` **four** times for two
+answers (once via `isSelectable`, twice again directly) — both are fixed; (d) the "88 call
+sites" figure quoted from architecture.md §3 was wrong by a wide margin: the wrapper had **381**
+(56 production across 17 files, 325 test across 33 files) — architecture.md's text is corrected;
+(e) "Tests excluded per instruction" is false for this item, as it was for O3 — deleting the
+module breaks the 33 test files that consume it, so the test tree is in scope (325 call sites
+re-pointed, no assertion changed); (f) the estimate is corrected from "−150 LOC" to **−93
+production lines** (−44 from the dissolution, −49 from the rewrites) and **−13 test lines**, so
+**−106 net** — the rewrites saved ~49 lines rather than the ~100 estimated, because the
+dissolution added back the `isSelectable` implementation and its manifest lines. The item's
+*quality* claim — one accessor module, one owner for the selectability rule — is met; its
+*quantity* claim was not. Leftovers: none; the sites not migrated are listed in the resolution's
+"Not addressed" table with their reasons, and the "friendlier name for the surviving accessor"
+question is recorded there as open.
+
 ---
 
 ## O5. Consolidate type-only micro-modules (est. −80 to −120 LOC, −22 files)

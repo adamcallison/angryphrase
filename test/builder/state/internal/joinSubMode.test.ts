@@ -6,7 +6,7 @@ import type { BuilderIntent } from '../../../../src/builder/state/intents';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
@@ -31,7 +31,7 @@ function makeState(
   const base = BuilderState.blank(gridSize, PuzzleKey.generate(new SeededRng(1)));
   let grid = base.puzzle.grid;
   for (const [r, c] of blackCells) {
-    grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+    grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
   }
   const builtCursor: Cursor = cursor
     ? {
@@ -341,7 +341,7 @@ describe('handleUnjoin', () => {
     expect(downstreamAfter!.clue).toBe('');
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
     expect(sourceAfter!.nextWord).toBeNull();
-    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    const cell = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(cell.marker.right).toBe('none');
   });
 
@@ -552,9 +552,9 @@ function withMarkerAt(
 ): BuilderState {
   const axis = flag.endsWith('right') ? 'right' : 'bottom';
   const separator = flag.startsWith('space') ? 'space' : 'hyphen';
-  const cell = GridOps.cellAt(state.puzzle.grid, Row.of(row), Col.of(col));
+  const cell = GridAccess.cellAt(state.puzzle.grid, Row.of(row), Col.of(col));
   const newCell = Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator));
-  const newGrid = GridOps.setCell(state.puzzle.grid, Row.of(row), Col.of(col), newCell);
+  const newGrid = GridAccess.setCell(state.puzzle.grid, Row.of(row), Col.of(col), newCell);
   return { ...state, puzzle: Puzzle.withGrid(state.puzzle, newGrid) };
 }
 
@@ -566,7 +566,7 @@ describe('join boundary markers', () => {
 
     const result = resolveJoin(state, source, target, rng);
 
-    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    const cell = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(cell.marker.right).toBe('space');
     expect(cell.marker.bottom).toBe('none');
   });
@@ -584,7 +584,7 @@ describe('join boundary markers', () => {
 
     const result = resolveJoin(state, source, target, rng);
 
-    const cell = GridOps.cellAt(result.state.puzzle.grid, lastCell.row, lastCell.col);
+    const cell = GridAccess.cellAt(result.state.puzzle.grid, lastCell.row, lastCell.col);
     expect(cell.marker.bottom).toBe('space');
     expect(cell.marker.right).toBe('none');
   });
@@ -597,7 +597,7 @@ describe('join boundary markers', () => {
 
     const result = resolveJoin(state, source, target, rng);
 
-    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    const cell = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(cell.marker.right).toBe('hyphen');
     expect(cell.marker.bottom).toBe('none');
   });
@@ -612,7 +612,7 @@ describe('unjoin boundary markers', () => {
 
     const result = handleUnjoin(state, intent, rng);
 
-    const cell = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    const cell = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(cell.marker.right).toBe('none');
     expect(cell.marker.bottom).toBe('none');
     const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
@@ -629,10 +629,10 @@ describe('unjoin boundary markers', () => {
 
     const result = handleUnjoin(state, intent, rng);
 
-    const sourceLast = GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
+    const sourceLast = GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(3));
     expect(sourceLast.marker.right).toBe('none');
     expect(sourceLast.marker.bottom).toBe('space');
-    const other = GridOps.cellAt(result.state.puzzle.grid, Row.of(2), Col.of(2));
+    const other = GridAccess.cellAt(result.state.puzzle.grid, Row.of(2), Col.of(2));
     expect(other.marker.right).toBe('hyphen');
   });
 });

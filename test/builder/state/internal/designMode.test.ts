@@ -6,7 +6,7 @@ import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../../src/domain/grid/CellMarker';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
@@ -50,13 +50,13 @@ function word(
 function gridWithBlacks(grid: Grid, cells: [number, number][]): Grid {
   let g = grid;
   for (const [row, col] of cells) {
-    g = GridOps.setCell(g, Row.of(row), Col.of(col), Cell.black());
+    g = GridAccess.setCell(g, Row.of(row), Col.of(col), Cell.black());
   }
   return g;
 }
 
 function designState(size: GridSize, blackCells: [number, number][], words: Word[] = []) {
-  const grid = gridWithBlacks(GridOps.blank(size), blackCells);
+  const grid = gridWithBlacks(GridAccess.blank(size), blackCells);
   const puzzle = Puzzle.withWords(
     Puzzle.withGrid(Puzzle.blank(size, PuzzleKey.generate(new SeededRng(2))), grid),
     words,
@@ -71,10 +71,10 @@ function designState(size: GridSize, blackCells: [number, number][], words: Word
 }
 
 function withRightFlag(grid: Grid, row: number, col: number, flag: 'space' | 'hyphen' | 'none'): Grid {
-  const marker = GridOps.cellAt(grid, Row.of(row), Col.of(col)).marker;
+  const marker = GridAccess.cellAt(grid, Row.of(row), Col.of(col)).marker;
   const separator = flag === 'none' ? 'none' : flag;
   const nextMarker = CellMarker.write(marker, 'right', separator);
-  return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(GridOps.cellAt(grid, Row.of(row), Col.of(col)), nextMarker));
+  return GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(GridAccess.cellAt(grid, Row.of(row), Col.of(col)), nextMarker));
 }
 
 describe('toggle-design-cell', () => {
@@ -83,16 +83,16 @@ describe('toggle-design-cell', () => {
 
     const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(true);
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(true);
   });
 
   it('black cell becomes white', () => {
-    const grid = GridOps.setCell(GridOps.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), Cell.black());
+    const grid = GridAccess.setCell(GridAccess.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), Cell.black());
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
     const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(false);
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(false);
   });
 
   it('cursor is cleared', () => {
@@ -198,7 +198,7 @@ describe('toggle-design-cell', () => {
     const letter = Letter.try('A')!;
     const marker = CellMarker.write(CellMarker.EMPTY, 'right', 'space');
     const whiteCell = Cell.setMarker(Cell.setAnswerLetter(Cell.white(), letter), marker);
-    const grid = GridOps.setCell(GridOps.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), whiteCell);
+    const grid = GridAccess.setCell(GridAccess.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), whiteCell);
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
     const afterBlack = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
@@ -208,7 +208,7 @@ describe('toggle-design-cell', () => {
       rng,
     );
 
-    const finalCell = GridOps.cellAt(afterWhite.state.puzzle.grid, Row.of(0), Col.of(0));
+    const finalCell = GridAccess.cellAt(afterWhite.state.puzzle.grid, Row.of(0), Col.of(0));
     expect(finalCell.black).toBe(false);
     expect(finalCell.answerLetter).toBeNull();
     expect(finalCell.marker).toEqual(CellMarker.EMPTY);
@@ -217,7 +217,7 @@ describe('toggle-design-cell', () => {
   it('toggle-design-cell threads reconciled boundary markers into the puzzle grid', () => {
     const size = GridSize.of(7);
     const bKey = key(0, 5, 'across');
-    const baseGrid = gridWithBlacks(GridOps.blank(size), [
+    const baseGrid = gridWithBlacks(GridAccess.blank(size), [
       [0, 3],
       [0, 4],
     ]);
@@ -231,9 +231,9 @@ describe('toggle-design-cell', () => {
     const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(2) }, rng);
 
     const reconciled = result.state.puzzle.grid;
-    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(2)).black).toBe(true);
-    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.right).toBe('space');
-    expect(GridOps.cellAt(reconciled, Row.of(0), Col.of(1)).marker.bottom).toBe('none');
+    expect(GridAccess.cellAt(reconciled, Row.of(0), Col.of(2)).black).toBe(true);
+    expect(GridAccess.cellAt(reconciled, Row.of(0), Col.of(1)).marker.right).toBe('space');
+    expect(GridAccess.cellAt(reconciled, Row.of(0), Col.of(1)).marker.bottom).toBe('none');
   });
 });
 
@@ -256,7 +256,7 @@ describe('change-grid-size', () => {
 
     const result = handleChangeGridSize(state, { target: 'builder', kind: 'change-grid-size', size: GridSize.of(20) });
 
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(5), Col.of(5))).toEqual(Cell.white());
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(5), Col.of(5))).toEqual(Cell.white());
   });
 
   it('clears cursor and resets subMode to none', () => {
@@ -277,7 +277,7 @@ describe('change-grid-size', () => {
 
   it('no-op when not blank (answerLetter present)', () => {
     const base = blankState();
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       base.puzzle.grid,
       Row.of(0),
       Col.of(0),
@@ -360,7 +360,7 @@ describe('request-switch-to-design', () => {
 
   it('when not blank (answerLetter set), returns state unchanged and emits modal-request', () => {
     const base = blankState();
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       base.puzzle.grid,
       Row.of(0),
       Col.of(0),
@@ -382,7 +382,7 @@ describe('request-switch-to-design', () => {
 
   it('modal-request has correct shape (kind, modal.kind === confirm-design-switch, confirmIntent.kind confirm-switch-to-design)', () => {
     const base = blankState();
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       base.puzzle.grid,
       Row.of(0),
       Col.of(0),
@@ -441,7 +441,7 @@ describe('confirm-switch-to-design', () => {
 
   it('no guard fires even when state is non-blank', () => {
     const base = blankState();
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       base.puzzle.grid,
       Row.of(0),
       Col.of(0),

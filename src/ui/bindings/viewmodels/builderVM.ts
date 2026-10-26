@@ -1,6 +1,6 @@
 import { BuilderState } from '../../../builder/state/state';
 import type { BuilderMode } from '../../../builder/state/state';
-import { GridOps } from '../../../domain/grid/GridOps';
+import { GridAccess } from '../../../domain/grid/GridAccess';
 import { GridSize } from '../../../domain/grid/GridSize';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import {
@@ -79,7 +79,7 @@ export type BuilderShellVM = {
 export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
   const isBlank = BuilderState.isBlank(state);
   const markerFlags = state.cursor
-    ? GridOps.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
+    ? GridAccess.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
     : CellMarker.EMPTY;
   const exportCompleteViolations = CompletenessCheck.check(state.puzzle);
   const exportCompleteCounts = CompletenessCheck.groupByKind(exportCompleteViolations);

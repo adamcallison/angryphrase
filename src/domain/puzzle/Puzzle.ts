@@ -4,7 +4,7 @@ import type { Grid } from '../grid/Grid';
 import type { Word } from '../word/Word';
 import { Title } from './Title';
 import { Author } from './Author';
-import { GridOps } from '../grid/GridOps';
+import { GridAccess } from '../grid/GridAccess';
 import { WordDerivation } from '../word/WordDerivation';
 import { Numbering } from '../word/Numbering';
 
@@ -25,7 +25,7 @@ export const Puzzle: {
   withMetadata(p: Puzzle, title: Title, author: Author): Puzzle;
 } = {
   blank(size: GridSize, key: PuzzleKey): Puzzle {
-    const grid = GridOps.blank(size);
+    const grid = GridAccess.blank(size);
     const words = Numbering.assign(grid, WordDerivation.derive(grid));
     return {
       key,

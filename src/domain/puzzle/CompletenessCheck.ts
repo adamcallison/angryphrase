@@ -4,7 +4,6 @@ import type { WordNumber } from '../word/WordNumber';
 import type { Direction } from '../word/Direction';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
-import { GridOps } from '../grid/GridOps';
 import { ChainIndex } from '../chain/ChainIndex';
 
 export type CompletenessViolation =
@@ -24,10 +23,8 @@ export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[] {
     const violations: CompletenessViolation[] = [];
 
-    const size = p.grid.length;
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
-        const cell = GridOps.cellAt(p.grid, Row.of(r), Col.of(c));
+    for (const [r, row] of p.grid.entries()) {
+      for (const [c, cell] of row.entries()) {
         if (!cell.black && cell.answerLetter === null) {
           violations.push({
             kind: 'missing-answer-letter',

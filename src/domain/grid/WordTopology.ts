@@ -76,6 +76,7 @@ export const WordTopology: {
   runs(grid: Grid, direction: Direction): readonly WordRun[];
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean;
   partOfRunMask(grid: Grid): boolean[][];
+  isSelectable(grid: Grid, row: Row, col: Col): boolean;
 } = {
   runs(grid: Grid, direction: Direction): readonly WordRun[] {
     const size = grid.length;
@@ -183,5 +184,12 @@ export const WordTopology: {
     }
 
     return mask;
+  },
+
+  isSelectable(grid: Grid, row: Row, col: Col): boolean {
+    return (
+      WordTopology.partOfRun(grid, row, col, 'across') ||
+      WordTopology.partOfRun(grid, row, col, 'down')
+    );
   },
 };

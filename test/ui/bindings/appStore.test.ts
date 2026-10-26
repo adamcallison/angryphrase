@@ -11,7 +11,7 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { Cell } from '../../../src/domain/grid/Cell';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
@@ -34,7 +34,7 @@ function makeCompletePuzzle(seed: number, size: number): PuzzleType {
     for (let c = 0; c < size; c++) {
       const letter = Letter.try(String.fromCharCode(65 + ((r * size + c) % 26)));
       if (letter === null) throw new Error('makeCompletePuzzle: invalid letter');
-      grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(Cell.white(), letter));
+      grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(Cell.white(), letter));
     }
   }
 
@@ -315,11 +315,11 @@ describe('appStore.svelte.ts', () => {
     if (player.phase !== 'solving') throw new Error('unreachable');
 
     const grid = player.puzzle.grid;
-    expect(GridOps.cellAt(grid, Row.of(0), Col.of(0)).playerLetter).toEqual(Letter.try('A'));
-    expect(GridOps.cellAt(grid, Row.of(0), Col.of(1)).playerLetter).toEqual(Letter.try('B'));
-    expect(GridOps.cellAt(grid, Row.of(0), Col.of(2)).playerLetter).toEqual(Letter.try('C'));
-    expect(GridOps.cellAt(grid, Row.of(2), Col.of(0)).playerLetter).toEqual(Letter.try('X'));
-    expect(GridOps.cellAt(grid, Row.of(2), Col.of(2)).playerLetter).toEqual(Letter.try('Z'));
+    expect(GridAccess.cellAt(grid, Row.of(0), Col.of(0)).playerLetter).toEqual(Letter.try('A'));
+    expect(GridAccess.cellAt(grid, Row.of(0), Col.of(1)).playerLetter).toEqual(Letter.try('B'));
+    expect(GridAccess.cellAt(grid, Row.of(0), Col.of(2)).playerLetter).toEqual(Letter.try('C'));
+    expect(GridAccess.cellAt(grid, Row.of(2), Col.of(0)).playerLetter).toEqual(Letter.try('X'));
+    expect(GridAccess.cellAt(grid, Row.of(2), Col.of(2)).playerLetter).toEqual(Letter.try('Z'));
   });
 
   it('appStore: load-player-progress with null blob → no apply-loaded-progress dispatched (state unchanged)', () => {
@@ -329,7 +329,7 @@ describe('appStore.svelte.ts', () => {
     const before = store.getPlayer();
     expect(before.phase).toBe('solving');
     if (before.phase !== 'solving') throw new Error('unreachable');
-    expect(GridOps.cellAt(before.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
+    expect(GridAccess.cellAt(before.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
 
     store.dispatch({ target: 'player', kind: 'import-new-puzzle' });
     store.dispatch({ target: 'player', kind: 'import-puzzle', fileContent: serializeComplete(puzzle) });
@@ -337,7 +337,7 @@ describe('appStore.svelte.ts', () => {
     const after = store.getPlayer();
     expect(after.phase).toBe('solving');
     if (after.phase !== 'solving') throw new Error('unreachable');
-    expect(GridOps.cellAt(after.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
+    expect(GridAccess.cellAt(after.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
   });
 
   it('appStore: load-player-progress with corrupt blob (parsePlayerProgress returns null) → no apply-loaded-progress dispatched, console.warn fires, state unchanged', () => {
@@ -352,7 +352,7 @@ describe('appStore.svelte.ts', () => {
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
     if (player.phase !== 'solving') throw new Error('unreachable');
-    expect(GridOps.cellAt(player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
+    expect(GridAccess.cellAt(player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
 
     warnSpy.mockRestore();
   });
@@ -369,7 +369,7 @@ describe('appStore.svelte.ts', () => {
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
     if (player.phase !== 'solving') throw new Error('unreachable');
-    expect(GridOps.cellAt(player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
+    expect(GridAccess.cellAt(player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBeNull();
 
     warnSpy.mockRestore();
   });

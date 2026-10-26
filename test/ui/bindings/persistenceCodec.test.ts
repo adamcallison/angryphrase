@@ -15,7 +15,7 @@ import { PlayerState } from '../../../src/player/state/state';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
@@ -61,7 +61,7 @@ function makeAllBlackPuzzle(seed: number, size: number): PuzzleType {
   let grid = puzzle.grid;
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.black());
+      grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.black());
     }
   }
   const words = Numbering.assign(grid, WordDerivation.derive(grid));
@@ -192,7 +192,7 @@ describe('persistenceCodec.ts', () => {
       const state = makePlayerSolvingState(8);
       const puzzle = Puzzle.withGrid(
         state.puzzle,
-        GridOps.setCell(
+        GridAccess.setCell(
           state.puzzle.grid,
           Row.of(0),
           Col.of(1),
@@ -220,7 +220,7 @@ describe('persistenceCodec.ts', () => {
       const state = makePlayerSolvingState(10);
       const puzzle = Puzzle.withGrid(
         state.puzzle,
-        GridOps.setCell(
+        GridAccess.setCell(
           state.puzzle.grid,
           Row.of(0),
           Col.of(1),

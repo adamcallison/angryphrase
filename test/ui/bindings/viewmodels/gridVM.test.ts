@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { deriveGridVM } from '../../../../src/ui/bindings/viewmodels/gridVM';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
+import { WordTopology } from '../../../../src/domain/grid/WordTopology';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -14,11 +15,11 @@ import type { Cursor } from '../../../../src/domain/grid/Cursor';
 import type { Grid } from '../../../../src/domain/grid/Grid';
 
 function black2x2Grid(): Grid {
-  const grid = GridOps.blank(GridSize.of(2));
-  return GridOps.setCell(
-    GridOps.setCell(
-      GridOps.setCell(
-        GridOps.setCell(grid, Row.of(0), Col.of(0), Cell.black()),
+  const grid = GridAccess.blank(GridSize.of(2));
+  return GridAccess.setCell(
+    GridAccess.setCell(
+      GridAccess.setCell(
+        GridAccess.setCell(grid, Row.of(0), Col.of(0), Cell.black()),
         Row.of(0), Col.of(1), Cell.black()),
       Row.of(1), Col.of(0), Cell.black()),
     Row.of(1), Col.of(1), Cell.black());
@@ -67,8 +68,8 @@ describe('deriveGridVM', () => {
     }
   });
 
-  it('deriveGridVM: blank 2x2 grid (all white) → all cells white, no numbers, no separators, selectable per GridOps.isSelectable', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+  it('deriveGridVM: blank 2x2 grid (all white) → all cells white, no numbers, no separators, selectable per WordTopology.isSelectable', () => {
+    const grid = GridAccess.blank(GridSize.of(2));
     const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vm.cells).toHaveLength(2);
     for (let r = 0; r < 2; r++) {
@@ -81,20 +82,20 @@ describe('deriveGridVM', () => {
         expect(cell.hilite).toBe('none');
         expect(cell.separatorRight).toBe('none');
         expect(cell.separatorBottom).toBe('none');
-        expect(cell.selectable).toBe(GridOps.isSelectable(grid, Row.of(r), Col.of(c)));
+        expect(cell.selectable).toBe(WordTopology.isSelectable(grid, Row.of(r), Col.of(c)));
       }
     }
   });
 
   it('deriveGridVM: whichLetter=answer pulls answerLetter; whichLetter=player pulls playerLetter', () => {
-    const grid = GridOps.blank(GridSize.of(2));
-    const cell = GridOps.cellAt(grid, Row.of(0), Col.of(0));
+    const grid = GridAccess.blank(GridSize.of(2));
+    const cell = GridAccess.cellAt(grid, Row.of(0), Col.of(0));
     const answerLetter = Letter.try('A');
     const playerLetter = Letter.try('Z');
     expect(answerLetter).not.toBeNull();
     expect(playerLetter).not.toBeNull();
     const updated = Cell.setAnswerLetter(Cell.setPlayerLetter(cell, playerLetter!), answerLetter!);
-    const gridWithLetters = GridOps.setCell(grid, Row.of(0), Col.of(0), updated);
+    const gridWithLetters = GridAccess.setCell(grid, Row.of(0), Col.of(0), updated);
 
     const answerVM = deriveGridVM({ grid: gridWithLetters, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(answerVM.cells[0]![0]!.letter).toBe('A');
@@ -104,7 +105,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: word-start cell receives WordNumber; cells not at a word start get null', () => {
-    const grid = GridOps.blank(GridSize.of(3));
+    const grid = GridAccess.blank(GridSize.of(3));
     const words: Word[] = [wordAt0(), downWordAt0()];
     const vm = deriveGridVM({ grid, cursor: null, words, whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vm.cells[0]![0]!.number).toBe(1);
@@ -114,7 +115,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: cursor cell → hilite=selected', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+    const grid = GridAccess.blank(GridSize.of(2));
     const cursor: Cursor = { row: Row.of(0), col: Col.of(1), direction: 'across' };
     const vm = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vm.cells[0]![1]!.hilite).toBe('selected');
@@ -124,7 +125,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: selectedWordCells (excluding cursor cell) → hilite=in-word', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+    const grid = GridAccess.blank(GridSize.of(2));
     const cursor: Cursor = { row: Row.of(0), col: Col.of(0), direction: 'across' };
     const selectedWordCells = new Set(['0,1']);
     const vm = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells });
@@ -135,7 +136,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: cursor null, no selectedWordCells, no checkResult → all hilites none (Builder clean state)', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+    const grid = GridAccess.blank(GridSize.of(2));
     const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 2; c++) {
@@ -145,7 +146,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: cells beyond selectedWordCells are hilite=none', () => {
-    const grid = GridOps.blank(GridSize.of(3));
+    const grid = GridAccess.blank(GridSize.of(3));
     const selectedWordCells = new Set(['0,0']);
     const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'player', selectedWordCells });
     expect(vm.cells[0]![0]!.hilite).toBe('in-word');
@@ -153,35 +154,35 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: separatorRight reflects marker.right', () => {
-    const grid = GridOps.blank(GridSize.of(2));
-    const cell = GridOps.cellAt(grid, Row.of(0), Col.of(0));
+    const grid = GridAccess.blank(GridSize.of(2));
+    const cell = GridAccess.cellAt(grid, Row.of(0), Col.of(0));
     const markedSpace = Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'space'));
-    const gSpace = GridOps.setCell(grid, Row.of(0), Col.of(0), markedSpace);
+    const gSpace = GridAccess.setCell(grid, Row.of(0), Col.of(0), markedSpace);
     const vmSpace = deriveGridVM({ grid: gSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmSpace.cells[0]![0]!.separatorRight).toBe('space');
 
     const cell2 = Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'hyphen'));
-    const gHyphen = GridOps.setCell(grid, Row.of(0), Col.of(0), cell2);
+    const gHyphen = GridAccess.setCell(grid, Row.of(0), Col.of(0), cell2);
     const vmHyphen = deriveGridVM({ grid: gHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmHyphen.cells[0]![0]!.separatorRight).toBe('hyphen');
   });
 
   it('deriveGridVM: separatorBottom reflects marker.bottom', () => {
-    const grid = GridOps.blank(GridSize.of(2));
-    const cell = GridOps.cellAt(grid, Row.of(0), Col.of(0));
+    const grid = GridAccess.blank(GridSize.of(2));
+    const cell = GridAccess.cellAt(grid, Row.of(0), Col.of(0));
     const markedSpace = Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'space'));
-    const gSpace = GridOps.setCell(grid, Row.of(0), Col.of(0), markedSpace);
+    const gSpace = GridAccess.setCell(grid, Row.of(0), Col.of(0), markedSpace);
     const vmSpace = deriveGridVM({ grid: gSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmSpace.cells[0]![0]!.separatorBottom).toBe('space');
 
     const cell2 = Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'hyphen'));
-    const gHyphen = GridOps.setCell(grid, Row.of(0), Col.of(0), cell2);
+    const gHyphen = GridAccess.setCell(grid, Row.of(0), Col.of(0), cell2);
     const vmHyphen = deriveGridVM({ grid: gHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmHyphen.cells[0]![0]!.separatorBottom).toBe('hyphen');
   });
 
   it('deriveGridVM: GridVM.size === grid.length; cells.length === size; cells[0].length === size (row-major)', () => {
-    const grid = GridOps.blank(GridSize.of(3));
+    const grid = GridAccess.blank(GridSize.of(3));
     const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vm.size).toBe(grid.length);
     expect(vm.cells.length).toBe(grid.length);
@@ -191,7 +192,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: the cursor fields are plain numbers and null when there is no cursor', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+    const grid = GridAccess.blank(GridSize.of(2));
     const vm1 = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vm1.cursorRow).toBeNull();
     expect(vm1.cursorCol).toBeNull();
@@ -204,7 +205,7 @@ describe('deriveGridVM', () => {
   });
 
   it('deriveGridVM: the cursor direction is carried through as a plain value', () => {
-    const grid = GridOps.blank(GridSize.of(2));
+    const grid = GridAccess.blank(GridSize.of(2));
     const across: Cursor = { row: Row.of(0), col: Col.of(0), direction: 'across' };
     const vmAcross = deriveGridVM({ grid, cursor: across, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     expect(vmAcross.cursorDirection).toBe('across');
@@ -214,25 +215,25 @@ describe('deriveGridVM', () => {
     expect(vmDown.cursorDirection).toBe('down');
   });
 
-  it('deriveGridVM: selectable matches GridOps.isSelectable for white cells', () => {
-    const grid = GridOps.blank(GridSize.of(3));
-    const g = GridOps.setCell(grid, Row.of(1), Col.of(1), Cell.black());
+  it('deriveGridVM: selectable matches WordTopology.isSelectable for white cells', () => {
+    const grid = GridAccess.blank(GridSize.of(3));
+    const g = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.black());
     const vm = deriveGridVM({ grid: g, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
-        const expected = GridOps.isSelectable(g, Row.of(r), Col.of(c));
+        const expected = WordTopology.isSelectable(g, Row.of(r), Col.of(c));
         expect(vm.cells[r]![c]!.selectable).toBe(expected);
       }
     }
   });
 
-  it('deriveGridVM: selectable matches GridOps.isSelectable for every cell', () => {
-    const grid = GridOps.blank(GridSize.of(3));
-    const g = GridOps.setCell(grid, Row.of(1), Col.of(1), Cell.black());
+  it('deriveGridVM: selectable matches WordTopology.isSelectable for every cell', () => {
+    const grid = GridAccess.blank(GridSize.of(3));
+    const g = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.black());
     const vm = deriveGridVM({ grid: g, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
-        expect(vm.cells[r]![c]!.selectable).toBe(GridOps.isSelectable(g, Row.of(r), Col.of(c)));
+        expect(vm.cells[r]![c]!.selectable).toBe(WordTopology.isSelectable(g, Row.of(r), Col.of(c)));
       }
     }
   });

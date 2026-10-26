@@ -1,10 +1,7 @@
 import type { Grid } from '../../../domain/grid/Grid';
-import { Row } from '../../../domain/grid/Row';
-import { Col } from '../../../domain/grid/Col';
 import type { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
-import { GridOps } from '../../../domain/grid/GridOps';
 import { WordTopology } from '../../../domain/grid/WordTopology';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../domain/grid/Cursor';
@@ -65,15 +62,10 @@ export function deriveGridVM(input: {
     wordStartNumber.set(key, Number(word.number));
   }
 
-  const cells: GridCellVM[][] = [];
-  for (let r = 0; r < grid.length; r++) {
-    const rowVms: GridCellVM[] = [];
-    for (let c = 0; c < grid.length; c++) {
-      const row = Row.of(r);
-      const col = Col.of(c);
-      const cell = GridOps.cellAt(grid, row, col);
+  const cells: GridCellVM[][] = grid.map((rowCells, r): GridCellVM[] =>
+    rowCells.map((cell, c): GridCellVM => {
       if (cell.black) {
-        rowVms.push({
+        return {
           row: r,
           col: c,
           black: true,
@@ -83,40 +75,39 @@ export function deriveGridVM(input: {
           separatorRight: 'none',
           separatorBottom: 'none',
           selectable: false,
-        });
-      } else {
-        const letter =
-          whichLetter === 'answer'
-            ? cell.answerLetter
-              ? String(cell.answerLetter)
-              : null
-            : cell.playerLetter
-              ? String(cell.playerLetter)
-              : null;
-        const number = wordStartNumber.get(cellKey(r, c)) ?? null;
-
-        let hilite: CellHilite = 'none';
-        if (cursor && cursor.row === row && cursor.col === col) {
-          hilite = 'selected';
-        } else if (selectedWordCells.has(cellKey(r, c))) {
-          hilite = 'in-word';
-        }
-
-        rowVms.push({
-          row: r,
-          col: c,
-          black: false,
-          letter,
-          number,
-          hilite,
-          separatorRight: deriveSeparatorRight(cell),
-          separatorBottom: deriveSeparatorBottom(cell),
-          selectable: mask[r]?.[c] === true,
-        });
+        };
       }
-    }
-    cells.push(rowVms);
-  }
+
+      const letter =
+        whichLetter === 'answer'
+          ? cell.answerLetter
+            ? String(cell.answerLetter)
+            : null
+          : cell.playerLetter
+            ? String(cell.playerLetter)
+            : null;
+      const number = wordStartNumber.get(cellKey(r, c)) ?? null;
+
+      let hilite: CellHilite = 'none';
+      if (cursor && Number(cursor.row) === r && Number(cursor.col) === c) {
+        hilite = 'selected';
+      } else if (selectedWordCells.has(cellKey(r, c))) {
+        hilite = 'in-word';
+      }
+
+      return {
+        row: r,
+        col: c,
+        black: false,
+        letter,
+        number,
+        hilite,
+        separatorRight: deriveSeparatorRight(cell),
+        separatorBottom: deriveSeparatorBottom(cell),
+        selectable: mask[r]?.[c] === true,
+      };
+    }),
+  );
 
   return { size, cells, cursorRow, cursorCol, cursorDirection };
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveAnagramModalVM } from '../../../../src/ui/bindings/viewmodels/anagramVM';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -28,11 +28,11 @@ const CLOSED_BASELINE = {
 };
 
 function grid3x3(): Grid {
-  return GridOps.blank(GridSize.of(3));
+  return GridAccess.blank(GridSize.of(3));
 }
 
 function grid4x4(): Grid {
-  return GridOps.blank(GridSize.of(4));
+  return GridAccess.blank(GridSize.of(4));
 }
 
 function word3Across(): Word {
@@ -78,19 +78,19 @@ function word4DownTail(): Word {
 function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridOps.cellAt(grid, r, c);
+  const cell = GridAccess.cellAt(grid, r, c);
   const l = Letter.try(letter);
   expect(l).not.toBeNull();
-  return GridOps.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
+  return GridAccess.setCell(grid, r, c, Cell.setPlayerLetter(cell, l!));
 }
 
 function setMarker(grid: Grid, row: number, col: number, flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridOps.cellAt(grid, r, c);
+  const cell = GridAccess.cellAt(grid, r, c);
   const axis = flag.endsWith('right') ? 'right' : 'bottom';
   const separator = flag.startsWith('space') ? 'space' : 'hyphen';
-  return GridOps.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
+  return GridAccess.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
 }
 
 function makeLetters(s: string): Letter[] {

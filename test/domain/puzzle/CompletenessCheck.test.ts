@@ -3,7 +3,7 @@ import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { CompletenessCheck, type CompletenessViolation } from '../../../src/domain/puzzle/CompletenessCheck';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
@@ -43,7 +43,7 @@ function fillGrid(grid: Grid) {
     for (let c = 0; c < row.length; c++) {
       const cell = row[c]!;
       if (!cell.black) {
-        g = GridOps.setCell(g, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, Letter.try('A')));
+        g = GridAccess.setCell(g, Row.of(r), Col.of(c), Cell.setAnswerLetter(cell, Letter.try('A')));
       }
     }
   }
@@ -62,11 +62,11 @@ describe('CompletenessCheck', () => {
 
   it('check reports missing-answer-letter for each empty white cell, plus missing-clue for derived heads with empty clue', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    const grid = GridOps.setCell(
+    const grid = GridAccess.setCell(
       p.grid,
       Row.of(0),
       Col.of(0),
-      Cell.setAnswerLetter(GridOps.cellAt(p.grid, Row.of(0), Col.of(0)), Letter.try('A')),
+      Cell.setAnswerLetter(GridAccess.cellAt(p.grid, Row.of(0), Col.of(0)), Letter.try('A')),
     );
     const partial = Puzzle.withGrid(p, grid);
 
@@ -83,10 +83,10 @@ describe('CompletenessCheck', () => {
 
   it('check does not report black cells as missing', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    let grid = GridOps.setCell(p.grid, Row.of(0), Col.of(0), Cell.black());
-    grid = GridOps.setCell(grid, Row.of(0), Col.of(1), Cell.black());
-    grid = GridOps.setCell(grid, Row.of(1), Col.of(0), Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('A')));
-    grid = GridOps.setCell(grid, Row.of(1), Col.of(1), Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('B')));
+    let grid = GridAccess.setCell(p.grid, Row.of(0), Col.of(0), Cell.black());
+    grid = GridAccess.setCell(grid, Row.of(0), Col.of(1), Cell.black());
+    grid = GridAccess.setCell(grid, Row.of(1), Col.of(0), Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('A')));
+    grid = GridAccess.setCell(grid, Row.of(1), Col.of(1), Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('B')));
     const words = [makeWord(1, 0, 'across', 1, 'clue')];
     const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);
 
@@ -126,23 +126,23 @@ describe('CompletenessCheck', () => {
 
   it('violations are ordered: missing-answer letters first (row-major), then missing-clue', () => {
     const p = Puzzle.blank(GridSize.of(2), makeKey());
-    let grid = GridOps.setCell(
+    let grid = GridAccess.setCell(
       p.grid,
       Row.of(0),
       Col.of(1),
-      Cell.setAnswerLetter(GridOps.cellAt(p.grid, Row.of(0), Col.of(1)), Letter.try('A')),
+      Cell.setAnswerLetter(GridAccess.cellAt(p.grid, Row.of(0), Col.of(1)), Letter.try('A')),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(1),
       Col.of(0),
-      Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('B')),
+      Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('B')),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(1),
       Col.of(1),
-      Cell.setAnswerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('C')),
+      Cell.setAnswerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('C')),
     );
     const words = [makeWord(0, 0, 'across', 1, '')];
     const puzzle = Puzzle.withWords(Puzzle.withGrid(p, grid), words);

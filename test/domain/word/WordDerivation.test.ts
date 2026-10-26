@@ -2,22 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
 import type { Grid } from '../../../src/domain/grid/Grid';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import { WordKey } from '../../../src/domain/word/WordKey';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
 
 function blank(size: number): Grid {
-  return GridOps.blank(GridSize.of(size));
+  return GridAccess.blank(GridSize.of(size));
 }
 
 function blackAt(g: Grid, r: number, c: number): Grid {
-  return GridOps.setCell(g, Row.of(r), Col.of(c), Cell.black());
+  return GridAccess.setCell(g, Row.of(r), Col.of(c), Cell.black());
 }
 
 function whiteAt(g: Grid, r: number, c: number): Grid {
-  return GridOps.setCell(g, Row.of(r), Col.of(c), Cell.white());
+  return GridAccess.setCell(g, Row.of(r), Col.of(c), Cell.white());
 }
 
 describe('WordDerivation', () => {

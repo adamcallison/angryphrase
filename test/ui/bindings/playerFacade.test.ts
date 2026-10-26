@@ -13,7 +13,7 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { Cell } from '../../../src/domain/grid/Cell';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
@@ -37,7 +37,7 @@ function makeCompletePuzzle(seed: number, size: number): Puzzle {
     for (let c = 0; c < size; c++) {
       const letter = Letter.try(String.fromCharCode(65 + ((r * size + c) % 26)));
       if (letter === null) throw new Error('makeCompletePuzzle: invalid letter');
-      grid = GridOps.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(Cell.white(), letter));
+      grid = GridAccess.setCell(grid, Row.of(r), Col.of(c), Cell.setAnswerLetter(Cell.white(), letter));
     }
   }
 

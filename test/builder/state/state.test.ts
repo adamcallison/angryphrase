@@ -3,7 +3,7 @@ import { BuilderState } from '../../../src/builder/state/state';
 import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { Row } from '../../../src/domain/grid/Row';
@@ -55,7 +55,7 @@ describe('BuilderState', () => {
     const rng = new SeededRng(5);
     const key = PuzzleKey.generate(rng);
     const puzzle = Puzzle.blank(GridSize.DEFAULT, key);
-    const gridWithAnswer = GridOps.setCell(
+    const gridWithAnswer = GridAccess.setCell(
       puzzle.grid,
       Row.of(0),
       Col.of(0),

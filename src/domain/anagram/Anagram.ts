@@ -1,4 +1,4 @@
-import { GridOps } from '../grid/GridOps';
+import { GridAccess } from '../grid/GridAccess';
 import type { Grid } from '../grid/Grid';
 import { WordGeometry } from '../word/WordGeometry';
 import type { Word } from '../word/Word';
@@ -63,7 +63,7 @@ export const Anagram: {
     for (let i = 0; i < cells.length; i++) {
       const cellCoord = cells[i];
       if (cellCoord === undefined) throw new Error('Anagram.buildWordModel: cell undefined');
-      const cell = GridOps.cellAt(grid, cellCoord.row, cellCoord.col);
+      const cell = GridAccess.cellAt(grid, cellCoord.row, cellCoord.col);
       if (cell.black) {
         throw new Error('Anagram.buildWordModel: word cell is black');
       }
@@ -101,7 +101,7 @@ export const Anagram: {
 
       if (i < members.length - 1) {
         const last = WordGeometry.lastCell(member);
-        const lastCell = GridOps.cellAt(grid, last.row, last.col);
+        const lastCell = GridAccess.cellAt(grid, last.row, last.col);
         const axis = member.key.direction === 'across' ? 'right' : 'bottom';
         separators.push(CellMarker.read(lastCell.marker, axis));
       }

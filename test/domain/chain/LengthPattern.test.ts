@@ -5,7 +5,7 @@ import { WordNumber } from '../../../src/domain/word/WordNumber';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { GridSize } from '../../../src/domain/grid/GridSize';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
 import { WordLength } from '../../../src/domain/word/WordLength';
@@ -47,8 +47,8 @@ function markerFlag(flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyp
 }
 
 function applyMarker(grid: Grid, row: number, col: number, marker: CellMarker): Grid {
-  const cell = GridOps.cellAt(grid, Row.of(row), Col.of(col));
-  return GridOps.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(cell, marker));
+  const cell = GridAccess.cellAt(grid, Row.of(row), Col.of(col));
+  return GridAccess.setCell(grid, Row.of(row), Col.of(col), Cell.setMarker(cell, marker));
 }
 
 function applyBoundaryMarker(grid: Grid, w: Word, flag: 'space-right' | 'space-bottom' | 'hyphen-right' | 'hyphen-bottom'): Grid {
@@ -57,13 +57,13 @@ function applyBoundaryMarker(grid: Grid, w: Word, flag: 'space-right' | 'space-b
     w.key.direction,
     Number(w.length) - 1,
   );
-  const cell = GridOps.cellAt(grid, end.row, end.col);
-  return GridOps.setCell(grid, end.row, end.col, Cell.setMarker(cell, markerFlag(flag)));
+  const cell = GridAccess.cellAt(grid, end.row, end.col);
+  return GridAccess.setCell(grid, end.row, end.col, Cell.setMarker(cell, markerFlag(flag)));
 }
 
 describe('LengthPattern', () => {
   it('head word with nextWord null and no markers returns String(length)', () => {
-    const grid = GridOps.blank(GridSize.of(5));
+    const grid = GridAccess.blank(GridSize.of(5));
     const w = makeWord(0, 0, 'across', null, 5);
     const index = buildIndex([w]);
 
@@ -71,7 +71,7 @@ describe('LengthPattern', () => {
   });
 
   it('head word with nextWord null, single space marker between cells 1-2 of 4 returns "2, 2"', () => {
-    let grid = GridOps.blank(GridSize.of(5));
+    let grid = GridAccess.blank(GridSize.of(5));
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const index = buildIndex([w]);
@@ -80,7 +80,7 @@ describe('LengthPattern', () => {
   });
 
   it('head word with nextWord null, single hyphen marker between cells 1-2 of 4 returns "2-2"', () => {
-    let grid = GridOps.blank(GridSize.of(5));
+    let grid = GridAccess.blank(GridSize.of(5));
     grid = applyMarker(grid, 0, 1, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const index = buildIndex([w]);
@@ -89,7 +89,7 @@ describe('LengthPattern', () => {
   });
 
   it('head word with nextWord null, mixed space and hyphen markers returns "2, 2-2"', () => {
-    let grid = GridOps.blank(GridSize.of(6));
+    let grid = GridAccess.blank(GridSize.of(6));
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     grid = applyMarker(grid, 0, 3, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 6);
@@ -99,7 +99,7 @@ describe('LengthPattern', () => {
   });
 
   it('across word reads right-axis markers', () => {
-    let grid = GridOps.blank(GridSize.of(5));
+    let grid = GridAccess.blank(GridSize.of(5));
     const marker = CellMarker.write(
       CellMarker.write(CellMarker.EMPTY, 'right', 'space'),
       'bottom',
@@ -113,7 +113,7 @@ describe('LengthPattern', () => {
   });
 
   it('down word reads bottom-axis markers', () => {
-    let grid = GridOps.blank(GridSize.of(5));
+    let grid = GridAccess.blank(GridSize.of(5));
     const marker = CellMarker.write(
       CellMarker.write(CellMarker.EMPTY, 'right', 'space'),
       'bottom',
@@ -127,7 +127,7 @@ describe('LengthPattern', () => {
   });
 
   it('word with nextWord != null joins separator-aware member patterns with comma+space', () => {
-    let grid = GridOps.blank(GridSize.of(7));
+    let grid = GridAccess.blank(GridSize.of(7));
     const b = makeWord(1, 1, 'across', null, 4);
     const a = makeWord(0, 0, 'across', b.key, 3);
     grid = applyBoundaryMarker(grid, a, 'space-right');
@@ -137,7 +137,7 @@ describe('LengthPattern', () => {
   });
 
   it('three-deep chain A->B->C returns "lenA, lenB, lenC"', () => {
-    let grid = GridOps.blank(GridSize.of(7));
+    let grid = GridAccess.blank(GridSize.of(7));
     const c = makeWord(2, 2, 'across', null, 5);
     const b = makeWord(1, 1, 'across', c.key, 4);
     const a = makeWord(0, 0, 'across', b.key, 3);
@@ -149,7 +149,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain head enumeration splits a non-head member on its space marker', () => {
-    let grid = GridOps.blank(GridSize.of(9));
+    let grid = GridAccess.blank(GridSize.of(9));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -162,7 +162,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain head enumeration splits a non-head member on its hyphen marker', () => {
-    let grid = GridOps.blank(GridSize.of(9));
+    let grid = GridAccess.blank(GridSize.of(9));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -175,7 +175,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain head with markers in two members enumerates each separator-aware', () => {
-    let grid = GridOps.blank(GridSize.of(9));
+    let grid = GridAccess.blank(GridSize.of(9));
     const middle = makeWord(1, 0, 'across', null, 4);
     const head = makeWord(0, 0, 'across', middle.key, 4);
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
@@ -187,7 +187,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain head with a marked head member and plain tail', () => {
-    let grid = GridOps.blank(GridSize.of(9));
+    let grid = GridAccess.blank(GridSize.of(9));
     const tail = makeWord(1, 0, 'across', null, 5);
     const head = makeWord(0, 0, 'across', tail.key, 4);
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
@@ -198,7 +198,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain with hyphen boundary markers renders 5-9-7', () => {
-    let grid = GridOps.blank(GridSize.of(11));
+    let grid = GridAccess.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -210,7 +210,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain with empty boundary markers merges member lengths into 21', () => {
-    const grid = GridOps.blank(GridSize.of(11));
+    const grid = GridAccess.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -220,7 +220,7 @@ describe('LengthPattern', () => {
   });
 
   it('chain with mixed boundaries renders 5, 9-7', () => {
-    let grid = GridOps.blank(GridSize.of(11));
+    let grid = GridAccess.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -232,7 +232,7 @@ describe('LengthPattern', () => {
   });
 
   it('none boundary merges the run into the next member\'s internal space split (7, 7, 7)', () => {
-    let grid = GridOps.blank(GridSize.of(11));
+    let grid = GridAccess.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
@@ -244,7 +244,7 @@ describe('LengthPattern', () => {
   });
 
   it('boundary marker on a down-word member reads the bottom pair', () => {
-    let grid = GridOps.blank(GridSize.of(7));
+    let grid = GridAccess.blank(GridSize.of(7));
     const tail = makeWord(0, 1, 'down', null, 5);
     const head = makeWord(0, 0, 'down', tail.key, 5);
     grid = applyBoundaryMarker(grid, head, 'space-bottom');

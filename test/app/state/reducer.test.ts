@@ -11,7 +11,7 @@ import { SeededRng } from '../../fakes/SeededRng';
 import { FakeClock } from '../../fakes/FakeClock';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Letter } from '../../../src/domain/letter/Letter';
 
@@ -203,16 +203,16 @@ describe('reduceApp', () => {
     );
     expect(playResult.state.player.phase).toBe('solving');
     if (playResult.state.player.phase !== 'solving') throw new Error('expected solving');
-    expect(GridOps.cellAt(playResult.state.player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toEqual(
+    expect(GridAccess.cellAt(playResult.state.player.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toEqual(
       Letter.try('A'),
     );
 
     const letter = Letter.try('B')!;
-    const gridWithAnswer = GridOps.setCell(
+    const gridWithAnswer = GridAccess.setCell(
       state.builder.puzzle.grid,
       Row.of(0),
       Col.of(0),
-      Cell.setAnswerLetter(GridOps.cellAt(state.builder.puzzle.grid, Row.of(0), Col.of(0)), letter),
+      Cell.setAnswerLetter(GridAccess.cellAt(state.builder.puzzle.grid, Row.of(0), Col.of(0)), letter),
     );
     const buildState = {
       ...state,
@@ -225,7 +225,7 @@ describe('reduceApp', () => {
       },
     };
     const buildResult = reduceApp(buildState, { target: 'builder', kind: 'backspace' }, deps);
-    expect(GridOps.cellAt(buildResult.state.builder.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(null);
+    expect(GridAccess.cellAt(buildResult.state.builder.puzzle.grid, Row.of(0), Col.of(0)).answerLetter).toBe(null);
   });
 
   it('reduceApp: ambiguous kind (report-import-read-failure) routes to Player on play route and Builder on build route', () => {

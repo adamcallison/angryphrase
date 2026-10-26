@@ -6,7 +6,7 @@ import {
   deriveCheckResultVM,
   derivePlayerShellVM,
 } from '../../../../src/ui/bindings/viewmodels/playerVM';
-import { GridOps } from '../../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../../src/domain/grid/GridAccess';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
 import { Col } from '../../../../src/domain/grid/Col';
@@ -50,19 +50,19 @@ function puzzleWithMetadata(p: Puzzle, title: string, author: string): Puzzle {
 function setAnswerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridOps.cellAt(grid, r, c);
+  const cell = GridAccess.cellAt(grid, r, c);
   const l = Letter.try(letter);
   if (l === null) throw new Error(`Invalid letter: ${letter}`);
-  return GridOps.setCell(grid, r, c, Cell.setAnswerLetter(cell, l));
+  return GridAccess.setCell(grid, r, c, Cell.setAnswerLetter(cell, l));
 }
 
 function setPlayerLetter(grid: Grid, row: number, col: number, letter: string): Grid {
   const r = Row.of(row);
   const c = Col.of(col);
-  const cell = GridOps.cellAt(grid, r, c);
+  const cell = GridAccess.cellAt(grid, r, c);
   const l = Letter.try(letter);
   if (l === null) throw new Error(`Invalid letter: ${letter}`);
-  return GridOps.setCell(grid, r, c, Cell.setPlayerLetter(cell, l));
+  return GridAccess.setCell(grid, r, c, Cell.setPlayerLetter(cell, l));
 }
 
 function makeWord(opts: {
@@ -264,7 +264,7 @@ describe('derivePlayerToolbarVM', () => {
   it('derivePlayerToolbarVM: solving phase with cursor on a stray cell (no word) → canOpenAnagram=false', () => {
     let puzzle = makeBlankPuzzle(3);
     let grid = puzzle.grid;
-    grid = GridOps.setCell(grid, Row.of(2), Col.of(1), Cell.black());
+    grid = GridAccess.setCell(grid, Row.of(2), Col.of(1), Cell.black());
     const words = Numbering.assign(grid, WordDerivation.derive(grid));
     puzzle = puzzleWithWords(puzzleWithGrid(puzzle, grid), words);
     const state = makeSolvingState({

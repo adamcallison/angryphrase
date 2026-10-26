@@ -8,7 +8,7 @@ import { Puzzle } from '../../../src/domain/puzzle/Puzzle';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
-import { GridOps } from '../../../src/domain/grid/GridOps';
+import { GridAccess } from '../../../src/domain/grid/GridAccess';
 import { Letter } from '../../../src/domain/letter/Letter';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { WordDerivation } from '../../../src/domain/word/WordDerivation';
@@ -87,21 +87,21 @@ describe('reducePlayer', () => {
     if (state.phase !== 'solving') throw new Error('expected solving');
 
     let grid = state.puzzle.grid;
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(0),
       Col.of(0),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(0), Col.of(0)), Letter.try('A')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(0), Col.of(0)), Letter.try('A')!),
         Letter.try('A')!,
       ),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(0),
       Col.of(1),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(0), Col.of(1)), Letter.try('X')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(0), Col.of(1)), Letter.try('X')!),
         Letter.try('B')!,
       ),
     );
@@ -114,8 +114,8 @@ describe('reducePlayer', () => {
     const result = reducePlayer(checked.state, { kind: 'clear-errors', target: 'player' }, deps);
 
     if (result.state.phase !== 'solving') throw new Error('expected solving');
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
-    expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
+    expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
       Letter.try('A'),
     );
     expect(result.state.checkResult).toBe(null);
@@ -135,39 +135,39 @@ describe('reducePlayer', () => {
     if (state.phase !== 'solving') throw new Error('expected solving');
 
     let grid = state.puzzle.grid;
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(0),
       Col.of(0),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(0), Col.of(0)), Letter.try('A')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(0), Col.of(0)), Letter.try('A')!),
         Letter.try('A')!,
       ),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(0),
       Col.of(1),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(0), Col.of(1)), Letter.try('B')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(0), Col.of(1)), Letter.try('B')!),
         Letter.try('B')!,
       ),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(1),
       Col.of(0),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('C')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(0)), Letter.try('C')!),
         Letter.try('C')!,
       ),
     );
-    grid = GridOps.setCell(
+    grid = GridAccess.setCell(
       grid,
       Row.of(1),
       Col.of(1),
       Cell.setAnswerLetter(
-        Cell.setPlayerLetter(GridOps.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('D')!),
+        Cell.setPlayerLetter(GridAccess.cellAt(grid, Row.of(1), Col.of(1)), Letter.try('D')!),
         Letter.try('D')!,
       ),
     );
@@ -368,10 +368,10 @@ describe('reducePlayer', () => {
 
       expect(result.state.phase).toBe('solving');
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
         Letter.try('X'),
       );
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(
         Letter.try('Y'),
       );
     });
@@ -405,10 +405,10 @@ describe('reducePlayer', () => {
 
       expect(result.state.phase).toBe('solving');
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
         Letter.try('X'),
       );
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(1)).playerLetter).toBe(null);
     });
 
     it('apply-loaded-progress: silently drops saved letters targeting now-black cells', () => {
@@ -428,9 +428,9 @@ describe('reducePlayer', () => {
 
       expect(result.state.phase).toBe('solving');
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(null);
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).black).toBe(true);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).playerLetter).toBe(null);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(1)).playerLetter).toBe(null);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(1), Col.of(0)).black).toBe(true);
     });
   });
 
@@ -508,11 +508,11 @@ describe('reducePlayer', () => {
         ...state,
         puzzle: {
           ...state.puzzle,
-          grid: GridOps.setCell(
+          grid: GridAccess.setCell(
             state.puzzle.grid,
             Row.of(0),
             Col.of(0),
-            Cell.setPlayerLetter(GridOps.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)), Letter.try('X')),
+            Cell.setPlayerLetter(GridAccess.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)), Letter.try('X')),
           ),
         },
         cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },
@@ -528,7 +528,7 @@ describe('reducePlayer', () => {
 
       expect(result.state.phase).toBe('solving');
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
       expect(result.state.cursor).toBe(null);
       expect(result.state.checkResult).toBe(null);
       expect(result.state.anagram).toBe(null);
@@ -540,8 +540,8 @@ describe('reducePlayer', () => {
     function solvingStateWith5x5Words() {
       const puzzle = Puzzle.blank(GridSize.of(5), PuzzleKey.generate(new SeededRng(1)));
       let grid = puzzle.grid;
-      grid = GridOps.setCell(grid, Row.of(0), Col.of(3), Cell.black());
-      grid = GridOps.setCell(grid, Row.of(0), Col.of(4), Cell.black());
+      grid = GridAccess.setCell(grid, Row.of(0), Col.of(3), Cell.black());
+      grid = GridAccess.setCell(grid, Row.of(0), Col.of(4), Cell.black());
       const words = Numbering.assign(grid, WordDerivation.derive(grid));
       return PlayerState.loaded(Puzzle.withWords(Puzzle.withGrid(puzzle, grid), words));
     }
@@ -553,8 +553,8 @@ describe('reducePlayer', () => {
       letter: string,
     ): ReturnType<typeof solvingStateWith5x5Words> {
       if (state.phase !== 'solving') throw new Error('expected solving');
-      const cell = GridOps.cellAt(state.puzzle.grid, Row.of(r), Col.of(c));
-      const newGrid = GridOps.setCell(
+      const cell = GridAccess.cellAt(state.puzzle.grid, Row.of(r), Col.of(c));
+      const newGrid = GridAccess.setCell(
         state.puzzle.grid,
         Row.of(r),
         Col.of(c),
@@ -753,7 +753,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(state, { kind: 'type-letter', target: 'player', letter: Letter.try('A')! }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(
         Letter.try('A'),
       );
       expect(result.state.cursor).toEqual({
@@ -770,11 +770,11 @@ describe('reducePlayer', () => {
         ...state,
         puzzle: {
           ...state.puzzle,
-          grid: GridOps.setCell(
+          grid: GridAccess.setCell(
             state.puzzle.grid,
             Row.of(0),
             Col.of(0),
-            Cell.setPlayerLetter(GridOps.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)), Letter.try('X')),
+            Cell.setPlayerLetter(GridAccess.cellAt(state.puzzle.grid, Row.of(0), Col.of(0)), Letter.try('X')),
           ),
         },
         cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' },
@@ -783,7 +783,7 @@ describe('reducePlayer', () => {
       const result = reducePlayer(state, { kind: 'backspace', target: 'player' }, deps);
 
       if (result.state.phase !== 'solving') throw new Error('expected solving');
-      expect(GridOps.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
+      expect(GridAccess.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).playerLetter).toBe(null);
       expect(result.state.cursor).toEqual({
         row: Row.of(0),
         col: Col.of(0),
