@@ -143,6 +143,28 @@ add no safety at all.
 **Risk:** low; type-level only. Many domain unit tests construct these values and must be
 updated.
 
+**Status (2026-10-26): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O2 — Brand-type boilerplate: generic constructor factory + removal of ceremony brands").
+Corrections to this item, made during the resolution: (a) the module list in (5) is wrong —
+`DurationMs` has no constructor (O3 removed its `try`/`of`), and the of-only owners
+(`EpochMs`, `WordLength`, `WordNumber`) must **not** re-expose the `try` halves O3 deleted as
+dead API; (b) (1) is **declined** — `Title.try` validates nothing, but the *brand* is what makes
+`Title` and `Author` non-interchangeable, and `type Title = string` is not a distinct type, so
+deleting the brands trades the title/author distinction and architecture.md §2 principle 4 for 14
+production lines; the brands stay and the constructor is renamed `Title.of`/`Author.of`, which
+also removes two unreachable null-checks the misleading name had produced in `builderFacade`;
+(c) (2) understates the problem — `AnagramEntry.position` is a **dead field** (read nowhere; the
+view-model derives a tile's slot from the array index), so the brand *and* the field are deleted
+rather than the brand being replaced by `number`; (d) the rationale in (3) is wrong — the previous
+16-byte hex generator was already collision-safe, and `uuidv4` carries slightly *fewer* entropy
+bits; the change is a **format change** (toast ids become UUID-v4 strings), not a safety fix;
+(e) the estimate is corrected from "−150 to −200" to **−45 production lines** — but **+79 test
+lines**, so the change is **+33 lines in total** (the test tree grew, because the guards this item
+proposed to drop are now pinned by tests, and the shared factory earned its own test file). The
+item's quality claim — one shape for brand construction — is met; its quantity claim was not. Leftovers: none; the sites not
+migrated (`Letter`, `DurationMs`) are listed in the resolution's "Not addressed" table with their
+reasons. This entry also closes the pointer O3's entry left open for O2.2.
+
 ---
 
 ## O3. Delete dead / test-only API surface (est. −170 LOC, verified by grep across `src/`)

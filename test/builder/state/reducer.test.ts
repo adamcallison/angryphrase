@@ -103,7 +103,7 @@ describe('reduceBuilder', () => {
 
   it('edit-title updates puzzle.title via Puzzle.withMetadata', () => {
     const state = blank();
-    const title = Title.try('New Title');
+    const title = Title.of('New Title');
     const result = reduceBuilder(state, { target: 'builder', kind: 'edit-title', title }, deps);
 
     expect(result.state.puzzle.title).toBe(title);
@@ -112,7 +112,7 @@ describe('reduceBuilder', () => {
 
   it('edit-author updates puzzle.author via Puzzle.withMetadata', () => {
     const state = blank();
-    const author = Author.try('New Author');
+    const author = Author.of('New Author');
     const result = reduceBuilder(state, { target: 'builder', kind: 'edit-author', author }, deps);
 
     expect(result.state.puzzle.author).toBe(author);

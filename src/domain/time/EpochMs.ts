@@ -1,14 +1,5 @@
-import { brand, type Brand } from '../brand';
+import { intBrand, type Brand } from '../brand';
 
 export type EpochMs = Brand<'EpochMs', number>;
 
-export const EpochMs: {
-  of(n: number): EpochMs;
-} = {
-  of(n: number): EpochMs {
-    if (!Number.isInteger(n) || n < 0) {
-      throw new RangeError(`Invalid EpochMs: ${n}`);
-    }
-    return brand(n);
-  }
-};
+export const EpochMs: { of(n: number): EpochMs } = { of: intBrand('EpochMs', 0).of };

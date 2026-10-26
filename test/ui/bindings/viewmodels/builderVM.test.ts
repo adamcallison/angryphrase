@@ -81,7 +81,7 @@ function stateWithDisplacedClues(state: BuilderState, displacedClues: DisplacedC
 function stateWithMetadata(state: BuilderState, title: string, author: string): BuilderState {
   return {
     ...state,
-    puzzle: Puzzle.withMetadata(state.puzzle, Title.try(title), Author.try(author)),
+    puzzle: Puzzle.withMetadata(state.puzzle, Title.of(title), Author.of(author)),
   };
 }
 

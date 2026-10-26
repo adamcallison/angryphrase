@@ -1,4 +1,4 @@
-import { uuidv4 } from '../../../src/domain/uuid/uuidv4';
+import { isUuidV4, uuidv4 } from '../../../src/domain/uuid/uuidv4';
 import type { Rng } from '../../../src/domain/rng/Rng';
 
 describe('uuidv4', () => {
@@ -36,5 +36,22 @@ describe('uuidv4', () => {
     expect(/^[0-9a-f-]+$/.test(result)).toBe(true);
     expect(result.length).toBe(36);
     expect(result.split('-').length).toBe(5);
+  });
+
+  it('isUuidV4 accepts a valid lowercase UUID v4 string', () => {
+    expect(isUuidV4('a0a0a0a0-1b1b-4c2c-8d3d-4e4e4e4e4e4e')).toBe(true);
+  });
+
+  it('isUuidV4 rejects malformed strings', () => {
+    expect(isUuidV4('')).toBe(false);
+    expect(isUuidV4('not-a-uuid')).toBe(false);
+    expect(isUuidV4('a0a0a0a01b1b4c2c8d3d4e4e4e4e4e4e')).toBe(false);
+    expect(isUuidV4('a0a0a0a0-1b1b-4c2c-8d3d-4e4e4e4e4e4e-extra')).toBe(false);
+    expect(isUuidV4('a0a0a0a0-1b1b-5c2c-8d3d-4e4e4e4e4e4e')).toBe(false);
+    expect(isUuidV4('a0a0a0a0-1b1b-4c2c-cd3d-4e4e4e4e4e4e')).toBe(false);
+  });
+
+  it('isUuidV4 rejects uppercase UUIDs', () => {
+    expect(isUuidV4('A0A0A0A0-1B1B-4C2C-8D3D-4E4E4E4E4E4E')).toBe(false);
   });
 });

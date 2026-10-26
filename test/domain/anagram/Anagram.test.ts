@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Anagram } from '../../../src/domain/anagram/Anagram';
 import type { AnagramEntry } from '../../../src/domain/anagram/AnagramEntry';
-import { Position } from '../../../src/domain/anagram/Position';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';
@@ -66,11 +65,11 @@ describe('Anagram', () => {
     const model = Anagram.buildWordModel(grid, word);
 
     expect(model.entries).toHaveLength(5);
-    expect(model.entries[0]).toEqual({ position: 0, fixed: true, letter: Letter.try('A') });
-    expect(model.entries[1]).toEqual({ position: 1, fixed: false, letter: null });
-    expect(model.entries[2]).toEqual({ position: 2, fixed: false, letter: null });
-    expect(model.entries[3]).toEqual({ position: 3, fixed: false, letter: null });
-    expect(model.entries[4]).toEqual({ position: 4, fixed: true, letter: Letter.try('E') });
+    expect(model.entries[0]).toEqual({ fixed: true, letter: Letter.try('A') });
+    expect(model.entries[1]).toEqual({ fixed: false, letter: null });
+    expect(model.entries[2]).toEqual({ fixed: false, letter: null });
+    expect(model.entries[3]).toEqual({ fixed: false, letter: null });
+    expect(model.entries[4]).toEqual({ fixed: true, letter: Letter.try('E') });
   });
 
   it('buildWordModel returns separators length = word.length - 1', () => {
@@ -118,9 +117,9 @@ describe('Anagram', () => {
 
   it('scramble with all-fixed entries returns a deep copy with no shuffle', () => {
     const entries: AnagramEntry[] = [
-      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
-      { position: Position.of(1), fixed: true, letter: Letter.try('B')! },
-      { position: Position.of(2), fixed: true, letter: Letter.try('C')! },
+      { fixed: true, letter: Letter.try('A')! },
+      { fixed: true, letter: Letter.try('B')! },
+      { fixed: true, letter: Letter.try('C')! },
     ];
 
     const rng = new SeededRng(12345);
@@ -136,11 +135,11 @@ describe('Anagram', () => {
 
   it('scramble places shuffled non-fixed letters using SeededRng deterministically', () => {
     const entries: AnagramEntry[] = [
-      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
-      { position: Position.of(1), fixed: false, letter: null },
-      { position: Position.of(2), fixed: false, letter: null },
-      { position: Position.of(3), fixed: false, letter: null },
-      { position: Position.of(4), fixed: true, letter: Letter.try('E')! },
+      { fixed: true, letter: Letter.try('A')! },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: true, letter: Letter.try('E')! },
     ];
 
     const rng = new SeededRng(12345);
@@ -161,11 +160,11 @@ describe('Anagram', () => {
 
   it('scramble does not mutate input entries', () => {
     const entries: AnagramEntry[] = [
-      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
-      { position: Position.of(1), fixed: false, letter: null },
-      { position: Position.of(2), fixed: false, letter: null },
-      { position: Position.of(3), fixed: false, letter: null },
-      { position: Position.of(4), fixed: true, letter: Letter.try('E')! },
+      { fixed: true, letter: Letter.try('A')! },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: true, letter: Letter.try('E')! },
     ];
     const original = entries.map((e) => ({ ...e }));
 
@@ -175,11 +174,11 @@ describe('Anagram', () => {
 
   it('scramble with two SeededRng instances seeded identically produces identical output', () => {
     const entries: AnagramEntry[] = [
-      { position: Position.of(0), fixed: false, letter: null },
-      { position: Position.of(1), fixed: false, letter: null },
-      { position: Position.of(2), fixed: false, letter: null },
-      { position: Position.of(3), fixed: false, letter: null },
-      { position: Position.of(4), fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
     ];
 
     const resultA = Anagram.scramble(entries, 'HELLO', new SeededRng(42));
@@ -190,11 +189,11 @@ describe('Anagram', () => {
 
   it('scramble throws when input shorter than fixed-count', () => {
     const entries: AnagramEntry[] = [
-      { position: Position.of(0), fixed: true, letter: Letter.try('A')! },
-      { position: Position.of(1), fixed: true, letter: Letter.try('B')! },
-      { position: Position.of(2), fixed: true, letter: Letter.try('C')! },
-      { position: Position.of(3), fixed: false, letter: null },
-      { position: Position.of(4), fixed: false, letter: null },
+      { fixed: true, letter: Letter.try('A')! },
+      { fixed: true, letter: Letter.try('B')! },
+      { fixed: true, letter: Letter.try('C')! },
+      { fixed: false, letter: null },
+      { fixed: false, letter: null },
     ];
 
     expect(() => Anagram.scramble(entries, 'AB', new SeededRng(1))).toThrow(
@@ -203,8 +202,7 @@ describe('Anagram', () => {
   });
 
   it('scramble throws when input longer than word.length', () => {
-    const entries: AnagramEntry[] = Array.from({ length: 5 }, (_, i) => ({
-      position: Position.of(i),
+    const entries: AnagramEntry[] = Array.from({ length: 5 }, () => ({
       fixed: false,
       letter: null,
     }));
@@ -214,7 +212,7 @@ describe('Anagram', () => {
     );
   });
 
-  it('buildChainModel concatenates entries head→tail and re-numbers position 0..N-1', () => {
+  it('buildChainModel concatenates entries head→tail', () => {
     let grid = blankGrid(5);
     grid = setPlayerLetter(grid, 0, 0, 'A');
     grid = setPlayerLetter(grid, 1, 2, 'E');
@@ -231,10 +229,10 @@ describe('Anagram', () => {
     const model = Anagram.buildChainModel(grid, [member1, member2]);
 
     expect(model.entries).toHaveLength(7);
-    expect(model.entries.map((e) => e.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    expect(model.entries[0]).toEqual({ position: 0, fixed: true, letter: Letter.try('A') });
-    expect(model.entries[3]).toEqual({ position: 3, fixed: false, letter: null });
-    expect(model.entries[5]).toEqual({ position: 5, fixed: true, letter: Letter.try('E') });
+    expect(model.entries.map((e) => e.fixed)).toEqual([true, false, false, false, false, true, false]);
+    expect(model.entries[0]).toEqual({ fixed: true, letter: Letter.try('A') });
+    expect(model.entries[3]).toEqual({ fixed: false, letter: null });
+    expect(model.entries[5]).toEqual({ fixed: true, letter: Letter.try('E') });
   });
 
   it('buildChainModel separators length === totalLength - 1', () => {

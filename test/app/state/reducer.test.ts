@@ -123,8 +123,8 @@ describe('reduceApp', () => {
   it('edit-title dispatches to reduceBuilder and updates builder.puzzle.title', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { target: 'builder', kind: 'edit-title', title: Title.try('My Puzzle') }, deps);
-    expect(result.state.builder.puzzle.title).toEqual(Title.try('My Puzzle'));
+    const result = reduceApp(state, { target: 'builder', kind: 'edit-title', title: Title.of('My Puzzle') }, deps);
+    expect(result.state.builder.puzzle.title).toEqual(Title.of('My Puzzle'));
     expect(result.events.length).toBe(0);
   });
 

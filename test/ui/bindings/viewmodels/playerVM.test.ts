@@ -44,7 +44,7 @@ function puzzleWithWords(p: Puzzle, words: Word[]): Puzzle {
 }
 
 function puzzleWithMetadata(p: Puzzle, title: string, author: string): Puzzle {
-  return Puzzle.withMetadata(p, Title.try(title), Author.try(author));
+  return Puzzle.withMetadata(p, Title.of(title), Author.of(author));
 }
 
 function setAnswerLetter(grid: Grid, row: number, col: number, letter: string): Grid {

@@ -32,8 +32,8 @@ export const Puzzle: {
       gridSize: size,
       grid,
       words,
-      title: Title.try(''),
-      author: Author.try(''),
+      title: Title.of(''),
+      author: Author.of(''),
     };
   },
 

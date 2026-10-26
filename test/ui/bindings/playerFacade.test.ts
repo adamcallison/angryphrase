@@ -46,7 +46,7 @@ function makeCompletePuzzle(seed: number, size: number): Puzzle {
   const numbered = Numbering.assign(grid, derived);
   const wordsWithClues = numbered.map((w) => ({ ...w, clue: 'Clue' }));
   puzzle = Puzzle.withWords(puzzle, wordsWithClues);
-  puzzle = Puzzle.withMetadata(puzzle, Title.try('Test Title'), Author.try('Test Author'));
+  puzzle = Puzzle.withMetadata(puzzle, Title.of('Test Title'), Author.of('Test Author'));
   return puzzle;
 }
 

@@ -40,7 +40,7 @@ function makeCompletePuzzle(seed: number, size: number): Puzzle {
   const numbered = Numbering.assign(grid, derived);
   const wordsWithClues = numbered.map((w) => ({ ...w, clue: 'Clue' }));
   puzzle = Puzzle.withWords(puzzle, wordsWithClues);
-  puzzle = Puzzle.withMetadata(puzzle, Title.try('Test Title'), Author.try('Test Author'));
+  puzzle = Puzzle.withMetadata(puzzle, Title.of('Test Title'), Author.of('Test Author'));
   return puzzle;
 }
 
@@ -322,14 +322,14 @@ describe('builderFacade.ts', () => {
     it('dispatchEditTitle("Hello") sets puzzle title to "Hello"', () => {
       builderFacade.actions.toolbar.editTitle('Hello');
 
-      expect(store.getBuilder().puzzle.title).toEqual(Title.try('Hello'));
+      expect(store.getBuilder().puzzle.title).toEqual(Title.of('Hello'));
       expect(builderFacade.builderShellVM().title).toBe('Hello');
     });
 
     it('dispatchEditAuthor("Anonymous") sets puzzle author to "Anonymous"', () => {
       builderFacade.actions.toolbar.editAuthor('Anonymous');
 
-      expect(store.getBuilder().puzzle.author).toEqual(Author.try('Anonymous'));
+      expect(store.getBuilder().puzzle.author).toEqual(Author.of('Anonymous'));
       expect(builderFacade.builderShellVM().author).toBe('Anonymous');
     });
 

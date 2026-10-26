@@ -139,7 +139,7 @@ function buildPuzzle(
     nextWord: null,
   };
   p = Puzzle.withWords(p, [word]);
-  p = Puzzle.withMetadata(p, Title.try('Title'), Author.try('Author'));
+  p = Puzzle.withMetadata(p, Title.of('Title'), Author.of('Author'));
   return p;
 }
 
@@ -699,7 +699,7 @@ describe('serializeIncomplete', () => {
       nextWord: null,
     };
     p = Puzzle.withWords(p, [word]);
-    p = Puzzle.withMetadata(p, Title.try('My Title'), Author.try('My Author'));
+    p = Puzzle.withMetadata(p, Title.of('My Title'), Author.of('My Author'));
 
     const displaced = [
       { id: UUID_A, clue: 'First displaced', direction: 'across' as Direction },

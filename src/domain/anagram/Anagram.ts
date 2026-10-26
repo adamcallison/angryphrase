@@ -7,7 +7,6 @@ import type { Rng } from '../rng/Rng';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import type { AnagramEntry } from './AnagramEntry';
-import { Position } from './Position';
 
 export type { AnagramEntry } from './AnagramEntry';
 
@@ -71,8 +70,8 @@ export const Anagram: {
       const playerLetter = cell.playerLetter;
       entries.push(
         playerLetter !== null
-          ? { position: Position.of(i), fixed: true, letter: playerLetter }
-          : { position: Position.of(i), fixed: false, letter: null }
+          ? { fixed: true, letter: playerLetter }
+          : { fixed: false, letter: null }
       );
       if (i < word.length - 1) {
         const axis = direction === 'across' ? 'right' : 'bottom';
@@ -91,10 +90,9 @@ export const Anagram: {
       const member = members[i];
       if (member === undefined) throw new Error('Anagram.buildChainModel: members[i] undefined');
       const memberModel = Anagram.buildWordModel(grid, member);
-      const offset = entries.length;
 
       for (const entry of memberModel.entries) {
-        entries.push({ ...entry, position: Position.of(Number(entry.position) + offset) });
+        entries.push({ ...entry });
       }
 
       for (const separator of memberModel.separators) {
@@ -180,7 +178,6 @@ export const Anagram: {
         result.push({ ...entry });
       } else {
         result.push({
-          position: entry.position,
           fixed: false,
           letter: pool[poolIndex] ?? null,
         });

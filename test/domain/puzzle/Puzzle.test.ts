@@ -48,8 +48,8 @@ describe('Puzzle', () => {
     expect(p.grid).toEqual(GridOps.blank(size));
     const expected = Numbering.assign(p.grid, WordDerivation.derive(p.grid));
     expect(p.words).toStrictEqual(expected);
-    expect(p.title).toBe(Title.try(''));
-    expect(p.author).toBe(Author.try(''));
+    expect(p.title).toBe(Title.of(''));
+    expect(p.author).toBe(Author.of(''));
   });
 
   it('isBlank returns true for a freshly blank puzzle', () => {
@@ -134,8 +134,8 @@ describe('Puzzle', () => {
 
   it('withMetadata returns a new Puzzle with the replaced title and author', () => {
     const p = Puzzle.blank(GridSize.of(3), makeKey());
-    const title = Title.try('My Title');
-    const author = Author.try('My Author');
+    const title = Title.of('My Title');
+    const author = Author.of('My Author');
     const p2 = Puzzle.withMetadata(p, title, author);
 
     expect(p2.title).toBe(title);
@@ -153,8 +153,8 @@ describe('Puzzle', () => {
 
     const newGrid = GridOps.blank(GridSize.of(4));
     const newWords = [makeWord(0, 0, 'across', '')];
-    const newTitle = Title.try('T');
-    const newAuthor = Author.try('A');
+    const newTitle = Title.of('T');
+    const newAuthor = Author.of('A');
 
     Puzzle.withGrid(p, newGrid);
     Puzzle.withWords(p, newWords);

@@ -1,4 +1,5 @@
 import { brand, type Brand } from '../brand';
+import { uuidv4 } from '../uuid/uuidv4';
 import type { Rng } from '../rng/Rng';
 
 export type ToastId = Brand<'ToastId', string>;
@@ -7,7 +8,6 @@ export const ToastId: {
   generate(rng: Rng): ToastId;
 } = {
   generate(rng: Rng): ToastId {
-    const hex = Array.from({ length: 16 }, () => rng.nextInt(256).toString(16).padStart(2, '0')).join('');
-    return brand<'ToastId', string>(hex);
+    return brand<'ToastId', string>(uuidv4(rng));
   },
 };

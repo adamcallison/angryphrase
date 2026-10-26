@@ -10,7 +10,7 @@ Conventions: no line-number references (they rot); functions, modules, and test 
 The house process for an entry is the one recorded in `archive/architecture_smell_resolutions.md`
 (Appendix — "Resolution process (gates)"), applied to audit items instead of smell findings.
 
-Resolved so far: O3 (delete dead / test-only API surface).
+Resolved so far: O2 (brand-type boilerplate), O3 (delete dead / test-only API surface).
 
 ---
 
@@ -241,15 +241,157 @@ list (gone entirely — the unions are the list). Touch costs that change:
 - **Comparing grids** in tests uses `toEqual` plus an independent snapshot (`structuredClone`) rather
   than a production `clone`/`equals` pair; the WordTopology immutability case, which previously compared
   the grid with itself, now compares against a real snapshot.
-- **Unchanged:** the grid's 88 call sites still go through `GridOps` (its dissolution is O4's), the
-  `Position` brand still exists (O2.2's), `Anagram.validateChainInput` keeps its name (O17.1's).
+- **Unchanged:** the grid's 88 call sites still go through `GridOps` (its dissolution is O4's),
+  `Anagram.validateChainInput` keeps its name (O17.1's). The `Position` brand existed at the time of
+  this change and was removed afterwards by O2 — together with the dead `AnagramEntry.position` field.
 
 ### Not addressed
 
 | Site | Reason | Landing site |
 |---|---|---|
 | `GridOps` module dissolution (the 5 leaf-accessor re-exports and `isSelectable`) | O3 removes the dead members only; the module itself is dissolved by O4, which also moves `isSelectable` to `WordTopology` | audit O4 |
-| `domain/anagram/Position.ts` deletion (`Position` brand → plain `number`) | O3 removes `Position.try`/`Position.equals`; the brand itself is removed by O2.2 | audit O2.2 |
+| `domain/anagram/Position.ts` deletion (`Position` brand → plain `number`) | O3 removes `Position.try`/`Position.equals`; the brand itself was removed by O2 — together with the dead `AnagramEntry.position` field | closed by audit O2 (2026-10-26) |
 | `Anagram.validateChainInput` → `Anagram.validate` rename | O3 removes the dead word-form entry point; the rename belongs to O17.1 | audit O17.1 |
 | S26 `Anagram.buildWordModel` | retained: live internal caller (`buildChainModel`) and direct test consumers | — (closed by decision, not deferred) |
 | S27 `ChainCells.cellsOfWord` | retained: live internal caller (`cellsOfChain`) and direct test cases | — (closed by decision, not deferred) |
+
+---
+
+## O2 — Brand-type boilerplate: generic constructor factory + removal of ceremony brands — resolved 2026-10-26
+
+### The item (recap)
+
+`code_reduction_audit.md` O2 proposes five changes (est. −150 to −200 LOC):
+
+1. delete the `Title` and `Author` brands, keeping the names as `type Title = string` / `type Author = string` aliases in `Puzzle.ts`;
+2. delete the `Position` brand, replacing it with plain `number`;
+3. mint `ToastId`s with `uuidv4()` instead of an inline hex generator;
+4. share one UUID-v4 regex between `PuzzleKey.try` and `DisplacedClueId.try`;
+5. replace the hand-written `try`/`of` blocks of `Row`, `Col`, `GridSize`, `EpochMs`, `DurationMs`, `WordNumber` and `WordLength` with one generic `intBrand(tag, min, max)` factory in `domain/brand.ts`.
+
+The item's premise: "The 14 branded types each carry a hand-written `try`/`of` + `RangeError` block — near identical code repeated ~10 times (~120 LOC of pure boilerplate), plus several brands that add no safety at all."
+
+Three of the five parts did not survive verification and are corrected by this entry:
+
+1. **Part 5's module list is wrong.** `DurationMs` has **no constructor** — its `try`/`of` were deleted by O3 and only the `DEFAULT` constant remains, so it is not a factory candidate at all. `WordLength`, `WordNumber` and `EpochMs` also lost their `try` halves in O3; a blanket factory returning `{ try, of }` would have **re-added** dead API two items after O3 deleted it as dead.
+2. **Part 1 conflates the brand with the constructor.** "Title.try validates nothing" is true — but the *type* `Brand<'Title', string>` is what makes `Title` and `Author` non-interchangeable, and `type Title = string` is **not** a distinct type: it is `string` under another name, so it restores no protection at all. The item's own header claims "no guard, contract, or documented property is traded for line count"; deleting these two brands trades architecture.md §2 principle 4 ("`Title`, `Author` … are branded types"; "Plain `string`/`number` do not appear in domain signatures") for 14 production lines. The real defect is narrower: the *constructor* is named `try` although it cannot fail, and the codebase has already paid for that lie — `builderFacade` carries two unreachable `=== null` branches.
+3. **Part 2 understates the problem.** `AnagramEntry.position` is not a branded index — it is a **dead field**. Nothing reads it outside `Anagram.ts`; the anagram view-model derives a tile's slot from the array index, and the player state keeps only `e.letter`. Unbranding it to `number` would keep dead state alive.
+
+The LOC estimate is also roughly 3× optimistic, and in the wrong direction overall: the landed change is
+**−45 production lines** but **+79 test lines** — the test tree grew, because the properties the item
+proposed to drop are now pinned by tests — so the change is **+33 lines in total**. See "Consequence".
+
+### Site inventory (Gate 0)
+
+The audit's own framing ("14 branded types … repeated ~10 times") is not trusted; the inventory below is what coverage is measured against.
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `Row.try` / `Row.of` hand-written block | `domain/grid/Row.ts` | migrated to `intBrand` |
+| S2 | `Col.try` / `Col.of` hand-written block | `domain/grid/Col.ts` | migrated to `intBrand` |
+| S3 | `GridSize.try` / `GridSize.of` hand-written block (+ `MIN`/`MAX`/`DEFAULT`/`invalidMessage`) | `domain/grid/GridSize.ts` | migrated to `intBrand`; the other four members kept |
+| S4 | `EpochMs.of` hand-written block | `domain/time/EpochMs.ts` | migrated to `intBrand` |
+| S5 | `WordLength.of` hand-written block | `domain/word/WordLength.ts` | migrated to `intBrand` |
+| S6 | `WordNumber.of` hand-written block | `domain/word/WordNumber.ts` | migrated to `intBrand` |
+| S7 | the `Position` brand module | `domain/anagram/Position.ts` | **deleted** |
+| S8 | `AnagramEntry.position` — the only consumer of S7 | `domain/anagram/AnagramEntry.ts` | **deleted** (dead field) |
+| S9 | `buildChainModel`'s offset re-mint `Position.of(Number(entry.position) + offset)` | `domain/anagram/Anagram.ts` | deleted with S8 |
+| S10 | `Title.try` — a constructor that validates nothing, named `try` | `domain/puzzle/Title.ts` | brand **kept**; constructor renamed `Title.of` |
+| S11 | `Author.try` — same | `domain/puzzle/Author.ts` | brand **kept**; constructor renamed `Author.of` |
+| S12 | the two unreachable `if (t === null) return;` / `if (a === null) return;` branches | `ui/bindings/builderFacade.ts` | deleted |
+| S13 | `Title.try('')` / `Author.try('')` | `domain/puzzle/Puzzle.ts` | → `Title.of('')` / `Author.of('')` |
+| S14 | `Title.try(titleRaw)` / `Author.try(authorRaw)` | `domain/format/v1.ts` | → `.of` |
+| S15 | `ToastId.generate`'s inline 16-byte hex generator | `domain/notifications/ToastId.ts` | replaced by `uuidv4(rng)` |
+| S16 | `PuzzleKey.try`'s inline UUID-v4 regex | `domain/puzzle/PuzzleKey.ts` | → `isUuidV4(s)` |
+| S17 | `DisplacedClueId.try`'s inline UUID-v4 regex (duplicate of S16) | `domain/builder/DisplacedClueId.ts` | → `isUuidV4(s)` |
+| S18 | `domain/uuid/uuidv4.ts` — gains the validation half of the concept | `domain/uuid/uuidv4.ts` | new export `isUuidV4` |
+| S19 | `domain/brand.ts` — the escaper module | `domain/brand.ts` | gains `intBrand`; `Brand`/`brand` unchanged |
+| S20 | the brand-owner list in the boundary spec | `tools/boundaries.js` | 14 → 13 owners (S7 removed) |
+| S21 | `Letter`'s constructor | `domain/letter/Letter.ts` | **kept** — not an integer brand; case-folds and validates A–Z, and owns `from`/`equals` |
+| S22 | `DurationMs` | `domain/time/DurationMs.ts` | **kept** — constant-only module; no constructor to consolidate |
+| S23 | the toast-id format assertion | `domain/notifications/Toast.ts` (consumer) | unaffected in source; the format assertion moved (see T5) |
+
+Test-side sites — a production change is not complete until the tree that consumed it is consistent:
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| T1 | the whole file | `test/domain/anagram/Position.test.ts` | deleted |
+| T2 | the `position` literals and the "re-numbers position 0..N-1" case | `test/domain/anagram/Anagram.test.ts` | rewritten; the case was retitled `'buildChainModel concatenates entries head→tail'` and its position assertion replaced by a `fixed`-flag-sequence assertion that still proves head→tail order |
+| T3 | six brand suites — `Row`, `Col`, `GridSize`, `EpochMs`, `WordLength`, `WordNumber` | `test/domain/grid/`, `test/domain/time/`, `test/domain/word/` | **unchanged** — the migrations are behaviour-preserving, and the unchanged suites are the proof |
+| T4 | the toast-id format assertions | `test/domain/notifications/ToastId.test.ts` | rewritten for the UUID-v4 shape |
+| T5 | the toast-id format assertion | `test/domain/notifications/Toast.test.ts` | rewritten — **a site the audit did not name**; it pinned the same 32-hex format |
+| T6 | `isUuidV4` coverage | `test/domain/uuid/uuidv4.test.ts` | three cases added |
+| T7 | `Title`/`Author` suites | `test/domain/puzzle/Title.test.ts`, `Author.test.ts` | renamed to the new constructor name, plus one brand-safety case each |
+| T8 | eight call-site suites | `test/domain/puzzle/Puzzle.test.ts`, `test/domain/format/v1.test.ts`, `test/builder/state/reducer.test.ts`, `test/app/state/reducer.test.ts`, `test/ui/bindings/builderFacade.test.ts`, `test/ui/bindings/viewmodels/builderVM.test.ts`, `test/ui/bindings/viewmodels/playerVM.test.ts`, `test/ui/bindings/playerFacade.test.ts` | call sites renamed |
+
+### Decision
+
+**S10 / S11 — the `Title` and `Author` brands: kept.** Options: (a) delete the brands and alias them to `string`, as the audit proposes; (b) keep the brands and delete only the misleading `try` name; (c) leave both untouched. (a) was rejected: it makes `Title` and `Author` mutually assignable, puts a plain `string` in two domain signatures, and contradicts a principle the architecture states explicitly — for 14 production lines. (c) was rejected: the constructor name is actively wrong and has already produced unreachable code. (b) was chosen: the brand stays, the constructor becomes `Title.of` / `Author.of`, and the two dead branches in `builderFacade` go with it. This matches the codebase's own convention, which the audit did not identify — `try` returns `T | null` and never throws (the failure-as-data constructor, used at trust boundaries), `of` returns `T` and never returns null (used where the value is derived internally, or where there is nothing to reject). architecture.md §2 now states that convention, and `Title`/`Author` are its worked example.
+
+**S7 / S8 / S9 — `Position`: the brand *and* the field deleted.** Options: (a) delete the brand, keep the field as `number`, as the audit proposes; (b) delete the brand and the field. (a) was rejected: the field is read nowhere — `deriveAnagramModalVM` derives a tile's slot from the array index, and `handleAnagramScramble` keeps only `e.letter` — so unbranding it keeps dead state alive and preserves a redundant `Number(...)` re-mint. (b) was chosen. The `AnagramEntry` shape is now `{ fixed: true; letter: Letter } | { fixed: false; letter: Letter | null }`, discriminated by `fixed` as before.
+
+**S15 — `ToastId`: minted through `uuidv4`.** Options: (a) `uuidv4(rng)`; (b) keep the 32-char hex and leave the RNG-draw idiom duplicated. (a) was chosen: it leaves one id-minting path in the domain. The audit's stated reason ("ids become collision-safe") is **wrong** and is not the reason — the previous generator already drew 16 bytes (128 bits) from the same rng, and `uuidv4` sets version and variant bits, so it carries slightly *fewer* entropy bits. The change is a **format change** (see "Deliberate behaviour changes"), not a safety fix.
+
+**S19 — the factory's shape.** `intBrand(tag, min, max)` lives in `domain/brand.ts` beside `Brand` and `brand`. Options: (a) a new module (e.g. `domain/brandFactory.ts`); (b) extend `domain/brand.ts`. (a) was rejected: the ESLint brand ban lists exactly one module, so a second one would need the boundary spec extended and its self-test taught a second ban — machinery for no gain. (b) was chosen: the brand-owner list already contains every module that needs the factory, so no boundary change is required. The tag argument doubles as the type tag (one source of truth), the `RangeError` message is `Invalid ${tag}: ${n}` — byte-identical to the messages it replaces — and `max` defaults to unbounded. The of-only owners (`EpochMs`, `WordLength`, `WordNumber`) expose **only** `of`, so the `try` halves O3 deleted are not resurrected.
+
+**S1–S6 — the migrations.** Behaviour-identical by construction: the same predicate, the same bounds, the same message. Every owner keeps its explicit `export const X: { … }` manifest — the architecture treats that block as the per-module documentation of what the module owns, and the rejected-changes list says so explicitly.
+
+### Design as implemented
+
+- `domain/brand.ts` exports `Brand`, `brand` (unchanged) and `intBrand(tag, min, max) → { try, of }`. `try` returns `null` on invalid input; `of` throws `RangeError` with the message `Invalid ${tag}: ${n}`.
+- `Row`, `Col`, `GridSize`, `EpochMs`, `WordLength`, `WordNumber` are one-line delegations to `intBrand`, each keeping its manifest, its bounds and its extra members (`GridSize.MIN`/`MAX`/`DEFAULT` keep their literal types; `invalidMessage()` is unchanged).
+- `domain/uuid/uuidv4.ts` is the single owner of the UUID-v4 concept: `uuidv4(rng)` mints, `isUuidV4(s)` validates. The shared regex is byte-identical to the two inline copies it replaces.
+- `Title`/`Author` are total constructors named `of`; the brands are unchanged nominal types.
+- `AnagramEntry` carries no position field; a tile's slot is its index in the entries array.
+- The brand-owner list in `tools/boundaries.js` is 13 entries — `domain/anagram/Position.ts` is gone.
+
+### Deliberate behaviour changes
+
+1. **Toast id format.** A toast id is now a UUID-v4 string (36 chars, dashed) instead of a 32-char lowercase hex string. The id is opaque — it is a Svelte keyed-list key, a `Map` key, and the argument to `dismiss(id)`; nothing parses it.
+2. **No other behaviour changes.** Every `RangeError` message, every parse-failure message, and every `RangeError` from a brand constructor is byte-identical to before.
+
+### Files
+
+18 production modules changed, 1 deleted; 14 test files changed, 1 deleted, 1 added; 1 tooling file changed.
+
+- `domain/brand.ts` (`intBrand`), `domain/grid/Row.ts`, `domain/grid/Col.ts`, `domain/grid/GridSize.ts`, `domain/time/EpochMs.ts`, `domain/word/WordLength.ts`, `domain/word/WordNumber.ts`
+- `domain/anagram/AnagramEntry.ts`, `domain/anagram/Anagram.ts`; `domain/anagram/Position.ts` **deleted**
+- `domain/puzzle/Title.ts`, `domain/puzzle/Author.ts`, `domain/puzzle/Puzzle.ts`, `domain/puzzle/PuzzleKey.ts`, `domain/builder/DisplacedClueId.ts`, `domain/notifications/ToastId.ts`, `domain/format/v1.ts`, `domain/uuid/uuidv4.ts`
+- `ui/bindings/builderFacade.ts`
+- `tools/boundaries.js`
+- tests: `test/domain/brand.test.ts` (new), `test/domain/anagram/Anagram.test.ts`, `test/domain/anagram/Position.test.ts` **deleted**, `test/domain/uuid/uuidv4.test.ts`, `test/domain/notifications/ToastId.test.ts`, `test/domain/notifications/Toast.test.ts`, `test/domain/puzzle/Title.test.ts`, `test/domain/puzzle/Author.test.ts`, `test/domain/puzzle/Puzzle.test.ts`, `test/domain/format/v1.test.ts`, `test/builder/state/reducer.test.ts`, `test/app/state/reducer.test.ts`, `test/ui/bindings/builderFacade.test.ts`, `test/ui/bindings/playerFacade.test.ts`, `test/ui/bindings/viewmodels/builderVM.test.ts`, `test/ui/bindings/viewmodels/playerVM.test.ts`
+- `architecture.md` — §2 principle 4 (the branded-type list, plus the `try`/`of` constructor contract), §3 (`domain/brand.ts`, `domain/grid/`, `domain/anagram/`, `domain/uuid/`), §4 (the brand ban: 14 → 13 owners), §5 (the constructors the bindings layer may call), §12 (coverage of the factory's range checks and each brand's constructor contract)
+
+### Verification
+
+- `npm run ci` green: `eslint .` + `madge --circular` (no cycles) + `svelte-check` + `vitest run` (**92 files, 1342 tests** — the baseline before this item was 92 files / 1332 tests) + `vite build` (`dist/index.html` 233.72 kB, gzip 102.90 kB; the baseline was 234.50 kB / 102.96 kB).
+- **Behaviour preservation, proven by untouched suites.** The `Row`, `Col`, `GridSize`, `EpochMs`, `WordLength` and `WordNumber` suites pass **without a single edit** — the migrations changed no observable behaviour.
+- **Message identity, checked mechanically.** The shared UUID-v4 regex was compared byte-for-byte against both inline copies it replaces; all three are identical. Every brand's `RangeError` message is derived from its tag, so `Invalid Row:`, `Invalid Col:`, `Invalid GridSize:`, `Invalid EpochMs:`, `Invalid WordLength:` and `Invalid WordNumber:` are unchanged.
+- **The brand guards are load-bearing, proven by mutation.** Degrading `intBrand` to return plain `number` makes `test/domain/brand.test.ts` fail to compile (`Unused '@ts-expect-error' directive`) — the case now asserts on the factory's return type, not on the `Brand` alias, so it catches exactly the regression it exists for. Degrading `Title` to `type Title = string` makes `test/domain/puzzle/Title.test.ts` fail to compile the same way. The `@ts-expect-error` brand cases in `Row`, `Col`, `Letter`, `EpochMs`, `WordLength`, `WordNumber` and `DurationMs` still fail to compile as intended.
+- **The boundary spec tracks the repository.** `validateBoundaries` accepts the 13-owner list, and the boundary self-test asserts it against the repository in both directions.
+
+### Consequence
+
+- **−45 production lines** (72 added, 117 deleted across 19 production files) and **+79 test lines**
+  (173 added, 94 deleted across 16 test files, including the new `test/domain/brand.test.ts`);
+  `tools/boundaries.js` −1. **The change is +33 lines in total.** The audit's "−150 to −200" was not
+  met and was not met for the reason the item assumed: the explicit per-module manifests were kept, so
+  most of the boilerplate the factory removed was replaced by the manifest rather than deleted — and the
+  shared factory, now the single place where seven brands' validation lives, earned its own test file
+  (`src/domain/brand.ts` had none before). The item's *quality* claim — one shape for brand
+  construction — is met; its *quantity* claim was not.
+- The test tree grew, and that is the point of the guards added: the `intBrand` range checks, the
+  `isUuidV4` cases, and the `Title`/`Author` brand-safety cases are the evidence that the properties
+  this item proposed to discard are still enforced.
+- The `Position` removal closes the pointer that O3's entry left open for O2.2; O3's "Not addressed" table now records it as closed here.
+- `Title`/`Author` are the codebase's worked example of a brand with **no runtime validation**: the type provides nominal distinction, the constructor provides none. architecture.md §2 now says so, so the next reader does not have to re-derive it.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| S21 `Letter`'s constructor | not an integer brand: it case-folds, validates A–Z, and owns `from`/`equals` — the integer-range factory does not fit it | — (closed by decision, not deferred) |
+| S22 `DurationMs` | the audit lists it as a factory candidate, but it has no constructor — O3 removed its `try`/`of` and only `DEFAULT` remains | — (closed by decision, not deferred) |
+| the audit's O2.1 — deleting the `Title`/`Author` brands | declined: it trades the title/author distinction and architecture.md §2 principle 4 for 14 production lines | — (closed by human decision, recorded in the audit's status line) |
+| S26 `GridOps` module dissolution | out of this item's scope | audit O4 |
+| `Anagram.validateChainInput` → `Anagram.validate` rename | out of this item's scope | audit O17.1 |

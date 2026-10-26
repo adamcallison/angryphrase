@@ -10,8 +10,8 @@ describe('Toast', () => {
     expect(toast.message).toBe('hello');
     expect(toast.createdAt).toBe(12345);
     expect(toast.ttlMs).toBe(3500);
-    expect(toast.id).toHaveLength(32);
-    expect(toast.id).toMatch(/^[0-9a-f]{32}$/);
+    expect(toast.id).toHaveLength(36);
+    expect(toast.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it('Toast.create default ttlMs is 3500', () => {

@@ -171,7 +171,6 @@ export const BOUNDARIES = {
       'src/domain/grid/Col.ts',
       'src/domain/grid/GridSize.ts',
       'src/domain/letter/Letter.ts',
-      'src/domain/anagram/Position.ts',
       'src/domain/puzzle/PuzzleKey.ts',
       'src/domain/puzzle/Title.ts',
       'src/domain/puzzle/Author.ts',

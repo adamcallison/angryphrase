@@ -122,14 +122,10 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       dispatch({ target: 'builder', kind: 'request-reset-builder' });
     },
     editTitle(title: string) {
-      const t = Title.try(title);
-      if (t === null) return;
-      dispatch({ target: 'builder', kind: 'edit-title', title: t });
+      dispatch({ target: 'builder', kind: 'edit-title', title: Title.of(title) });
     },
     editAuthor(author: string) {
-      const a = Author.try(author);
-      if (a === null) return;
-      dispatch({ target: 'builder', kind: 'edit-author', author: a });
+      dispatch({ target: 'builder', kind: 'edit-author', author: Author.of(author) });
     },
     requestImportPuzzle(fileContent: string) {
       dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent });

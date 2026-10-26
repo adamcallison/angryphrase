@@ -687,8 +687,8 @@ export const parsePuzzleShape = (
     gridSize,
     grid,
     words: numberedWords,
-    title: Title.try(titleRaw),
-    author: Author.try(authorRaw),
+    title: Title.of(titleRaw),
+    author: Author.of(authorRaw),
   };
 
   const displacedClues: DisplacedClue[] =
