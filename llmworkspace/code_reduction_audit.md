@@ -553,6 +553,19 @@ hand-built 12-field object literal. Whole file 41 → ~20 lines.
 
 **Risk:** none.
 
+**Status (2026-11-01): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O13 — `boot.ts`: `freshBlank` duplicates `AppState.blank`"). Corrections to this item, made during
+the resolution: (a) the first sentence is verified correct — `AppState.blank` sets all four
+re-derived fields identically, and `freshBlank` plus its redundant overrides are deleted (the two
+blank-path call sites collapsed into one via a snapshot ternary); (b) the second sentence is
+**rejected** — the restore branch stays an explicit literal: the naive `AppState.blank(...)`
++ `builder` override calls `deps.rng` on the loaded-snapshot path, breaking the pinned
+`boot.test.ts` case and the documented #8 invariant, and the snapshot-key workaround constructs a
+blank `BuilderState` only to discard it while obscuring the reload shape architecture.md §3 says
+`boot.ts` solely owns; (c) the estimate is corrected from "−15 LOC, 41 → ~20" to **−13 net
+production lines** (41 → 28, one file, zero test edits). Leftovers: none; the rejected restore
+rewrite is recorded in the resolution's "Not addressed" table.
+
 ---
 
 ## O14. Delete `typingIntent.ts`; let `TypingSurface` drive the action bag directly (est. −35 LOC)

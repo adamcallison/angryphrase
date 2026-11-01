@@ -12,7 +12,7 @@ The house process for an entry is the one recorded in `archive/architecture_smel
 
 Resolved so far: O1 (v1.ts parser/serializer consolidation), O2 (brand-type boilerplate), O3 (delete
 dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the
-grid scan sites), O7 (persistence plumbing duplication).
+grid scan sites), O7 (persistence plumbing duplication), O13 (boot.ts `freshBlank` removal).
 
 ---
 
@@ -870,5 +870,91 @@ one cast per parser.
 | Site | Reason | Landing site |
 |---|---|---|
 | `coerceError` duplicated between `filePickPort.ts` and `localStoragePort.ts` (two private 3-line copies) | a shared `src/ports/` error module is a new cross-module boundary for two 3-line functions; each file's copy stays private where a reader looks for it | — (closed by decision, not deferred) |
-| audit item O13 (paired with O7 in the audit's implementation order) | separate audit item, not part of O7's site inventory | audit O13 |
+| audit item O13 (paired with O7 in the audit's implementation order) | separate audit item, not part of O7's site inventory | audit O13 — resolved 2026-11-01, see the O13 entry below |
 | `serializePlayerProgress` loop→`.map` consolidation (part 4's headline) | premise stale — the code was already `.map`-based; there was nothing to consolidate | — (closed: nothing to do) |
+
+---
+
+## O13 — `boot.ts`: `freshBlank` duplicates `AppState.blank` — resolved 2026-11-01
+
+### The item (recap)
+
+`code_reduction_audit.md` O13 claims `freshBlank` in `src/ui/bindings/boot.ts` re-sets four fields
+that `AppState.blank` already returns, proposes deleting the helper, and further proposes rewriting
+the restore branch as `AppState.blank(...)` with the `builder` field overridden — "whole file 41 →
+~20 lines", est. −15 LOC, "Risk: none".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `freshBlank` helper (spread + four overrides) | `src/ui/bindings/boot.ts` | deleted; blank path returns `AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(deps.rng))` directly |
+| S2 | the two blank-path call sites (`result.kind !== 'loaded'` and `snapshot === null`) | `src/ui/bindings/boot.ts` | collapsed into one via a `const snapshot = result.kind === 'loaded' ? parseBuilderSnapshot(result.value) : null` ternary |
+| S3 | the restore branch's 12-field `AppState` literal | `src/ui/bindings/boot.ts` | **kept as an explicit literal** — see decision; now spells `player`/`toasts`/`modal`/`pendingConfirmIntent` itself (it previously inherited them from the blank spread through `freshBlank`'s return) |
+
+### Decision
+
+**Part 1 (delete `freshBlank`) — executed, claim verified.** `AppState.blank` in
+`src/app/state/state.ts` sets exactly `player: PlayerState.importScreen()`, `toasts: []`,
+`modal: null`, `pendingConfirmIntent: null` — value-identical to the four overrides, and
+`PlayerState.importScreen()` is pure (no rng/clock). The overrides were pure redundancy; deleting
+them changes nothing observable.
+
+**Part 2 (restore branch as `AppState.blank(...)` + `builder` override) — rejected.** Two options
+were considered and both fail:
+
+- *Naive form* — `AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(deps.rng))` on the restore
+  path calls `deps.rng` when a snapshot loaded. That breaks a pinned property:
+  `test/ui/bindings/boot.test.ts` "rng is NOT called on the loaded-snapshot path", and the
+  documented invariant in `archive/architecture_smell_resolutions.md` #8 ("`deps.rng` is called
+  exactly once on the blank path … and not at all on the loaded-snapshot path").
+- *Snapshot-key workaround* — reuse `snapshot.puzzle.key` so rng stays silent. This constructs a
+  full blank `BuilderState` (15×15 grid via `Puzzle.blank`) only to discard its `builder` field,
+  and converts the restore literal into a blank-then-discard spread. architecture.md §3 names
+  `boot.ts` the "Sole owner of the `BuilderState` reload shape"; the explicit literal **is** that
+  ownership made legible. Rejected on both counts — wasted construction and obscured ownership —
+  for ~5 lines.
+
+**Estimate corrected.** The item's "−15 LOC, whole file 41 → ~20" is wrong arithmetic: the restore
+literal stays and gains four spelled fields it used to inherit. Delivered: **−13 net production
+lines** (41 → 28; 2 insertions, 15 deletions), one file. Test tree untouched.
+
+### Design as implemented
+
+`createInitialAppState` now reads: load builder slice → `snapshot = result.kind === 'loaded' ?
+parseBuilderSnapshot(result.value) : null` → `snapshot === null` ⇒ return
+`AppState.blank(GridSize.DEFAULT, PuzzleKey.generate(deps.rng))` → otherwise return the explicit
+restore literal (subMode forced `{ kind: 'none' }`, `cursor: null`, wrapper fields spelled).
+Exactly one `PuzzleKey.generate` call site, on the blank path only.
+
+### Deliberate behaviour changes
+
+None. Blank path returns a deep-equal `AppState` on every branch (absent / failed / corrupt /
+complete-file snapshots); restore path byte-identical.
+
+### Files
+
+- Modified: `src/ui/bindings/boot.ts` (only file; no test, doc, or sibling changes).
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx vitest run test/ui/bindings/boot.test.ts` | 9/9 pass — **zero test edits**, the behaviour-preservation proof |
+| `npm run ci` | lint + madge clean; svelte-check 0/0; 1343 tests green; single-file build OK |
+
+`git diff --stat` closes the accounting: one file, 2 insertions / 15 deletions. The rng-count pins
+(blank path 16 draws, loaded path 0) pass unchanged.
+
+### Consequence
+
+- `AppState.blank` is the sole owner of the fresh-boot wrapper shape; `boot.ts` no longer re-states
+  it. `boot.ts` remains the sole owner of the `BuilderState` reload shape, now more legible (the
+  literal spells every field).
+- The rng-silence-on-restore invariant survives with one construction site to audit.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| restore-branch rewrite as `AppState.blank(...)` + `builder` override (item's second sentence) | rejected — breaks the pinned rng-silence property in its naive form; the snapshot-key workaround builds a blank `BuilderState` to discard it and obscures the documented reload-shape ownership | — (closed by decision, not deferred) |
