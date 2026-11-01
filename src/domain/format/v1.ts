@@ -38,13 +38,15 @@ function markerFromJson(
   c: number,
   failures: ParseFailure[],
 ): CellMarkerType | null {
-  if (spaceRight && hyphenRight) {
-    failures.push({ message: `Cell (${r}, ${c}) has conflicting right markers.` });
-    return null;
-  }
-  if (spaceBottom && hyphenBottom) {
-    failures.push({ message: `Cell (${r}, ${c}) has conflicting bottom markers.` });
-    return null;
+  const axes = [
+    { axis: 'right' as const, space: spaceRight, hyphen: hyphenRight },
+    { axis: 'bottom' as const, space: spaceBottom, hyphen: hyphenBottom },
+  ];
+  for (const { axis, space, hyphen } of axes) {
+    if (space && hyphen) {
+      failures.push({ message: `Cell (${r}, ${c}) has conflicting ${axis} markers.` });
+      return null;
+    }
   }
   return {
     right: spaceRight ? 'space' : hyphenRight ? 'hyphen' : 'none',
@@ -122,11 +124,48 @@ function isIntegerInRange(value: unknown, min: number, max: number): value is nu
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }
 
+type KeyedCoords = { startRow: number; startCol: number; direction: Direction };
+
+function validateKeyedCoordinates(
+  obj: Record<string, unknown>,
+  baseMessage: string,
+  size: number,
+  failures: ParseFailure[],
+): KeyedCoords | null {
+  let hasError = false;
+
+  if (!isIntegerInRange(obj.startRow, 0, size - 1)) {
+    failures.push({ message: `${baseMessage} startRow must be an in-bounds integer.` });
+    hasError = true;
+  }
+  if (!isIntegerInRange(obj.startCol, 0, size - 1)) {
+    failures.push({ message: `${baseMessage} startCol must be an in-bounds integer.` });
+    hasError = true;
+  }
+  if (!isDirection(obj.direction)) {
+    failures.push({ message: `${baseMessage} direction must be 'across' or 'down'.` });
+    hasError = true;
+  }
+
+  if (hasError) {
+    return null;
+  }
+
+  return {
+    startRow: obj.startRow as number,
+    startCol: obj.startCol as number,
+    direction: obj.direction as Direction,
+  };
+}
+
+function unknownKeys(obj: Record<string, unknown>, allowed: Set<string>): string[] {
+  return Object.keys(obj).filter((key) => !allowed.has(key));
+}
+
 function validateTopLevelExtras(parsed: Record<string, unknown>, failures: ParseFailure[]): void {
-  for (const key of Object.keys(parsed)) {
-    if (!TOP_LEVEL_KEYS.has(key) && key !== 'displacedClues') {
-      failures.push({ message: `Unknown top-level field "${key}".` });
-    }
+  const keys = unknownKeys(parsed, TOP_LEVEL_KEYS).filter((key) => key !== 'displacedClues');
+  for (const key of keys) {
+    failures.push({ message: `Unknown top-level field "${key}".` });
   }
 }
 
@@ -183,11 +222,12 @@ function validateCell(
     return null;
   }
 
-  for (const key of Object.keys(cell)) {
-    if (!CELL_KEYS.has(key)) {
-      failures.push({ message: `Cell at row ${r}, col ${c} has unknown field "${key}".` });
-      return null;
-    }
+  const unknownCellKeys = unknownKeys(cell, CELL_KEYS);
+  if (unknownCellKeys.length > 0) {
+    failures.push({
+      message: `Cell at row ${r}, col ${c} has unknown field "${unknownCellKeys[0]}".`,
+    });
+    return null;
   }
 
   if (typeof cell.black !== 'boolean') {
@@ -264,32 +304,25 @@ function validateWords(
       continue;
     }
 
-    for (const key of Object.keys(word)) {
-      if (!WORD_KEYS.has(key)) {
-        failures.push({ message: `Word ${i} has unknown field "${key}".` });
-        wordError = true;
-      }
+    for (const key of unknownKeys(word, WORD_KEYS)) {
+      failures.push({ message: `Word ${i} has unknown field "${key}".` });
+      wordError = true;
     }
 
-    const startRow = word.startRow;
-    const startCol = word.startCol;
-    const direction = word.direction;
     const length = word.length;
     const clue = word.clue;
     const nextWord = word.nextWord;
 
-    if (!isIntegerInRange(startRow, 0, size - 1)) {
-      failures.push({ message: `Word ${i}: startRow must be an in-bounds integer.` });
+    const keyedCoords = validateKeyedCoordinates(
+      word,
+      `Word ${i}:`,
+      size,
+      failures,
+    );
+    if (keyedCoords === null) {
       wordError = true;
     }
-    if (!isIntegerInRange(startCol, 0, size - 1)) {
-      failures.push({ message: `Word ${i}: startCol must be an in-bounds integer.` });
-      wordError = true;
-    }
-    if (!isDirection(direction)) {
-      failures.push({ message: `Word ${i}: direction must be 'across' or 'down'.` });
-      wordError = true;
-    }
+
     if (typeof length !== 'number' || !Number.isInteger(length) || length < 2) {
       failures.push({ message: `Word ${i}: length must be an integer >= 2.` });
       wordError = true;
@@ -305,45 +338,28 @@ function validateWords(
         failures.push({ message: `Word ${i}: nextWord must be an object or null.` });
         wordError = true;
       } else {
-        for (const key of Object.keys(nextWord)) {
-          if (!NEXT_WORD_KEYS.has(key)) {
-            failures.push({ message: `Word ${i}: nextWord has unknown field "${key}".` });
-            wordError = true;
-          }
-        }
-
-        const nwStartRow = nextWord.startRow;
-        const nwStartCol = nextWord.startCol;
-        const nwDirection = nextWord.direction;
-
-        if (!isIntegerInRange(nwStartRow, 0, size - 1)) {
-          failures.push({ message: `Word ${i}: nextWord startRow must be an in-bounds integer.` });
-          wordError = true;
-        }
-        if (!isIntegerInRange(nwStartCol, 0, size - 1)) {
-          failures.push({ message: `Word ${i}: nextWord startCol must be an in-bounds integer.` });
-          wordError = true;
-        }
-        if (!isDirection(nwDirection)) {
-          failures.push({ message: `Word ${i}: nextWord direction must be 'across' or 'down'.` });
+        for (const key of unknownKeys(nextWord, NEXT_WORD_KEYS)) {
+          failures.push({ message: `Word ${i}: nextWord has unknown field "${key}".` });
           wordError = true;
         }
 
-        if (!wordError) {
-          parsedNextWord = {
-            startRow: nwStartRow as number,
-            startCol: nwStartCol as number,
-            direction: nwDirection as Direction,
-          };
+        parsedNextWord = validateKeyedCoordinates(
+          nextWord,
+          `Word ${i}: nextWord`,
+          size,
+          failures,
+        );
+        if (parsedNextWord === null) {
+          wordError = true;
         }
       }
     }
 
-    if (!wordError) {
+    if (!wordError && keyedCoords !== null) {
       result.push({
-        startRow: startRow as number,
-        startCol: startCol as number,
-        direction: direction as Direction,
+        startRow: keyedCoords.startRow,
+        startCol: keyedCoords.startCol,
+        direction: keyedCoords.direction,
         length: length as number,
         clue: clue as string,
         nextWord: parsedNextWord,
@@ -515,12 +531,10 @@ function validateDisplacedClues(
       continue;
     }
 
-    for (const key of Object.keys(entry)) {
-      if (!DISPLACED_CLUE_KEYS.has(key)) {
-        failures.push({ message: 'displacedClues is malformed.' });
-        ok = false;
-      }
-    }
+    unknownKeys(entry, DISPLACED_CLUE_KEYS).forEach(() => {
+      failures.push({ message: 'displacedClues is malformed.' });
+      ok = false;
+    });
 
     const id = entry.id;
     const clue = entry.clue;
@@ -621,14 +635,14 @@ export const parsePuzzleShape = (
     failures.push({ message: 'Complete puzzles must not include displacedClues.' });
   }
 
-  if (failures.length > 0 || (fileType !== 'incomplete' && fileType !== 'complete')) {
-    return { ok: false, failures };
-  }
-
-  if (gridSize === null || puzzleKey === null) {
-    return { ok: false, failures };
-  }
-  if (typeof titleRaw !== 'string' || typeof authorRaw !== 'string') {
+  if (
+    failures.length > 0 ||
+    (fileType !== 'incomplete' && fileType !== 'complete') ||
+    gridSize === null ||
+    puzzleKey === null ||
+    typeof titleRaw !== 'string' ||
+    typeof authorRaw !== 'string'
+  ) {
     return { ok: false, failures };
   }
 
@@ -735,15 +749,7 @@ export const serializeIncompleteShape = (p: Puzzle, displacedClues: DisplacedClu
 };
 
 export const serializeCompleteShape = (p: Puzzle): object => {
-  const {
-    version,
-    type,
-    key,
-    gridSize,
-    title,
-    author,
-    grid,
-    words,
-  } = buildSerializedOutput(p, 'complete', []);
-  return { version, type, key, gridSize, title, author, grid, words };
+  const { displacedClues: omitted, ...rest } = buildSerializedOutput(p, 'complete', []);
+  void omitted;
+  return rest;
 };

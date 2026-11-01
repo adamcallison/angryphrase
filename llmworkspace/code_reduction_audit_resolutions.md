@@ -10,7 +10,9 @@ Conventions: no line-number references (they rot); functions, modules, and test 
 The house process for an entry is the one recorded in `archive/architecture_smell_resolutions.md`
 (Appendix — "Resolution process (gates)"), applied to audit items instead of smell findings.
 
-Resolved so far: O2 (brand-type boilerplate), O3 (delete dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the grid scan sites).
+Resolved so far: O1 (v1.ts parser/serializer consolidation), O2 (brand-type boilerplate), O3 (delete
+dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the
+grid scan sites).
 
 ---
 
@@ -549,3 +551,149 @@ The item's own counts are not trusted; the inventory below is what coverage is m
 | `builderFacade.setMarker`, `builderVM`'s marker flags, `fillMode`'s letter write, `designMode`'s toggle | the same kind: point reads at cursor- or intent-derived coordinates. All migrated to `GridAccess.cellAt` | — (closed by decision, not deferred) |
 | `WordTopology.partOfRun`'s own O(n) scan implementation, and `partOfRunMask`'s per-direction variant | out of this item's scope: O9 owns `partOfRun`'s implementation. The bulk mask is deliberately left as the source of `selectable` in the view-model | audit O9 |
 | the `GridOps` name itself — a friendlier name for the surviving accessor | closed: after this entry, the accessor namespace was renamed `GridAccess` → `Grid` and moved into `src/domain/grid/Grid.ts` beside the `Grid` type (2026-10-26) | — (closed, not deferred) |
+
+## O1 — `domain/format/v1.ts` parser/serializer consolidation — resolved 2026-11-01
+
+### The item (recap)
+
+O1 proposed six sub-items inside `src/domain/format/v1.ts`, estimating **−180 LOC** on the premise
+"no behavior change required; all failure strings can stay byte-identical". Five of the item's
+premises did not survive verification against the file as it stood (the item was written before
+O2/O3/O4 landed; the file was 749 lines, not 774, and its `buildDomainGrid` had already been
+rewritten):
+
+1. **Item 4 (`buildDomainGrid`) was stale.** O4's resolution (2026-10-26) had already rewritten it
+   as a direct nested `map` over validated data — the exact shape O1 sketched. Zero work; recorded
+   as site S11.
+2. **Item 5 as written was a wire-format bug.** "Give `buildSerializedOutput` a `displacedClues`
+   argument of `[]` for the complete case and delete the destructure" would emit
+   `displacedClues: []` in complete files — which `parsePuzzleShape` rejects
+   (`Complete puzzles must not include displacedClues.`) and architecture.md §10 forbids
+   ("Complete: … no `displacedClues` field"). The app would have emitted files its own parser
+   refuses, breaking the export→import round-trip and the field-set and byte-equality tests. The
+   audit's own rejected list ("`serializeCompleteShape` keeping `displacedClues: []` —
+   wire-format compatibility; leave") contradicts the item. Declined in that form.
+3. **Item 1's helper sketch matched only one of the five sites.** The cell site reports only the
+   *first* unknown key and aborts the cell; the word, `nextWord`, displaced-clue and top-level
+   sites report *all* unknown keys. The sketched `rejectUnknownFields` (push one, return false)
+   applied uniformly would silently drop failures — against §10's "strict — the failure list is
+   the contract".
+4. **Item 3's "dead" re-checks are live for the type-checker.** The second guard block is
+   unreachable at runtime but exists to narrow `GridSize | null` etc. after the
+   accumulate-then-return pattern; deleting it outright fails `typecheck`, and replacing it with
+   per-field early returns would stop top-level failures accumulating (a hostile file with bad
+   version + bad key + bad size must get all three at once).
+5. **The estimate was wrong by two orders of direction.** The landed change is **+6 production
+   lines** (749 → 755; 96 added, 90 deleted) — not −180, and not the −55 of the pre-implementation
+   plan either. The structural reason: each extraction *adds* a helper body and multi-line call
+   sites (the repo's formatting), while the item counted only the deleted lines. Same correction
+   pattern as O2 (−150 claimed, +33 landed).
+
+### Site inventory (Gate 0)
+
+| # | Site | Sub-item | Outcome |
+|---|---|---|---|
+| S1 | unknown-key loop, `validateTopLevelExtras` | 1 | migrated to `unknownKeys`; `displacedClues` exemption stays at the site |
+| S2 | unknown-key loop, `validateCell` | 1 | migrated; stays first-failure-only via the first element of the helper's result |
+| S3 | unknown-key loop, word branch of `validateWords` | 1 | migrated; reports all keys |
+| S4 | unknown-key loop, `nextWord` branch of `validateWords` | 1 | migrated; reports all keys |
+| S5 | unknown-key loop, `validateDisplacedClues` | 1 | migrated; constant message, one per unknown key |
+| S6 | `startRow`/`startCol`/`direction` checks, word branch | 2 | migrated to `validateKeyedCoordinates(word, \`Word ${i}:\`, …)` |
+| S7 | the same three checks, `nextWord` branch | 2 | migrated to `validateKeyedCoordinates(nextWord, \`Word ${i}: nextWord\`, …)` |
+| S8 | second guard block in `parsePuzzleShape` | 3 | deleted; conditions folded into the single early-return guard |
+| S9 | 7-field destructure/re-pack in `serializeCompleteShape` | 5 | replaced by one-line rest-omit; **not** the item's `[]` form |
+| S10 | two conflict branches in `markerFromJson` | 6 | collapsed to a loop over the two axes; right-before-bottom order kept |
+| S11 | `buildDomainGrid` construction ceremony | 4 | **already migrated by O4** — no work, no duplication left |
+
+### Decision
+
+- **S1–S5: the helper owns the loop and the Set check only.** `unknownKeys(obj, allowed): string[]`
+  hands the keys back; every site keeps its own message text, failure count and control flow. This
+  is the whole difference between this and the item's sketch: message construction and
+  early-return-vs-continue are site semantics, not shared mechanics, and folding them into the
+  helper is what would have changed failure lists.
+- **S6–S7: one keyed-coordinate validator, called twice.** `validateKeyedCoordinates(obj,
+  baseMessage, size, failures): KeyedCoords | null` — `baseMessage` is the full label before the
+  field name (`Word ${i}:` / `Word ${i}: nextWord`), which keeps both message families
+  byte-identical, including the `direction` line, without string surgery. It accumulates all three
+  failures before returning null; at the word site a null sets `wordError` but does not skip the
+  `length`/`clue` checks, and at the `nextWord` site it leaves `parsedNextWord` null under the
+  existing `if (!wordError)` guard.
+- **S8: merge, don't delete.** All narrowing conditions joined the existing early return as
+  disjuncts; TypeScript narrows every binding through the negated disjunction, so no casts and no
+  `!` were needed. The invariant that makes it safe: every added disjunct is true only when a
+  failure was already pushed, so `failures.length > 0` already covers it — the merged guard is
+  truth-functionally identical at runtime.
+- **S9: omit by rest-pattern, keep the wire shape.** `const { displacedClues: omitted, ...rest } =
+  buildSerializedOutput(p, 'complete', []); return rest;` — insertion order is preserved by the
+  rest spread, so the emitted bytes are unchanged. The binding is named (`omitted`) with
+  `void omitted;` because the repo's `no-unused-vars` has no rest-sibling exemption; no lint rule
+  was touched.
+- **S10: axis loop.** Right-before-bottom order and first-conflict-early-return preserved.
+
+### Design as implemented
+
+`src/domain/format/v1.ts` only. Two new module-private helpers (`unknownKeys`,
+`validateKeyedCoordinates`), one module-private type alias (`KeyedCoords`), one merged guard, one
+rest-omit. No public export added, removed, or changed; no import changed; no layer, boundary or
+lint movement. The `v1.ts`/`v1Json.ts` split is untouched (the audit's rejected list already
+protects it).
+
+### Deliberate behaviour changes
+
+**None.** Every failure list and every serializer byte is proven unchanged (see Verification).
+
+### Files
+
+- `src/domain/format/v1.ts` — the only file changed. **No test file was touched** — the first
+  audit item so far to land with a completely untouched test tree (O3 and O4 both had the test
+  tree in scope; O1 deletes no consumed API).
+
+### Verification
+
+- `npm run ci` green: `eslint .` + `madge --circular` (**no cycles**) + `svelte-check` (**0 errors,
+  0 warnings**) + `vitest run` (full suite) + `vite build`.
+- **Behaviour preservation proved empirically, not by assertion.** A throwaway probe compared
+  `parsePuzzleShape` failure lists and both serializers' bytes between `HEAD` and the working
+  tree, over a hostile corpus: every unknown-field site exercised with *multiple* unknown keys
+  (the case where the item's sketch would have dropped failures), cell marker conflicts
+  (right/bottom/both), mixed multi-rule accumulations, `nextWord`-not-an-object, a
+  complete-file-with-`displacedClues`, a many-bad-top-level-fields file, plus all seven
+  `puzzles/*.json` re-parsed and re-serialized. **Byte-for-byte identical** — run once per landed
+  sub-task (after each of the four dispatches) and cumulatively at the end.
+- **The unchanged suite is the proof.** `test/domain/format/v1.test.ts` passes without a single
+  edit — 51 tests, including the byte-equality case (`serializeCompleteShape`'s
+  `JSON.stringify` matches `serializeComplete` byte-for-byte), the field-set case (complete output
+  carries no `displacedClues` — the case the item's original item-5 form would have broken), and
+  the strict `letter`-field and non-head-clue rejections. The audit's verification-plan prediction
+  ("parser tests still pass unchanged") held exactly.
+
+### Consequence
+
+- **+6 production lines** (749 → 755; 96 added, 90 deleted), 0 test lines, plus this entry and the
+  audit's status line. The item estimated −180; the plan corrected it to −55; the landed figure is
+  +6. Approximate per-task attribution: items 1+6 ≈ 0, item 2 ≈ +10 (the helper body and call
+  formatting outweigh the two deleted check triples), item 3 ≈ −2, item 5 ≈ −8. The item's
+  *quantity* claim was wrong for a structural reason worth recording: an extraction's cost is a
+  helper plus call sites; a per-site deletion estimate that counts only the removed lines will
+  overshoot every time in this formatting regime.
+- **The item's quality claims are met.** Four rules that each had a second expression now have
+  one owner: the unknown-key loop (five hand-rolled copies → one helper), keyed-coordinate
+  validation (two copies → one), the top-level validity guard (two expressions → one), and the
+  complete-shape `displacedClues` omission (a 7-field re-pack → a one-line omit). `markerFromJson`
+  writes its two axes once.
+- **No guard was traded for any of it.** The cell site's first-failure-only behavior, the
+  accumulate-don't-return semantics at every level, and the failure-list contract are all
+  preserved and pinned by the old-vs-new proof.
+- Touch costs that change: adding a new keyed field to a validation site means touching the
+  `Set` and the site's message, not a hand-rolled loop; adding a third keyed-coordinate shape
+  (none exists today) means a third call to `validateKeyedCoordinates`, not a third copy of three
+  checks.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `buildDomainGrid` (item 4) | already migrated by O4's array-iteration rewrite; recorded, not deferred | O4 resolution (closed) |
+| item 5's `displacedClues: []` form | **declined by decision** — it changes the complete-file wire shape to one the app's own parser rejects; the omission is a §10 rule, not a style choice | — (closed by decision, not deferred) |
+| `length`/`clue` casts (`as number` / `as string`) at the word `result.push` | word-site-specific checks, not the keyed-coordinate shape; absorbing them would widen the helper past its rule | — (closed by decision, not deferred) |

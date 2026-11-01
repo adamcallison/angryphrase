@@ -88,6 +88,23 @@ repetitive. No behavior change required; all failure strings can stay byte-ident
 tests must be updated where they assert exact failure counts (the double-guard and
 shared-validation refactors alter *which* code emits a given message, never the message).
 
+**Status (2026-11-01): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O1 — `domain/format/v1.ts` parser/serializer consolidation"). Corrections to this item, made
+during the resolution: (a) item 4 was stale — O4's resolution had already rewritten
+`buildDomainGrid` into the exact shape sketched here; (b) item 5 as written was a wire-format bug
+— emitting `displacedClues: []` in complete files makes the app's own parser reject its own
+exports (§10 forbids the field in complete files; the audit's own rejected list says "leave");
+it was implemented as a one-line rest-omit that preserves the omission; (c) item 1's helper sketch
+matched only the cell site — the other four unknown-field sites report *all* unknown keys while
+the cell site reports only the first, so the helper owns the loop and hands keys back, with
+message/count/control-flow staying at each site; (d) item 3's "dead" re-checks are live for the
+type-checker (narrowing after accumulate-then-return) — they were folded into the single
+early-return guard as disjuncts, not deleted; (e) the estimate is corrected from "−180" to **+6
+production lines** (749 → 755) with zero test lines — every extraction adds a helper body and
+formatted call sites that the per-site deletion accounting never counted; the item's *quality*
+claims (one owner per repeated rule) are met, its quantity claim was not. Leftovers: none; the
+sites not migrated are listed in the resolution's "Not addressed" table with their reasons.
+
 ---
 
 ## O2. Brand-type boilerplate: generic constructor factory + removal of ceremony brands (est. −150 to −200 LOC)
