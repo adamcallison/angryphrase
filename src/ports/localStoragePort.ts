@@ -8,57 +8,57 @@ import type { PuzzleKey } from '../domain/puzzle/PuzzleKey';
 const BUILDER_KEY = 'angryphrase:builder';
 const PLAYER_PREFIX = 'angryphrase:player-progress:';
 
+function coerceError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err));
+}
+
+function loadKey(key: string): LoadResult<string> {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
+  } catch (err) {
+    console.warn('localStoragePort.load failed:', err);
+    return { kind: 'failed', error: coerceError(err) };
+  }
+}
+
+function saveKey(key: string, blob: string): Error | null {
+  try {
+    localStorage.setItem(key, blob);
+    return null;
+  } catch (err) {
+    return coerceError(err);
+  }
+}
+
+function removeKey(key: string): Error | null {
+  try {
+    localStorage.removeItem(key);
+    return null;
+  } catch (err) {
+    return coerceError(err);
+  }
+}
+
 export function createLocalStoragePort(): StoragePort {
   return {
     loadBuilder(): LoadResult<string> {
-      try {
-        const value = localStorage.getItem(BUILDER_KEY);
-        return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
-      } catch (err) {
-        console.warn('localStoragePort.loadBuilder failed:', err);
-        return { kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) };
-      }
+      return loadKey(BUILDER_KEY);
     },
     saveBuilder(blob: string): Error | null {
-      try {
-        localStorage.setItem(BUILDER_KEY, blob);
-        return null;
-      } catch (err) {
-        return err instanceof Error ? err : new Error(String(err));
-      }
+      return saveKey(BUILDER_KEY, blob);
     },
     clearBuilder(): Error | null {
-      try {
-        localStorage.removeItem(BUILDER_KEY);
-        return null;
-      } catch (err) {
-        return err instanceof Error ? err : new Error(String(err));
-      }
+      return removeKey(BUILDER_KEY);
     },
     loadPlayerProgress(key: PuzzleKey): LoadResult<string> {
-      try {
-        const value = localStorage.getItem(PLAYER_PREFIX + String(key));
-        return value === null ? { kind: 'absent' } : { kind: 'loaded', value };
-      } catch (err) {
-        console.warn('localStoragePort.loadPlayerProgress failed:', err);
-        return { kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) };
-      }
+      return loadKey(PLAYER_PREFIX + String(key));
     },
     savePlayerProgress(key: PuzzleKey, blob: string): Error | null {
-      try {
-        localStorage.setItem(PLAYER_PREFIX + String(key), blob);
-        return null;
-      } catch (err) {
-        return err instanceof Error ? err : new Error(String(err));
-      }
+      return saveKey(PLAYER_PREFIX + String(key), blob);
     },
     clearPlayerProgress(key: PuzzleKey): Error | null {
-      try {
-        localStorage.removeItem(PLAYER_PREFIX + String(key));
-        return null;
-      } catch (err) {
-        return err instanceof Error ? err : new Error(String(err));
-      }
+      return removeKey(PLAYER_PREFIX + String(key));
     },
   };
 }

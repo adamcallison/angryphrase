@@ -35,22 +35,20 @@ export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
     return null;
   }
 
-  if (
-    typeof snap !== 'object' ||
-    snap === null ||
-    (snap as { kind?: unknown }).kind !== 'builder-snapshot' ||
-    (snap as { version?: unknown }).version !== 1
-  ) {
+  if (typeof snap !== 'object' || snap === null) {
     return null;
   }
 
-  const puzzleParsed = (snap as { puzzle: unknown }).puzzle;
+  const w = snap as { kind?: unknown; version?: unknown; puzzle?: unknown; mode?: unknown };
+  if (w.kind !== 'builder-snapshot' || w.version !== 1) return null;
+
+  const puzzleParsed = w.puzzle;
   const result = parsePuzzleShape(puzzleParsed);
   if (!result.ok || result.fileType !== 'incomplete') {
     return null;
   }
 
-  const mode = (snap as { mode?: unknown }).mode;
+  const mode = w.mode;
   if (mode !== 'design' && mode !== 'fill') {
     return null;
   }
@@ -74,12 +72,12 @@ export function serializePlayerProgress(state: PlayerState): string | null {
   if (state.phase !== 'solving') return null;
   const size = Number(state.puzzle.gridSize);
   const playerLetters = state.puzzle.grid.map((row) =>
-    row.map((cell) => (cell.playerLetter === null ? null : String(cell.playerLetter))),
+    row.map((cell) => (cell.playerLetter === null ? null : cell.playerLetter)),
   );
   return JSON.stringify({
     version: 1,
     kind: 'player-progress',
-    key: String(state.puzzle.key),
+    key: state.puzzle.key,
     gridSize: size,
     playerLetters,
   });
@@ -93,33 +91,25 @@ export function parsePlayerProgress(blob: string): PlayerProgressBlob | null {
     return null;
   }
 
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    (parsed as { kind?: unknown }).kind !== 'player-progress' ||
-    (parsed as { version?: unknown }).version !== 1
-  ) {
+  if (typeof parsed !== 'object' || parsed === null) {
     return null;
   }
 
-  if (typeof (parsed as { key: unknown }).key !== 'string' || typeof (parsed as { gridSize: unknown }).gridSize !== 'number') {
-    return null;
-  }
+  const w = parsed as { kind?: unknown; version?: unknown; key?: unknown; gridSize?: unknown; playerLetters?: unknown };
+  if (w.kind !== 'player-progress' || w.version !== 1) return null;
 
-  if (!Array.isArray((parsed as { playerLetters: unknown }).playerLetters)) {
-    return null;
-  }
+  const keyRaw = w.key;
+  const gridSizeRaw = w.gridSize;
+  if (typeof keyRaw !== 'string' || typeof gridSizeRaw !== 'number') return null;
 
-  const key = PuzzleKey.try((parsed as { key: string }).key);
-  if (key === null) {
-    return null;
-  }
-  const gridSize = GridSizeCtor.try((parsed as { gridSize: number }).gridSize);
-  if (gridSize === null) {
-    return null;
-  }
+  const rawLetters = w.playerLetters;
+  if (!Array.isArray(rawLetters)) return null;
 
-  const rawLetters = (parsed as { playerLetters: unknown[] }).playerLetters;
+  const key = PuzzleKey.try(keyRaw);
+  if (key === null) return null;
+  const gridSize = GridSizeCtor.try(gridSizeRaw);
+  if (gridSize === null) return null;
+
   const playerLetters: (Letter | null)[][] = [];
   for (const rawRow of rawLetters) {
     if (!Array.isArray(rawRow)) return null;

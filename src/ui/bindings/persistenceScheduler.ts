@@ -19,95 +19,98 @@ export interface PersistenceScheduler {
   flush(): void;
 }
 
+type SliceScheduler<S, C> = {
+  schedule(state: S): void;
+  clear(arg: C): void;
+  flush(): void;
+};
+
+/** One timer + pending state + cancel + flush, parameterized by saved state and clear-argument types. */
+function createSliceScheduler<S, C>(
+  doSave: (state: S) => void,
+  doClear: (arg: C) => void,
+  debounceMs: number,
+): SliceScheduler<S, C> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: S | null = null;
+
+  function cancelTimer(): void {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  }
+
+  return {
+    schedule(state) {
+      pending = state;
+      cancelTimer();
+      timer = setTimeout(() => {
+        timer = null;
+        const snapshot = pending;
+        pending = null;
+        if (snapshot === null) return;
+        doSave(snapshot);
+      }, debounceMs);
+    },
+
+    clear(arg) {
+      cancelTimer();
+      pending = null;
+      doClear(arg);
+    },
+
+    flush() {
+      cancelTimer();
+      if (pending !== null) {
+        const snapshot = pending;
+        pending = null;
+        doSave(snapshot);
+      }
+    },
+  };
+}
+
 export function createPersistenceScheduler(
   storage: StoragePort,
   debounceMs: number = 400,
   onWriteResult: (slice: 'builder' | 'player', err: Error | null) => void,
 ): PersistenceScheduler {
-
-  let builderTimer: ReturnType<typeof setTimeout> | null = null;
-  let playerTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingBuilderState: BuilderState | null = null;
-  let pendingPlayerState: PlayerState | null = null;
-
-  function doSaveBuilder(state: BuilderState): void {
-    const blob = serializeBuilderSnapshot(state);
-    const err = storage.saveBuilder(blob);
-    onWriteResult('builder', err);
-  }
-
-  function doSavePlayer(state: PlayerState): void {
-    const blob = serializePlayerProgress(state);
-    if (blob === null) return;
-    const key = (state as Extract<PlayerState, { phase: 'solving' }>).puzzle.key;
-    const err = storage.savePlayerProgress(key, blob);
-    onWriteResult('player', err);
-  }
-
-  return {
-    scheduleBuilderSave(state) {
-      pendingBuilderState = state;
-      if (builderTimer !== null) clearTimeout(builderTimer);
-      builderTimer = setTimeout(() => {
-        builderTimer = null;
-        const snapshot = pendingBuilderState;
-        pendingBuilderState = null;
-        if (snapshot === null) return;
-        doSaveBuilder(snapshot);
-      }, debounceMs);
+  const builder = createSliceScheduler<BuilderState, void>(
+    (state) => {
+      const blob = serializeBuilderSnapshot(state);
+      const err = storage.saveBuilder(blob);
+      onWriteResult('builder', err);
     },
-
-    schedulePlayerSave(state) {
-      pendingPlayerState = state;
-      if (playerTimer !== null) clearTimeout(playerTimer);
-      playerTimer = setTimeout(() => {
-        playerTimer = null;
-        const snapshot = pendingPlayerState;
-        pendingPlayerState = null;
-        if (snapshot === null) return;
-        doSavePlayer(snapshot);
-      }, debounceMs);
-    },
-
-    clearBuilder() {
-      if (builderTimer !== null) {
-        clearTimeout(builderTimer);
-        builderTimer = null;
-      }
-      pendingBuilderState = null;
+    () => {
       const err = storage.clearBuilder();
       onWriteResult('builder', err);
     },
+    debounceMs,
+  );
 
-    clearPlayer(key) {
-      if (playerTimer !== null) {
-        clearTimeout(playerTimer);
-        playerTimer = null;
-      }
-      pendingPlayerState = null;
+  const player = createSliceScheduler<PlayerState, PuzzleKey>(
+    (state) => {
+      const blob = serializePlayerProgress(state);
+      if (blob === null || state.phase !== 'solving') return;
+      const err = storage.savePlayerProgress(state.puzzle.key, blob);
+      onWriteResult('player', err);
+    },
+    (key) => {
       const err = storage.clearPlayerProgress(key);
       onWriteResult('player', err);
     },
+    debounceMs,
+  );
 
+  return {
+    scheduleBuilderSave: builder.schedule,
+    schedulePlayerSave: player.schedule,
+    clearBuilder: () => builder.clear(),
+    clearPlayer: player.clear,
     flush() {
-      if (builderTimer !== null) {
-        clearTimeout(builderTimer);
-        builderTimer = null;
-      }
-      if (pendingBuilderState !== null) {
-        const snapshot = pendingBuilderState;
-        pendingBuilderState = null;
-        doSaveBuilder(snapshot);
-      }
-      if (playerTimer !== null) {
-        clearTimeout(playerTimer);
-        playerTimer = null;
-      }
-      if (pendingPlayerState !== null) {
-        const snapshot = pendingPlayerState;
-        pendingPlayerState = null;
-        doSavePlayer(snapshot);
-      }
+      builder.flush();
+      player.flush();
     },
   };
 }

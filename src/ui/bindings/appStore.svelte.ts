@@ -43,34 +43,30 @@ export function createAppStore(
   let state: AppState = $state(initial);
   let activeQueue: (AppIntent | BuilderIntent | PlayerIntent)[] | null = null;
   const retoastMs = options?.saveFailureRetoastMs ?? 60_000;
-  const builderLatch = { armed: false, toastAt: null as EpochMs | null };
-  const playerLatch = { armed: false, toastAt: null as EpochMs | null };
 
-  function handleWriteResult(slice: 'builder' | 'player', err: Error | null): void {
-    if (err === null) {
-      if (slice === 'builder') {
-        builderLatch.armed = false;
-        builderLatch.toastAt = null;
-      } else {
-        playerLatch.armed = false;
-        playerLatch.toastAt = null;
-      }
-      return;
-    }
-    const latch = slice === 'builder' ? builderLatch : playerLatch;
-    if (latch.armed && latch.toastAt !== null && deps.now() - latch.toastAt < retoastMs) {
-      return;
-    }
-    latch.armed = true;
-    latch.toastAt = deps.now();
-    if (slice === 'builder') {
-      console.warn('appStore: builder persistence write failed', err);
-      dispatch({ kind: 'report-builder-save-failure' });
-    } else {
-      console.warn('appStore: player persistence write failed', err);
-      dispatch({ kind: 'report-player-save-failure' });
-    }
+  function makeLatch(warnPrefix: string, failureIntent: AppIntent) {
+    let armed = false;
+    let toastAt: EpochMs | null = null;
+    return {
+      report(err: Error | null): void {
+        if (err === null) {
+          armed = false;
+          toastAt = null;
+          return;
+        }
+        if (armed && toastAt !== null && deps.now() - toastAt < retoastMs) {
+          return;
+        }
+        armed = true;
+        toastAt = deps.now();
+        console.warn(warnPrefix, err);
+        dispatch(failureIntent);
+      },
+    };
   }
+
+  const builderLatch = makeLatch('appStore: builder persistence write failed', { kind: 'report-builder-save-failure' });
+  const playerLatch = makeLatch('appStore: player persistence write failed', { kind: 'report-player-save-failure' });
 
   function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
     if (activeQueue !== null) {
@@ -170,7 +166,7 @@ export function createAppStore(
   const scheduler = createPersistenceScheduler(
     ports.storage,
     options?.persistenceDebounceMs ?? 400,
-    handleWriteResult,
+    (slice, err) => (slice === 'builder' ? builderLatch : playerLatch).report(err),
   );
 
   const store: AppStore = {

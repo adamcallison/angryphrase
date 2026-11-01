@@ -12,7 +12,7 @@ The house process for an entry is the one recorded in `archive/architecture_smel
 
 Resolved so far: O1 (v1.ts parser/serializer consolidation), O2 (brand-type boilerplate), O3 (delete
 dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the
-grid scan sites).
+grid scan sites), O7 (persistence plumbing duplication).
 
 ---
 
@@ -697,3 +697,178 @@ protects it).
 | `buildDomainGrid` (item 4) | already migrated by O4's array-iteration rewrite; recorded, not deferred | O4 resolution (closed) |
 | item 5's `displacedClues: []` form | **declined by decision** — it changes the complete-file wire shape to one the app's own parser rejects; the omission is a §10 rule, not a style choice | — (closed by decision, not deferred) |
 | `length`/`clue` casts (`as number` / `as string`) at the word `result.push` | word-site-specific checks, not the keyed-coordinate shape; absorbing them would widen the helper past its rule | — (closed by decision, not deferred) |
+
+---
+
+## O7 — Persistence plumbing duplication — resolved 2026-11-01
+
+### The item (recap)
+
+`code_reduction_audit.md` O7 proposes four changes (est. −120 LOC): (1) a slice factory replacing the
+cloned builder/player halves of `persistenceScheduler.ts`; (2) a latch factory replacing
+`builderLatch`/`playerLatch` + the branchy `handleWriteResult` in `appStore.svelte.ts`; (3)
+`coerceError` + a `guard<T>` wrapper collapsing `localStoragePort.ts`'s six re-inlined
+`try/catch` blocks, and keep the factory only if `test/ports/` uses it; (4) single-cast wrapper
+locals replacing the repeated `(parsed as { kind?: unknown }).kind` casts in `persistenceCodec.ts`,
+plus turning `serializePlayerProgress`'s "20 lines of loops" into `.map`.
+
+Four of the item's premises did not survive verification, and are corrected by this entry:
+
+1. **The sketch's `clear(): void` is wrong.** `clearPlayer` takes a `PuzzleKey`; `clearBuilder` takes
+   nothing. A factory collapsing both to `clear(): void` cannot back the frozen
+   `PersistenceScheduler` interface. The factory must be generic over the clear-argument type.
+2. **The sketch's factory blanket-calls `onWriteResult` after `doSave`.** `doSavePlayer` early-returns
+   when `serializePlayerProgress` yields `null` (phase ≠ 'solving') and must fire **no**
+   `onWriteResult` in that case (architecture.md §8: reminders ride on *attempted* writes). The
+   slice-specific save function owns the report decision; a blanket report would fabricate write
+   attempts that never reached storage.
+3. **Part 3's generic `guard<T>` would flatten a load-bearing asymmetry.** A failed *load* warns
+   (`console.warn`) and returns `{ kind: 'failed' }`; a failed *save/clear* returns the error
+   silently — `localStoragePort.test.ts` asserts `warnSpy` is *not* called for save/clear failures.
+   One generic wrapper needs a mode flag to preserve that; key-addressed primitives
+   (`loadKey`/`saveKey`/`removeKey`) preserve it by construction. The audit's shape was rejected for
+   the cleaner one. The factory-vs-singleton question resolves to *keep both*:
+   `test/ports/localStoragePort.test.ts` calls `createLocalStoragePort()` 14×.
+4. **Part 4's "20 lines of loops" claim is stale.** `serializePlayerProgress` was already
+   `.map`-based (3 lines) before this change — there was no loop consolidation to do. The real win was
+   only the repeated casts. The per-cell `Letter.try` validation loop in `parsePlayerProgress` is
+   load-bearing (it rejects invalid letters on reload) and stays as is.
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `scheduleBuilderSave` timer+pending+coalesce body | `ui/bindings/persistenceScheduler.ts` | migrated to factory |
+| S2 | `schedulePlayerSave` timer+pending+coalesce body | `ui/bindings/persistenceScheduler.ts` | migrated to factory |
+| S3 | `clearBuilder` cancel+clear body | `ui/bindings/persistenceScheduler.ts` | migrated to factory |
+| S4 | `clearPlayer(key)` cancel+clear body | `ui/bindings/persistenceScheduler.ts` | migrated to factory (clear-arg generic) |
+| S5 | `flush`'s builder half | `ui/bindings/persistenceScheduler.ts` | migrated to factory |
+| S6 | `flush`'s player half | `ui/bindings/persistenceScheduler.ts` | migrated to factory; builder-first ordering kept |
+| S7 | `doSaveBuilder` / `doSavePlayer` | `ui/bindings/persistenceScheduler.ts` | **kept as slice closures** — not duplication: they differ per slice (blob kind, per-key address, null-blob silence) |
+| S8 | `builderLatch` / `playerLatch` literals | `ui/bindings/appStore.svelte.ts` | migrated to `makeLatch` factory |
+| S9 | `handleWriteResult`'s four `slice === 'builder'` branches | `ui/bindings/appStore.svelte.ts` | migrated; one branch remains (latch *selection* only) |
+| S10 | `loadBuilder` / `loadPlayerProgress` try/catch bodies | `ports/localStoragePort.ts` | migrated to `loadKey` |
+| S11 | `saveBuilder` / `savePlayerProgress` try/catch bodies | `ports/localStoragePort.ts` | migrated to `saveKey` |
+| S12 | `clearBuilder` / `clearPlayerProgress` try/catch bodies | `ports/localStoragePort.ts` | migrated to `removeKey` |
+| S13 | six inline `err instanceof Error ? …` coercions | `ports/localStoragePort.ts` | migrated to module-local `coerceError` |
+| S14 | `parseBuilderSnapshot`'s five `snap as { … }` casts | `ui/bindings/persistenceCodec.ts` | single cast to wrapper local `w` |
+| S15 | `parsePlayerProgress`'s five `parsed as { … }` casts | `ui/bindings/persistenceCodec.ts` | single cast to wrapper local `w` + `keyRaw`/`gridSizeRaw`/`rawLetters` consts |
+| S16 | `serializePlayerProgress`'s `String()` conversions | `ui/bindings/persistenceCodec.ts` | dropped — brands are strings at runtime, `JSON.stringify` byte-identical (proved below); `Number(gridSize)` kept (real coercion) |
+
+### Decision
+
+All sixteen sites migrated or explicitly kept. The contested calls:
+
+- **Factory reporting shape (S1–S7).** Options: (a) the audit's sketch — `doSave`/`doClear` return
+  values, factory calls `onWriteResult` centrally; (b) both callbacks `void`, each slice closure calls
+  `onWriteResult` itself. (a) was rejected: it forces the factory to know the report policy, and the
+  player save's null-blob silence (premise 2) would need a special-case return convention. (b) was
+  chosen — reporting decisions live with the slice-specific code that knows whether a write was
+  attempted, and the factory is pure timer/pending/cancel/flush mechanics, which is exactly the
+  responsibility split architecture.md gives it ("Holds no failure policy").
+- **Key-addressed primitives over generic `guard<T>` (S10–S13).** See premise 3. The six public
+  methods become one-line delegations; the load-warns/write-silent asymmetry and the exact key
+  composition (`PLAYER_PREFIX + String(key)`) are preserved by construction.
+- **`String()` drops (S16).** Kept `Number(gridSize)`; dropped the two `String()` calls. Chosen
+  because the byte-diff proof (below) shows identical output; rejected keeping them because they
+  implied the brands needed conversion when the runtime never does.
+- **Scheduler LOC.** The factory nets **+3** lines (113→116): the duplication halved, but a fully
+  typed generic factory carries ceremony (a `SliceScheduler<S, C>` alias, two generic
+  instantiations, a `void`-arg wrapper for `clearBuilder`) that two bare clones did not. Accepted:
+  the item's goal is that the halves cannot drift, and the invariant set (one timer per slice,
+  coalescing, clear-cancels-pending, builder-first flush) is now single-copy. Line count was never
+  the real currency here — see Verification.
+
+### Design as implemented
+
+- `persistenceScheduler.ts`: internal `createSliceScheduler<S, C>(doSave, doClear, debounceMs)`
+  returning `{ schedule, clear(arg), flush }`, instantiated as
+  `createSliceScheduler<BuilderState, void>` and `createSliceScheduler<PlayerState, PuzzleKey>`.
+  The public `PersistenceScheduler` interface and `createPersistenceScheduler` signature are frozen
+  and unchanged; the returned object delegates. `doSavePlayer` narrows `state.phase === 'solving'`
+  before reading `state.puzzle.key`, which removes the `as Extract<PlayerState, …>` cast the old
+  code carried — a cast deleted, not added.
+- `appStore.svelte.ts`: `makeLatch(warnPrefix, failureIntent)` returns `{ report(err) }` with the
+  three-case policy (disarm on success / silent within cadence / warn + toast). `retoastMs` stays a
+  store-level concern read by closure. The scheduler wiring keeps exactly one `slice` branch, which
+  selects the latch.
+- `localStoragePort.ts`: module-local `coerceError` (same shape as `filePickPort.ts`'s private
+  one), `loadKey` (sole warner), `saveKey`, `removeKey`. Factory + singleton both kept.
+- `persistenceCodec.ts`: each parser casts once after its `typeof`/null guard into a wrapper local
+  typed with only the fields it reads; field reads go through consts so `typeof`/`Array.isArray`
+  narrow without further casts. The guard-before-cast order is load-bearing and unchanged: the cast
+  shapes, the guard validates.
+
+### Deliberate behaviour changes
+
+None. No user-visible behaviour, no wire format, no failure message changed. The
+`console.warn` label on a failed load changed from two method-specific strings
+(`'localStoragePort.loadBuilder failed:'` / `'…loadPlayerProgress failed:'`) to one
+(`'localStoragePort.load failed:'`) — the tests pin call-count, not the string, and no other
+consumer reads it.
+
+### Files
+
+Production — 4 files (153 insertions, 164 deletions): `src/ports/localStoragePort.ts` (66→66),
+`src/ui/bindings/appStore.svelte.ts` (205→201), `src/ui/bindings/persistenceCodec.ts` (138→128),
+`src/ui/bindings/persistenceScheduler.ts` (113→116).
+
+Tests — **zero files touched**. This is the proof item for the behaviour-preservation claim: the
+suites that pin every one of these behaviours (`persistenceScheduler.test.ts` 34 cases,
+`persistenceCodec.test.ts`, `appStore.test.ts`'s six latch cases, `localStoragePort.test.ts` 14
+cases) pass without a single edit.
+
+Docs: this file.
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npm run test` | 91 files / 1343 tests pass — no test file edited |
+| `npm run typecheck` | 0 errors, 0 warnings |
+| `npm run lint` (incl. `madge --circular`) | clean, no cycles |
+
+**Old-vs-new byte diff (the strong proof for the blob claim).** A scratch harness (created for this
+verification, deleted after) built three deterministic fixtures via `SeededRng` — a blank builder
+state, a builder state with black cells / words / a displaced clue / fill mode, and a solving player
+state with two typed letters — and captured `serializeBuilderSnapshot` ×2 and
+`serializePlayerProgress` outputs under both code versions (working tree stashed for the old
+capture). **Outputs byte-identical** (8,299 bytes each, `diff` empty) across all three fixtures.
+This covers the `String()`-drop claim (S16) and the unchanged wrapper shapes directly, not just via
+assertions.
+
+Closure audit: grep over `src/` confirms the old encodings are gone — `handleWriteResult` (0 refs),
+`builderLatch`/`playerLatch` as object literals (0 refs; the names now bind `makeLatch` results),
+the five-per-parser `as { … }` casts in `persistenceCodec.ts` (replaced by exactly one wrapper cast
+per parser — 2 refs total, the S14/S15 end state, down from 10), and the inline
+`err instanceof Error ? err : new Error(String(err))` coercion in `localStoragePort.ts` (one copy,
+inside `coerceError`). Accountings close: `StoragePort`,
+`PersistenceScheduler`, and the codec's four functions + two types keep their exact signatures and
+call-site counts.
+
+Size: **−11 net LOC** (522→511 across the four files). The audit estimated −120; the estimate
+double-counted (it subtracted the duplicated lines while ignoring the ceremony a fully typed
+factory costs, and its part-4 premise was stale). The delivered value is structural: one copy of
+the debounce/coalesce/cancel/flush mechanics, one copy of the latch policy, one coercion function,
+one cast per parser.
+
+### Consequence
+
+- **A new persistence slice** (if one is ever added) is a third `createSliceScheduler` instantiation
+  plus two delegating methods — not a third hand-written copy of timer/pending/clear/flush.
+- **The latch policy** (disarm / cadence / warn+toast) has one owner; a cadence change edits one
+  closure, not four branches.
+- **The port's asymmetry** (loads warn, writes stay silent) is now visible in the code shape itself
+  (`loadKey` warns; `saveKey`/`removeKey` do not) rather than implied by six repetitive bodies.
+- **Unchanged:** architecture.md §8's descriptions remain accurate as written — the factory is
+  internal to `persistenceScheduler.ts`, which §3 still describes as "mechanical
+  debounce/serialize/coalesce/cancel-on-clear/flush; holds no failure policy (the latches live in
+  the appStore)".
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `coerceError` duplicated between `filePickPort.ts` and `localStoragePort.ts` (two private 3-line copies) | a shared `src/ports/` error module is a new cross-module boundary for two 3-line functions; each file's copy stays private where a reader looks for it | — (closed by decision, not deferred) |
+| audit item O13 (paired with O7 in the audit's implementation order) | separate audit item, not part of O7's site inventory | audit O13 |
+| `serializePlayerProgress` loop→`.map` consolidation (part 4's headline) | premise stale — the code was already `.map`-based; there was nothing to consolidate | — (closed: nothing to do) |
