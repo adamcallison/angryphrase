@@ -19,6 +19,22 @@ const PLAYER_SLOT: LetterSlot = {
   set: Cell.setPlayerLetter,
 };
 
+type SolvingState = Extract<PlayerState, { phase: 'solving' }>;
+
+type CursorChange = { grid?: Grid; cursor: NonNullable<Cursor> };
+
+function applyCursorChange(state: SolvingState, out: CursorChange | null): SolvingState {
+  if (out === null) return state;
+  const puzzle = out.grid ? Puzzle.withGrid(state.puzzle, out.grid) : state.puzzle;
+  return {
+    ...state,
+    puzzle,
+    cursor: out.cursor,
+    checkResult: null,
+    anagram: anagramAfterCursorChange(state.anagram, puzzle, out.cursor),
+  };
+}
+
 function anagramAfterCursorChange(
   anagram: AnagramModalState | null,
   puzzle: Puzzle,
@@ -42,14 +58,8 @@ export function handleSelectCell(
     return Result.ok(state);
   }
 
-  const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
-  if (cursor === null) return Result.ok(state);
-  return Result.ok({
-    ...state,
-    cursor,
-    checkResult: null,
-    anagram: anagramAfterCursorChange(state.anagram, state.puzzle, cursor),
-  });
+  const nextCursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
+  return Result.ok(applyCursorChange(state, nextCursor === null ? null : { cursor: nextCursor }));
 }
 
 export function handleMoveCursor(
@@ -60,14 +70,8 @@ export function handleMoveCursor(
     return Result.ok(state);
   }
 
-  const cursor = GridInteraction.move(state.puzzle.grid, state.cursor, intent.direction, intent.sign);
-  if (cursor === null) return Result.ok(state);
-  return Result.ok({
-    ...state,
-    cursor,
-    checkResult: null,
-    anagram: anagramAfterCursorChange(state.anagram, state.puzzle, cursor),
-  });
+  const nextCursor = GridInteraction.move(state.puzzle.grid, state.cursor, intent.direction, intent.sign);
+  return Result.ok(applyCursorChange(state, nextCursor === null ? null : { cursor: nextCursor }));
 }
 
 export function handleClickCluePanelWord(
@@ -83,18 +87,12 @@ export function handleClickCluePanelWord(
     return Result.ok(state);
   }
 
-  const newCursor: Cursor = {
+  const newCursor: NonNullable<Cursor> = {
     row: target.key.startRow,
     col: target.key.startCol,
     direction: target.key.direction,
   };
-  const newAnagram = anagramAfterCursorChange(state.anagram, state.puzzle, newCursor);
-  return Result.ok({
-    ...state,
-    cursor: newCursor,
-    checkResult: null,
-    anagram: newAnagram,
-  });
+  return Result.ok(applyCursorChange(state, { cursor: newCursor }));
 }
 
 export function handleTypeLetter(
@@ -113,14 +111,9 @@ export function handleTypeLetter(
   );
   if (out === null) return Result.ok(state);
 
-  const newPuzzle = Puzzle.withGrid(state.puzzle, out.grid);
-  return Result.ok({
-    ...state,
-    puzzle: newPuzzle,
-    cursor: out.cursor,
-    checkResult: null,
-    anagram: anagramAfterCursorChange(state.anagram, newPuzzle, out.cursor),
-  });
+  const { grid, cursor } = out;
+  if (cursor === null) return Result.ok(state);
+  return Result.ok(applyCursorChange(state, { grid, cursor }));
 }
 
 export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> {
@@ -131,14 +124,9 @@ export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> 
   const out = GridInteraction.backspace(state.puzzle.grid, state.cursor, PLAYER_SLOT);
   if (out === null) return Result.ok(state);
 
-  const newPuzzle = Puzzle.withGrid(state.puzzle, out.grid);
-  return Result.ok({
-    ...state,
-    puzzle: newPuzzle,
-    cursor: out.cursor,
-    checkResult: null,
-    anagram: anagramAfterCursorChange(state.anagram, newPuzzle, out.cursor),
-  });
+  const { grid, cursor } = out;
+  if (cursor === null) return Result.ok(state);
+  return Result.ok(applyCursorChange(state, { grid, cursor }));
 }
 
 export function handleCheck(state: PlayerState): ReducerResult<PlayerState> {

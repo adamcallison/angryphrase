@@ -443,6 +443,22 @@ smaller — ~20 LOC).
 **Risk:** low; `handleClickCluePanelWord`'s flow differs slightly (constructs cursor
 directly) — keep it explicit or adapt the helper.
 
+**Status (2026-11-01): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O8 — Player solving handlers: one fold instead of five copies"). Corrections to this item, made
+during the resolution: (a) the sketch's cursor guard (`out.cursor !== undefined`) and fallback
+(`out.cursor ?? state.cursor`) are both wrong — `undefined` cannot occur and a `null` cursor would
+be silently spread, since `Cursor` is a nullable union; the fold's input type now pins
+`NonNullable<Cursor>`, carried by the invariant that every non-null `GridInteraction` outcome holds
+a non-null cursor; (b) the `handleClickCluePanelWord` hedge was resolved by adapting — its per-site
+logic (word lookup, cursor construction) stays explicit, the shared tail folds; (c) the builder
+`fillMode` half is **declined** — LOC-neutral at best (the sites are already ternary one-liners),
+a second fold would re-duplicate the concept, and sharing is blocked by the sibling-import boundary
+and wrong-layered for `domain/`; O18 remains independent of it; (d) the estimate is corrected from
+"−70 LOC" to **−12 production lines** (202 → 190) with zero test edits — the per-site accounting
+over-counted what a guard-plus-call handler can shed. The item's quality claim (one owner of the
+check-clear and anagram re-eval rules) is met. Leftovers: none; the `fillMode` half is recorded in
+the resolution's "Not addressed" table with its landing site.
+
 ---
 
 ## O9. `WordTopology.partOfRun` — 60 lines doing a 2-line job (est. −60 LOC)

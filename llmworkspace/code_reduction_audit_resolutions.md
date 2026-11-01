@@ -12,7 +12,8 @@ The house process for an entry is the one recorded in `archive/architecture_smel
 
 Resolved so far: O1 (v1.ts parser/serializer consolidation), O2 (brand-type boilerplate), O3 (delete
 dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the
-grid scan sites), O7 (persistence plumbing duplication), O13 (boot.ts `freshBlank` removal).
+grid scan sites), O7 (persistence plumbing duplication), O8 (player solving handlers: one
+cursor-change fold), O13 (boot.ts `freshBlank` removal).
 
 ---
 
@@ -958,3 +959,125 @@ complete-file snapshots); restore path byte-identical.
 | Site | Reason | Landing site |
 |---|---|---|
 | restore-branch rewrite as `AppState.blank(...)` + `builder` override (item's second sentence) | rejected — breaks the pinned rng-silence property in its naive form; the snapshot-key workaround builds a blank `BuilderState` to discard it and obscures the documented reload-shape ownership | — (closed by decision, not deferred) |
+
+---
+
+## O8 — Player solving handlers: one fold instead of five copies — resolved 2026-11-01
+
+### The item (recap)
+
+`code_reduction_audit.md` O8 claims `solving.ts` repeats a five-step pattern (phase guard →
+`GridInteraction` call → null-check → spread with `checkResult: null` and
+`anagramAfterCursorChange(...)`) across five handlers, proposes one private `applyCursorChange`
+helper (~est. −70 LOC), suggests the same for the builder's `fillMode` cursor handlers (~20 LOC),
+and hedges that `handleClickCluePanelWord`'s flow "differs slightly — keep it explicit or adapt the
+helper".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `handleSelectCell` | `src/player/state/internal/solving.ts` | migrated — calls the fold with `{ cursor }` |
+| S2 | `handleMoveCursor` | `src/player/state/internal/solving.ts` | migrated — calls the fold with `{ cursor }` |
+| S3 | `handleClickCluePanelWord` | `src/player/state/internal/solving.ts` | migrated — word lookup and the cursor literal stay explicit, then `{ cursor: newCursor }` |
+| S4 | `handleTypeLetter` | `src/player/state/internal/solving.ts` | migrated — passes the `WriteOutcome` as `{ grid, cursor }` |
+| S5 | `handleBackspace` | `src/player/state/internal/solving.ts` | migrated — same as S4 |
+| S6 | `fillMode`'s four cursor handlers (`select-cell`/`move-cursor`/`type-letter`/`backspace`) | `src/builder/state/internal/fillMode.ts` | **not migrated — see decision** |
+
+### Decision
+
+**Player half (S1–S5) — executed, core claim verified.** All five tails are value-identical
+(spread + optional `Puzzle.withGrid` + `cursor` + `checkResult: null` + anagram re-eval against the
+post-change puzzle). The check-clear-on-change and anagram re-eval rules now have exactly one owner,
+the private `applyCursorChange` fold. No new exports; handler names and signatures unchanged.
+
+**Builder half (S6) — declined.** Options considered: (a) a second fold in `fillMode.ts` mirroring
+the player's; (b) a shared fold in `domain/` consumed by both; (c) skip. Chosen: skip.
+
+- (a) is LOC-neutral at best: the `fillMode` sites are already ternary one-liners; the fold saves
+  ~6 lines against a ~10-line helper, and leaves the fold *concept* (post-outcome state assembly)
+  expressed twice — once with the check-clear/anagram resets, once without — which is the
+  duplication this item exists to remove.
+- (b) is blocked architecturally: `builder/state` and `player/state` may not import each other
+  (architecture.md §3), and the shared core cannot live in `domain/` because the `checkResult` /
+  `anagram` resets are state-layer policy, not domain rules. The fold is a player-state concept and
+  stays in `solving.ts`.
+- O18's note that `fillMode` handlers "collapse to the point where inlining is defensible **with
+  O8's shared fold**" concerns the builder half only and is unaffected: O18 remains viable on its
+  own terms (body-shrinking via the O6.2 `Extract` aliases), and its own text says "whether to
+  inline is taste — keep the files, shrink the bodies".
+
+**`handleClickCluePanelWord` hedge — resolved by adapting.** The item's "keep it explicit" option
+was unnecessary: the only per-site logic (word lookup, cursor construction from the word key) stays
+in the handler; the shared tail folds. The audit's own risk note anticipated this correctly.
+
+### Corrections to the item
+
+1. **The sketch's cursor guard is wrong twice.** `...(out.cursor !== undefined && { cursor:
+   out.cursor })` guards against `undefined`, which cannot occur (the field is required), and would
+   *silently spread a `null` cursor* if the value were null, since `Cursor` is a nullable union.
+   The `out.cursor ?? state.cursor` fallback is likewise dead. Fixed by typing the fold's input
+   `cursor: NonNullable<Cursor>` — null is unrepresentable at the fold boundary. The invariant
+   carrying it: every **non-null** `GridInteraction` outcome carries a non-null cursor
+   (`typeLetter`/`backspace` return `null`, not a null-cursor outcome, when the cursor is null);
+   `WriteOutcome.cursor`'s declared type is wider than its runtime value, so `handleTypeLetter` /
+   `handleBackspace` destructure and guard `cursor === null` before calling the fold — a
+   type-required, runtime-dead guard that returns state unchanged (same reference), with no
+   non-null assertions.
+2. **The estimate is corrected from "−70 LOC" to −12 production lines** (202 → 190; 28 insertions,
+   40 deletions, one file). The per-site deletion accounting assumed each handler collapses to
+   "guard + one call (~8 lines → 4)", but each retains its own guard(s), its own
+   `GridInteraction`/lookup call, and the `Result.ok` wrapper — the realistic per-site shrink is
+   2–4 lines, plus the fold adds 15. (The lead's pre-dispatch estimate of −30 to −40 was wrong for
+   the same reason.) The item's *quality* claim — one owner of the repeated rule — is met; its
+   quantity claim was not. This is the fourth consecutive O-item whose estimate missed high (O1
+   −180 → +6; O2 −150 → +33; O13 −15 → −13).
+
+### Design as implemented
+
+`solving.ts` gains two private type aliases (`SolvingState = Extract<PlayerState, { phase:
+'solving' }>`, `CursorChange = { grid?: Grid; cursor: NonNullable<Cursor> }`) and the private fold:
+null outcome ⇒ return `state` (same reference); otherwise `puzzle = out.grid ?
+Puzzle.withGrid(state.puzzle, out.grid) : state.puzzle`, then spread `{...state, puzzle, cursor:
+out.cursor, checkResult: null, anagram: anagramAfterCursorChange(state.anagram, puzzle,
+out.cursor)}`. The anagram re-eval reads the *post-change* puzzle for grid-changing sites and the
+incoming puzzle for cursor-only sites — encoded once, in the fold's `puzzle` local. `handleCheck`
+and `handleClearErrors` are not cursor-change handlers and were correctly excluded by the item.
+
+### Deliberate behaviour changes
+
+None. No-op paths return the same state reference; every outcome path is value-identical
+(the no-op assertions in the suite are `toBe` identity checks, not deep equality).
+
+### Files
+
+- Modified: `src/player/state/internal/solving.ts` (only file).
+- Not modified: `test/player/state/internal/solving.test.ts` — zero edits, by design (see
+  Verification).
+- `llmworkspace/code_reduction_audit.md` — status line added; `llmworkspace/architecture.md` — §3
+  `solving.ts` line and §7 check-clear wording updated to name the fold (lead-owned doc edits).
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx vitest run test/player/state/internal/solving.test.ts` on the **pre-change** code (`git stash`) | 85/85 pass |
+| `npx vitest run test/player/state/internal/solving.test.ts` on the **post-change** code | 85/85 pass — **the same suite, zero edits, green on both sides of the change** — the behaviour-preservation proof |
+| `npm run typecheck` | 0 errors, 0 warnings |
+| `npm run lint` | clean, `madge --circular` finds no cycles |
+| `npm run test` | 1343/1343 pass (91 files) |
+
+`git diff --stat` closes the accounting: one file, 28 insertions / 40 deletions.
+
+### Consequence
+
+- The check-clear-on-change and anagram-re-eval rules have one implementation site instead of five;
+  a future change to either rule (e.g. a different clear policy) edits one function.
+- The fold is player-only and private: no domain export, no cross-state-module dependency, no
+  change to the reducer's dispatch surface.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `fillMode` cursor handlers (item's "same idea applies to the builder" sentence) | declined — LOC-neutral at best, and a second fold would re-duplicate the concept the item removes; sharing is blocked by the sibling-import boundary and wrong-layered for `domain/` | `code_reduction_audit.md` O18 (builder body-shrinking via O6.2 aliases — independent of this item) |
