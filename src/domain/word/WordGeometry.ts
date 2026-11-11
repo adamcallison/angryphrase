@@ -25,34 +25,27 @@ function extentOf(word: Word): Extent {
   };
 }
 
+function offsetCell(word: Word, offset: number): WordCell {
+  const dr = word.key.direction === 'down' ? 1 : 0;
+  const dc = 1 - dr;
+  return {
+    row: Row.of(Number(word.key.startRow) + offset * dr),
+    col: Col.of(Number(word.key.startCol) + offset * dc),
+    offset,
+  };
+}
+
 export const WordGeometry: {
   cells(word: Word): readonly WordCell[];
   contains(word: Word, row: Row, col: Col): boolean;
   lastCell(word: Word): WordCell;
 } = {
   cells(word: Word): readonly WordCell[] {
-    const extent = extentOf(word);
-    const length = extent.length;
-    const startRow = Number(extent.startRow);
-    const startCol = Number(extent.startCol);
+    const length = Number(word.length);
     const cells: WordCell[] = [];
 
-    if (extent.direction === 'across') {
-      for (let offset = 0; offset < length; offset += 1) {
-        cells.push({
-          row: Row.of(startRow),
-          col: Col.of(startCol + offset),
-          offset,
-        });
-      }
-    } else {
-      for (let offset = 0; offset < length; offset += 1) {
-        cells.push({
-          row: Row.of(startRow + offset),
-          col: Col.of(startCol),
-          offset,
-        });
-      }
+    for (let offset = 0; offset < length; offset += 1) {
+      cells.push(offsetCell(word, offset));
     }
 
     return cells;
@@ -74,23 +67,6 @@ export const WordGeometry: {
   },
 
   lastCell(word: Word): WordCell {
-    const extent = extentOf(word);
-    const offset = extent.length - 1;
-    const startRow = Number(extent.startRow);
-    const startCol = Number(extent.startCol);
-
-    if (extent.direction === 'across') {
-      return {
-        row: Row.of(startRow),
-        col: Col.of(startCol + offset),
-        offset,
-      };
-    }
-
-    return {
-      row: Row.of(startRow + offset),
-      col: Col.of(startCol),
-      offset,
-    };
+    return offsetCell(word, Number(word.length) - 1);
   },
 };

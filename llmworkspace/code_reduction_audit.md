@@ -520,6 +520,17 @@ recorded in the resolution's "Not addressed" table.
 
 **Risk:** none.
 
+**Status (2026-11-11): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O10 — `WordGeometry` consolidation"). Corrections to this item, made during the resolution:
+(a) the `lastCell = cells[word][length − 1]` form is **declined** — it allocates the word's
+entire cell list to answer a question about one cell, the same re-derivation defect shape the
+S13 fix removed at `LengthPattern.separatorAt`; `lastCell` stays O(1) via the same private
+`offsetCell` helper `cells` uses, at zero extra cost; (b) the estimate is corrected from
+"−45 LOC" to **−24 production lines** (96 → 72; +14/−38) with zero test edits — the existing
+suite already pins `lastCell ≡ cells[len−1]` conformance and the malformed-word `RangeError`
+throws. Leftovers: none; `contains` (kept per this item's own "keep") and the surviving
+single-consumer `extentOf` are listed in the resolution's "Not addressed" table.
+
 ---
 
 ## O11. Chain-boundary marker logic exists three times (est. −70 LOC, DRY)

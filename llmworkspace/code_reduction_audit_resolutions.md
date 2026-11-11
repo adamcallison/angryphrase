@@ -1197,3 +1197,104 @@ new ≡ old on every case any of the three forms can observe.
 |---|---|---|
 | `partOfRunMask` implementation | item does not propose changing it; bulk form is the deliberate source of `selectable` in the grid view-model | recorded in the O4 resolution's "Not addressed" table |
 | Exhaustive n=4 case in the *permanent* suite | ~1 s runtime per run; n=4 was covered by the one-time differential recorded above and is closed by it | this entry's Verification table (evidence, not a landing site — the permanent n=2,3 cases plus the fixture conformance test carry the invariant forward) |
+
+---
+
+## O10 — `WordGeometry` consolidation — resolved 2026-11-11
+
+### The item (recap)
+
+`code_reduction_audit.md` O10 claims `WordGeometry`'s across/down branch pair is duplicated
+across `cells` (two loops, ~35 lines) and `lastCell` (two return branches), sketches one
+delta-based loop (`dr`/`dc` from direction), proposes `lastCell = cells(word)[length - 1]`
+("9 lines → 2"), says keep `contains`, and estimates −45 LOC.
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `cells` across/down loops | `src/domain/word/WordGeometry.ts` | migrated — thin loop over one private `offsetCell(word, offset)` |
+| S2 | `lastCell` across/down branches | `src/domain/word/WordGeometry.ts` | migrated — single `offsetCell(word, length − 1)` call, O(1) |
+| S3 | `contains` branch pair | `src/domain/word/WordGeometry.ts` | not migrated — item says keep; O(1) arithmetic in raw number space, mints no brands (see Decision) |
+| S4 | `directionAxis` in `LengthPattern.separatorAt` | `src/domain/chain/LengthPattern.ts` | out of this item's scope — that is one of O11's four sites, not a word-extent walk |
+| S5 | production consumers (`ChainCells.cellsOfWord`, `LengthPattern.separatorAt` ×2, `Anagram.buildWordModel`/`buildChainModel`, `WordSelection.findContainingWord`) | 4 files | unchanged — all go through the public surface; no signature or semantics change |
+
+### Decision
+
+**Executed, with the item's `lastCell` form declined before dispatch.** The item's
+"`lastCell(word)` is exactly `cells(word)[length - 1]` (9 lines → 2)" trades a real property
+for lines: it allocates the word's entire cell array — L branded `Row.of`/`Col.of`
+constructions — to answer a question about one cell, making the *owner* of word extent
+re-derive its input per query. That is the exact defect shape `architecture_smell_resolutions.md`
+S13 recorded and fixed at `LengthPattern.separatorAt` (O(L²) from re-deriving cell lists).
+Declined by the human-approved design; the implemented form keeps `lastCell` O(1) via the
+same shared private helper `cells` uses, at a cost of zero extra lines versus the declined
+form.
+
+`contains` stays untouched, as the item itself says. Its branch pair is the same
+direction→axis concept, but expressed in raw-number arithmetic that mints no brands; forcing
+it through `offsetCell` would either mint-and-discard branded coordinates or require a second
+raw-variant helper — both worse than the 13 lines it keeps. `extentOf` (and its `Extent`
+type) survive as `contains`'s single remaining consumer; the direction→delta mapping lives in
+exactly one place, `offsetCell`.
+
+### Corrections to the item
+
+1. **The `lastCell = cells[len−1]` sketch is a regression, not a simplification** (see
+   Decision) — the sixth item whose proposed form, not just its accounting, needed correction.
+2. **The estimate is corrected from "−45 LOC" to −24 production lines** (14 insertions,
+   38 deletions, one file; 96 → 72 lines). Sixth consecutive estimate miss high (O1 −180 → +6;
+   O2 −150 → +33; O13 −15 → −13; O8 −70 → −12; O9 −60 → −38). Test tree: zero lines — the
+   existing suite already pins everything this change must preserve, including a
+   `lastCell ≡ cells[len−1]` conformance case and malformed-word `RangeError` throws.
+
+### Design as implemented
+
+One module-private `offsetCell(word, offset)` derives `dr`/`dc` from `word.key.direction` and
+mints `Row.of` **before** `Col.of` (byte-identical `RangeError` message and evaluation order
+on malformed words). `cells` is a plain loop pushing `offsetCell` per offset; `lastCell` is
+one call at `length − 1`. Public surface, `WordCell` export, and every consumer untouched.
+The implementer chose a `for`-loop push over the sketch's `Array.from` (house array-iteration
+style, no lint change either way) and kept the helper self-contained on the raw `Word` rather
+than threading an `Extent` — both reported with reasons; both accepted.
+
+### Deliberate behaviour changes
+
+None. Every observable output (cell arrays, `contains` results, `lastCell` values,
+`RangeError` messages, throw order) is unchanged; the unchanged suites are the evidence.
+
+### Files
+
+- Modified: `src/domain/word/WordGeometry.ts` (only file; +14/−38).
+- `llmworkspace/code_reduction_audit.md` — status line added (lead-owned doc edit).
+- `llmworkspace/architecture.md` — no edit needed: §3's description of `WordGeometry` is
+  behavioural ("the single owner of word extent and word-coordinate walking", coordinates
+  minted through `Row.of`/`Col.of`), all of which still holds.
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx vitest run test/domain/word/WordGeometry.test.ts` | 23/23 — unedited; incl. offset sequencing, both directions, `lastCell ≡ cells[len−1]` conformance (2 cases), malformed `RangeError` throws for both `cells` and `lastCell` |
+| `npx vitest run test/domain/anagram/Anagram.test.ts test/domain/chain/LengthPattern.test.ts test/domain/chain/ChainCells.test.ts test/domain/word/WordSelection.test.ts` | 62/62 — unedited downstream consumers, the behaviour-preservation evidence |
+| `npm run typecheck` | 0 errors, 0 warnings |
+| `npm run lint` | clean, `madge --circular` finds no cycles |
+
+`git diff --stat` closes the accounting: `WordGeometry.ts` +14/−38, no other file touched.
+
+### Consequence
+
+- The direction→axis-step mapping has one encoding (`offsetCell`) behind `cells` and
+  `lastCell`; a future change to word-walk semantics (new direction, length semantics) moves
+  one helper instead of two/three branch pairs.
+- `lastCell` remains O(1); no new allocation on any path.
+- No boundary, export, or consumer change; `extentOf`'s survival is scoped to `contains`
+  alone and is the hook for O11's marker work if it ever wants a shared extent read.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `contains` branch pair | item says keep; O(1) raw-number arithmetic, mints no brands, forcing it through `offsetCell` is worse (see Decision) | none needed — single 13-line function, no duplication outside it |
+| `extentOf`/`Extent` (now single-consumer) | kept deliberately: `contains` untouched per item; folding it in saves ~13 lines but rewrites a function the item scoped out | candidate for O11 if marker work touches extent reads; otherwise closed here |
+| audit's `lastCell = cells[len−1]` form | declined — allocation regression, contradicts the S13 fix's principle | this entry's Decision |
