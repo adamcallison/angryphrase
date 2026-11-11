@@ -38,3 +38,9 @@ export type PlayerIntent =
   | { kind: 'close-anagram-helper'; target: 'player' }                          // closes the anagram modal
   | { kind: 'anagram-input'; target: 'player'; input: string }                  // the reducer filters to A-Z, uppercases, and clamps to the word length
   | { kind: 'anagram-scramble'; target: 'player' };                              // reducer calls Anagram.scramble(deps.rng) directly and writes scrambledArrangement into PlayerState
+
+type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
+
+export type PlayerIntentMinusTarget = DistributiveOmit<PlayerIntent, 'target'>;
+export type PlayerIntentOf<K extends PlayerIntent['kind']> = Extract<PlayerIntent, { kind: K }>;
+

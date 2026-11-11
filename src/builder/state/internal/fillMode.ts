@@ -1,5 +1,5 @@
 import type { BuilderState } from '../state';
-import type { BuilderIntent } from '../intents';
+import type { BuilderIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
@@ -20,7 +20,7 @@ const ANSWER_SLOT: LetterSlot = {
 
 export function handleSelectCell(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'select-cell' }>,
+  intent: BuilderIntentOf<'select-cell'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -32,7 +32,7 @@ export function handleSelectCell(
 
 export function handleMoveCursor(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'move-cursor' }>,
+  intent: BuilderIntentOf<'move-cursor'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -49,7 +49,7 @@ export function handleMoveCursor(
 
 export function handleTypeLetter(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'type-letter' }>,
+  intent: BuilderIntentOf<'type-letter'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -87,7 +87,7 @@ export function handleBackspace(state: BuilderState): ReducerResult<BuilderState
 
 export function handleSetMarker(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'set-marker' }>,
+  intent: BuilderIntentOf<'set-marker'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill' || state.cursor === null) {
     return Result.ok(state);
@@ -109,7 +109,7 @@ export function handleSetMarker(
 
 export function handleEditClue(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'edit-clue' }>,
+  intent: BuilderIntentOf<'edit-clue'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -140,7 +140,7 @@ export function handleEditClue(
 
 export function handleClickWord(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'click-clue-panel-word' | 'click-grid-word' }>,
+  intent: BuilderIntentOf<'click-clue-panel-word' | 'click-grid-word'>,
   rng: Rng,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {

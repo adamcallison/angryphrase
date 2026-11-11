@@ -1,5 +1,4 @@
-import type { BuilderIntent } from '../../builder/state/intents';
-import type { PlayerIntent } from '../../player/state/intents';
+import type { PlayerIntent, PlayerIntentMinusTarget } from '../../player/state/intents';
 import { derivePlayerShellVM } from './viewmodels/playerVM';
 import type { PlayerShellVM } from './viewmodels/playerVM';
 import type { AppStore } from './appStore.svelte';
@@ -54,47 +53,47 @@ export type PlayerFacade = {
 };
 
 export function createPlayerFacade(appStore: AppStore): PlayerFacade {
-  function dispatch(intent: BuilderIntent | PlayerIntent): void {
-    appStore.dispatch(intent);
-  }
+  const d = (partial: PlayerIntentMinusTarget): void => {
+    appStore.dispatch({ target: 'player', ...partial });
+  };
 
   const filePick = createFilePickActions(
     appStore,
     'playerFacade',
     'player',
-    dispatch,
-    (text) => dispatch({ kind: 'import-puzzle', target: 'player', fileContent: text }),
+    (intent) => appStore.dispatch(intent),
+    (text) => d({ kind: 'import-puzzle', fileContent: text }),
   );
 
   const toolbar: PlayerToolbarActions = {
     check() {
-      dispatch({ kind: 'check', target: 'player' });
+      d({ kind: 'check' });
     },
     clearErrors() {
-      dispatch({ kind: 'clear-errors', target: 'player' });
+      d({ kind: 'clear-errors' });
     },
     requestResetPlayer() {
-      dispatch({ kind: 'request-reset-player', target: 'player' });
+      d({ kind: 'request-reset-player' });
     },
     importNewPuzzle() {
-      dispatch({ kind: 'import-new-puzzle', target: 'player' });
+      d({ kind: 'import-new-puzzle' });
     },
     openAnagramHelper() {
-      dispatch({ kind: 'open-anagram-helper', target: 'player' });
+      d({ kind: 'open-anagram-helper' });
     },
   };
 
-  const grid: PlayerGridActions = createGridActions('player', dispatch);
+  const grid: PlayerGridActions = createGridActions('player', (intent) => appStore.dispatch(intent));
 
   const cluePanel: PlayerCluePanelActions = {
     clickCluePanelWord(wordKey: WordKey) {
-      dispatch({ kind: 'click-clue-panel-word', target: 'player', wordKey });
+      d({ kind: 'click-clue-panel-word', wordKey });
     },
   };
 
   const importScreen: PlayerImportScreenActions = {
     importPuzzle(fileContent: string) {
-      dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
+      d({ kind: 'import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
       await filePick.importDroppedFile(file);
@@ -103,18 +102,18 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
 
   const anagram: PlayerAnagramActions = {
     input(input: string) {
-      dispatch({ kind: 'anagram-input', target: 'player', input });
+      d({ kind: 'anagram-input', input });
     },
     scramble() {
-      dispatch({ kind: 'anagram-scramble', target: 'player' });
+      d({ kind: 'anagram-scramble' });
     },
     close() {
-      dispatch({ kind: 'close-anagram-helper', target: 'player' });
+      d({ kind: 'close-anagram-helper' });
     },
   };
 
   const facade: PlayerFacade = {
-    dispatch,
+    dispatch: appStore.dispatch,
     playerShellVM() {
       return derivePlayerShellVM(appStore.getPlayer());
     },

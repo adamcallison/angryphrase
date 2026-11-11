@@ -1,5 +1,9 @@
 # angryphrase — Code Reduction Audit
 
+**Method note (2026-11-11, added after the O6 resolution — this supersedes anything suggested in this audit).** The findings below are suggestions, not mandates, and one principle overrides every item in this document: **a uniform organisational invariant — a concept class with a single home and no exceptions (every VM type lives in `viewmodels/`; `Grid` is the single grid-accessor module; `WordGeometry` is the single owner of word extent) — is worth more than any line count.** An item that saves lines by moving a concept out of its uniform home, or by converting a zero-exception rule into a judgment-call rule ("fold when trivial"), does not qualify under this audit's own admission criterion regardless of its estimate. Such an item is to be declined, or re-scoped so the invariant survives intact.
+
+The principle was proven the expensive way: O6.4 (fold `toastVM`/`modalVM` into their facades, ~9 lines) was landed and reverted the same day — see the O6 resolution in `code_reduction_audit_resolutions.md` and the O5 row's decline note. The already-resolved items that implicitly followed this principle are the pattern to keep: O7 declining a shared `ports/` error module for two 3-line copies, O9 declining raw indexing to preserve `Grid`'s single-accessor ownership, O11 declining a `ChainMarker.endCell` that would mint a second owner of word extent. This note binds the companion document (`code_reduction_audit_architectural_changes.md`) equally.
+
 **Scope:** all of `src/` (117 files, ≈8,240 LOC). Tests excluded per instruction, but note that
 many deletions below remove prod API that `test/` consumes; those tests must be updated or
 deleted alongside (flagged per finding). No significant architectural changes: the five-layer
@@ -315,7 +319,7 @@ files that never earned one. No merged file exceeds ~120 lines.
 | `domain/time/` 2 → 1 | −1 | 38 LOC total |
 | `domain/builder/` 2 → 1 | −1 | |
 | `domain/anagram/` 2 → 1 (after the `Position` deletion, O2.2) | −1 | |
-| `viewmodels/toastVM.ts` + `modalVM.ts` fold into `toastFacade.ts` / `modalFacade.ts` (both VMs are trivial; the facades are their only consumers) | −2 | see also O6.4 |
+| `viewmodels/toastVM.ts` + `modalVM.ts` fold into `toastFacade.ts` / `modalFacade.ts` (both VMs are trivial; the facades are their only consumers) | −2 | **declined 2026-11-11** — briefly landed under O6 and reverted: all VM types live in one place (`viewmodels/`, no exceptions), and that uniform home is worth more than the ~9 lines the fold saved; do not re-propose |
 
 Public symbols stay the same, so call-site churn is import paths only (mechanical,
 ~60 files). The `domain/brand` owner list in `tools/boundaries.js` must be re-pointed at
@@ -363,6 +367,25 @@ shrunk the content, so rebase conflicts stay shallow.
    (`(intent as { kind: string }).kind`) goes away — `target` is the discriminator.
 
 **Risk:** low, type-level.
+
+**Status (2026-11-11): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O6 — Facade / action-bag / intent-type boilerplate"). Corrections to this item, made during the
+resolution: (a) all three site counts are wrong — the stamping is 31 sites (20 builder + 11 player),
+not "~40"; the `Extract` sites are 21 intent-typed ones, not "~30" (two `Extract<PlayerState,…>`
+sites are a different concept and stay); `AnyIntent`'s union is spelled in 5 places in `src/`, not 6;
+(b) item 4 is **declined** — the `toastVM`/`modalVM` fold was briefly landed under O6 and reverted
+the same day: it saved ~9 lines and broke "all VM types live in `viewmodels/`" (one location, no
+exceptions), a uniform home worth more than the lines (the O5 row carries the decline note);
+(c) item 5's implication that the `default` throw disappears is rejected — the unknown-target guard
+survives as a post-switch, narrowed, cast-free throw, pinned by a test whose assertion was updated
+with the message; (d) the sketch's `DistributiveOmit` home is settled as a **private, unexported**
+per-`intents.ts` definition (an export in `Event.ts` was briefly tried and reversed);
+(e) the estimate is corrected from "−150 LOC" to **+6 net production lines** (+109/−103 across 16
+files) with one test line changed — items 1–3 are type-level readability changes that save ~0 lines
+by construction, the alias exports add 17, and the reducer inlining saves 8. The item's *quality*
+claims — one owner of the `target` literal per facade, named per-kind intent types, one routing
+switch with a surviving guard — are all met. Leftovers: none; the sites not migrated are listed in
+the resolution's "Not addressed" table.
 
 ---
 

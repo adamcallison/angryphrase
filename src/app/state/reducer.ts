@@ -1,7 +1,5 @@
 import type { AppState } from './state';
-import type { AppIntent } from './intents';
-import type { BuilderIntent } from '../../builder/state/intents';
-import type { PlayerIntent } from '../../player/state/intents';
+import type { AnyIntent } from './intents';
 import type { Rng } from '../../domain/rng/Rng';
 import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
@@ -11,7 +9,7 @@ import { GridSize } from '../../domain/grid/GridSize';
 
 export function reduceApp(
   state: AppState,
-  intent: AppIntent | BuilderIntent | PlayerIntent,
+  intent: AnyIntent,
   deps: { rng: Rng; now: () => EpochMs },
 ): ReducerResult<AppState> {
   // App-level intents first (narrow by kind)
@@ -34,22 +32,16 @@ export function reduceApp(
   }
 
   // Builder or Player intent: dispatch by target.
-  function routeToBuilder(intent: BuilderIntent): ReducerResult<AppState> {
-    const r = reduceBuilder(state.builder, intent, deps);
-    return { state: { ...state, builder: r.state }, events: r.events };
-  }
-
-  function routeToPlayer(intent: PlayerIntent): ReducerResult<AppState> {
-    const r = reducePlayer(state.player, intent, deps);
-    return { state: { ...state, player: r.state }, events: r.events };
-  }
-
   switch (intent.target) {
-    case 'builder':
-      return routeToBuilder(intent);
-    case 'player':
-      return routeToPlayer(intent);
-    default:
-      throw new Error(`reduceApp: unknown intent kind: ${(intent as { kind: string }).kind}`);
+    case 'builder': {
+      const r = reduceBuilder(state.builder, intent, deps);
+      return { state: { ...state, builder: r.state }, events: r.events };
+    }
+    case 'player': {
+      const r = reducePlayer(state.player, intent, deps);
+      return { state: { ...state, player: r.state }, events: r.events };
+    }
   }
+
+  throw new Error(`reduceApp: unknown intent target: ${JSON.stringify(intent)}`);
 }

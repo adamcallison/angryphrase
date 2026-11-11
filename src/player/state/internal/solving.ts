@@ -1,6 +1,6 @@
 import type { PlayerState, AnagramModalState, CheckClassification, CheckResult } from '../state';
 import type { Cursor } from '../../../domain/grid/Cursor';
-import type { PlayerIntent } from '../intents';
+import type { PlayerIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
 import { Grid } from '../../../domain/grid/Grid';
@@ -52,7 +52,7 @@ function anagramAfterCursorChange(
 
 export function handleSelectCell(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'select-cell' }>,
+  intent: PlayerIntentOf<'select-cell'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);
@@ -64,7 +64,7 @@ export function handleSelectCell(
 
 export function handleMoveCursor(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'move-cursor' }>,
+  intent: PlayerIntentOf<'move-cursor'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);
@@ -76,7 +76,7 @@ export function handleMoveCursor(
 
 export function handleClickCluePanelWord(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'click-clue-panel-word' }>,
+  intent: PlayerIntentOf<'click-clue-panel-word'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);
@@ -97,7 +97,7 @@ export function handleClickCluePanelWord(
 
 export function handleTypeLetter(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'type-letter' }>,
+  intent: PlayerIntentOf<'type-letter'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.cursor === null) {
     return Result.ok(state);

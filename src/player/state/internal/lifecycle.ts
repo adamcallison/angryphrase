@@ -1,5 +1,5 @@
 import { PlayerState } from '../state';
-import type { PlayerIntent } from '../intents';
+import type { PlayerIntent, PlayerIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
 import { parsePuzzle } from '../../../domain/format/v1Json';
@@ -14,7 +14,7 @@ const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
 const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
 
 export function handleImportPuzzle(
-  intent: Extract<PlayerIntent, { kind: 'import-puzzle' }>,
+  intent: PlayerIntentOf<'import-puzzle'>,
 ): ReducerResult<PlayerState> {
   const result = parsePuzzle(intent.fileContent);
   if (!result.ok) {
@@ -41,7 +41,7 @@ export function handleImportPuzzle(
 
 export function handleApplyLoadedProgress(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'apply-loaded-progress' }>,
+  intent: PlayerIntentOf<'apply-loaded-progress'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);

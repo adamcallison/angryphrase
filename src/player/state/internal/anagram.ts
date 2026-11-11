@@ -1,6 +1,6 @@
 import type { PlayerState } from '../state';
 import type { AnagramModalState } from '../state';
-import type { PlayerIntent } from '../intents';
+import type { PlayerIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { WordSelection } from '../../../domain/word/WordSelection';
@@ -31,7 +31,7 @@ export function handleOpenAnagramHelper(
 
 export function handleAnagramInput(
   state: PlayerState,
-  intent: Extract<PlayerIntent, { kind: 'anagram-input' }>,
+  intent: PlayerIntentOf<'anagram-input'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving' || state.anagram === null) {
     return Result.ok(state);

@@ -1,5 +1,4 @@
-import type { BuilderIntent } from '../../builder/state/intents';
-import type { PlayerIntent } from '../../player/state/intents';
+import type { BuilderIntent, BuilderIntentMinusTarget } from '../../builder/state/intents';
 import { deriveBuilderShellVM } from './viewmodels/builderVM';
 import type { BuilderShellVM } from './viewmodels/builderVM';
 import type { AppStore } from './appStore.svelte';
@@ -72,24 +71,24 @@ export type BuilderFacade = {
 };
 
 export function createBuilderFacade(appStore: AppStore): BuilderFacade {
-  function dispatch(intent: BuilderIntent | PlayerIntent): void {
-    appStore.dispatch(intent);
-  }
+  const d = (partial: BuilderIntentMinusTarget): void => {
+    appStore.dispatch({ target: 'builder', ...partial });
+  };
 
   const filePick = createFilePickActions(
     appStore,
     'builderFacade',
     'builder',
-    dispatch,
-    (text) => dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: text }),
+    (intent) => appStore.dispatch(intent),
+    (text) => d({ kind: 'request-import-puzzle', fileContent: text }),
   );
 
   const toolbar: BuilderToolbarActions = {
     switchToFill() {
-      dispatch({ target: 'builder', kind: 'switch-to-fill' });
+      d({ kind: 'switch-to-fill' });
     },
     requestSwitchToDesign() {
-      dispatch({ target: 'builder', kind: 'request-switch-to-design' });
+      d({ kind: 'request-switch-to-design' });
     },
     changeGridSize(size: number) {
       const s = GridSize.try(size);
@@ -97,45 +96,45 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
         appStore.dispatch({ kind: 'report-grid-size-failure' });
         return false;
       }
-      dispatch({ target: 'builder', kind: 'change-grid-size', size: s });
+      d({ kind: 'change-grid-size', size: s });
       return true;
     },
     setMarker(axis: CellMarkerAxis, separator: CellSeparator) {
       const state = appStore.getBuilder();
       const cursor = state.cursor;
       if (cursor === null || state.mode !== 'fill') {
-        dispatch({ target: 'builder', kind: 'set-marker', axis, separator: 'none' });
+        d({ kind: 'set-marker', axis, separator: 'none' });
         return;
       }
       const cell = Grid.cellAt(state.puzzle.grid, cursor.row, cursor.col);
       const current = CellMarker.read(cell.marker, axis);
       const newSeparator = current === separator ? 'none' : separator;
-      dispatch({ target: 'builder', kind: 'set-marker', axis, separator: newSeparator });
+      d({ kind: 'set-marker', axis, separator: newSeparator });
     },
     exportIncomplete() {
-      dispatch({ target: 'builder', kind: 'export-incomplete' });
+      d({ kind: 'export-incomplete' });
     },
     exportComplete() {
-      dispatch({ target: 'builder', kind: 'export-complete' });
+      d({ kind: 'export-complete' });
     },
     requestResetBuilder() {
-      dispatch({ target: 'builder', kind: 'request-reset-builder' });
+      d({ kind: 'request-reset-builder' });
     },
     editTitle(title: string) {
-      dispatch({ target: 'builder', kind: 'edit-title', title: Title.of(title) });
+      d({ kind: 'edit-title', title: Title.of(title) });
     },
     editAuthor(author: string) {
-      dispatch({ target: 'builder', kind: 'edit-author', author: Author.of(author) });
+      d({ kind: 'edit-author', author: Author.of(author) });
     },
     requestImportPuzzle(fileContent: string) {
-      dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent });
+      d({ kind: 'request-import-puzzle', fileContent });
     },
     async importDroppedFile(file: File) {
       await filePick.importDroppedFile(file);
     },
   };
 
-  const sharedGrid = createGridActions('builder', dispatch);
+  const sharedGrid = createGridActions('builder', (intent) => appStore.dispatch(intent));
   const grid: BuilderGridActions = {
     ...sharedGrid,
     clickCell(row: number, col: number) {
@@ -144,7 +143,7 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
         const r = Row.try(row);
         const c = Col.try(col);
         if (r === null || c === null) return;
-        dispatch({ target: 'builder', kind: 'toggle-design-cell', row: r, col: c });
+        d({ kind: 'toggle-design-cell', row: r, col: c });
       } else {
         sharedGrid.selectCell(row, col);
       }
@@ -153,36 +152,36 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
 
   const cluePanel: BuilderCluePanelActions = {
     editClue(wordKey: WordKey, clue: string) {
-      dispatch({ target: 'builder', kind: 'edit-clue', wordKey, clue });
+      d({ kind: 'edit-clue', wordKey, clue });
     },
     beginJoin(source: WordKey) {
-      dispatch({ target: 'builder', kind: 'begin-join', source });
+      d({ kind: 'begin-join', source });
     },
     unjoin(source: WordKey) {
-      dispatch({ target: 'builder', kind: 'unjoin', source });
+      d({ kind: 'unjoin', source });
     },
     clickCluePanelWord(wordKey: WordKey) {
-      dispatch({ target: 'builder', kind: 'click-clue-panel-word', wordKey });
+      d({ kind: 'click-clue-panel-word', wordKey });
     },
   };
 
   const displacedClues: DisplacedCluesPanelActions = {
     beginReattach(displacedClueId: DisplacedClueId) {
-      dispatch({ target: 'builder', kind: 'begin-reattach', displacedClueId });
+      d({ kind: 'begin-reattach', displacedClueId });
     },
     deleteDisplacedClue(id: DisplacedClueId) {
-      dispatch({ target: 'builder', kind: 'delete-displaced-clue', id });
+      d({ kind: 'delete-displaced-clue', id });
     },
   };
 
   const banner: BuilderBannerActions = {
     escape() {
-      dispatch({ target: 'builder', kind: 'escape' });
+      d({ kind: 'escape' });
     },
   };
 
   const facade: BuilderFacade = {
-    dispatch,
+    dispatch: appStore.dispatch,
     builderShellVM() {
       return deriveBuilderShellVM(appStore.getBuilder());
     },

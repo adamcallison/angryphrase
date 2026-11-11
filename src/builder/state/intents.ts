@@ -58,3 +58,9 @@ export type BuilderIntent =
   // lifecycle
   | { target: 'builder'; kind: 'request-reset-builder' }
   | { target: 'builder'; kind: 'confirm-reset-builder' };
+
+type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
+
+export type BuilderIntentMinusTarget = DistributiveOmit<BuilderIntent, 'target'>;
+export type BuilderIntentOf<K extends BuilderIntent['kind']> = Extract<BuilderIntent, { kind: K }>;
+

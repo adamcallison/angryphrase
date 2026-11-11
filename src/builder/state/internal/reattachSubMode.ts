@@ -1,5 +1,5 @@
 import type { BuilderState } from '../state';
-import type { BuilderIntent } from '../intents';
+import type { BuilderIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import { DisplacedClueId } from '../../../domain/builder/DisplacedClueId';
 import { Result } from '../../../domain/notifications/Event';
@@ -10,7 +10,7 @@ import { ChainAdmission } from '../../../domain/chain/ChainAdmission';
 
 export function handleBeginReattach(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'begin-reattach' }>,
+  intent: BuilderIntentOf<'begin-reattach'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -29,7 +29,7 @@ export function handleBeginReattach(
 
 export function handleDeleteDisplacedClue(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'delete-displaced-clue' }>,
+  intent: BuilderIntentOf<'delete-displaced-clue'>,
 ): ReducerResult<BuilderState> {
   const exists = state.displacedClues.some(d => DisplacedClueId.equals(d.id, intent.id));
   if (!exists) {

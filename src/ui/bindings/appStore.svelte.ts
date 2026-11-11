@@ -1,6 +1,5 @@
 import type { AppState } from '../../app/state/state';
-import type { AppIntent } from '../../app/state/intents';
-import type { BuilderIntent } from '../../builder/state/intents';
+import type { AppIntent, AnyIntent } from '../../app/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 import { reduceApp } from '../../app/state/reducer';
 import { applyEventsToApp } from '../../app/state/effects';
@@ -31,7 +30,7 @@ export type AppStore = {
   getPlayer(): PlayerState;
   getScheduler(): PersistenceScheduler;
   getPorts(): AppPorts;
-  dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void;
+  dispatch(intent: AnyIntent): void;
 };
 
 export function createAppStore(
@@ -41,7 +40,7 @@ export function createAppStore(
   options?: { persistenceDebounceMs?: number; saveFailureRetoastMs?: number },
 ): AppStore {
   let state: AppState = $state(initial);
-  let activeQueue: (AppIntent | BuilderIntent | PlayerIntent)[] | null = null;
+  let activeQueue: AnyIntent[] | null = null;
   const retoastMs = options?.saveFailureRetoastMs ?? 60_000;
 
   function makeLatch(warnPrefix: string, failureIntent: AppIntent) {
@@ -68,7 +67,7 @@ export function createAppStore(
   const builderLatch = makeLatch('appStore: builder persistence write failed', { kind: 'report-builder-save-failure' });
   const playerLatch = makeLatch('appStore: player persistence write failed', { kind: 'report-player-save-failure' });
 
-  function dispatch(intent: AppIntent | BuilderIntent | PlayerIntent): void {
+  function dispatch(intent: AnyIntent): void {
     if (activeQueue !== null) {
       activeQueue.push(intent);
       return;
@@ -115,7 +114,7 @@ export function createAppStore(
     }
   }
 
-  function performExternalEvent(event: DomainEvent): AppIntent | BuilderIntent | PlayerIntent | null {
+  function performExternalEvent(event: DomainEvent): AnyIntent | null {
     switch (event.kind) {
       case 'download': {
         const err = ports.download.download(event.filename, event.content);

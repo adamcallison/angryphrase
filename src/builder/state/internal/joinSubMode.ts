@@ -1,5 +1,5 @@
 import type { BuilderState } from '../state';
-import type { BuilderIntent } from '../intents';
+import type { BuilderIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
@@ -11,7 +11,7 @@ import { ChainMarker } from '../../../domain/chain/ChainMarker';
 
 export function handleBeginJoin(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'begin-join' }>,
+  intent: BuilderIntentOf<'begin-join'>,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {
     return Result.ok(state);
@@ -34,7 +34,7 @@ export function handleBeginJoin(
 
 export function handleUnjoin(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'unjoin' }>,
+  intent: BuilderIntentOf<'unjoin'>,
   rng: Rng,
 ): ReducerResult<BuilderState> {
   if (state.mode !== 'fill') {

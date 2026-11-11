@@ -1468,3 +1468,145 @@ is always in bounds — and the primitive's no-op-on-out-of-bounds covers the sa
 | `gridVM` separator reads (`ui/bindings/viewmodels`) | renders both literal axes of every cell; no direction involved | none needed — same |
 | interior per-offset separator reads (`Anagram.buildWordModel`, `LengthPattern.singleWordPattern`/`chainPattern` interiors) | separators *between a word's own cells*, not the chain-boundary rule; the per-offset read is generic | none needed — `separatorAt` stays, now on `Direction.markerAxis` |
 | O10's `extentOf`/`Extent` pointer | `WordExtent` is now the named exported extent concept; `extentOf` remains `contains`'s private arithmetic detail | closed by this entry (the landing site O10 named) |
+
+---
+
+## O6 — Facade / action-bag / intent-type boilerplate — resolved 2026-11-11
+
+### The item (recap)
+
+`code_reduction_audit.md` O6 proposes five sub-items across the bindings/state seam: (1) a curried
+dispatch helper per facade replacing hand-stamped `target` literals ("repeated ~40 times"),
+(2) named `Extract` aliases for handler signatures ("~30 sites, 2 lines each"),
+(3) an `AnyIntent` alias ("spelled out in 6 places"), (4) the `toastFacade`+`toastVM` and
+`modalFacade`+`modalVM` merges (cross-referenced to O5), and (5) inlining `reduceApp`'s routing —
+with the claim that the `default` arm's "cast gymnastics goes away". Est. −150 LOC, "Risk: low,
+type-level."
+
+### Site inventory (Gate 0)
+
+| # | Site | Count / files | Outcome |
+|---|---|---|---|
+| S1 | hand-stamped `target` at facade dispatch | **31** sites (20 `builderFacade.ts`, 11 `playerFacade.ts`) — audit said "~40" | curried `d(partial)` per facade; exactly one stamp each, inside `d` |
+| S2 | widened internal `dispatch(intent: BuilderIntent \| PlayerIntent)` wrapper + the sibling-intent import it existed for | both facades | deleted; factories receive an `(intent) => appStore.dispatch(intent)` adapter |
+| S3 | inline `Extract<XIntent, { kind: '…' }>` at handler signatures | **21** intent sites across 8 `internal/` files — audit said "~30" | `BuilderIntentOf<'…'>` / `PlayerIntentOf<'…'>` (union `K` at the one multi-kind site) |
+| S4 | `AppIntent \| BuilderIntent \| PlayerIntent` spelled out | **5** `src/` sites (4 `appStore.svelte.ts`, 1 `app/state/reducer.ts`) — audit said 6 | `AnyIntent`, exported from `app/state/intents.ts` |
+| S5 | `toastVM.ts`+`toastFacade.ts`, `modalVM.ts`+`modalFacade.ts` two-file splits | 4 files, 127 lines | **declined** — briefly landed (all symbols preserved, tests moved to mirrored paths), then reverted the same day; see Decision |
+| S6 | `routeToBuilder`/`routeToPlayer` inner declarations + cast `default` throw | `app/state/reducer.ts` | inlined into a direct `intent.target` switch; the throw **survives**, post-switch, narrowed to `never`, cast-free |
+
+Two `Extract<PlayerState, { phase: 'solving' }>` sites (`solving.ts`, `playerVM.ts`) are a
+different concept (state phase, not intent) and were correctly out of the item's scope.
+
+### Decision
+
+**6.1 — executed, sketch corrected twice.** The audit's sketch put `DistributiveOmit` "once in
+`intents.ts`" without saying which; the first implementation exported it from
+`domain/notifications/Event.ts` (the shared module both state trees can import). Design review
+rejected that placement — reachability is not ownership, and nothing in `notifications` needs the
+utility — and also rejected a shared `typeUtils` micro-module (the shape O5 exists to kill) and an
+`app/state` home (blocked: the sibling state trees may not import it). Final form: the one-line
+idiom is **private and unexported in each `intents.ts`**, feeding only the `*MinusTarget` aliases.
+Two private copies of a fixed TS idiom — the same shape as the duplicated private
+`assertUnreachable` O17.5 examined and tolerated. Promotion trigger: a third generic helper or a
+third consumer (O17.5 is the likely one) earns a real shared home, matrix-amended if needed.
+
+**6.2 — generic alias over per-kind aliases.** The audit offered both; ~20 per-kind exported names
+would be noise. One `BuilderIntentOf<K extends BuilderIntent['kind']>` (player twin) per
+`intents.ts`; union `K` handles the multi-kind `click-clue-panel-word | click-grid-word` site.
+
+**6.3 — executed as sketched**, in `app/state/intents.ts`.
+
+**6.4 — declined, after a same-day land-and-revert.** The fold was implemented first (all public
+symbols preserved, derivations relocated byte-identical, tests moved) and saved ~9 net production
+lines. Design review then rejected it: "all VM types live in `viewmodels/`" was a rule with zero
+exceptions — one sentence, no judgment calls — and the fold replaced it with a judgment-call rule
+("fold when the derivation is trivial"), whose boundary is unadministrateable (three other
+single-consumer viewmodels sit one ratchet turn away). The uniform home is worth more than 9 lines;
+the working tree was reverted mechanically (`git checkout` of the seven affected files,
+byte-identical restoration). O5's table row for this fold carries the decline note and a
+do-not-re-propose.
+
+**6.5 — the audit's deletion of the `default` throw is rejected.** Removing it would turn an
+unknown-`target` invariant breach into a silent `undefined` return from `reduceApp`, breaking the
+`ReducerResult` contract. The guard survives relocated: after the exhaustive switch `intent`
+narrows to `never`, so a single post-switch `throw` needs no cast, and `JSON.stringify(intent)`
+renders the offending object at runtime for any type-untyped caller. A pinned reducer test
+(`unknown intent target throws`) keeps the guard test-covered; its assertion regex was updated with
+the deliberately changed message.
+
+**Estimate corrected.** "−150 LOC" → **+6 net production lines** (+109/−103 across 16 files),
+one test line changed (the assertion regex above). The resolution's own first implementation
+(which included the fold) measured −3 net production lines; removing the fold's −9 yields +6.
+Even the resolution's pre-implementation estimate of −30 to −40 was wrong: items 1–3 are
+type-level readability changes that save ~0 lines by construction (nearly every affected line was
+a single-line call or signature before and after), the alias exports add 17 lines, the reducer
+inlining saves 8, and the two facades save one line each.
+
+### Design as implemented
+
+- Each facade: `const d = (partial: XIntentMinusTarget) => { appStore.dispatch({ target: 'x', ...partial }); };`
+  — the single owner of the `target` literal; every call site fully type-checked. The one AppIntent
+  dispatch in each facade (`report-grid-size-failure`) stays direct.
+- Factories take an `(intent) => appStore.dispatch(intent)` adapter rather than the bare method
+  reference: the bare reference binds at facade creation and would miss `vi.spyOn(store, 'dispatch')`
+  in the `pickFile`/`importDroppedFile` failure tests; the adapter reads the property at call time
+  (the curried `d` already does). The facades' public `dispatch` members are preserved over
+  `appStore.dispatch`.
+- `app/state/reducer.ts` (55→47 lines): `AnyIntent` signature; AppIntent switch unchanged; direct
+  `intent.target` switch with inline sub-slice composition; post-switch narrowed throw.
+- `viewmodels/` unchanged: every VM type stays in its single home (the toast/modal fold was landed
+  and reverted — see Decision 6.4).
+
+### Deliberate behaviour changes
+
+One: the `reduceApp` unknown-intent `Error` message — `unknown intent kind: <kind>` →
+`unknown intent target: <JSON of intent>`. Developer-facing only; nothing user-visible.
+
+### Files
+
+- Modified (src, 15): `app/state/intents.ts`, `app/state/reducer.ts`,
+  `builder/state/intents.ts`, `player/state/intents.ts`, `domain/notifications/Event.ts` (net 0 —
+  export added then removed), the 8 `builder/player` `internal/` handler files,
+  `ui/bindings/appStore.svelte.ts`, `builderFacade.ts`, `playerFacade.ts`.
+- Briefly modified then reverted (byte-identical to HEAD): `toastFacade.ts`, `modalFacade.ts`,
+  `ui/shared/Toast.svelte`, `viewmodels/toastVM.ts`, `viewmodels/modalVM.ts`, and the two
+  co-located test files.
+- Test tree: `test/app/state/reducer.test.ts` one assertion regex updated.
+- Docs: `architecture.md` (§3 Layer 1 discriminator/alias paragraph, §3 Layer 2 viewmodels row —
+  which now records the one-location invariant and the reverted fold, §5 facade-stamping and
+  Routing paragraphs, §6 `AppStore` block); the audit's O6 status line and O5 table row (decline
+  note).
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run ci` | lint + madge clean; svelte-check 0/0; 92 files / **1357 tests** green; single-file build OK |
+| `grep "target: 'builder'" builderFacade.ts` / player twin | **1** match each (inside `d`) — was 20 / 11 |
+| `grep 'Extract<.*Intent' builder/player internal/` | **0** matches — was 21 |
+| `grep DistributiveOmit src/` | 2 private definitions, **0** imports |
+| unchanged suites | 451 state tests, 62 app/appStore tests, 72 facade/factory tests, 23 toast/modal VM+facade tests pass with zero edits (post-revert) — the behaviour-preservation proof |
+| `git diff --shortstat` | src: 109 insertions / 103 deletions; test: 1 line changed |
+
+### Consequence
+
+- The `target` literal has exactly one owner per facade; the cross-union `dispatch` wrappers (and
+  the sibling-intent imports that existed only to type them) are gone.
+- Handler signatures read intent kinds by name; the `*IntentOf` aliases are the single place the
+  `Extract` idiom appears for intents.
+- `AnyIntent` names the dispatch-queue currency once; `AppStore`'s contract reads by name.
+- The unknown-target guard survives, cast-free, test-pinned.
+- Every VM type keeps its single home in `viewmodels/` — the invariant is now stated in
+  architecture.md §3/§9 with the reverted fold as the recorded reason.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| public `facade.dispatch` members | zero production callers, but documented API (§3 "typed dispatch narrowing"); tests consume them | a future O3-style dead-API decision, not this item |
+| `IntentTarget` export (`domain/notifications/Event.ts`) | dead in `src/` (zero importers) — surfaced by this item's doc-staleness check; deleting is O3-shaped and out of scope | next dead-API sweep |
+| shared `DistributiveOmit` / `typeUtils` module | premature at two one-line idioms × two private copies; two private copies are cheaper than a speculative module or layer-matrix amendment | promotion trigger: third generic helper or third consumer (O17.5's `assertUnreachable` is the likely one) |
+| `assertUnreachable` duplication (`reduceBuilder`/`reducePlayer`) | untouched; independent of this item | O17.5 |
+| `Extract<PlayerState, { phase: 'solving' }>` sites | state-phase narrowing, not intent-kind extraction — different concept | — |
+| the `toastVM`/`modalVM` fold into their facades (item 4, and O5's table row) | declined after a same-day land-and-revert — ~9 lines saved did not justify breaking "all VM types live in `viewmodels/`" (one location, no exceptions) with a judgment-call exception rule | — (closed by decision, not deferred); O5's row carries a do-not-re-propose |
+| O5's remaining rows | unaffected by O6 | O5 |

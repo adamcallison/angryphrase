@@ -142,7 +142,7 @@ describe('reduceApp', () => {
     const state = makeState();
     const deps = makeDeps();
     const badIntent = { kind: 'not-a-real-kind' } as unknown as Parameters<typeof reduceApp>[1];
-    expect(() => reduceApp(state, badIntent, deps)).toThrow(/^reduceApp: unknown intent kind:/);
+    expect(() => reduceApp(state, badIntent, deps)).toThrow(/^reduceApp: unknown intent target:/);
   });
 
   it('passthrough: a BuilderIntent that emits a download event returns that event in leftoverEvents', () => {

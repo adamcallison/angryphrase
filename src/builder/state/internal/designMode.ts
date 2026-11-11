@@ -1,5 +1,5 @@
 import { BuilderState } from '../state';
-import type { BuilderIntent } from '../intents';
+import type { BuilderIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
 import { Result } from '../../../domain/notifications/Event';
@@ -12,7 +12,7 @@ import { reconcileWords } from './reconcileWords';
 
 export function handleToggleDesignCell(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'toggle-design-cell' }>,
+  intent: BuilderIntentOf<'toggle-design-cell'>,
   rng: Rng,
 ): ReducerResult<BuilderState> {
 
@@ -52,7 +52,7 @@ export function handleToggleDesignCell(
 
 export function handleChangeGridSize(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'change-grid-size' }>,
+  intent: BuilderIntentOf<'change-grid-size'>,
 ): ReducerResult<BuilderState> {
 
   if (state.mode !== 'design') {

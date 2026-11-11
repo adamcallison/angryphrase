@@ -1,4 +1,4 @@
-import type { BuilderIntent } from '../intents';
+import type { BuilderIntentOf } from '../intents';
 import { BuilderState } from '../state';
 import type { DomainEvent, ReducerResult } from '../../../domain/notifications/Event';
 import { Result } from '../../../domain/notifications/Event';
@@ -32,7 +32,7 @@ function executeImport(state: BuilderState, fileContent: string): ReducerResult<
 
 export function handleRequestImportPuzzle(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'request-import-puzzle' }>,
+  intent: BuilderIntentOf<'request-import-puzzle'>,
 ): ReducerResult<BuilderState> {
   if (BuilderState.isBlank(state)) {
     return executeImport(state, intent.fileContent);
@@ -48,7 +48,7 @@ export function handleRequestImportPuzzle(
 
 export function handleConfirmImportPuzzle(
   state: BuilderState,
-  intent: Extract<BuilderIntent, { kind: 'confirm-import-puzzle' }>,
+  intent: BuilderIntentOf<'confirm-import-puzzle'>,
 ): ReducerResult<BuilderState> {
   return executeImport(state, intent.fileContent);
 }
