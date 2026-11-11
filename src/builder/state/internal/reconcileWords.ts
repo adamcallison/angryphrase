@@ -1,5 +1,4 @@
-import { CellMarker } from '../../../domain/grid/CellMarker';
-import type { CellMarkerAxis } from '../../../domain/grid/CellMarker';
+import type { Grid } from '../../../domain/grid/Grid';
 import type { Word } from '../../../domain/word/Word';
 import type { DerivedWord } from '../../../domain/word/DerivedWord';
 import type { DisplacedClue } from '../../../domain/builder/DisplacedClue';
@@ -7,16 +6,12 @@ import type { DomainEvent } from '../../../domain/notifications/Event';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Rng } from '../../../domain/rng/Rng';
 import type { ChainViolation } from '../../../domain/chain/ChainViolation';
-import { Row } from '../../../domain/grid/Row';
-import { Col } from '../../../domain/grid/Col';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
 import { Numbering } from '../../../domain/word/Numbering';
 import { ChainValidation } from '../../../domain/chain/ChainValidation';
+import { ChainMarker } from '../../../domain/chain/ChainMarker';
 import { DisplacedClue as DisplacedClueCtor } from '../../../domain/builder/DisplacedClue';
-import { Direction as DirectionOps } from '../../../domain/word/Direction';
-import { Grid } from '../../../domain/grid/Grid';
-import { Cell } from '../../../domain/grid/Cell';
 
 type LengthChange = {
   wordKey: string;
@@ -143,71 +138,30 @@ export function reconcileWords(
   return { grid: reconciledGrid, words, displacedClues, events: lengthChangeEvents };
 }
 
-function directionAxis(direction: Direction): CellMarkerAxis {
-  return direction === 'across' ? 'right' : 'bottom';
-}
-
 function applyBoundaryMarkerRule(
   grid: Grid,
   oldWords: Word[],
   newByCanonical: Map<string, DerivedWord>,
   survivingByCanonical: Map<string, DerivedWord>,
 ): Grid {
-  const updates: { row: Row; col: Col; cell: Cell }[] = [];
-
-  function pushMarker(row: Row, col: Col, marker: CellMarker): void {
-    updates.push({ row, col, cell: Cell.setMarker(Grid.cellAt(grid, row, col), marker) });
-  }
+  let g = grid;
 
   for (const oldWord of oldWords) {
     if (oldWord.nextWord === null) continue;
 
-    const oldEnd = DirectionOps.advance(
-      { row: oldWord.key.startRow, col: oldWord.key.startCol },
-      oldWord.key.direction,
-      Number(oldWord.length) - 1,
-    );
+    const kind = ChainMarker.boundarySeparatorAt(grid, oldWord) ?? 'space';
+    g = ChainMarker.writeBoundarySeparator(g, oldWord, 'none');
 
-    if (!Grid.withinBounds(grid, oldEnd.row, oldEnd.col)) continue;
-
-    const axis = directionAxis(oldWord.key.direction);
-    const oldEndCell = Grid.cellAt(grid, oldEnd.row, oldEnd.col);
-    const kind = Cell.isWhite(oldEndCell)
-      ? CellMarker.read(oldEndCell.marker, axis)
-      : 'space';
     const canonical = WordKey.toCanonical(oldWord.key);
-
-    if (!newByCanonical.has(canonical)) {
-      if (Cell.isWhite(Grid.cellAt(grid, oldEnd.row, oldEnd.col))) {
-        pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(Grid.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
-      }
-      continue;
-    }
+    if (!newByCanonical.has(canonical)) continue;
 
     const survivor = survivingByCanonical.get(canonical);
-    if (survivor === undefined) continue;
+    if (survivor === undefined || survivor.nextWord === null) continue;
 
-    if (Cell.isWhite(Grid.cellAt(grid, oldEnd.row, oldEnd.col))) {
-      pushMarker(oldEnd.row, oldEnd.col, CellMarker.write(Grid.cellAt(grid, oldEnd.row, oldEnd.col).marker, axis, 'none'));
-    }
-
-    if (survivor.nextWord !== null) {
-      const newEnd = DirectionOps.advance(
-        { row: survivor.key.startRow, col: survivor.key.startCol },
-        survivor.key.direction,
-        Number(survivor.length) - 1,
-      );
-      if (
-        Grid.withinBounds(grid, newEnd.row, newEnd.col) &&
-        Cell.isWhite(Grid.cellAt(grid, newEnd.row, newEnd.col))
-      ) {
-        pushMarker(newEnd.row, newEnd.col, CellMarker.write(Grid.cellAt(grid, newEnd.row, newEnd.col).marker, directionAxis(survivor.key.direction), kind));
-      }
-    }
+    g = ChainMarker.writeBoundarySeparator(g, survivor, kind);
   }
 
-  if (updates.length === 0) return grid;
-  return Grid.updateCells(grid, updates);
+  return g;
 }
 
 function describeViolation(violation: ChainViolation): string {

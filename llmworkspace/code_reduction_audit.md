@@ -556,6 +556,26 @@ duplicated state-layer logic — consistent with the layering rules.
 
 **Risk:** low; behavior pinned by `reconcileWords` and `joinSubMode`/`v1` tests.
 
+**Status (2026-11-11): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O11 — Chain-boundary marker logic exists three times"). Corrections to this item, made
+during the resolution: (a) the inventory undercounts — the axis ternary exists **six** times,
+not four (both `Anagram.ts` sites missed), the `Anagram`/`LengthPattern` member-end boundary
+*reads* were missed, and `joinSubMode.sourceLastCell` is a verbatim duplicate of
+`WordGeometry.lastCell` that neither the site list nor the proposed API accounted for; (b) the
+proposed `endCell(word)` export is **declined** — architecture.md §3 makes `WordGeometry` the
+single owner of word extent, so `ChainMarker` reuses `lastCell` instead; (c) the single-module
+shape is wrong for half the sites — the direction→axis fact is used by standalone-word logic
+(`Anagram.buildWordModel`), so it lives in `Direction.markerAxis`, not `chain/`; a
+`CellMarker` home would invert the word→grid import edge (cycle); (d) typing the primitives
+`word: Word` initially forced a `survivor as Word` cast in `reconcileWords` (`DerivedWord`
+lacks `number`; numbering is downstream) — fixed structurally by exporting `WordExtent` from
+`WordGeometry` and extent-typing both modules, zero casts; (e) the estimate is corrected from
+"−70 LOC" to **−23 production lines** (+45/−131 modified, +63 new module; +223 test lines).
+The item's *quality* claim — one owner per rule — is met. Leftovers: none; the sites not
+migrated (`builderFacade.setMarker`, `fillMode`, `gridVM`, interior per-offset reads) are
+listed in the resolution's "Not addressed" table with their reasons — all are different
+concepts (user-axis-at-cursor, interior separators), not missed instances.
+
 ---
 
 ## O12. View-model redundancy (est. −50 LOC)

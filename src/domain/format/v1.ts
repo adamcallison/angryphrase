@@ -8,7 +8,6 @@ import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
 import { Grid } from '../grid/Grid';
 import { Cell } from '../grid/Cell';
-import { CellMarker } from '../grid/CellMarker';
 import type { CellMarker as CellMarkerType } from '../grid/CellMarker';
 import { WordKey } from '../word/WordKey';
 import { WordLength } from '../word/WordLength';
@@ -19,6 +18,7 @@ import { WordDerivation } from '../word/WordDerivation';
 import { Numbering } from '../word/Numbering';
 import { WordMap } from '../word/WordMap';
 import { ChainValidation } from '../chain/ChainValidation';
+import { ChainMarker } from '../chain/ChainMarker';
 import { Letter } from '../letter/Letter';
 import type { DisplacedClue } from '../builder/DisplacedClue';
 import { DisplacedClueId } from '../builder/DisplacedClueId';
@@ -567,27 +567,14 @@ function validateDisplacedClues(
 }
 
 function normalizeV1ChainBoundaries(grid: Grid, words: Word[]): Grid {
-  const updates: { row: Row; col: Col; cell: Cell }[] = [];
+  let g = grid;
 
   for (const w of words) {
     if (w.nextWord === null) continue;
-
-    const end = Direction.advance(
-      { row: w.key.startRow, col: w.key.startCol },
-      w.key.direction,
-      Number(w.length) - 1,
-    );
-    const cell = Grid.cellAt(grid, end.row, end.col);
-    if (!Cell.isWhite(cell)) continue;
-
-    const axis = w.key.direction === 'across' ? 'right' : 'bottom';
-    if (CellMarker.isEmpty(cell.marker, axis)) {
-      const newMarker = CellMarker.write(cell.marker, axis, 'space');
-      updates.push({ row: end.row, col: end.col, cell: Cell.setMarker(cell, newMarker) });
-    }
+    g = ChainMarker.materializeDefaultBoundary(g, w);
   }
 
-  return Grid.updateCells(grid, updates);
+  return g;
 }
 
 export const parsePuzzleShape = (

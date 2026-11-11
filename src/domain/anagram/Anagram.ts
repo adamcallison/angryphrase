@@ -5,6 +5,8 @@ import { Letter } from '../letter/Letter';
 import type { Rng } from '../rng/Rng';
 import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
+import { Direction } from '../word/Direction';
+import { ChainMarker } from '../chain/ChainMarker';
 import type { AnagramEntry } from './AnagramEntry';
 
 export type { AnagramEntry } from './AnagramEntry';
@@ -73,7 +75,7 @@ export const Anagram: {
           : { fixed: false, letter: null }
       );
       if (i < word.length - 1) {
-        const axis = direction === 'across' ? 'right' : 'bottom';
+        const axis = Direction.markerAxis(direction);
         separators.push(CellMarker.read(cell.marker, axis));
       }
     }
@@ -99,10 +101,7 @@ export const Anagram: {
       }
 
       if (i < members.length - 1) {
-        const last = WordGeometry.lastCell(member);
-        const lastCell = Grid.cellAt(grid, last.row, last.col);
-        const axis = member.key.direction === 'across' ? 'right' : 'bottom';
-        separators.push(CellMarker.read(lastCell.marker, axis));
+        separators.push(ChainMarker.boundarySeparatorAt(grid, member) ?? 'none');
       }
     }
 

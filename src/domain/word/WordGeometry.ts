@@ -1,7 +1,13 @@
-import type { Word } from './Word';
+import type { WordKey } from './WordKey';
+import type { WordLength } from './WordLength';
 import type { Direction } from './Direction';
 import { Row } from '../grid/Row';
 import { Col } from '../grid/Col';
+
+export type WordExtent = {
+  key: WordKey;
+  length: WordLength;
+};
 
 export type WordCell = {
   row: Row;
@@ -16,7 +22,7 @@ type Extent = {
   direction: Direction;
 };
 
-function extentOf(word: Word): Extent {
+function extentOf(word: WordExtent): Extent {
   return {
     startRow: word.key.startRow,
     startCol: word.key.startCol,
@@ -25,7 +31,7 @@ function extentOf(word: Word): Extent {
   };
 }
 
-function offsetCell(word: Word, offset: number): WordCell {
+function offsetCell(word: WordExtent, offset: number): WordCell {
   const dr = word.key.direction === 'down' ? 1 : 0;
   const dc = 1 - dr;
   return {
@@ -36,11 +42,11 @@ function offsetCell(word: Word, offset: number): WordCell {
 }
 
 export const WordGeometry: {
-  cells(word: Word): readonly WordCell[];
-  contains(word: Word, row: Row, col: Col): boolean;
-  lastCell(word: Word): WordCell;
+  cells(word: WordExtent): readonly WordCell[];
+  contains(word: WordExtent, row: Row, col: Col): boolean;
+  lastCell(word: WordExtent): WordCell;
 } = {
-  cells(word: Word): readonly WordCell[] {
+  cells(word: WordExtent): readonly WordCell[] {
     const length = Number(word.length);
     const cells: WordCell[] = [];
 
@@ -51,7 +57,7 @@ export const WordGeometry: {
     return cells;
   },
 
-  contains(word: Word, row: Row, col: Col): boolean {
+  contains(word: WordExtent, row: Row, col: Col): boolean {
     const extent = extentOf(word);
     const r = Number(row);
     const c = Number(col);
@@ -66,7 +72,7 @@ export const WordGeometry: {
     return c === startCol && r >= startRow && r < startRow + length;
   },
 
-  lastCell(word: Word): WordCell {
+  lastCell(word: WordExtent): WordCell {
     return offsetCell(word, Number(word.length) - 1);
   },
 };

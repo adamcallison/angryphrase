@@ -4,6 +4,8 @@ import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import { WordGeometry } from '../word/WordGeometry';
 import type { WordCell } from '../word/WordGeometry';
+import { Direction } from '../word/Direction';
+import { ChainMarker } from './ChainMarker';
 import type { ChainIndex } from './ChainIndex';
 
 export type LengthPattern = string;
@@ -13,7 +15,7 @@ function separatorAt(grid: Grid, w: Word, cells: readonly WordCell[], offset: nu
   if (cell === undefined) {
     throw new Error('LengthPattern.separatorAt: offset out of range');
   }
-  const axis = w.key.direction === 'across' ? 'right' : 'bottom';
+  const axis = Direction.markerAxis(w.key.direction);
   return CellMarker.read(Grid.cellAt(grid, cell.row, cell.col).marker, axis);
 }
 
@@ -57,7 +59,7 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
     }
 
     if (memberIndex < members.length - 1) {
-      run = appendSeparator(pieces, run, separatorAt(grid, w, cells, lastIndex));
+      run = appendSeparator(pieces, run, ChainMarker.boundarySeparatorAt(grid, w) ?? 'none');
     }
   }
 

@@ -1298,3 +1298,173 @@ None. Every observable output (cell arrays, `contains` results, `lastCell` value
 | `contains` branch pair | item says keep; O(1) raw-number arithmetic, mints no brands, forcing it through `offsetCell` is worse (see Decision) | none needed — single 13-line function, no duplication outside it |
 | `extentOf`/`Extent` (now single-consumer) | kept deliberately: `contains` untouched per item; folding it in saves ~13 lines but rewrites a function the item scoped out | candidate for O11 if marker work touches extent reads; otherwise closed here |
 | audit's `lastCell = cells[len−1]` form | declined — allocation regression, contradicts the S13 fix's principle | this entry's Decision |
+
+---
+
+## O11 — Chain-boundary marker logic exists three times — resolved 2026-11-11
+
+### The item (recap)
+
+`code_reduction_audit.md` O11 claims the rule "compute a linked word's last cell, read/write
+the separator marker on the axis its direction implies" is implemented independently in
+`joinSubMode.ts` (~45 lines), `reconcileWords.ts` (~60 of 227) and `v1.ts`'s
+`normalizeV1ChainBoundaries` (~25), that `directionAxis` is spelled out **four** times (those
+three + `LengthPattern.separatorAt`), and proposes one domain module
+(`domain/chain/ChainMarker.ts` or extending `WordGeometry`) exposing `endCell(word)`,
+`axisFor(direction)`, `separatorAtWordEnd(grid, word)`, `setWordEndSeparator(grid, word, sep)`;
+est. −70 LOC; risk low, pinned by the `reconcileWords` and `joinSubMode`/v1 tests.
+
+### Site inventory (Gate 0)
+
+Derived by grep, not from the item's list — the item **undercounts**. Axis mapping is
+`<ternary>` over `src/`; boundary sites are every `CellMarker.read/write/isEmpty` caller that
+derives its axis from a word's direction.
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `directionAxis` | `builder/state/internal/joinSubMode.ts` | migrated — deleted; `Direction.markerAxis` |
+| S2 | `directionAxis` | `builder/state/internal/reconcileWords.ts` | migrated — deleted; `Direction.markerAxis` |
+| S3 | inline axis ternary | `domain/format/v1.ts` (normalize) | migrated — `Direction.markerAxis` |
+| S4 | inline axis ternary | `domain/chain/LengthPattern.ts` (`separatorAt`) | migrated — `Direction.markerAxis` |
+| S5 | inline axis ternary | `domain/anagram/Anagram.ts` (`buildWordModel`) | migrated — **missed by the item** |
+| S6 | inline axis ternary | `domain/anagram/Anagram.ts` (`buildChainModel`) | migrated — deleted with S11's fold; **missed by the item** |
+| S7 | `materializeJoinMarker` | `joinSubMode.ts` | migrated — `ChainMarker.materializeDefaultBoundary` |
+| S8 | `clearBoundaryMarker` | `joinSubMode.ts` | migrated — `ChainMarker.writeBoundarySeparator(…, 'none')` |
+| S9 | `applyBoundaryMarkerRule` mechanics | `reconcileWords.ts` | migrated — read/clear/write via primitives; the *policy* (move/clear/default-to-space) stays in the reducer |
+| S10 | `normalizeV1ChainBoundaries` | `domain/format/v1.ts` | migrated — fold of `materializeDefaultBoundary` per linked word |
+| S11 | member-end boundary read | `Anagram.buildChainModel` | migrated — `boundarySeparatorAt(grid, member) ?? 'none'`; **missed by the item** |
+| S12 | member-end boundary read | `LengthPattern.chainPattern` | migrated — `boundarySeparatorAt(grid, w) ?? 'none'`; partially covered by the item (axis only) |
+| S13 | `sourceLastCell` | `joinSubMode.ts` | deleted — verbatim duplicate of `WordGeometry.lastCell`; **missed by the item** |
+| S14 | end-cell `Direction.advance` ×2 | `reconcileWords.ts` | replaced — `lastCell` inside the primitives |
+| S15 | end-cell `Direction.advance` | `v1.ts` | replaced — `lastCell` inside the primitives |
+
+### Decision
+
+**Executed, with the inventory corrected and two owners instead of one.**
+
+- **`Direction.markerAxis` owns the direction→axis fact** (`domain/word/Direction.ts`), not
+  `ChainMarker`. The item's four-site count missed both `Anagram` sites (S5/S6), and S5 reads
+  separators for a *standalone* word — the axis fact is a property of `Direction`, not of
+  chains; a `chain/` home would make non-chain callers import `chain/` for a non-chain fact.
+  A `CellMarker` home is structurally impossible: `grid/CellMarker` value-importing
+  `word/Direction` inverts the word→grid import edge (`Direction` value-imports `Row`/`Col`);
+  `madge --circular` would flag it. Type-only import each way keeps the edge one-way.
+- **`ChainMarker` (`domain/chain/`) owns the boundary rule** — `boundarySeparatorAt`
+  (null when the end cell is out of bounds or black; **caller owns the default**:
+  `reconcileWords` maps null→`'space'`, `Anagram`/`LengthPattern` map null→`'none'` — the two
+  defaults differ by design), `writeBoundarySeparator` (no-op on out-of-bounds/black end),
+  `materializeDefaultBoundary` (write `'space'` iff white ∧ axis pair empty — the identical
+  join-reducer and v1-normalize semantics, including `'none'` counting as empty per
+  `CellMarker.isEmpty`). End cells come from `WordGeometry.lastCell`.
+- **The item's `endCell` export — declined.** architecture.md §3 names `WordGeometry` "the
+  single owner of word extent"; a `ChainMarker.endCell` would mint a second owner. Reuse
+  `lastCell` instead.
+- **The item's "or extend `WordGeometry`" — declined for the marker rule** (it grafts marker
+  semantics onto the coordinate-walking module), but `WordGeometry` did gain the exported
+  `WordExtent` type (see Corrections 4) — the extent *type*, not the marker rule.
+- **S11/S12 were initially deferred by the lead, then folded** after checking reachability:
+  a black end cell is unreachable (the parser rejects words that are not maximal white runs,
+  `v1.ts` "Word i does not correspond to a maximal white run in the grid"; reducer words
+  derive from white runs), and a black cell's marker is `CellMarker.EMPTY`, reading `'none'` —
+  so `boundarySeparatorAt ?? 'none'` is identical to the old unguarded read in **every**
+  state, reachable or not. Interior per-offset separator reads (between a word's own cells)
+  stay with their callers: those are not the boundary concept.
+
+### Corrections to the item
+
+1. **The inventory undercounts.** Axis ternary: 6 sites, not 4 (both `Anagram.ts` sites
+   missed). Boundary reads S11/S12 missed. `sourceLastCell` (S13) is a verbatim duplicate of
+   `WordGeometry.lastCell` and was neither listed nor deleted by the item's proposal. Counts
+   here are grep-derived.
+2. **`endCell(word)` as proposed conflicts with §3's single-ownership of word extent** and
+   was replaced by reuse of `lastCell`.
+3. **The axis fact is not chain-specific** (S5 is standalone-word logic), so the single-module
+   shape the item sketches is wrong for half its sites; two owners, per Decision.
+4. **Mid-implementation: the primitives initially typed `word: Word` forced a
+   `survivor as Word` cast in `reconcileWords`** — `DerivedWord` (the pre-numbering shape
+   `reconcileWords` legitimately works in; numbering runs after reconciliation) lacks `Word`'s
+   `number` field. Fixed structurally, not by keeping the cast: `WordGeometry` now exports
+   `type WordExtent = { key: WordKey; length: WordLength }` and its three functions take it;
+   `ChainMarker`'s three take it; both `Word` and `DerivedWord` satisfy it structurally.
+   Grep-verified: zero `as Word` / `as unknown` / `as any` casts in `src/`. This also closes
+   the pointer O10's "Not addressed" table left open on `extentOf`/`Extent`.
+5. **The lead's own test spec had a wrong case** — "materializeDefaultBoundary preserves
+   none": `'none'` *is* the empty pair (`CellMarker.isEmpty` is `=== 'none'`), so the
+   primitive writes `'space'` over it, exactly as both original sites did. The implementer
+   caught it and split the test case.
+6. **The estimate is corrected from "−70 LOC" to −23 production lines**: modified files
+   +45/−131 (net −86), new `ChainMarker.ts` +63 → **−23 net**; test tree **+223**
+   (`ChainMarker.test.ts`, house rule: one test file per module). Sixth consecutive estimate
+   miss high (O1 −180 → +6; O2 −150 → +33; O13 −15 → −13; O8 −70 → −12; O9 −60 → −38;
+   O10 −45 → −24). The item's *quality* claim — one owner per rule — is met; its quantity
+   claim was not, again because every extraction adds a module body the per-site accounting
+   never counts.
+
+### Design as implemented
+
+`Direction.markerAxis(direction)`; `ChainMarker.boundarySeparatorAt` /
+`.writeBoundarySeparator` / `.materializeDefaultBoundary`, all typed `word: WordExtent`,
+computing end cells through `WordGeometry.lastCell`; `WordGeometry.cells`/`contains`/`lastCell`
+typed `word: WordExtent`. Consumers per the inventory table. In `reconcileWords`, the marker
+`kind` is read from the base grid before any clears and the batched
+`updates` + `Grid.updateCells` became an accumulating fold of primitive calls — equivalent
+because `updateCells` applies updates sequentially, same as chained `setCell` (the
+surviving-word-same-extent case, oldEnd === newEnd, clear-then-write lands on the same final
+marker). The item's "thin calls" hold: policy (which marker moves where, when to clear, when
+to default) stayed in the reducer throughout.
+
+### Deliberate behaviour changes
+
+None. The proof is the unchanged suite: 1357/1357 with **zero test-file edits** — the
+exhaustive `reconcileWords` edge suite, the v1 parser tests including the v1-only boundary
+normalization, `LengthPattern`, `Anagram`, and the join/unjoin intent tests all ran unedited.
+(The old `reconcileWords` `withinBounds → continue` skip on the old end cell was dead
+defensiveness — `toggle-design-cell` never changes grid dimensions, so an old word's end cell
+is always in bounds — and the primitive's no-op-on-out-of-bounds covers the same nothing.)
+
+### Files
+
+- Modified: `src/domain/word/Direction.ts`, `src/domain/word/WordGeometry.ts`,
+  `src/domain/chain/LengthPattern.ts`, `src/domain/anagram/Anagram.ts`,
+  `src/domain/format/v1.ts`, `src/builder/state/internal/joinSubMode.ts`,
+  `src/builder/state/internal/reconcileWords.ts`.
+- New: `src/domain/chain/ChainMarker.ts` (63 lines),
+  `test/domain/chain/ChainMarker.test.ts` (223 lines, 12 cases).
+- Docs (lead-owned): `llmworkspace/architecture.md` §3 — `domain/word/` row
+  (`Direction.markerAxis` + its placement rationale), `domain/chain/` row (`ChainMarker`'s
+  full contract incl. the caller-owned null default and the `WordExtent` parameter),
+  `domain/anagram/` row, `WordGeometry`'s `WordExtent` charter, the `unjoin`/reconciliation
+  prose, the §src tree; `llmworkspace/code_reduction_audit.md` — O11 status line.
+
+### Verification
+
+| Check | Result |
+|---|---|
+| `npm run test` | 92 files / 1357 tests, **zero test-file edits** — the unchanged suites are the behaviour-preservation evidence |
+| `npm run typecheck` | 0 errors, 0 warnings |
+| `npm run lint` | clean; `madge --circular` finds no cycles; boundary matrix clean |
+| axis-ternary count over `src/` | 6 → 1 (the `Direction.markerAxis` body itself) |
+| `sourceLastCell` / `directionAxis` / end-cell `Direction.advance` over `src/` | 0 hits |
+| `as Word` / `as unknown` / `as any` casts over `src/` | 0 hits |
+| `git diff --stat -- src` | +45/−131 across 7 files; +63 new (`ChainMarker.ts`) → −23 net production |
+
+### Consequence
+
+- Three rules each have exactly one owner: direction→axis (`Direction.markerAxis`),
+  chain-boundary marker read/write (`ChainMarker`), word extent (`WordGeometry`, now typed
+  as such via the exported `WordExtent`).
+- The v1/v2 normalization contract, the join/unjoin reducer behaviour, and the reconcile
+  marker moves can no longer drift independently — they share the same primitives, with the
+  per-site *defaults* (`'space'` vs `'none'`) explicit at each call site.
+- `Word` and `DerivedWord` (pre- and post-numbering) share extent-typed geometry with no
+  casts anywhere.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `builderFacade.setMarker` (`ui/bindings`) | user-chosen axis at the cursor cell — no direction→axis fact, no word-end rule; different concept | none needed — not an instance of either rule this item gives an owner |
+| `fillMode` set-marker write (`builder/state`) | same — the intent payload carries an explicit axis (user data) | none needed — same |
+| `gridVM` separator reads (`ui/bindings/viewmodels`) | renders both literal axes of every cell; no direction involved | none needed — same |
+| interior per-offset separator reads (`Anagram.buildWordModel`, `LengthPattern.singleWordPattern`/`chainPattern` interiors) | separators *between a word's own cells*, not the chain-boundary rule; the per-offset read is generic | none needed — `separatorAt` stays, now on `Direction.markerAxis` |
+| O10's `extentOf`/`Extent` pointer | `WordExtent` is now the named exported extent concept; `extentOf` remains `contains`'s private arithmetic detail | closed by this entry (the landing site O10 named) |
