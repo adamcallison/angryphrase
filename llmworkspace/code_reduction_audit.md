@@ -484,6 +484,23 @@ axis is white). This is exactly what the current scan computes. Verify with the 
 conformance test (it already proves `partOfRun` ≡ `partOfRunMask` on every cell).
 **Risk:** low — the equivalence is mathematically direct and the existing test pins it.
 
+**Status (2026-11-11): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O9 — `WordTopology.partOfRun` — 60 lines doing a 2-line job"). Corrections to this item, made
+during the resolution: (a) the sketch's raw `g[r]?.[c]` index was **declined** — it passes the
+lint rule (optional chaining is not the banned non-null form) but violates architecture.md §3's
+grant that `Grid` is "the raw-indexing leaf and the single grid-accessor module", and it silently
+changes ragged-grid behaviour (throw → false); the implemented form routes the three lookups
+through `Grid.withinBounds`/`Grid.cellAt` with `Row.try`/`Col.try` neighbour coords, at a cost of
+~5 lines; (b) "verify with the existing conformance test" is insufficient — that test pins one
+fixture grid only, and `partOfRunMask` derives from `runs`, so a single fixture cannot
+distinguish a boundary bug; closure came from an exhaustive differential over **all** 2^(n²)
+grids for n=2,3,4 (2,097,152 checks at n=4) proving old ≡ new by transitivity through two fixed
+oracles, plus a permanent per-axis exhaustive test (n=2,3, oracle from `runs`) folded into
+`WordTopology.test.ts`; (c) the estimate is corrected from "−60 LOC" to **−38 production lines**
+(53 deletions, 15 insertions; the 61-line body becomes 22 lines — "a 2-line job" was wrong) and
++59 test lines. Leftovers: none; `partOfRunMask` (not proposed for change by this item) is
+recorded in the resolution's "Not addressed" table.
+
 ---
 
 ## O10. `WordGeometry` consolidation (est. −45 LOC)

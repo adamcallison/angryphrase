@@ -472,4 +472,63 @@ describe('WordTopology', () => {
       expect(mask[2]![2]).toBe(false);
     });
   });
+
+  describe('partOfRun per-axis exhaustive conformance', () => {
+    function gridsOfSize(n: number): Grid[] {
+      const total = 1 << (n * n);
+      const out: Grid[] = [];
+      const black = Cell.black();
+      const white = Cell.white();
+      for (let bits = 0; bits < total; bits++) {
+        const rows: CellType[][] = [];
+        for (let r = 0; r < n; r++) {
+          const row: CellType[] = [];
+          for (let c = 0; c < n; c++) {
+            row.push((bits >> (r * n + c)) & 1 ? black : white);
+          }
+          rows.push(row);
+        }
+        out.push(rows);
+      }
+      return out;
+    }
+
+    function runsDerivedMask(
+      g: Grid,
+      n: number,
+      direction: Direction
+    ): boolean[][] {
+      const mask: boolean[][] = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => false)
+      );
+      for (const run of WordTopology.runs(g, direction)) {
+        if (run.length < 2) continue;
+        const sr = Number(run.startRow);
+        const sc = Number(run.startCol);
+        for (let i = 0; i < run.length; i++) {
+          const r = direction === 'across' ? sr : sr + i;
+          const c = direction === 'across' ? sc + i : sc;
+          mask[r]![c] = true;
+        }
+      }
+      return mask;
+    }
+
+    for (const n of [2, 3]) {
+      it(`partOfRun agrees with the runs-derived per-axis mask on all 2^${n * n} ${n}x${n} grids`, () => {
+        for (const g of gridsOfSize(n)) {
+          for (const dir of ['across', 'down'] as const) {
+            const expected = runsDerivedMask(g, n, dir);
+            for (let r = 0; r < n; r++) {
+              for (let c = 0; c < n; c++) {
+                expect(
+                  WordTopology.partOfRun(g, Row.of(r), Col.of(c), dir)
+                ).toBe(expected[r]![c]);
+              }
+            }
+          }
+        }
+      });
+    }
+  });
 });

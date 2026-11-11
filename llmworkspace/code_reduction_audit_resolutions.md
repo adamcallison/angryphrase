@@ -1081,3 +1081,119 @@ None. No-op paths return the same state reference; every outcome path is value-i
 | Site | Reason | Landing site |
 |---|---|---|
 | `fillMode` cursor handlers (item's "same idea applies to the builder" sentence) | declined — LOC-neutral at best, and a second fold would re-duplicate the concept the item removes; sharing is blocked by the sibling-import boundary and wrong-layered for `domain/` | `code_reduction_audit.md` O18 (builder body-shrinking via O6.2 aliases — independent of this item) |
+
+## O9 — `WordTopology.partOfRun` — 60 lines doing a 2-line job — resolved 2026-11-11
+
+### The item (recap)
+
+`code_reduction_audit.md` O9 claims `partOfRun`'s walk-to-start/walk-to-end scan (61 lines) is
+equivalent to a 3-lookup neighbour check ("cell white AND prev-or-next along axis white"),
+sketches the replacement reading the grid via raw `g[r]?.[c]` inside `WordTopology`, estimates
+−60 LOC, and says "verify with the existing conformance test (it already proves `partOfRun` ≡
+`partOfRunMask` on every cell)".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `partOfRun` implementation | `src/domain/grid/WordTopology.ts` | migrated — neighbour-check form, accessor-routed |
+| S2 | `partOfRunMask` | `src/domain/grid/WordTopology.ts` | not migrated — item does not propose it; bulk form built from `runs`, unchanged (stays the source of `selectable` in `gridVM`, per the O4 resolution) |
+| S3 | `runs`/`isRunStart`/`measureRun` | `src/domain/grid/WordTopology.ts` | not migrated — out of the item's scope; `runs` is the oracle the new form is pinned against |
+| S4 | `isSelectable` + `GridInteraction.select` (production consumers) | `WordTopology.ts` / `GridInteraction.ts` | unchanged — signatures and semantics identical; benefit is per-call cost O(n) → O(1) |
+
+### Decision
+
+**Executed, core claim verified.** The equivalence is mathematically direct and was proven
+exhaustively before any production edit (see Verification): the 61-line walk and the
+neighbour check agree on every cell/direction of **all** black/white grids up to 4×4
+(2^16 grids, 2,097,152 cell/direction checks at n=4), plus out-of-bounds inputs.
+
+**The sketch's raw indexing — declined; accessor-routed form implemented instead.** Options
+considered: (a) the audit's sketch (`g[r]?.[c]` optional-chained raw index inside
+`WordTopology`); (b) the same neighbour check routed through `Grid.withinBounds`/`Grid.cellAt`
+with `Row.try`/`Col.try`-minted neighbour coords. Chosen: (b).
+
+- (a) passes the lint rule (optional chaining is not the banned non-null indexing) but violates
+  architecture.md §3's ownership grant: `Grid` is "the raw-indexing leaf and the single
+  grid-accessor module". It would be the first raw grid index in `domain/` outside `Grid.ts`
+  (the only other one, `v1.ts`'s parser loop, validates untrusted JSON before a `Grid` exists —
+  a different situation).
+- (a) also silently changes behaviour on ragged (non-square) grids: baseline throws `TypeError`,
+  the sketch returns `false`. Out of contract (grids are square by `GridSize` 2..25 and parser
+  validation) but a behaviour change bought with zero lines saved. Form (b) throws identically.
+- Cost of (b): ~5 extra lines vs the sketch. Bought: documented ownership preserved, ragged
+  behaviour preserved, no new `Grid` export.
+
+### Corrections to the item
+
+1. **The sketch violates a documented boundary** (see Decision) — the first O-item whose proposed
+   *text of the code*, not just its accounting, was wrong. The item's own preamble ("no guard,
+   contract, or documented property is traded for line count") is what the sketch trades.
+2. **"Verify with the existing conformance test" is insufficient.** The existing test proves
+   `partOfRun` ≡ `partOfRunMask` on **one fixture grid** only ("on every cell" of that fixture),
+   and `partOfRunMask` itself derives from `runs` — a single fixture cannot distinguish a
+   neighbour-check bug at a boundary the fixture lacks. The closure evidence is the exhaustive
+   differential (below), plus a permanent per-axis exhaustive test now folded into the suite.
+3. **The estimate is corrected from "−60 LOC" to −38 production lines** (53 deletions, 15
+   insertions, one file; the 61-line body becomes a 5-line private `whiteAt` + a 17-line
+   `partOfRun`). "A 2-line job" is also wrong — the honest replacement is 22 lines, because
+   accessor-routed bounds/brand checks do not compress to the sketch's two lines. Fifth
+   consecutive estimate miss high (O1 −180 → +6; O2 −150 → +33; O13 −15 → −13; O8 −70 → −12);
+   this one lands closest. Test tree: +59 lines (the permanent exhaustive conformance test).
+
+### Design as implemented
+
+`WordTopology` gains one private helper, `whiteAt(g, row: Row | null, col: Col | null): boolean`
+(null coords → false; `withinBounds` guard; `Cell.isWhite(Grid.cellAt(...))`), and `partOfRun`
+becomes: `whiteAt` at the cell itself, then per-axis explicit branches minting
+`Col.try(c ± 1)` / `Row.try(r ± 1)` neighbours and returning
+`whiteAt(prev) || whiteAt(next)`. No signature, export, or member-set change anywhere.
+
+### Deliberate behaviour changes
+
+None. Proven by the differential chain: pre-change, two fixed oracles (the audit-sketch form A
+and the accessor-routed form B) were run against the **old** implementation over all 2^(n²)
+grids for n = 2, 3, 4 plus out-of-bounds and ragged inputs — identical everywhere. Post-change,
+the same oracles against the **new** implementation — identical everywhere. By transitivity
+new ≡ old on every case any of the three forms can observe.
+
+### Files
+
+- Modified: `src/domain/grid/WordTopology.ts` (only production file), `test/domain/grid/
+  WordTopology.test.ts` (appended one describe: per-axis exhaustive conformance, n = 2 and 3,
+  oracle derived independently from `WordTopology.runs`; zero existing assertions edited).
+- Deleted: `test/domain/grid/__tmp_o9_equiv.test.ts`, `test/domain/grid/__tmp_o9_peraxis.test.ts`
+  — untracked leftovers from a prior aborted session, kept uncommitted until they had served as
+  the old-vs-new differential harness, then removed.
+- `llmworkspace/code_reduction_audit.md` — status line added (lead-owned doc edit).
+- `llmworkspace/architecture.md` — no edit needed: §3 describes `partOfRun` behaviourally
+  ("the single-cell 'part of a length-≥-2 run' predicate on one axis"), which is unchanged.
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx vitest run` on `__tmp_o9_equiv` + `__tmp_o9_peraxis` **pre-change** | 12/12 — oracles A and B ≡ old implementation, exhaustive n=2,3,4 (2,097,152 checks at n=4), out-of-bounds, ragged |
+| Same two files **post-change** | 8+4 green — oracles ≡ new implementation ⇒ new ≡ old by transitivity |
+| `npx vitest run test/domain/grid/` | 137/137 (37 in `WordTopology.test.ts`, incl. the 2 new exhaustive cases; existing assertions unedited) |
+| `npm run test` | 1345/1345 (91 files), **zero edits to any test file outside `WordTopology.test.ts`** — the unchanged downstream suites (`isSelectable`, `GridInteraction`, viewmodels, parser) are the behaviour-preservation evidence |
+| `npm run typecheck` | 0 errors, 0 warnings |
+| `npm run lint` | clean, `madge --circular` finds no cycles |
+
+`git diff --stat` closes the accounting: `WordTopology.ts` +15/−53, `WordTopology.test.ts` +59.
+
+### Consequence
+
+- `partOfRun` is O(1) instead of O(n) per call; `isSelectable` and `GridInteraction.select`
+  (its two production consumers, two calls each) drop from 4 O(n) walks to 4 O(1) checks.
+- The predicate now has two independent derivations pinned against each other permanently:
+  the neighbour form (implementation) and the `runs`-derived mask (test oracle, exhaustive
+  over all grids up to 3×3).
+- No boundary change: `Grid` remains the only raw indexer in `domain/`.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| `partOfRunMask` implementation | item does not propose changing it; bulk form is the deliberate source of `selectable` in the grid view-model | recorded in the O4 resolution's "Not addressed" table |
+| Exhaustive n=4 case in the *permanent* suite | ~1 s runtime per run; n=4 was covered by the one-time differential recorded above and is closed by it | this entry's Verification table (evidence, not a landing site — the permanent n=2,3 cases plus the fixture conformance test carry the invariant forward) |

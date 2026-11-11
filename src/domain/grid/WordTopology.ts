@@ -71,6 +71,12 @@ function measureRun(
   return length;
 }
 
+function whiteAt(g: Grid, row: Row | null, col: Col | null): boolean {
+  if (row === null || col === null) return false;
+  if (!Grid.withinBounds(g, row, col)) return false;
+  return CellCtor.isWhite(Grid.cellAt(g, row, col));
+}
+
 export const WordTopology: {
   runs(grid: Grid, direction: Direction): readonly WordRun[];
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean;
@@ -103,65 +109,21 @@ export const WordTopology: {
   },
 
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean {
-    if (!Grid.withinBounds(grid, row, col)) {
+    if (!whiteAt(grid, row, col)) {
       return false;
     }
-    if (!CellCtor.isWhite(Grid.cellAt(grid, row, col))) {
-      return false;
+
+    if (direction === 'across') {
+      const c = Number(col);
+      const prev = ColCtor.try(c - 1);
+      const next = ColCtor.try(c + 1);
+      return whiteAt(grid, row, prev) || whiteAt(grid, row, next);
     }
 
     const r = Number(row);
-    const c = Number(col);
-    const size = grid.length;
-
-    let stepsBefore = 0;
-    if (direction === 'across') {
-      let scan = c - 1;
-      while (scan >= 0) {
-        const scanCol = ColCtor.try(scan);
-        if (scanCol === null) break;
-        if (!Grid.withinBounds(grid, row, scanCol)) break;
-        if (!CellCtor.isWhite(Grid.cellAt(grid, row, scanCol))) break;
-        stepsBefore++;
-        scan--;
-      }
-    } else {
-      let scan = r - 1;
-      while (scan >= 0) {
-        const scanRow = RowCtor.try(scan);
-        if (scanRow === null) break;
-        if (!Grid.withinBounds(grid, scanRow, col)) break;
-        if (!CellCtor.isWhite(Grid.cellAt(grid, scanRow, col))) break;
-        stepsBefore++;
-        scan--;
-      }
-    }
-
-    const startIndex =
-      direction === 'across' ? c - stepsBefore : r - stepsBefore;
-    let length = 0;
-
-    if (direction === 'across') {
-      let scan = startIndex;
-      while (scan < size) {
-        const scanCol = ColCtor.of(scan);
-        if (!Grid.withinBounds(grid, row, scanCol)) break;
-        if (!CellCtor.isWhite(Grid.cellAt(grid, row, scanCol))) break;
-        length++;
-        scan++;
-      }
-    } else {
-      let scan = startIndex;
-      while (scan < size) {
-        const scanRow = RowCtor.of(scan);
-        if (!Grid.withinBounds(grid, scanRow, col)) break;
-        if (!CellCtor.isWhite(Grid.cellAt(grid, scanRow, col))) break;
-        length++;
-        scan++;
-      }
-    }
-
-    return length >= 2;
+    const prev = RowCtor.try(r - 1);
+    const next = RowCtor.try(r + 1);
+    return whiteAt(grid, prev, col) || whiteAt(grid, next, col);
   },
 
   partOfRunMask(grid: Grid): boolean[][] {
