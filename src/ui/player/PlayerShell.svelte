@@ -38,12 +38,12 @@
     <div class="flex flex-col md:flex-row gap-6">
       <!-- left column: banners + grid + toolbar -->
       <section class="flex flex-col gap-3 flex-1 min-w-0">
-        <ActiveClueBanner vm={vm.topBanner} />
+        <ActiveClueBanner vm={vm.banner} />
         <div class="relative overflow-x-auto">
           <Grid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={!vm.anagram.open} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
+          <TypingSurface enabled={vm.anagram === null} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
         </div>
-        <ActiveClueBanner vm={vm.bottomBanner} />
+        <ActiveClueBanner vm={vm.banner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
       </section>
 

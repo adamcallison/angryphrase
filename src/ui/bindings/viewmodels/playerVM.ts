@@ -38,7 +38,6 @@ export type PlayerCheckResultVM = {
   incorrectCount: number;
   emptyCount: number;
   message: string;
-  colorClass: string;
 } | null;
 
 export type PlayerShellVM =
@@ -48,11 +47,10 @@ export type PlayerShellVM =
       title: string;
       author: string;
       grid: GridVM;
-      topBanner: ActiveClueBannerVM;
-      bottomBanner: ActiveClueBannerVM;
+      banner: ActiveClueBannerVM;
       cluePanel: PlayerCluePanelVM;
       toolbar: PlayerToolbarVM;
-      anagram: AnagramModalVM;
+      anagram: AnagramModalVM | null;
       checkResult: PlayerCheckResultVM;
     };
 
@@ -134,24 +132,19 @@ export function deriveCheckResultVM(
   const incorrectCount = checkResult.incorrectCells.length;
   const emptyCount = checkResult.emptyCells.length;
   let message: string;
-  let colorClass: string;
 
   switch (checkResult.classification) {
     case 'complete-correct':
       message = 'Puzzle solved!';
-      colorClass = 'text-green-600';
       break;
     case 'incomplete-correct':
       message = 'Looks good so far. No incorrect letters, but some empty cells remain.';
-      colorClass = 'text-green-600';
       break;
     case 'complete-incorrect':
       message = 'Some letters are incorrect.';
-      colorClass = 'text-red-600';
       break;
     case 'incomplete-incorrect':
       message = 'Some letters are incorrect and some cells are empty.';
-      colorClass = 'text-red-600';
       break;
   }
 
@@ -160,7 +153,6 @@ export function deriveCheckResultVM(
     incorrectCount,
     emptyCount,
     message,
-    colorClass,
   };
 }
 
@@ -182,11 +174,10 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     whichLetter: 'player',
     selectedWordCells,
   });
-  const topBanner = deriveActiveClueBannerVM({
+  const banner = deriveActiveClueBannerVM({
     puzzle: state.puzzle,
     cursor: state.cursor,
   });
-  const bottomBanner = topBanner;
   const cluePanel = derivePlayerCluePanelVM({
     puzzle: state.puzzle,
     highlightedWordKey,
@@ -204,8 +195,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     title: String(state.puzzle.title),
     author: String(state.puzzle.author),
     grid,
-    topBanner,
-    bottomBanner,
+    banner,
     cluePanel,
     toolbar,
     anagram,

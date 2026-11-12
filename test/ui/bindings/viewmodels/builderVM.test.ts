@@ -15,7 +15,6 @@ import { Col } from '../../../../src/domain/grid/Col';
 import { Cell } from '../../../../src/domain/grid/Cell';
 import { CellMarker, type CellMarker as CellMarkerType } from '../../../../src/domain/grid/CellMarker';
 import { Letter } from '../../../../src/domain/letter/Letter';
-import { CompletenessCheck } from '../../../../src/domain/puzzle/CompletenessCheck';
 import { Puzzle } from '../../../../src/domain/puzzle/Puzzle';
 import { PuzzleKey } from '../../../../src/domain/puzzle/PuzzleKey';
 import { Title } from '../../../../src/domain/puzzle/Title';
@@ -117,11 +116,6 @@ describe('deriveBuilderToolbarVM', () => {
     expect(vm.canSwitchToDesignWithoutConfirm).toBe(true);
     expect(vm.canChangeGridSize).toBe(true);
     expect(vm.canExportComplete).toBe(false);
-    expect(vm.exportCompleteCounts).toEqual({
-      'missing-answer-letter': 25,
-      'missing-clue': 10,
-      'non-head-clue': 0,
-    });
   });
 
   it('deriveBuilderToolbarVM: state with answer letters, blank=false — canChangeGridSize=false, canSwitchToDesignWithoutConfirm=false', () => {
@@ -183,14 +177,6 @@ describe('deriveBuilderToolbarVM', () => {
     ]);
     const vm = deriveBuilderToolbarVM(state);
     expect(vm.canExportComplete).toBe(true);
-    expect(vm.exportCompleteViolations).toHaveLength(0);
-  });
-
-  it('deriveBuilderToolbarVM: exportCompleteViolations returned from CompletenessCheck.check', () => {
-    const state = makeBlankState(2);
-    const vm = deriveBuilderToolbarVM(state);
-    expect(vm.exportCompleteViolations).toEqual(CompletenessCheck.check(state.puzzle));
-    expect(vm.exportCompleteViolations.length).toBeGreaterThan(0);
   });
 
   it('toolbar VM maps export-complete violations to a grouped summary', () => {
@@ -204,11 +190,6 @@ describe('deriveBuilderToolbarVM', () => {
     ]);
     const vm = deriveBuilderToolbarVM(state);
     expect(vm.violationSummary).toEqual([{ count: 1, label: '1 missing clue' }]);
-    expect(vm.exportCompleteCounts).toEqual({
-      'missing-answer-letter': 0,
-      'missing-clue': 1,
-      'non-head-clue': 0,
-    });
   });
 
   it('toolbar VM includes the non-head-clue summary when a non-head word carries a clue', () => {
@@ -240,11 +221,6 @@ describe('deriveBuilderToolbarVM', () => {
       count: 1,
       label: '1 non-head word with stray clue text',
     });
-    expect(vm.exportCompleteCounts).toEqual({
-      'missing-answer-letter': 0,
-      'missing-clue': 0,
-      'non-head-clue': 1,
-    });
   });
 
   it('toolbar VM violationSummary is empty when the puzzle is complete', () => {
@@ -259,11 +235,6 @@ describe('deriveBuilderToolbarVM', () => {
     const vm = deriveBuilderToolbarVM(state);
     expect(vm.canExportComplete).toBe(true);
     expect(vm.violationSummary).toEqual([]);
-    expect(vm.exportCompleteCounts).toEqual({
-      'missing-answer-letter': 0,
-      'missing-clue': 0,
-      'non-head-clue': 0,
-    });
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveAnagramModalVM } from '../../../../src/ui/bindings/viewmodels/anagramVM';
+import type { AnagramModalVM } from '../../../../src/ui/bindings/viewmodels/anagramVM';
 import { Grid } from '../../../../src/domain/grid/Grid';
 import { GridSize } from '../../../../src/domain/grid/GridSize';
 import { Row } from '../../../../src/domain/grid/Row';
@@ -12,19 +13,6 @@ import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 
 import type { AnagramModalState } from '../../../../src/player/state/state';
-
-const CLOSED_BASELINE = {
-  open: false,
-  wordLength: 0,
-  tiles: [],
-  separators: [],
-  input: '',
-  inputLength: 0,
-  expectedUniqueLetterCounts: [],
-  inputValid: false,
-  scrambleEnabled: false,
-  errorMessage: null,
-};
 
 function grid3x3(): Grid {
   return Grid.blank(GridSize.of(3));
@@ -92,6 +80,10 @@ function setMarker(grid: Grid, row: number, col: number, flag: 'space-right' | '
   return Grid.setCell(grid, r, c, Cell.setMarker(cell, CellMarker.write(cell.marker, axis, separator)));
 }
 
+function assertOpen(vm: AnagramModalVM | null): asserts vm is AnagramModalVM {
+  expect(vm).not.toBeNull();
+}
+
 function makeLetters(s: string): Letter[] {
   return Array.from(s).map((ch) => {
     const l = Letter.try(ch);
@@ -125,15 +117,15 @@ function makeAnagramModalAligned(
 }
 
 describe('deriveAnagramModalVM', () => {
-  it('deriveAnagramModalVM: null anagramModal → closed baseline (open: false, wordLength: 0, all defaults)', () => {
+  it('deriveAnagramModalVM: null anagramModal → null', () => {
     const result = deriveAnagramModalVM({ anagramModal: null, grid: grid3x3(), words: [] });
-    expect(result).toEqual(CLOSED_BASELINE);
+    expect(result).toBeNull();
   });
 
-  it('deriveAnagramModalVM: openedForWord not found in words → closed baseline', () => {
+  it('deriveAnagramModalVM: openedForWord not found in words → null', () => {
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid: grid3x3(), words: [] });
-    expect(result).toEqual(CLOSED_BASELINE);
+    expect(result).toBeNull();
   });
 
   it('deriveAnagramModalVM: open modal — tiles count matches word length; fixed positions show their grid letter', () => {
@@ -143,7 +135,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
-    expect(result.open).toBe(true);
+    assertOpen(result);
     expect(result.wordLength).toBe(3);
     expect(result.tiles).toHaveLength(3);
     expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
@@ -158,6 +150,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     const nonFixed = result.tiles.filter((t) => !t.fixed);
     expect(nonFixed.length).toBeGreaterThan(0);
     for (const tile of nonFixed) {
@@ -172,6 +165,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('ABC', 'ABC');
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
     expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: 'B' });
     expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
@@ -183,6 +177,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModalAligned('B', ['B', null, 'A']);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.tiles[0]).toEqual({ position: 0, fixed: false, letter: 'B' });
     expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null });
     expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'A' });
@@ -198,18 +193,20 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.separators).toEqual(['space', 'hyphen']);
   });
 
-  it('deriveAnagramModalVM: input echoed unchanged; inputLength = input.length', () => {
+  it('deriveAnagramModalVM: input echoed unchanged; inputLength field no longer exists', () => {
     let grid = grid3x3();
     grid = setPlayerLetter(grid, 0, 0, 'A');
     grid = setPlayerLetter(grid, 0, 2, 'C');
     const word = word3Across();
     const modal = makeAnagramModal('XYZ', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.input).toBe('XYZ');
-    expect(result.inputLength).toBe(3);
+    expect('inputLength' in result).toBe(false);
   });
 
   it('deriveAnagramModalVM: inputValid = Anagram.validateChainInput result; errorMessage = reason on invalid', () => {
@@ -223,6 +220,7 @@ describe('deriveAnagramModalVM', () => {
       grid,
       words: [word],
     });
+    assertOpen(shortResult);
     expect(shortResult.inputValid).toBe(false);
     expect(shortResult.errorMessage).toBe('Input must be 3 letters (got 2).');
 
@@ -231,6 +229,7 @@ describe('deriveAnagramModalVM', () => {
       grid,
       words: [word],
     });
+    assertOpen(missingResult);
     expect(missingResult.inputValid).toBe(false);
     expect(missingResult.errorMessage).toBe('Input letters do not cover the fixed-position letters.');
 
@@ -239,6 +238,7 @@ describe('deriveAnagramModalVM', () => {
       grid,
       words: [word],
     });
+    assertOpen(validResult);
     expect(validResult.inputValid).toBe(true);
     expect(validResult.errorMessage).toBeNull();
   });
@@ -254,6 +254,7 @@ describe('deriveAnagramModalVM', () => {
       grid,
       words: [word],
     });
+    assertOpen(result);
     expect(result.expectedUniqueLetterCounts).toEqual([
       { letter: 'A', count: 2 },
       { letter: 'B', count: 1 },
@@ -269,6 +270,7 @@ describe('deriveAnagramModalVM', () => {
       grid: grid4,
       words: [word4Across()],
     });
+    assertOpen(result4);
     expect(result4.expectedUniqueLetterCounts).toEqual([
       { letter: 'A', count: 2 },
       { letter: 'B', count: 2 },
@@ -282,6 +284,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.inputValid).toBe(true);
     expect(result.scrambleEnabled).toBe(true);
   });
@@ -293,6 +296,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('AB', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.inputValid).toBe(false);
     expect(result.scrambleEnabled).toBe(false);
   });
@@ -305,6 +309,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.inputValid).toBe(true);
     expect(result.scrambleEnabled).toBe(false);
   });
@@ -314,6 +319,7 @@ describe('deriveAnagramModalVM', () => {
     const word = word3Across();
     const modal = makeAnagramModal('', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
+    assertOpen(result);
     expect(result.wordLength).toBe(word.length);
   });
 
@@ -326,7 +332,7 @@ describe('deriveAnagramModalVM', () => {
       grid: grid4x4(),
       words: [head, tail],
     });
-    expect(result.open).toBe(true);
+    assertOpen(result);
     expect(result.wordLength).toBe(7);
     expect(result.tiles).toHaveLength(7);
     expect(result.separators).toHaveLength(6);
@@ -347,6 +353,7 @@ describe('deriveAnagramModalVM', () => {
       grid: spaceBoundaryGrid,
       words: [head, tail],
     });
+    assertOpen(spaceResult);
     expect(spaceResult.separators).toEqual(['none', 'space', 'space', 'hyphen', 'none', 'none']);
 
     let hyphenBoundaryGrid = grid4x4();
@@ -358,6 +365,7 @@ describe('deriveAnagramModalVM', () => {
       grid: hyphenBoundaryGrid,
       words: [head, tail],
     });
+    assertOpen(hyphenResult);
     expect(hyphenResult.separators).toEqual(['none', 'space', 'hyphen', 'space', 'none', 'none']);
 
     let noneBoundaryGrid = grid4x4();
@@ -368,6 +376,7 @@ describe('deriveAnagramModalVM', () => {
       grid: noneBoundaryGrid,
       words: [head, tail],
     });
+    assertOpen(noneResult);
     expect(noneResult.separators).toEqual(['none', 'space', 'none', 'hyphen', 'none', 'none']);
   });
 });

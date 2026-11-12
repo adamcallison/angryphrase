@@ -2,15 +2,16 @@
   import type { AnagramModalVM } from '../bindings/viewmodels/anagramVM';
   import type { PlayerAnagramActions } from '../bindings/playerFacade';
 
-  let { vm, actions }: { vm: AnagramModalVM; actions: PlayerAnagramActions } = $props();
+  let { vm, actions }: { vm: AnagramModalVM | null; actions: PlayerAnagramActions } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
   let wasOpen = $state(false);
   $effect(() => {
-    if (vm.open && !wasOpen) {
+    const open = vm !== null;
+    if (open && !wasOpen) {
       inputEl?.focus();
     }
-    wasOpen = vm.open;
+    wasOpen = open;
   });
 
   function onInput(event: Event): void {
@@ -25,7 +26,7 @@
   }
 </script>
 
-{#if vm.open}
+{#if vm}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
@@ -82,7 +83,7 @@
         maxlength={vm.wordLength}
         class="w-full rounded border border-gray-300 px-3 py-2 text-lg uppercase tracking-widest"
       />
-      <div class="mt-1 text-xs text-gray-500">Entered: {vm.inputLength} / {vm.wordLength}</div>
+      <div class="mt-1 text-xs text-gray-500">Entered: {vm.input.length} / {vm.wordLength}</div>
 
       {#if vm.errorMessage !== null}
         <div class="mt-2 text-xs text-red-600">{vm.errorMessage}</div>

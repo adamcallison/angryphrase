@@ -12,8 +12,10 @@ The house process for an entry is the one recorded in `archive/architecture_smel
 
 Resolved so far: O1 (v1.ts parser/serializer consolidation), O2 (brand-type boilerplate), O3 (delete
 dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iteration rewrite of the
-grid scan sites), O7 (persistence plumbing duplication), O8 (player solving handlers: one
-cursor-change fold), O13 (boot.ts `freshBlank` removal).
+grid scan sites), O6 (facade / action-bag / intent-type boilerplate), O7 (persistence plumbing
+duplication), O8 (player solving handlers: one cursor-change fold), O9 (`WordTopology.partOfRun`
+consolidation), O10 (`WordGeometry` consolidation), O11 (chain-boundary marker logic — one owner),
+O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal).
 
 ---
 
@@ -1610,3 +1612,139 @@ One: the `reduceApp` unknown-intent `Error` message — `unknown intent kind: <k
 | `Extract<PlayerState, { phase: 'solving' }>` sites | state-phase narrowing, not intent-kind extraction — different concept | — |
 | the `toastVM`/`modalVM` fold into their facades (item 4, and O5's table row) | declined after a same-day land-and-revert — ~9 lines saved did not justify breaking "all VM types live in `viewmodels/`" (one location, no exceptions) with a judgment-call exception rule | — (closed by decision, not deferred); O5's row carries a do-not-re-propose |
 | O5's remaining rows | unaffected by O6 | O5 |
+
+---
+
+## O12 — View-model redundancy — resolved 2026-11-12
+
+### The item (recap)
+
+`code_reduction_audit.md` O12 proposes six view-model reductions (est. −50 LOC, "Risk: none"):
+unused `BuilderToolbarVM` export fields; `PlayerShellVM.bottomBanner` being literally `topBanner`;
+`AnagramModalVM.inputLength` = `input.length`; the `CLOSED_BASELINE` zero-filled placeholder vs
+`ModalVM`'s null convention; `PlayerCheckResultVM.colorClass` (a Tailwind class minted in the
+bindings layer); and `gridVM`'s two one-line separator wrappers plus the black branch's duplicated
+8-field literal.
+
+### Site inventory (Gate 0)
+
+| # | Site | File(s) | Outcome |
+|---|---|---|---|
+| S1 | `BuilderToolbarVM.exportCompleteViolations` (type + derivation) | `builderVM.ts` | deleted; the local `CompletenessCheck.check` call stays — `canExportComplete` derives from it |
+| S2 | `BuilderToolbarVM.exportCompleteCounts` (type + derivation) | `builderVM.ts` | deleted |
+| S3 | `CompletenessCheck.groupByKind` + `CompletenessViolationCounts` | `CompletenessCheck.ts`, `builderVM.ts` | deleted from the domain; counting inlined into `builderVM`'s summary fold (human decision, below) |
+| S4 | `PlayerShellVM.topBanner` / `.bottomBanner` (alias pair) | `playerVM.ts`, `PlayerShell.svelte` | single `banner` field, derived once, rendered at both positions |
+| S5 | `AnagramModalVM.inputLength` | `anagramVM.ts`, `AnagramModal.svelte` | deleted; the component reads `vm.input.length` |
+| S6 | `AnagramModalVM.open` + `CLOSED_BASELINE` | `anagramVM.ts`, `playerVM.ts`, `PlayerShell.svelte`, `AnagramModal.svelte` | null convention adopted: `deriveAnagramModalVM → AnagramModalVM \| null` |
+| S7 | `PlayerCheckResultVM.colorClass` | `playerVM.ts`, `PlayerToolbar.svelte` | deleted from the VM; moved to `PlayerToolbar`'s component-local exhaustive colour map |
+| S8 | `deriveSeparatorRight` / `deriveSeparatorBottom` wrappers | `gridVM.ts` | deleted; `CellMarker.read(cell.marker, axis)` inline |
+| S9 | black-branch 8-field literal vs white branch | `gridVM.ts` | unified to one return literal; black keying explicit per field |
+| S10 | test consumer `vm.anagram.open` (**missed by the item**) | `test/ui/bindings/playerFacade.test.ts` | 3 assertions re-pointed to null/non-null |
+
+The item's site list was correct for every site it named but incomplete: S10 is a test-tree consumer
+the item's "verified by grep against component usage" framing cannot see — the same blind spot O3
+and O4 corrected. S3's "keep or inline" wording is not a site but a branch point; it was surfaced to
+the human rather than resolved silently.
+
+### Decision
+
+- **S1–S2: delete.** Straight dead-surface removal; `canExportComplete` keeps deriving from the
+  local `CompletenessCheck.check` call — the call is load-bearing, only the VM *fields* were dead.
+- **S3 (options: keep `groupByKind` as the domain owner of "count violations by kind" vs inline the
+  counting into `builderVM`): inlined, on explicit human approval.** Counting-for-display is a
+  bindings fold — the label wording and singular/plural rules already lived there
+  (`VIOLATION_LABELS`); architecture.md §3 never listed `groupByKind` among `CompletenessCheck`'s
+  owned rules; the domain surface shrinks to exactly its documented API
+  (`check` / `clueViolations` / `message`).
+- **S4: single `banner` field.** The alias line deleted; both render sites keep their positions.
+- **S6 (options: keep the zero-filled baseline vs a nullable union): null.** Aligns the anagram
+  modal with the `ModalVM` / `AppState.modal` null convention and with §9's own "no placeholder
+  view-model" principle — `CLOSED_BASELINE` was exactly such a placeholder. Null ≡ baseline for
+  every consumer (modal renders nothing; typing surface enabled).
+- **S7 (options: keep `colorClass` in the VM vs move it): move.** §9 documents component-side class
+  resolution as the convention (its `hilite` example is the same rule shape). The map is typed
+  `Record<NonNullable<PlayerCheckResultVM>['classification'], string>` — exhaustive and
+  compile-checked against the VM's own type, with no import from `state/` (components may not).
+  `classification`, `incorrectCount`, `emptyCount`, `message` stay on the VM: they are data.
+- **S9 (options: unify by relying on domain invariants — black cells provably carry `EMPTY`
+  markers, never hold cursors, never start words — vs explicit per-field keying): explicit keying
+  on `cell.black`.** The black branch is a presentation-layer guard; leaning rendering on unstated
+  domain invariants would make it silently wrong if an invariant ever loosened. The unification is
+  syntactic (one literal), not semantic.
+
+### Corrections to the item
+
+1. The inventory missed S10 (test-tree consumer; see above).
+2. "Risk: none" holds for rendered behaviour but not for the test tree: assertions on the removed
+   fields existed in four test files, so tests were necessarily in scope — the same correction O3
+   and O4 applied to this audit's "tests excluded" framing.
+3. Item 4 is an improvement beyond its stated LOC: it does not merely save 12 lines, it removes the
+   last zero-filled placeholder view-model and brings the anagram modal under the null convention.
+4. The estimate is corrected from "−50 LOC" to **−37 production lines** (+68/−105 across 8 files)
+   and **−77 test lines** — **−114 net**. The per-field accounting again over-counted what deletion
+   sheds (every fold gains a body; every component substitution gains a line elsewhere).
+
+### Design as implemented
+
+- `builderVM.ts`: private `violationSummary(violations)` counts per kind, iterating a fixed kind
+  order (`missing-answer-letter`, `missing-clue`, `non-head-clue`) so the output order stays
+  byte-identical to the old counts-record key order; zero-count kinds skipped; `VIOLATION_LABELS`
+  wording untouched.
+- `playerVM.ts`: the solving variant carries `banner: ActiveClueBannerVM` derived once;
+  `deriveCheckResultVM` keeps its message switch and drops the class arms.
+- `anagramVM.ts`: both closed paths (modal state null, head-word lookup failure) return `null`;
+  `PlayerShell` enables the typing surface on `vm.anagram === null`; `AnagramModal` guards
+  `{#if vm}` (Svelte-narrowed) and re-keys its focus-on-open `$effect` on the null→non-null
+  transition.
+- `gridVM.ts`: one return literal per cell; every black-dependent field (`letter`, `number`,
+  `hilite`, both separators, `selectable`) keyed explicitly on `cell.black`; the `Cell` type import
+  (used only by the deleted wrappers) removed.
+
+### Deliberate behaviour changes
+
+None observable. Rendered output is byte-identical: the banner renders at the same two positions,
+the colour strings are verbatim, the violation summary keeps its labels and order, the closed modal
+renders nothing and leaves the typing surface enabled. The contract changes are type-level only:
+`AnagramModalVM` consumers see a nullable union, and `PlayerShellVM`'s solving variant exposes
+`banner` where it had `topBanner`/`bottomBanner`.
+
+### Files
+
+- Production (8, +68/−105): `domain/puzzle/CompletenessCheck.ts`, `ui/bindings/viewmodels/`
+  (`builderVM`, `playerVM`, `anagramVM`, `gridVM`), `ui/player/` (`AnagramModal.svelte`,
+  `PlayerShell.svelte`, `PlayerToolbar.svelte`).
+- Tests (5, +49/−126): `CompletenessCheck.test.ts` (`groupByKind` block deleted),
+  `builderVM.test.ts`, `playerVM.test.ts`, `anagramVM.test.ts` (incl. an `assertOpen` helper for
+  the nullable result), `playerFacade.test.ts` (S10).
+- Docs: `architecture.md` §9 (violation-summary wording; `AnagramModalVM` null convention; the
+  single `banner` field; the classification→colour map added to the presentation-convention
+  example); the audit's O12 status block.
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run test` | 92 files / **1352 tests** green |
+| `npm run typecheck` | svelte-check 0 errors / 0 warnings |
+| `npm run lint` | eslint clean; madge — no cycles |
+| grep removed symbols across `src/` + `test/` | **0** matches (`exportCompleteViolations`, `exportCompleteCounts`, `groupByKind`, `CompletenessViolationCounts`, `topBanner`, `bottomBanner`, `inputLength`, `colorClass`, `CLOSED_BASELINE`, `deriveSeparator*`); surviving `.open` hits are `anagram.openedForWord` — a state field, different concept |
+| unchanged suites as preservation proof | `gridVM` suite: 15/15 with **zero edits** (S8–S9); the `violationSummary` value assertions carried over unchanged (S1–S3); the check-result message/count assertions carried over unchanged (S7); banner assertions rewritten in place with identical values (S4) |
+
+### Consequence
+
+- `CompletenessCheck`'s public API is now exactly its documented §3 set; the domain no longer
+  exports a display-only tally.
+- No zero-filled placeholder view-models remain in `viewmodels/`; the anagram modal follows the
+  null convention, so "closed" is a type, not a field.
+- `PlayerToolbar` owns the classification→colour presentation constant, exhaustively keyed on the
+  VM's own type — the §9 layering leak (Tailwind in a VM) is closed.
+- Every VM type keeps its single home in `viewmodels/`; no concept moved out of a uniform home —
+  the audit method-note's admission criterion is satisfied.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| — | — | — |
+
+*(Empty — the closure walk covered S1–S10; every site is migrated.)*

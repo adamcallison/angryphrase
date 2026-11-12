@@ -12,46 +12,31 @@ export type AnagramTileVM = {
 };
 
 export type AnagramModalVM = {
-  open: boolean;
   wordLength: number;
   tiles: AnagramTileVM[];
   separators: CellSeparator[];
   input: string;
-  inputLength: number;
   expectedUniqueLetterCounts: { letter: string; count: number }[];
   inputValid: boolean;
   scrambleEnabled: boolean;
   errorMessage: string | null;
 };
 
-const CLOSED_BASELINE: AnagramModalVM = {
-  open: false,
-  wordLength: 0,
-  tiles: [],
-  separators: [],
-  input: '',
-  inputLength: 0,
-  expectedUniqueLetterCounts: [],
-  inputValid: false,
-  scrambleEnabled: false,
-  errorMessage: null,
-};
-
 export function deriveAnagramModalVM(input: {
   anagramModal: AnagramModalState | null;
   grid: Grid;
   words: Word[];
-}): AnagramModalVM {
+}): AnagramModalVM | null {
   const { anagramModal, grid, words } = input;
   if (anagramModal === null) {
-    return CLOSED_BASELINE;
+    return null;
   }
 
   const index = ChainIndex.build(words);
 
   const head = index.word(anagramModal.openedForWord);
   if (head === undefined) {
-    return CLOSED_BASELINE;
+    return null;
   }
 
   const members = index.fromHead(head.key).members;
@@ -61,7 +46,6 @@ export function deriveAnagramModalVM(input: {
   const validation = Anagram.validateChainInput(totalLength, entries, anagramModal.input);
   const inputValid = validation.ok;
   const errorMessage = validation.ok ? null : validation.reason;
-  const inputLength = anagramModal.input.length;
 
   const counts = new Map<string, { letter: string; count: number }>();
   for (const e of entries) {
@@ -92,12 +76,10 @@ export function deriveAnagramModalVM(input: {
   const scrambleEnabled = inputValid && entries.some((e) => !e.fixed);
 
   return {
-    open: true,
     wordLength: totalLength,
     tiles,
     separators,
     input: anagramModal.input,
-    inputLength,
     expectedUniqueLetterCounts,
     inputValid,
     scrambleEnabled,

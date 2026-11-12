@@ -298,7 +298,7 @@ describe('deriveCheckResultVM', () => {
     expect(deriveCheckResultVM(null)).toBeNull();
   });
 
-  it('deriveCheckResultVM: complete-correct → message "Puzzle solved!", colorClass "text-green-600", counts from result', () => {
+  it('deriveCheckResultVM: complete-correct → message "Puzzle solved!" and counts from result', () => {
     const result = makeCheckResult('complete-correct', 0, 0);
     const vm = deriveCheckResultVM(result);
     expect(vm).toEqual({
@@ -306,35 +306,31 @@ describe('deriveCheckResultVM', () => {
       incorrectCount: 0,
       emptyCount: 0,
       message: 'Puzzle solved!',
-      colorClass: 'text-green-600',
     });
   });
 
-  it('deriveCheckResultVM: incomplete-correct → "Looks good so far..." + text-green-600', () => {
+  it('deriveCheckResultVM: incomplete-correct → "Looks good so far..." message and counts', () => {
     const result = makeCheckResult('incomplete-correct', 0, 3);
     const vm = deriveCheckResultVM(result);
     expect(vm?.message).toBe(
       'Looks good so far. No incorrect letters, but some empty cells remain.',
     );
-    expect(vm?.colorClass).toBe('text-green-600');
     expect(vm?.incorrectCount).toBe(0);
     expect(vm?.emptyCount).toBe(3);
   });
 
-  it('deriveCheckResultVM: complete-incorrect → "Some letters are incorrect." + text-red-600 + emptyCount=0', () => {
+  it('deriveCheckResultVM: complete-incorrect → "Some letters are incorrect." message and counts', () => {
     const result = makeCheckResult('complete-incorrect', 2, 0);
     const vm = deriveCheckResultVM(result);
     expect(vm?.message).toBe('Some letters are incorrect.');
-    expect(vm?.colorClass).toBe('text-red-600');
     expect(vm?.incorrectCount).toBe(2);
     expect(vm?.emptyCount).toBe(0);
   });
 
-  it('deriveCheckResultVM: incomplete-incorrect → "Some letters are incorrect and some cells are empty." + text-red-600', () => {
+  it('deriveCheckResultVM: incomplete-incorrect → "Some letters are incorrect and some cells are empty." message and counts', () => {
     const result = makeCheckResult('incomplete-incorrect', 1, 2);
     const vm = deriveCheckResultVM(result);
     expect(vm?.message).toBe('Some letters are incorrect and some cells are empty.');
-    expect(vm?.colorClass).toBe('text-red-600');
     expect(vm?.incorrectCount).toBe(1);
     expect(vm?.emptyCount).toBe(2);
   });
@@ -375,15 +371,14 @@ describe('derivePlayerShellVM', () => {
     expect(vm.title).toBe('Test Title');
     expect(vm.author).toBe('Test Author');
     expect(vm.grid).toBeDefined();
-    expect(vm.topBanner).toBeDefined();
-    expect(vm.bottomBanner).toBeDefined();
+    expect(vm.banner).toBeDefined();
     expect(vm.cluePanel).toBeDefined();
     expect(vm.toolbar).toBeDefined();
     expect(vm.anagram).toBeDefined();
     expect(vm.checkResult).toBeDefined();
   });
 
-  it('derivePlayerShellVM: solving phase empty cursor → phase="solving"; grid empty cursor reflected; topBanner nulls; bottomBanner === topBanner (same instance)', () => {
+  it('derivePlayerShellVM: solving phase empty cursor → phase="solving"; grid empty cursor reflected; banner nulls', () => {
     let puzzle = puzzleWithMetadata(makeBlankPuzzle(3), 'Test Title', 'Test Author');
     const word = makeWord({
       startRow: 0,
@@ -403,17 +398,16 @@ describe('derivePlayerShellVM', () => {
     expect(vm.grid.cursorRow).toBeNull();
     expect(vm.grid.cursorCol).toBeNull();
     expect(vm.grid.cursorDirection).toBeNull();
-    expect(vm.topBanner).toEqual({
+    expect(vm.banner).toEqual({
       visible: true,
       wordNumber: null,
       direction: null,
       displayClue: null,
       lengthPattern: null,
     });
-    expect(vm.bottomBanner).toBe(vm.topBanner);
   });
 
-  it('derivePlayerShellVM: solving phase with cursor on word — topBanner populated; same instance assigned to bottomBanner', () => {
+  it('derivePlayerShellVM: solving phase with cursor on word — banner populated', () => {
     let puzzle = makeBlankPuzzle(3);
     const word = makeWord({
       startRow: 0,
@@ -428,9 +422,8 @@ describe('derivePlayerShellVM', () => {
     const vm = derivePlayerShellVM(state);
     expect(vm.phase).toBe('solving');
     if (vm.phase !== 'solving') throw new Error('unreachable');
-    expect(vm.topBanner.wordNumber).toBe(1);
-    expect(vm.topBanner.displayClue).toBe('Head clue');
-    expect(vm.bottomBanner).toBe(vm.topBanner);
+    expect(vm.banner.wordNumber).toBe(1);
+    expect(vm.banner.displayClue).toBe('Head clue');
   });
 
   it('derivePlayerShellVM: solving phase grid whichLetter=player (playerLetter used for letter extraction)', () => {
@@ -446,7 +439,7 @@ describe('derivePlayerShellVM', () => {
     expect(vm.grid.cells[0]![0]!.letter).toBe('Z');
   });
 
-  it('derivePlayerShellVM: anagram modal open when state.anagram exists — anagram.open=true', () => {
+  it('derivePlayerShellVM: anagram modal open when state.anagram exists — anagram is non-null', () => {
     let puzzle = makeBlankPuzzle(3);
     const word = makeWord({
       startRow: 0,
@@ -469,8 +462,9 @@ describe('derivePlayerShellVM', () => {
     const vm = derivePlayerShellVM(state);
     expect(vm.phase).toBe('solving');
     if (vm.phase !== 'solving') throw new Error('unreachable');
-    expect(vm.anagram.open).toBe(true);
-    expect(vm.anagram.wordLength).toBe(3);
+    expect(vm.anagram).not.toBeNull();
+    expect(vm.anagram!.input).toBe('ABC');
+    expect(vm.anagram!.wordLength).toBe(3);
   });
 
   it('derivePlayerShellVM: grid highlights all chain members when cursor on a chain member', () => {

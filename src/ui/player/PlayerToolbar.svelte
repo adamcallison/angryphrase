@@ -7,6 +7,13 @@
     checkResult: PlayerCheckResultVM;
     actions: PlayerToolbarActions;
   } = $props();
+
+  const COLOR_CLASS: Record<NonNullable<PlayerCheckResultVM>['classification'], string> = {
+    'complete-correct': 'text-green-600',
+    'incomplete-correct': 'text-green-600',
+    'complete-incorrect': 'text-red-600',
+    'incomplete-incorrect': 'text-red-600',
+  };
 </script>
 
 <div class="flex flex-col gap-3">
@@ -38,7 +45,7 @@
   </div>
 
   {#if checkResult !== null}
-    <div class="rounded p-2 text-sm font-semibold {checkResult.colorClass}">
+    <div class="rounded p-2 text-sm font-semibold {COLOR_CLASS[checkResult.classification]}">
       {checkResult.message}
       {#if checkResult.incorrectCount > 0}
         <span class="font-normal text-gray-600"> ({checkResult.incorrectCount} incorrect)</span>

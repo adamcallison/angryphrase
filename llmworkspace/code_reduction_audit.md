@@ -629,6 +629,29 @@ All verified by grep against component usage:
 
 **Risk:** none (fields unused or trivially substituted).
 
+**Status (2026-11-12): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O12 — View-model redundancy"). Corrections to this item, made during the
+resolution: (a) the inventory was incomplete by one site —
+`test/ui/bindings/playerFacade.test.ts` consumed `vm.anagram.open` (three assertions), a
+test-tree consumer the item's "verified by grep against component usage" framing cannot
+see; it was migrated with the rest; (b) "Risk: none" holds for rendered behaviour but not
+for the test tree — assertions on the removed fields existed in four test files, so tests
+were necessarily in scope (same correction as O3/O4); (c) item 6's "unify the black/white
+cell construction" was constrained before dispatch: the black distinction stays explicit
+per field (keyed on `cell.black`) — dissolving it by relying on domain invariants
+(cursor never on a black cell, black markers EMPTY) was rejected as leaning presentation
+on unstated invariants; (d) item 1's "keep or inline" branch point was resolved by the
+human: the counting is inlined into `builderVM`'s summary fold and
+`CompletenessCheck.groupByKind` + `CompletenessViolationCounts` are deleted from the
+domain (architecture.md §3 never listed them; the label/pluralisation wording already
+lived in bindings); (e) item 4's null convention is an improvement beyond LOC — it brings
+the anagram modal in line with `ModalVM`'s null convention and §9's own
+"no placeholder view-model" principle; (f) the estimate is corrected from "−50 LOC" to
+**−37 production lines** (+68/−105 across 8 files) and **−77 test lines** (−114 net) —
+the audit's per-field accounting again over-counted what deletion sheds. Leftovers: none;
+the sites not migrated are listed in the resolution's "Not addressed" table (empty — the
+closure walk covered S1–S10).
+
 ---
 
 ## O13. `boot.ts`: `freshBlank` duplicates `AppState.blank` (est. −15 LOC)

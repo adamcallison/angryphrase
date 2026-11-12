@@ -7,7 +7,6 @@ import {
   CompletenessCheck,
   type CompletenessViolation,
   type CompletenessViolationKind,
-  type CompletenessViolationCounts,
 } from '../../../domain/puzzle/CompletenessCheck';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordSelection } from '../../../domain/word/WordSelection';
@@ -23,9 +22,19 @@ const VIOLATION_LABELS: Record<CompletenessViolationKind, { singular: string; pl
   'non-head-clue': { singular: 'non-head word with stray clue text', plural: 'non-head words with stray clue text' },
 };
 
-function violationSummaryFromCounts(counts: CompletenessViolationCounts): Array<{ count: number; label: string }> {
+function violationSummary(violations: CompletenessViolation[]): Array<{ count: number; label: string }> {
+  const counts: Record<CompletenessViolationKind, number> = {
+    'missing-answer-letter': 0,
+    'missing-clue': 0,
+    'non-head-clue': 0,
+  };
+  for (const v of violations) {
+    counts[v.kind]++;
+  }
+
   const out: Array<{ count: number; label: string }> = [];
-  for (const kind of Object.keys(counts) as CompletenessViolationKind[]) {
+  const kinds: CompletenessViolationKind[] = ['missing-answer-letter', 'missing-clue', 'non-head-clue'];
+  for (const kind of kinds) {
     const count = counts[kind];
     if (count === 0) continue;
     const noun = count === 1 ? VIOLATION_LABELS[kind].singular : VIOLATION_LABELS[kind].plural;
@@ -44,8 +53,6 @@ export type BuilderToolbarVM = {
   cellSelected: boolean;
   markerFlags: CellMarker;
   canExportComplete: boolean;
-  exportCompleteViolations: CompletenessViolation[];
-  exportCompleteCounts: CompletenessViolationCounts;
   violationSummary: Array<{ count: number; label: string }>;
 };
 
@@ -81,9 +88,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
   const markerFlags = state.cursor
     ? Grid.cellAt(state.puzzle.grid, state.cursor.row, state.cursor.col).marker
     : CellMarker.EMPTY;
-  const exportCompleteViolations = CompletenessCheck.check(state.puzzle);
-  const exportCompleteCounts = CompletenessCheck.groupByKind(exportCompleteViolations);
-  const violationSummary = violationSummaryFromCounts(exportCompleteCounts);
+  const violations = CompletenessCheck.check(state.puzzle);
+  const summary = violationSummary(violations);
   return {
     mode: state.mode,
     canSwitchToDesignWithoutConfirm: isBlank,
@@ -93,10 +99,8 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     maxGridSize: Number(GridSize.MAX),
     cellSelected: state.cursor !== null,
     markerFlags,
-    canExportComplete: exportCompleteViolations.length === 0,
-    exportCompleteViolations,
-    exportCompleteCounts,
-    violationSummary,
+    canExportComplete: violations.length === 0,
+    violationSummary: summary,
   };
 }
 

@@ -260,7 +260,7 @@ describe('playerFacade.ts', () => {
       const vm = playerFacade.playerShellVM();
       expect(vm.phase).toBe('solving');
       if (vm.phase !== 'solving') throw new Error('unreachable');
-      expect(vm.anagram.open).toBe(true);
+      expect(vm.anagram).not.toBeNull();
     });
 
     it('playerFacade: dispatchCloseAnagramHelper closes anagram modal', () => {
@@ -272,7 +272,7 @@ describe('playerFacade.ts', () => {
       const vm = playerFacade.playerShellVM();
       expect(vm.phase).toBe('solving');
       if (vm.phase !== 'solving') throw new Error('unreachable');
-      expect(vm.anagram.open).toBe(false);
+      expect(vm.anagram).toBeNull();
     });
 
     it('playerFacade: dispatchAnagramInput updates anagram modal input', () => {
@@ -284,7 +284,8 @@ describe('playerFacade.ts', () => {
       const vm = playerFacade.playerShellVM();
       expect(vm.phase).toBe('solving');
       if (vm.phase !== 'solving') throw new Error('unreachable');
-      expect(vm.anagram.input).toBe('CBA');
+      expect(vm.anagram).not.toBeNull();
+      expect(vm.anagram!.input).toBe('CBA');
     });
 
     it('playerFacade: dispatchAnagramScramble populates scrambledArrangement', () => {

@@ -1,5 +1,4 @@
 import type { Grid } from '../../../domain/grid/Grid';
-import type { Cell } from '../../../domain/grid/Cell';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import { WordTopology } from '../../../domain/grid/WordTopology';
@@ -35,14 +34,6 @@ function cellKey(r: number, c: number): string {
   return `${r},${c}`;
 }
 
-function deriveSeparatorRight(cell: Cell): CellSeparator {
-  return CellMarker.read(cell.marker, 'right');
-}
-
-function deriveSeparatorBottom(cell: Cell): CellSeparator {
-  return CellMarker.read(cell.marker, 'bottom');
-}
-
 export function deriveGridVM(input: {
   grid: Grid;
   cursor: Cursor;
@@ -64,47 +55,49 @@ export function deriveGridVM(input: {
 
   const cells: GridCellVM[][] = grid.map((rowCells, r): GridCellVM[] =>
     rowCells.map((cell, c): GridCellVM => {
-      if (cell.black) {
-        return {
-          row: r,
-          col: c,
-          black: true,
-          letter: null,
-          number: null,
-          hilite: 'none',
-          separatorRight: 'none',
-          separatorBottom: 'none',
-          selectable: false,
-        };
-      }
+      const black = cell.black;
+      const key = cellKey(r, c);
 
-      const letter =
-        whichLetter === 'answer'
+      const letter = black
+        ? null
+        : whichLetter === 'answer'
           ? cell.answerLetter
             ? String(cell.answerLetter)
             : null
           : cell.playerLetter
             ? String(cell.playerLetter)
             : null;
-      const number = wordStartNumber.get(cellKey(r, c)) ?? null;
 
-      let hilite: CellHilite = 'none';
-      if (cursor && Number(cursor.row) === r && Number(cursor.col) === c) {
-        hilite = 'selected';
-      } else if (selectedWordCells.has(cellKey(r, c))) {
-        hilite = 'in-word';
-      }
+      const number = black ? null : wordStartNumber.get(key) ?? null;
+
+      const hilite: CellHilite = black
+        ? 'none'
+        : cursor && Number(cursor.row) === r && Number(cursor.col) === c
+          ? 'selected'
+          : selectedWordCells.has(key)
+            ? 'in-word'
+            : 'none';
+
+      const separatorRight: CellSeparator = black
+        ? 'none'
+        : CellMarker.read(cell.marker, 'right');
+
+      const separatorBottom: CellSeparator = black
+        ? 'none'
+        : CellMarker.read(cell.marker, 'bottom');
+
+      const selectable = black ? false : mask[r]?.[c] === true;
 
       return {
         row: r,
         col: c,
-        black: false,
+        black,
         letter,
         number,
         hilite,
-        separatorRight: deriveSeparatorRight(cell),
-        separatorBottom: deriveSeparatorBottom(cell),
-        selectable: mask[r]?.[c] === true,
+        separatorRight,
+        separatorBottom,
+        selectable,
       };
     }),
   );
