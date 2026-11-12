@@ -1,7 +1,7 @@
 import { PlayerState } from '../state';
-import type { PlayerIntent, PlayerIntentOf } from '../intents';
+import type { PlayerIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
-import { Result } from '../../../domain/notifications/Event';
+import { Result, confirmEvent } from '../../../domain/notifications/Event';
 import { parsePuzzle } from '../../../domain/format/v1Json';
 import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
@@ -103,13 +103,8 @@ export function handleRequestResetPlayer(
     return Result.ok(state);
   }
 
-  const confirmIntent: PlayerIntent = { kind: 'confirm-reset-player', target: 'player' };
   return Result.withEvents(state, [
-    {
-      kind: 'modal-request',
-      modal: { kind: 'confirm-reset-player' },
-      confirmIntent,
-    },
+    confirmEvent('confirm-reset-player', { target: 'player', kind: 'confirm-reset-player' }),
   ]);
 }
 

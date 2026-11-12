@@ -1,8 +1,7 @@
 import type { ToastKind } from './ToastKind';
 import type { ModalRequest } from './ModalRequest';
+import type { ModalKind } from './ModalKind';
 import type { PuzzleKey } from '../puzzle/PuzzleKey';
-
-export type IntentTarget = 'builder' | 'player';
 
 export type DomainEvent =
   | { kind: 'toast'; toastKind: ToastKind; message: string }
@@ -19,6 +18,10 @@ export type ConfirmableIntent =
   | { target: 'player'; kind: 'confirm-reset-player' };
 
 export type ReducerResult<S> = { state: S; events: DomainEvent[] };
+
+export function confirmEvent(modal: ModalKind, confirm: ConfirmableIntent): DomainEvent {
+  return { kind: 'modal-request', modal: { kind: modal }, confirmIntent: confirm };
+}
 
 export const Result: {
   ok<S>(state: S): ReducerResult<S>;

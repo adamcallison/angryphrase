@@ -1,7 +1,7 @@
 import type { BuilderIntentOf } from '../intents';
 import { BuilderState } from '../state';
 import type { DomainEvent, ReducerResult } from '../../../domain/notifications/Event';
-import { Result } from '../../../domain/notifications/Event';
+import { Result, confirmEvent } from '../../../domain/notifications/Event';
 import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1Json';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 
@@ -38,11 +38,7 @@ export function handleRequestImportPuzzle(
     return executeImport(state, intent.fileContent);
   }
   return Result.withEvents(state, [
-    {
-      kind: 'modal-request',
-      modal: { kind: 'confirm-import-puzzle' },
-      confirmIntent: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: intent.fileContent },
-    },
+    confirmEvent('confirm-import-puzzle', { target: 'builder', kind: 'confirm-import-puzzle', fileContent: intent.fileContent }),
   ]);
 }
 

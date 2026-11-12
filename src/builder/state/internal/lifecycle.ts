@@ -1,7 +1,7 @@
 import { BuilderState } from '../state';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
-import { Result } from '../../../domain/notifications/Event';
+import { Result, confirmEvent } from '../../../domain/notifications/Event';
 import { PuzzleKey } from '../../../domain/puzzle/PuzzleKey';
 
 function resetBuilder(state: BuilderState, rng: Rng): ReducerResult<BuilderState> {
@@ -19,11 +19,7 @@ export function handleRequestResetBuilder(
   }
 
   return Result.withEvents(state, [
-    {
-      kind: 'modal-request',
-      modal: { kind: 'confirm-reset-builder' },
-      confirmIntent: { target: 'builder', kind: 'confirm-reset-builder' },
-    },
+    confirmEvent('confirm-reset-builder', { target: 'builder', kind: 'confirm-reset-builder' }),
   ]);
 }
 

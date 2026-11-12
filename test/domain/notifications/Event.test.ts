@@ -1,5 +1,6 @@
-import { Result } from '../../../src/domain/notifications/Event';
-import type { DomainEvent } from '../../../src/domain/notifications/Event';
+import { Result, confirmEvent } from '../../../src/domain/notifications/Event';
+import type { DomainEvent, ConfirmableIntent } from '../../../src/domain/notifications/Event';
+import type { ModalKind } from '../../../src/domain/notifications/ModalKind';
 import type { ModalRequest } from '../../../src/domain/notifications/ModalRequest';
 import type { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 
@@ -54,5 +55,34 @@ describe('Event', () => {
       'clear-builder-storage',
       'clear-player-storage',
     ]);
+  });
+
+  it('confirmEvent builds a modal-request event for each guarded action pairing', () => {
+    const cases: { modal: ModalKind; confirm: ConfirmableIntent }[] = [
+      {
+        modal: 'confirm-design-switch',
+        confirm: { target: 'builder', kind: 'confirm-switch-to-design' },
+      },
+      {
+        modal: 'confirm-import-puzzle',
+        confirm: { target: 'builder', kind: 'confirm-import-puzzle', fileContent: 'puzzle-json' },
+      },
+      {
+        modal: 'confirm-reset-builder',
+        confirm: { target: 'builder', kind: 'confirm-reset-builder' },
+      },
+      {
+        modal: 'confirm-reset-player',
+        confirm: { target: 'player', kind: 'confirm-reset-player' },
+      },
+    ];
+
+    for (const { modal, confirm } of cases) {
+      expect(confirmEvent(modal, confirm)).toEqual({
+        kind: 'modal-request',
+        modal: { kind: modal },
+        confirmIntent: confirm,
+      });
+    }
   });
 });

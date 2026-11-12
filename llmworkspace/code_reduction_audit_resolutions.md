@@ -15,7 +15,8 @@ dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iterati
 grid scan sites), O6 (facade / action-bag / intent-type boilerplate), O7 (persistence plumbing
 duplication), O8 (player solving handlers: one cursor-change fold), O9 (`WordTopology.partOfRun`
 consolidation), O10 (`WordGeometry` consolidation), O11 (chain-boundary marker logic — one owner),
-O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal).
+O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O16 (guarded-action modal events —
+one `confirmEvent` constructor).
 
 ---
 
@@ -1606,7 +1607,7 @@ One: the `reduceApp` unknown-intent `Error` message — `unknown intent kind: <k
 | Site | Reason | Landing site |
 |---|---|---|
 | public `facade.dispatch` members | zero production callers, but documented API (§3 "typed dispatch narrowing"); tests consume them | a future O3-style dead-API decision, not this item |
-| `IntentTarget` export (`domain/notifications/Event.ts`) | dead in `src/` (zero importers) — surfaced by this item's doc-staleness check; deleting is O3-shaped and out of scope | next dead-API sweep |
+| `IntentTarget` export (`domain/notifications/Event.ts`) | dead in `src/` (zero importers) — surfaced by this item's doc-staleness check; deleting is O3-shaped and out of scope | ~~next dead-API sweep~~ **closed by O16 (2026-11-12)** — deleted there under the free-win rule (same file, zero consumers, compiler-verified) |
 | shared `DistributiveOmit` / `typeUtils` module | premature at two one-line idioms × two private copies; two private copies are cheaper than a speculative module or layer-matrix amendment | promotion trigger: third generic helper or third consumer (O17.5's `assertUnreachable` is the likely one) |
 | `assertUnreachable` duplication (`reduceBuilder`/`reducePlayer`) | untouched; independent of this item | O17.5 |
 | `Extract<PlayerState, { phase: 'solving' }>` sites | state-phase narrowing, not intent-kind extraction — different concept | — |
@@ -1748,3 +1749,106 @@ renders nothing and leaves the typing surface enabled. The contract changes are 
 | — | — | — |
 
 *(Empty — the closure walk covered S1–S10; every site is migrated.)*
+
+---
+
+## O16 — Guarded-action modal events: one `confirmEvent` constructor — resolved 2026-11-12
+
+### The item (recap)
+
+Each `request-*` guarded handler hand-built the same 7-line `modal-request` event literal
+(`Result.withEvents(state, [{ kind: 'modal-request', modal: { kind: K }, confirmIntent: { target, kind: C, ...extra } }])`).
+The item proposed one helper in `domain/notifications/Event.ts`, estimated −30 LOC, risk "none".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `handleRequestSwitchToDesign` event literal | `builder/state/internal/designMode.ts` | migrated to `confirmEvent('confirm-design-switch', …)` |
+| S2 | `handleRequestImportPuzzle` event literal | `builder/state/internal/importExport.ts` | migrated to `confirmEvent('confirm-import-puzzle', …)` (payload variant keeps `fileContent`) |
+| S3 | `handleRequestResetBuilder` event literal | `builder/state/internal/lifecycle.ts` | migrated |
+| S4 | `handleRequestResetPlayer` event literal (+ intermediate `confirmIntent: PlayerIntent` local) | `player/state/internal/lifecycle.ts` | migrated; local and the now-unused `PlayerIntent` type import removed |
+| S5 | `IntentTarget` dead export | `domain/notifications/Event.ts` | **deleted — site the item's sketch would have papered over** (see corrections) |
+
+Consumers (`appStore.svelte.ts` fold, `app/state/effects.ts`) verified untouched — they read the
+event, they never construct it.
+
+### Decision
+
+- **S1–S4 (options: hand-rolled literals vs one constructor): one constructor**, in
+  `domain/notifications/Event.ts` beside `Result` — the de-facto home for event/result
+  construction. Same class of helper as `Result`; the import site's payload variant is the proof
+  the pattern needs a named constructor.
+- **Signature: `confirmEvent(modal: ModalKind, confirm: ConfirmableIntent)`** — the sketch's
+  `target: IntentTarget` param dropped: `ConfirmableIntent` already carries `target`, and a
+  separate param admits mismatched values the types cannot reject.
+- **ModalKind ↔ confirm-kind pairing stays unchecked at the type level.** The 1:1 mapping is not
+  string-identical (`'confirm-design-switch'` vs `'confirm-switch-to-design'`); a table-driven or
+  conditional-type version was considered (item and lead both) and declined as over-engineering for
+  four sites. Residual risk — a caller pairing the wrong modal text with a confirm action — is
+  carried by the new `Event.test.ts` case, which pins all four real pairings, and by the existing
+  literal-equality assertions in each handler's suite.
+- **S5: folded in under the free-win rule.** A dead export in the very file the item edits, zero
+  consumers repo-wide (`src/`, `test/`, `tools/`, configs — grep-verified), compiler as the safety
+  net: deletion is free and unambiguous, so it rides along instead of parking for a "next dead-API
+  sweep". Human directive on record: *"O6 was wrong to not address it. We should always leave the
+  codebase better than we found it."*
+
+### Corrections to the item
+
+1. **The sketch's signature had a bug-shaped redundancy** (the `target` param, above); following it
+   verbatim would also have revived the `IntentTarget` dead export instead of deleting it.
+2. **The estimate is corrected from "−30 LOC" to −14 production lines** (+14/−28 across 5 files).
+   The four folds are smaller than per-site line counting suggests (each gains an import edit; the
+   helper gains a body). The verdict is unchanged — the win is the single constructor, not the count.
+
+### Design as implemented
+
+- `domain/notifications/Event.ts`: `confirmEvent(modal, confirm)` returning
+  `{ kind: 'modal-request', modal: { kind: modal }, confirmIntent: confirm }`; `ModalKind` type
+  import added; `IntentTarget` deleted.
+- Each S1–S4 handler: `Result.withEvents(state, [confirmEvent(<modalKind>, <confirmIntent literal>)])`
+  — call sites pass string literals, so no `ModalKind` import is needed there.
+
+### Deliberate behaviour changes
+
+None. The emitted `DomainEvent` at each of S1–S4 deep-equals the hand-rolled literal it replaced.
+
+### Files
+
+- Production (5, +14/−28): `domain/notifications/Event.ts`,
+  `builder/state/internal/` (`designMode.ts`, `importExport.ts`, `lifecycle.ts`),
+  `player/state/internal/lifecycle.ts`.
+- Tests (1, +32/−2): `test/domain/notifications/Event.test.ts` — additions only; **no pre-existing
+  test file or assertion was edited**.
+- Docs: `architecture.md` §3 (notifications module row; dead-export parenthetical removed), §5
+  (`modal-request` minting note); this file's O6 "Not addressed" row closed.
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run test` | 92 files / **1353 tests** green |
+| `npm run typecheck` | svelte-check 0 errors / 0 warnings |
+| `npm run lint` | eslint clean; madge — no cycles |
+| grep `kind: 'modal-request'` construction outside `Event.ts` | **0** matches — no hand-rolled site survives |
+| grep `IntentTarget` across `src/` + `test/` + `tools/` | **0** matches |
+| `confirmEvent` accounting | 9 hits = 1 definition + 4 import edits + 4 call sites — closes |
+| unchanged suites as preservation proof | every pre-existing suite passes with zero edits (`git diff test/` is additions-only); the handler suites assert literal object equality on the emitted event, so any shape drift would fail loudly |
+
+### Consequence
+
+- `modal-request` event construction has one owner (`confirmEvent`), completing the notifications
+  module's set alongside `Result`; the four guarded handlers now differ only in their two literals.
+- O6's parked `IntentTarget` deferral row is closed — the "next dead-API sweep" never needed to
+  happen. New standing rule (recorded at the human's direction): a free, unambiguous win — zero
+  consumers, same file as the item, compiler-verified — rides along with the item that touches its
+  file instead of being deferred as out-of-scope.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| — | — | — |
+
+*(Empty — the closure walk covered S1–S5; every site is migrated.)*

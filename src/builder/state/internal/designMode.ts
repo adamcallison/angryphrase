@@ -2,7 +2,7 @@ import { BuilderState } from '../state';
 import type { BuilderIntentOf } from '../intents';
 import type { ReducerResult } from '../../../domain/notifications/Event';
 import type { Rng } from '../../../domain/rng/Rng';
-import { Result } from '../../../domain/notifications/Event';
+import { Result, confirmEvent } from '../../../domain/notifications/Event';
 import { Grid } from '../../../domain/grid/Grid';
 import { Cell } from '../../../domain/grid/Cell';
 import { Puzzle } from '../../../domain/puzzle/Puzzle';
@@ -88,11 +88,7 @@ export function handleRequestSwitchToDesign(
   }
 
   return Result.withEvents(state, [
-    {
-      kind: 'modal-request',
-      modal: { kind: 'confirm-design-switch' },
-      confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' },
-    },
+    confirmEvent('confirm-design-switch', { target: 'builder', kind: 'confirm-switch-to-design' }),
   ]);
 }
 
