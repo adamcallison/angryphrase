@@ -14,34 +14,24 @@
     'complete-incorrect': 'text-red-600',
     'incomplete-incorrect': 'text-red-600',
   };
+
+  const buttons = [
+    { label: 'Check', colorPair: 'bg-blue-600 hover:bg-blue-700', disabled: () => !vm.canCheck, run: () => actions.check() },
+    { label: 'Clear Errors', colorPair: 'bg-amber-600 hover:bg-amber-700', disabled: () => !vm.canClearErrors, run: () => actions.clearErrors() },
+    { label: 'Reset', colorPair: 'bg-red-600 hover:bg-red-700', disabled: () => !vm.canReset, run: () => actions.requestResetPlayer() },
+    { label: 'Import New', colorPair: 'bg-green-600 hover:bg-green-700', disabled: () => !vm.canImportNew, run: () => actions.importNewPuzzle() },
+    { label: 'Anagram Helper', colorPair: 'bg-purple-600 hover:bg-purple-700', disabled: () => !vm.canOpenAnagram, run: () => actions.openAnagramHelper() },
+  ];
 </script>
 
 <div class="flex flex-col gap-3">
   <div class="flex flex-wrap gap-2">
-    <button type="button"
-            class="rounded bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!vm.canCheck}
-            onclick={() => actions.check()}>Check</button>
-
-    <button type="button"
-            class="rounded bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!vm.canClearErrors}
-            onclick={() => actions.clearErrors()}>Clear Errors</button>
-
-    <button type="button"
-            class="rounded bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!vm.canReset}
-            onclick={() => actions.requestResetPlayer()}>Reset</button>
-
-    <button type="button"
-            class="rounded bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!vm.canImportNew}
-            onclick={() => actions.importNewPuzzle()}>Import New</button>
-
-    <button type="button"
-            class="rounded bg-purple-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!vm.canOpenAnagram}
-            onclick={() => actions.openAnagramHelper()}>Anagram Helper</button>
+    {#each buttons as b (b.label)}
+      <button type="button"
+              class="rounded {b.colorPair} px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={b.disabled()}
+              onclick={b.run}>{b.label}</button>
+    {/each}
   </div>
 
   {#if checkResult !== null}

@@ -1,4 +1,4 @@
-import type { FilePickPort, PickResult } from '../domain/ports/ports';
+import type { DroppedFileResult, FilePickPort, PickResult } from '../domain/ports/ports';
 
 function coerceError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err));
@@ -77,7 +77,7 @@ export function createFilePickPort(): FilePickPort {
         }
       });
     },
-    readDroppedFile(file: File): Promise<{ kind: 'read'; text: string } | { kind: 'failed'; error: Error }> {
+    readDroppedFile(file: File): Promise<DroppedFileResult> {
       return file.text().then(
         (text) => ({ kind: 'read', text }),
         (err) => ({ kind: 'failed', error: err instanceof Error ? err : new Error(String(err)) }),

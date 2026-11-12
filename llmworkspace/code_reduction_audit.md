@@ -821,6 +821,20 @@ against the post-O6/O8 tree.
   (Vite inlines the asset either way for the single-file build — verify the plugin
   handles `<link>` hrefs; it does handle them for `singlefile`). Test before doing.
 
+**Status (2026-11-12): addressed — two of three sub-items; favicon sub-item declined on
+disproof.** Resolution in `code_reduction_audit_resolutions.md` ("O19 — Odds and ends — two
+of three"). Corrections to this item, made during the resolution: (a) the favicon premise
+("it does handle them for `singlefile`") is false — a build with the static tag emitted an
+external `dist/favicon-*.png` (56.58 kB) with "asset not inlined", breaking the §1
+single-file guarantee, so `main.ts`'s runtime injection stays (it is the mechanism that
+inlines the PNG as a data URI inside the JS bundle); (b) "Same pattern in
+`ImportScreen`/`BuilderToolbar`" never carried a site — neither file contains a repeated
+same-class-string button block, so the scope is `PlayerToolbar` alone; (c) the
+`PlayerToolbar` estimate is corrected from ~15 LOC to −10 (data array + one `{#each}`,
+literal `colorPair` strings so Tailwind's scanner sees them). Combined estimate corrected
+from −30 to −11. `DroppedFileResult` sub-item landed as written — `filePickPort.ts` now
+imports and returns the named type, body byte-identical.
+
 ---
 
 ## Explicitly considered and NOT recommended (for the record)

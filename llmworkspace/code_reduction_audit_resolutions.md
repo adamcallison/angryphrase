@@ -19,7 +19,8 @@ O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O14 (`typingInt
 `TypingSurface` drives the grid bag directly), O16 (guarded-action modal events —
 one `confirmEvent` constructor), O18 (`reducer.ts` wiring — declined, no change; substance consumed
 by O6.2 and O8's decline), O15 (`PlayerCluePanel` — inline duplicate of the Across/Down sections
-extracted into `{#snippet clueRow(entry)}`).
+extracted into `{#snippet clueRow(entry)}`), O19 (odds and ends — `PlayerToolbar` button
+array; `DroppedFileResult` named type; favicon sub-item declined on build disproof).
 
 ---
 
@@ -2172,3 +2173,120 @@ None. Rendered DOM identical; the change is a markup move inside one component.
 
 *(Empty — the closure walk covered S1–S3; the section shells are intentionally explicit, not
 missed duplication — two sections with distinct headings are structure, not copy-paste.)*
+
+---
+
+## O19 — Odds and ends — resolved 2026-11-12 (two of three sub-items; favicon sub-item declined)
+
+### The item (recap)
+
+Three unrelated small squeezes, est. −30 LOC combined: (a) `PlayerToolbar`'s five buttons
+share a class string differing only in bg color — a `{#snippet btn(...)}` or a small data
+array cuts ~15 lines; "Same pattern in `ImportScreen`/`BuilderToolbar` if desired"; (b)
+`DroppedFileResult` is declared in `domain/ports/ports.ts` but `filePickPort.ts` re-declares
+the union inline in its return type — use the named type; (c) `main.ts` favicon link
+injection (8 lines) could move to `index.html` as a static tag — "verify the plugin handles
+`<link>` hrefs; it does handle them for `singlefile`. Test before doing."
+
+### Site inventory (Gate 0)
+
+| # | Site | Kind | Outcome |
+|---|---|---|---|
+| S1 | `PlayerToolbar`'s five `<button>` blocks (`Check`/`Clear Errors`/`Reset`/`Import New`/`Anagram Helper`) | 5× duplicated markup | **migrated** — component-local `buttons` data array + one `{#each}` |
+| S2 | `filePickPort.ts` `readDroppedFile` inline union return type | contract drift — named type re-declared | **migrated** — `Promise<DroppedFileResult>` |
+| S3 | `main.ts` favicon runtime link injection | runtime asset wiring | **no change** — declined on build disproof |
+| S4 | `ImportScreen` ("same pattern if desired") | claimed same-kind site | **no change** — premise stale: one `FilePicker`, no repeated button block |
+| S5 | `BuilderToolbar` ("same pattern if desired") | claimed same-kind site | **no change** — buttons structurally heterogeneous (mode-toggle ternary classes, conditional export colours, red-tinted reset, `FilePicker`); an array adds complexity, removes no duplication |
+
+### Decision
+
+- **S1 — data array over `{#snippet}`.** A snippet still leaves five call sites; the array
+  leaves five data entries plus one render block, so the concept (a toolbar button) gets one
+  structural owner. First implementation was rejected in review for net +22 LOC (a named
+  `ToolbarButton` type the inference already carries, plus five-line object entries — the
+  duplication re-encoded as verbosity); tightened to inferred type + one-line entries → net
+  −10. Load-bearing detail: each entry's `colorPair` holds full literal class pairs
+  (`'bg-blue-600 hover:bg-blue-700'`) — Tailwind's build-time scanner only sees literals, so
+  dynamic construction (`bg-${c}-600`) would silently drop the styles. `(b.label)` each-key;
+  `disabled`/`run` closures re-evaluate per render under runes. `COLOR_CLASS` and the
+  `checkResult` block untouched — O12's deliberate placement stands.
+- **S2 — named type, body byte-identical.** Structural identity between the inline union and
+  `DroppedFileResult` is proven by typecheck; `filePickActions.test.ts` (which already
+  imports the named type) passes without a single edit — the unchanged suite is the
+  preservation proof. Aligns with §2.3 (explicit types).
+- **S3 — declined on empirical disproof, per the item's own hedge ("Test before doing").**
+  The build with a static `<link rel="icon" type="image/png" href="/src/assets/favicon.png">`
+  tag and the `main.ts` injection removed emitted `dist/favicon-BSlmpyuV.png` (56.58 kB)
+  alongside `index.html`, with `[plugin vite:singlefile] NOTE: asset not inlined` — breaking
+  §1's single-file guarantee ("no external runtime fetches"). The item's parenthetical
+  assertion ("it does handle them for `singlefile`") is false. Options: (a) keep the runtime
+  injection — **chosen**: the PNG import inlines as a data URI inside the JS bundle
+  (`dist/index.html` ≈ 228 kB, no external assets; 152.77 kB + ~75.5 kB base64 arithmetic
+  confirms the inline); (b) static tag + external file — violates §1, rejected; (c) build
+  hook / config change to force inlining — new machinery to save 8 LOC, the trade the method
+  note forbids, rejected. The candidate change was reverted byte-identical before landing.
+- **S4/S5 — declined by re-derivation.** The item's "if desired" parenthetical never carried
+  a site inventory; the closure walk read both files and found zero repeated same-class-string
+  button blocks. Bringing them in would require inventing uniformity that does not exist.
+
+### Corrections to the item
+
+1. The favicon premise ("it does handle them for `singlefile`") is false — disproved by
+   build, not argued from docs.
+2. "Same pattern in `ImportScreen`/`BuilderToolbar`" never carried a site; neither file
+   contains the repeated-button shape the sub-item describes.
+3. The `PlayerToolbar` estimate is corrected from ~15 LOC to −10 (five buttons = 24 lines;
+   replacement = 7-line array + 5-line each-block).
+4. The combined estimate is corrected from −30 LOC to −11.
+
+### Design as implemented
+
+- `PlayerToolbar`: `const buttons = [...]`, one line per entry with fields
+  `{ label, colorPair, disabled, run }` as closures over the `vm`/`actions` props; one
+  `{#each buttons as b (b.label)}` renders
+  `class="rounded {b.colorPair} px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"`,
+  `disabled={b.disabled()}`, `onclick={b.run}`. Rendered class *set* per button is identical
+  to pre-change (utility order inside the string differs; single-class Tailwind utilities —
+  no specificity effect).
+- `filePickPort.ts`: type import extended with `DroppedFileResult`;
+  `readDroppedFile(file: File): Promise<DroppedFileResult>`. Body unchanged.
+
+### Deliberate behaviour changes
+
+None. (S3's candidate change was reverted before landing; the tree never shipped it.)
+
+### Files
+
+- `src/ui/player/PlayerToolbar.svelte` (S1)
+- `src/ports/filePickPort.ts` (S2)
+- Docs only: `code_reduction_audit_resolutions.md` (this entry; "Resolved so far" list),
+  `code_reduction_audit.md` (O19 status line).
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | 0 errors, 0 warnings (lead's own run) |
+| `npm run lint` | eslint clean; madge — no cycles (lead's own run) |
+| `npm run test` | 91 files / 1349 tests passed, zero test-file edits (lead's own run) — the unchanged suites are the behaviour-preservation proof for S1 and S2 |
+| `npm run build` | succeeds; `dist/` = `index.html` only, ≈ 228 kB — arithmetic consistent with the favicon inlined as a data URI in the JS bundle; single-file guarantee preserved |
+| S3 disproof build (pre-revert) | static-tag variant emitted external `dist/favicon-BSlmpyuV.png` + "NOTE: asset not inlined" — the evidence for the decline, captured verbatim before revert |
+| grep `kind: 'read'` in `src/` | exactly 2 matches — the construction in `filePickPort.ts`'s body and the declaration in `ports.ts`; the inline re-declaration is gone |
+| `git diff --stat` | `PlayerToolbar.svelte` 14+/24−, `filePickPort.ts` 2+/2−, plus the two llmworkspace docs — no scope creep |
+
+### Consequence
+
+- The player toolbar gains a sixth button as one array entry — the five-hand-synced class
+  strings' copy-paste drift risk is gone.
+- `DroppedFileResult` has exactly one expression in `src/`: the `ports.ts` declaration.
+- The favicon question is closed with evidence: the runtime injection is load-bearing for
+  the single-file guarantee, not boilerplate. Do not re-propose without a plugin upgrade
+  that inlines `link[href]` assets.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| S3 `main.ts` favicon injection | plugin emits an external asset for static `link[href]`; the static tag breaks §1's single-file guarantee | none needed — the runtime injection is the working mechanism; revisit only if `vite-plugin-singlefile` adds `link[href]` inlining |
+| S4 `ImportScreen` buttons | no repeated-button pattern exists — the parenthetical never carried a site | — |
+| S5 `BuilderToolbar` buttons | buttons structurally heterogeneous; a data array adds complexity, removes no duplication | — |
