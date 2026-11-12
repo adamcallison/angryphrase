@@ -712,6 +712,19 @@ convention architecture.md §9 already documents for the Builder panel.)
 
 **Risk:** none.
 
+**Status (2026-11-12): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O15 — `PlayerCluePanel` — inline duplicate of the Across/Down sections"). Corrections to
+this item, made during the resolution: (a) the item's two offered snippet forms are a real
+design fork, not taste — resolved by the human to the row-level `{#snippet clueRow(entry)}`,
+matching the builder panel's documented reference idiom; the section-level
+`section(title, entries)` form is declined (a second, nowhere-else-used idiom for ~4 extra
+lines); (b) "byte-identical apart from the heading and list" was verified correct;
+(c) the estimate is corrected from "−30 LOC, halves the 68-line file" to **−12 production
+lines** (68 → 56, +23/−35) — one copy of the row body goes, the section shells stay, and the
+snippet adds its declaration plus two `{@render}` lines. The item's quality claim — one owner
+of the row markup — is met. Leftovers: none; the intentionally explicit section shells are
+recorded in the resolution's "Not addressed" table as structure, not missed duplication.
+
 ---
 
 ## O16. Guarded-action modal events: 4 copies of the same block (est. −30 LOC)

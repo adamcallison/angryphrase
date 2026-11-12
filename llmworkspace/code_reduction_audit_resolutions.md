@@ -18,7 +18,8 @@ consolidation), O10 (`WordGeometry` consolidation), O11 (chain-boundary marker l
 O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O14 (`typingIntent.ts` deleted —
 `TypingSurface` drives the grid bag directly), O16 (guarded-action modal events —
 one `confirmEvent` constructor), O18 (`reducer.ts` wiring — declined, no change; substance consumed
-by O6.2 and O8's decline).
+by O6.2 and O8's decline), O15 (`PlayerCluePanel` — inline duplicate of the Across/Down sections
+extracted into `{#snippet clueRow(entry)}`).
 
 ---
 
@@ -2071,3 +2072,103 @@ action). The component's emitted bag calls carry exactly what the old `applyTypi
 | — | — | — |
 
 *(Empty — the closure walk covered S1–S5; every site is migrated or deleted with the module.)*
+
+## O15 — `PlayerCluePanel` — inline duplicate of the Across/Down sections — resolved 2026-11-12
+
+### The item (recap)
+
+`PlayerCluePanel.svelte` (68 lines) rendered the Across and Down `<section>`s as verbatim
+duplicates apart from the heading text and the list source (`vm.across` / `vm.down`) — the
+~17-line `<li>` row body (a11y `svelte-ignore` comments, `bind:this` ref, `onclick` dispatch,
+number/clue/length-pattern spans) existed twice. The item proposed deduplicating via the
+`{#snippet}` convention §9 documents (reference example: `BuilderCluePanel`'s
+`{#snippet clueRow(entry)}`), offering either a row-level or a section-level snippet, estimated
+−30 LOC ("halves the 68-line file"), risk "none".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | Across `<section>` (heading + keyed `{#each}` + inline row body) | `src/ui/player/PlayerCluePanel.svelte` | row body moved into the snippet; shell renders `{@render clueRow(entry)}` |
+| S2 | Down `<section>` (identical shape) | `src/ui/player/PlayerCluePanel.svelte` | same |
+| S3 | type import for the snippet param | `src/ui/player/PlayerCluePanel.svelte` | `ClueEntryVM` added to the existing `cluePanelVM` type import (builder-panel precedent) |
+
+### Decision
+
+- **Snippet form (options: `clueRow(entry)` vs `section(title, entries)` vs shared child
+  component): `clueRow(entry)` — resolved by the human.** Deciding property: uniformity. The
+  method note at the top of the audit values a uniform organisational invariant over line
+  count, and §9's documented convention is row-level: `BuilderCluePanel`'s `clueRow` is the
+  reference example. `clueRow` gives both clue panels the same idiom ("every clue panel dedupes
+  its row via `clueRow`, rendered in both `<ul>`s"); a `section(title, entries)` snippet saves
+  ~4 more lines but introduces a second, nowhere-else-used snippet idiom beside the builder's
+  row-level one, and hides that two sections with distinct headings exist. A shared
+  `ClueSection` child component stays rejected per the archived G-smell resolution ("snippet /
+  param soup"; §9 extracts a child only for a genuine ownership boundary, and the two row bodies
+  are genuinely different — edit/join affordances vs display-only).
+- **S1–S3: executed as a pure move.** Row body copied once, unmodified — same elements,
+  classes, keyed `{#each entry.id}`, `bind:this` into the same `liRefs`, same `onclick` payload,
+  a11y ignores attached to the `<li>` inside the snippet.
+
+### Corrections to the item
+
+1. **The item offered two snippet forms without deciding; the fork is a real design choice.**
+   Resolved to `clueRow` on uniformity grounds (Decision above); the section-level form is
+   declined, not merely unpicked.
+2. **"byte-identical apart from the heading and list" — verified correct** on inspection of
+   both sections before the change.
+3. **The estimate is corrected from "−30 LOC, halves the 68-line file" to −12 production
+   lines** (68 → 56; +23/−35, one file). The per-section accounting over-counted again: only
+   one copy of the row body goes, the section shells stay, and the snippet adds its own
+   declaration + two `{@render}` lines. The item's quality claim — one owner of the row markup
+   — is met.
+4. **"Risk: none" holds, with the verification caveat the O14 entry already recorded**: the
+   repo has no component/DOM test harness, so DOM equivalence is established by line-by-line
+   inspection of the moved body plus svelte-check at 0/0, not by a rendered-output diff. No
+   test file was touched or needed (no suite pins panel markup).
+
+### Design as implemented
+
+- `{#snippet clueRow(entry: ClueEntryVM)}` declared at top level after the `<script>`, same
+  placement and shape as the builder panel's; both sections keep explicit shells
+  (`<section>` / `<h2>` / keyed `<ul>`) and render `{@render clueRow(entry)}`.
+- Script block untouched: props, `panelEl`, `liRefs`, the scroll-into-view `$effect`.
+
+### Deliberate behaviour changes
+
+None. Rendered DOM identical; the change is a markup move inside one component.
+
+### Files
+
+- Production (1, +23/−35): `src/ui/player/PlayerCluePanel.svelte`.
+- Tests: none edited, none added (no component harness; §12).
+- Docs: `architecture.md` (§9 snippet-convention paragraph — extended to name the player
+  panel as the second `clueRow` user, section-shells-explicit note), `code_reduction_audit.md`
+  (O15 status line), this entry.
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run test` | 91 files / **1349 tests** green, **zero test edits** (`git status`: one production file) |
+| `npm run typecheck` | svelte-check 0 errors / 0 warnings |
+| `npm run lint` | eslint clean; madge — no cycles |
+| Row-body equivalence | moved body compared line-by-line against the pre-change Across copy — identical classes, keyed each `(entry.id)`, `bind:this={liRefs[entry.id]}`, same `onclick` payload, a11y ignores attached |
+| `git status` | exactly `src/ui/player/PlayerCluePanel.svelte` + the two llmworkspace docs — no scope creep |
+
+### Consequence
+
+- A future row-level change in the player panel (new field, class, affordance) lands once —
+  the copy-paste drift risk the file carried (previously demonstrated by the G9 tandem fixes)
+  is gone.
+- Both clue panels now share one dedupe idiom; §9's reference example names the convention
+  both follow.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| — | — | — |
+
+*(Empty — the closure walk covered S1–S3; the section shells are intentionally explicit, not
+missed duplication — two sections with distinct headings are structure, not copy-paste.)*
