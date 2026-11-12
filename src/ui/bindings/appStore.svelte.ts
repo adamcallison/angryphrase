@@ -5,7 +5,7 @@ import { reduceApp } from '../../app/state/reducer';
 import { applyEventsToApp } from '../../app/state/effects';
 import type { DomainEvent, ConfirmableIntent } from '../../domain/notifications/Event';
 import type { Toast } from '../../domain/notifications/Toast';
-import type { ModalRequest } from '../../domain/notifications/ModalRequest';
+import type { ModalRequest } from '../../domain/notifications/Event';
 import type { StoragePort } from '../../domain/ports/ports';
 import type { DownloadPort } from '../../domain/ports/ports';
 import type { FilePickPort } from '../../domain/ports/ports';

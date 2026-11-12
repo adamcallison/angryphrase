@@ -11,7 +11,7 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { brand } from '../../../src/domain/brand';
 import type { Toast } from '../../../src/domain/notifications/Toast';
-import type { ToastId } from '../../../src/domain/notifications/ToastId';
+import type { ToastId } from '../../../src/domain/notifications/Toast';
 import { EpochMs } from '../../../src/domain/time/EpochMs';
 import { DurationMs } from '../../../src/domain/time/DurationMs';
 

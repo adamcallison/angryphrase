@@ -5,7 +5,7 @@ import type { DisplacedClue } from '../../../domain/builder/DisplacedClue';
 import type { DomainEvent } from '../../../domain/notifications/Event';
 import type { Direction } from '../../../domain/word/Direction';
 import type { Rng } from '../../../domain/rng/Rng';
-import type { ChainViolation } from '../../../domain/chain/ChainViolation';
+import type { ChainViolation } from '../../../domain/chain/ChainValidation';
 import { WordKey } from '../../../domain/word/WordKey';
 import { WordMap } from '../../../domain/word/WordMap';
 import { Numbering } from '../../../domain/word/Numbering';

@@ -1,8 +1,13 @@
 import type { Word } from '../word/Word';
 import type { WordKey } from '../word/WordKey';
-import type { ChainViolation } from './ChainViolation';
 import { WordKey as WordKeyCtor } from '../word/WordKey';
 import { WordMap } from '../word/WordMap';
+
+export type ChainViolation =
+  | { kind: 'cycle'; involved: WordKey[] }
+  | { kind: 'branch'; target: WordKey; sources: WordKey[] }
+  | { kind: 'dangling'; source: WordKey; missingTarget: WordKey }
+  | { kind: 'self-reference'; word: WordKey };
 
 export const ChainValidation: {
   validate(words: Word[]): ChainViolation[];

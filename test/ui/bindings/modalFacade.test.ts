@@ -12,7 +12,7 @@ import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
-import type { ModalRequest } from '../../../src/domain/notifications/ModalRequest';
+import type { ModalRequest } from '../../../src/domain/notifications/Event';
 
 function makeRng(seed: number): SeededRng {
   return new SeededRng(seed);

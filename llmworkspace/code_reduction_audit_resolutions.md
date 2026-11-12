@@ -20,7 +20,9 @@ O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O14 (`typingInt
 one `confirmEvent` constructor), O18 (`reducer.ts` wiring — declined, no change; substance consumed
 by O6.2 and O8's decline), O15 (`PlayerCluePanel` — inline duplicate of the Across/Down sections
 extracted into `{#snippet clueRow(entry)}`), O19 (odds and ends — `PlayerToolbar` button
-array; `DroppedFileResult` named type; favicon sub-item declined on build disproof).
+array; `DroppedFileResult` named type; favicon sub-item declined on build disproof), O5
+(type-only micro-modules — four satellite folds; area grab-bags declined on the
+method note).
 
 ---
 
@@ -2290,3 +2292,154 @@ None. (S3's candidate change was reverted before landing; the tree never shipped
 | S3 `main.ts` favicon injection | plugin emits an external asset for static `link[href]`; the static tag breaks §1's single-file guarantee | none needed — the runtime injection is the working mechanism; revisit only if `vite-plugin-singlefile` adds `link[href]` inlining |
 | S4 `ImportScreen` buttons | no repeated-button pattern exists — the parenthetical never carried a site | — |
 | S5 `BuilderToolbar` buttons | buttons structurally heterogeneous; a data array adds complexity, removes no duplication | — |
+
+---
+
+## O5 — Consolidate type-only micro-modules — resolved 2026-11-12 (four satellite folds; the area-grab-bag merges declined)
+
+### The item (recap)
+
+Six merge rows, est. −80 to −120 LOC / −22 files: notifications 6→1, grid *type* files → one
+`gridTypes.ts`, word type+ctor files → one `wordTypes.ts`, time 2→1, builder 2→1, anagram 2→1;
+scope rule "merge only type-only/constructor micro-files; every behavior module keeps its own
+file"; call-site churn "import paths only, ~60 files"; the toastVM/modalVM row was already
+declined 2026-11-11 (see the O6 resolution).
+
+### Site inventory (Gate 0)
+
+| # | Site | Kind | Outcome |
+|---|---|---|---|
+| S1 | `viewmodels/toastVM`+`toastFacade`, `modalVM`+`modalFacade` fold | uniform-home violation | **no change** — declined 2026-11-11 under O6; decline note already on the O5 row |
+| S2 | `notifications/` 6→1 | area grab-bag merge | **split** — the four satellite type files folded into their owners (below); the 6→1 single-file merge declined |
+| S3 | grid type files → `gridTypes.ts` (`Grid`, `Cell`, `CellMarker`, `CellSeparator`, `Cursor`, `Row`, `Col`, `GridSize`) | area grab-bag merge | **no change** — declined |
+| S4 | word type+ctor files → `wordTypes.ts` | area grab-bag merge | **no change** — declined |
+| S5 | `time/` 2→1 | area grab-bag merge | **no change** — declined |
+| S6 | `builder/` `DisplacedClue`+`DisplacedClueId` 2→1 | identifier fold | **no change** — declined (independent life) |
+| S7 | `anagram/AnagramEntry.ts` → `Anagram.ts` | satellite type fold | **migrated** |
+| S8 | `chain/ChainViolation.ts` → `ChainValidation.ts` | satellite type fold | **migrated** — same-kind site the item never listed (found by the closure walk) |
+| S9 | `notifications/ModalKind.ts` + `ModalRequest.ts` → `Event.ts`; `ToastId.ts` + `ToastKind.ts` → `Toast.ts` | satellite type folds (the S2 split) | **migrated** |
+| S10 | `puzzle/Title.ts`, `Author.ts`, `PuzzleKey.ts` | same-kind brand micro-files the item never listed | **no change** — declined (independent lives) |
+
+### Decision
+
+- **The deciding criterion is a rule, not size: a type file folds only when the type has no
+  independent life** — no state field of its own, no cross-module vocabulary — it exists purely
+  as the payload/input/output of one owner module. Resolved with the human (2026-11-12): churn
+  is acceptable; the requirement is that the change genuinely improves the codebase. The rule
+  keeps the de-facto domain invariant "one file = one concept (family)" intact, which is
+  exactly the uniform-home property the method note at the top of the audit protects.
+  Everything that passes: `AnagramEntry` (one importer — `Anagram.ts` itself), `ChainViolation`
+  (minted by `ChainValidation.validate`, read by one consumer), `ModalRequest`/`ModalKind`
+  (payload of the `modal-request` event, already imported by `Event.ts`), `ToastId`/`ToastKind`
+  (`Toast.create` is `ToastId.generate`'s only consumer). Everything that fails and stays:
+  `DisplacedClueId` (referenced by `subMode` with no `DisplacedClue` in hand — folding it
+  would be like folding `WordKey` into `Word`), `Cursor` (state field in both experiences),
+  every coordinate/quantity/identifier brand (`Row`, `Col`, `GridSize`, `WordLength`,
+  `WordNumber`, `Title`, `Author`, `PuzzleKey`, `EpochMs`, `DurationMs`), and every mid-size
+  value-object module (`Cell`, `CellMarker`, `CellSeparator`, `Direction`, `Word`, `WordKey`,
+  `DerivedWord`).
+- **The area grab-bags (S3–S5, the 6→1 form of S2) are declined on the method note's own
+  terms.** `gridTypes.ts` would be ~7 unrelated concepts / ~140 lines in one file — the file
+  stops answering "what's in here?" from its name, diffs and blame blur across concepts, and
+  the payoff is file count plus ~100 LOC of import lines nobody's pain. "One file per domain
+  concept" is precisely the kind of uniform organisational invariant the method note (written
+  after these rows, applied to only the toast row at the time) says outranks line counts.
+  Note the O5 scope rule's own text ("merge only type-only/constructor micro-files") is
+  violated by the item's own table — `CellMarker` (read/write/isEmpty), `Direction`
+  (advance/markerAxis), `WordKey` (equals/toCanonical) all carry behavior — so the rule as
+  written selects almost nothing; the table was really proposing grab-bags by another name.
+- **A structural blocker, found and proven before deciding: the grid/word merges would trip
+  the cycle guard.** `madge --circular` counts type-only imports (verified empirically on
+  scratch files before any change landed). Merging `Cursor`→`gridTypes` and
+  `Direction`→`wordTypes` creates a file-level cycle `gridTypes ↔ wordTypes` — `Cursor`'s
+  `Direction` field is a type-only edge one way, `Direction.advance`'s `Row.of`/`Col.of` a
+  value edge the other — even though the runtime edges are one-directional. The lint gate
+  would fail; the only escapes are weakening the guard or carving exceptions. The decline
+  above makes this moot, and the record stands: do not re-propose the grid/word area merge
+  without either dissolving the `Cursor`↔`Direction` coupling or weakening the guard (the
+  latter is a method-note-forbidden trade).
+- **S7–S9 executed as pure moves**: symbol names, shapes and semantics unchanged; consumer
+  churn is import specifiers only (18 sites across 14 files, plus the four owner files).
+
+### Corrections to the item
+
+1. **The grid row lists `Grid` — stale.** `Grid.ts` is the single grid-accessor *behavior*
+   module since O9's `GridAccess`→`Grid` rename; it was never a merge candidate.
+2. **The file-count arithmetic is wrong twice over**: the toast row's decline (−2) was not
+   netted out, and `Grid` was double-counted (−7 claimed for a row with −6 real candidates).
+   Core rows as written: −19, not −22.
+3. **"~60 files" of churn is a large undercount**: 110 files in `src/` + `test/` import the
+   listed module paths (37 src, 73 test). Measured by grep before deciding.
+4. **The estimate is corrected from "−80 to −120 LOC" to −12** (+52/−64 across the 27
+   production/test/tooling files; the rest is import-line dedup). The quality claim that
+   survives: four satellite types now live in their owner's room, six rooms fewer, no
+   grab-bag created.
+5. **The item's table missed two same-kind sites** (S8 `ChainViolation`, S10 puzzle brand
+   micro-files) — the closure walk's grep-by-shape found them; S8 migrated, S10 declined by
+   the independent-life rule.
+
+### Design as implemented
+
+- `Anagram.ts` defines `AnagramEntry` inline (it previously *re-exported* it; the re-export
+  line is gone — semantics identical). `ChainValidation.ts` defines `ChainViolation` above
+  the `validate` implementation. `Event.ts` defines `ModalKind`/`ModalRequest` beside
+  `DomainEvent`. `Toast.ts` defines `ToastId` (brand + `generate`) and `ToastKind` beside
+  `Toast` — and is therefore a brand-owner module now (`tools/boundaries.js` owner entry
+  re-pointed from `ToastId.ts` to `Toast.ts`; the owner list is still 13 modules).
+- `Event.ts` keeps a type-only import of `ToastKind` from `./Toast` (`DomainEvent`'s toast
+  variant references it) — one-way, inside `domain/`, no cycle.
+- Implementation deviation accepted: `Toast.ts` calls `ToastId.generate` directly, dropping
+  the old `ToastIdFactory` import alias — the alias existed only to dodge the type/value name
+  collision at import time, which the merged file no longer has.
+
+### Deliberate behaviour changes
+
+None. Runtime-identical; the proof is the unchanged suites (below).
+
+### Files
+
+- Deleted (6): `src/domain/anagram/AnagramEntry.ts`, `src/domain/chain/ChainViolation.ts`,
+  `src/domain/notifications/ModalKind.ts`, `src/domain/notifications/ModalRequest.ts`,
+  `src/domain/notifications/ToastId.ts`, `src/domain/notifications/ToastKind.ts`.
+- Owner files (4): `src/domain/anagram/Anagram.ts`, `src/domain/chain/ChainValidation.ts`,
+  `src/domain/notifications/Event.ts`, `src/domain/notifications/Toast.ts`.
+- Consumers, import specifiers only (10): `src/app/state/state.ts`, `src/app/state/intents.ts`,
+  `src/builder/state/internal/reconcileWords.ts`, `src/ui/bindings/appStore.svelte.ts`,
+  `src/ui/bindings/toastFacade.ts`, `src/ui/bindings/viewmodels/modalVM.ts`,
+  `src/ui/bindings/viewmodels/toastVM.ts`, `src/ui/shared/ToastHost.svelte`, plus tests.
+- Tooling (1): `tools/boundaries.js` (brand-owner path).
+- Docs: `architecture.md` (§3 `domain/notifications/`, `domain/chain/`, `domain/anagram/` rows
+  — amended before the code change), `code_reduction_audit.md` (O5 status line), this entry.
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run lint` | eslint clean; `madge --circular` — no cycles (lead's own run) |
+| `npm run typecheck` | svelte-check 0 errors / 0 warnings (lead's own run) |
+| `npm run test` | 91 files / **1349 tests** green with **import-specifier-only edits in test files** — the unchanged suites are the behaviour-preservation proof |
+| Leftover-path grep | zero import specifiers reference the six deleted paths in `src/` + `test/` |
+| Consumer diff audit | every non-owner hunk is an import specifier line — no logic, no renames, no extra exports |
+| `test/tools/boundaries.test.ts` | passes unedited — the brand-owner self-check validates the re-pointed spec |
+| `git diff --stat` | 27 files, +55/−67 incl. the docs — no scope creep |
+
+### Consequence
+
+- The toast family and the event/modal machinery each have one room; a reader of
+  `Event.ts` sees the whole `modal-request` contract (event, payload, confirm intent,
+  constructor) in one place.
+- `Toast.ts` is now a `domain/brand` owner — the allowlist's semantics are unchanged, the
+  entry just points at the surviving file.
+- The O5 question is closed with a reusable criterion: **independent life, not line count,
+  decides whether a type file folds.** Future micro-file proposals apply the same rule.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| S3 `gridTypes.ts` merge | area grab-bag breaks "one file = one concept"; would also trip `madge`'s type-import cycle check via `Cursor`↔`Direction` | none — declined under the method note; the cycle evidence is recorded above |
+| S4 `wordTypes.ts` merge | same; `Direction` is a cross-area vocabulary with its documented home rationale (§3 `domain/word/` row) | none — declined |
+| S5 `time/` 2→1 | `EpochMs` and `DurationMs` are distinct concepts with independent lives | none — declined |
+| S6 `DisplacedClueId` fold | identifier brand referenced by `subMode` without a `DisplacedClue` in hand | none — declined |
+| S10 `puzzle/` brand folds | `Title`/`Author`/`PuzzleKey` have independent cross-module lives; no single owner file exists to fold into | none — declined |
+| S2's 6→1 single-file form | would absorb `Event.ts`'s machinery and `Toast.ts`'s family into one area file — grab-bag | the four satellite folds (S9) are the whole surviving substance |

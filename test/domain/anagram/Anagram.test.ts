@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Anagram } from '../../../src/domain/anagram/Anagram';
-import type { AnagramEntry } from '../../../src/domain/anagram/AnagramEntry';
+import type { AnagramEntry } from '../../../src/domain/anagram/Anagram';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { CellMarker } from '../../../src/domain/grid/CellMarker';

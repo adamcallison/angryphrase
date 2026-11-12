@@ -1,5 +1,5 @@
-import type { ModalRequest } from '../../../domain/notifications/ModalRequest';
-import type { ModalKind } from '../../../domain/notifications/ModalKind';
+import type { ModalRequest } from '../../../domain/notifications/Event';
+import type { ModalKind } from '../../../domain/notifications/Event';
 
 export type ModalVM = { kind: ModalKind; title: string; body: string; confirmLabel: string; cancelLabel: string } | null;
 

@@ -7,9 +7,9 @@ import { CellMarker } from '../grid/CellMarker';
 import type { CellSeparator } from '../grid/CellSeparator';
 import { Direction } from '../word/Direction';
 import { ChainMarker } from '../chain/ChainMarker';
-import type { AnagramEntry } from './AnagramEntry';
-
-export type { AnagramEntry } from './AnagramEntry';
+export type AnagramEntry =
+  | { fixed: true; letter: Letter }
+  | { fixed: false; letter: Letter | null };
 
 function validateAgainst(
   totalLength: number,

@@ -177,7 +177,7 @@ export const BOUNDARIES = {
       'src/domain/builder/DisplacedClueId.ts',
       'src/domain/word/WordLength.ts',
       'src/domain/word/WordNumber.ts',
-      'src/domain/notifications/ToastId.ts',
+      'src/domain/notifications/Toast.ts',
       'src/domain/time/EpochMs.ts',
       'src/domain/time/DurationMs.ts',
     ],

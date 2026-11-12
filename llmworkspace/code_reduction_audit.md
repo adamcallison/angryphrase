@@ -326,6 +326,22 @@ Public symbols stay the same, so call-site churn is import paths only (mechanica
 the new module paths. **Risk:** none at runtime. Do last, after the deletions above have
 shrunk the content, so rebase conflicts stay shallow.
 
+**Status (2026-11-12): addressed — re-scoped** — resolution in `code_reduction_audit_resolutions.md`
+("O5 — Consolidate type-only micro-modules"). The item was re-examined under the method note
+above and re-scoped by a rule resolved with the human: *a type file folds only when the type
+has no independent life* (no state field, no cross-module vocabulary) — it exists purely as
+the payload/input/output of one owner module. What survived: four satellite folds —
+`AnagramEntry`→`Anagram.ts`, `ChainViolation`→`ChainValidation.ts` (a same-kind site the
+table never listed), `ModalKind`+`ModalRequest`→`Event.ts`, `ToastId`+`ToastKind`→`Toast.ts`
+(−6 files, −12 LOC, 18 import sites re-pointed). What was declined: every area-grab-bag merge
+(`gridTypes.ts`, `wordTypes.ts`, `time.ts`, the 6→1 notifications form) — "one file per domain
+concept" is the kind of uniform invariant the method note protects, and the grid/word merge
+would additionally trip `madge`'s cycle check (type-only `Cursor`↔`Direction` edge — proven
+empirically before deciding). Corrections to this item: the grid row lists `Grid` (stale — a
+behavior module since O9's rename); the −22 count double-counts `Grid` and ignores the toast
+row's decline (real: −19); "~60 files" of churn is actually 110; the estimate is −12, not
+−80..−120. Leftovers: the declined sites are in the resolution's "Not addressed" table.
+
 ---
 
 ## O6. Facade / action-bag / intent-type boilerplate (est. −150 LOC)

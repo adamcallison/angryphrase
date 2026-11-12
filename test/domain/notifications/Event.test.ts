@@ -1,7 +1,7 @@
 import { Result, confirmEvent } from '../../../src/domain/notifications/Event';
 import type { DomainEvent, ConfirmableIntent } from '../../../src/domain/notifications/Event';
-import type { ModalKind } from '../../../src/domain/notifications/ModalKind';
-import type { ModalRequest } from '../../../src/domain/notifications/ModalRequest';
+import type { ModalKind } from '../../../src/domain/notifications/Event';
+import type { ModalRequest } from '../../../src/domain/notifications/Event';
 import type { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 
 describe('Event', () => {

@@ -1,6 +1,6 @@
 import { deriveToastListVM } from './viewmodels/toastVM';
 import type { ToastVM } from './viewmodels/toastVM';
-import type { ToastId } from '../../domain/notifications/ToastId';
+import type { ToastId } from '../../domain/notifications/Toast';
 import type { AppStore } from './appStore.svelte';
 
 export type { ToastVM };

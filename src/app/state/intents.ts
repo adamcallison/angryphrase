@@ -1,4 +1,4 @@
-import type { ToastId } from '../../domain/notifications/ToastId';
+import type { ToastId } from '../../domain/notifications/Toast';
 import type { BuilderIntent } from '../../builder/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 

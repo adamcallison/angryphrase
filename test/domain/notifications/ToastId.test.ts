@@ -1,4 +1,4 @@
-import { ToastId } from '../../../src/domain/notifications/ToastId';
+import { ToastId } from '../../../src/domain/notifications/Toast';
 import type { Rng } from '../../../src/domain/rng/Rng';
 
 describe('ToastId', () => {

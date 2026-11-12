@@ -1,7 +1,13 @@
-import type { ToastKind } from './ToastKind';
-import type { ModalRequest } from './ModalRequest';
-import type { ModalKind } from './ModalKind';
+import type { ToastKind } from './Toast';
 import type { PuzzleKey } from '../puzzle/PuzzleKey';
+
+export type ModalKind =
+  | 'confirm-design-switch'
+  | 'confirm-import-puzzle'
+  | 'confirm-reset-builder'
+  | 'confirm-reset-player';
+
+export type ModalRequest = { kind: ModalKind };
 
 export type DomainEvent =
   | { kind: 'toast'; toastKind: ToastKind; message: string }

@@ -1,6 +1,6 @@
 import type { Toast } from '../../../domain/notifications/Toast';
-import type { ToastId } from '../../../domain/notifications/ToastId';
-import type { ToastKind } from '../../../domain/notifications/ToastKind';
+import type { ToastId } from '../../../domain/notifications/Toast';
+import type { ToastKind } from '../../../domain/notifications/Toast';
 
 export type ToastVM = { id: ToastId; kind: ToastKind; message: string; ttlMs: number };
 

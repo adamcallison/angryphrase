@@ -3,7 +3,7 @@ import { PlayerState } from '../../player/state/state';
 import type { GridSize } from '../../domain/grid/GridSize';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { Toast } from '../../domain/notifications/Toast';
-import type { ModalRequest } from '../../domain/notifications/ModalRequest';
+import type { ModalRequest } from '../../domain/notifications/Event';
 import type { ConfirmableIntent } from '../../domain/notifications/Event';
 
 export type AppState = {

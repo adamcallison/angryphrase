@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import type { ToastVM, ToastHostActions } from '../bindings/toastFacade';
-  import type { ToastId } from '../../domain/notifications/ToastId';
+  import type { ToastId } from '../../domain/notifications/Toast';
   import Toast from './Toast.svelte';
 
   let { vms, actions }: { vms: ToastVM[]; actions: ToastHostActions } = $props();

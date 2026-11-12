@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveModalVM } from '../../../../src/ui/bindings/viewmodels/modalVM';
-import type { ModalRequest } from '../../../../src/domain/notifications/ModalRequest';
+import type { ModalRequest } from '../../../../src/domain/notifications/Event';
 
 describe('deriveModalVM', () => {
   it('deriveModalVM: null input → null', () => {

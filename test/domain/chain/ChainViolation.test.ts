@@ -1,4 +1,4 @@
-import type { ChainViolation } from '../../../src/domain/chain/ChainViolation';
+import type { ChainViolation } from '../../../src/domain/chain/ChainValidation';
 import { Row } from '../../../src/domain/grid/Row';
 import { Col } from '../../../src/domain/grid/Col';
 import type { WordKey } from '../../../src/domain/word/WordKey';
