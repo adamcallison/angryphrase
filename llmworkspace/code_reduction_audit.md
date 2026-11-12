@@ -690,6 +690,17 @@ it invokes a prop bag, no domain imports.
 
 **Risk:** none.
 
+**Status (2026-11-12): addressed** — resolution in `code_reduction_audit_resolutions.md`
+("O14 — Delete `typingIntent.ts`; `TypingSurface` drives the action bag directly"). Corrections to
+this item, made during the resolution: (a) the claim "`TypingActions` *is* structurally `GridActions`"
+is imprecise — `TypingActions` was a *subset* (no `selectCell`) and `BuilderGridActions` a *superset*
+(+`clickCell`); structural typing makes the proposal work regardless; (b) "Risk: none" understates the
+test tree — deleting the module deletes its suite, the only test of the intent→bag mapping (a trivial
+4-case switch; the component's key normalization, the actual logic, was never under test before or
+after, and the repo has no component-test harness); (c) the estimate is corrected from "−35 LOC" to
+**−91 net lines** (−33 production: the deleted module plus the two shell wrapper lambdas, the
+component rewrite line-neutral; −58 the deleted test file). Leftovers: none.
+
 ---
 
 ## O15. `PlayerCluePanel` — inline duplicate of the Across/Down sections (est. −30 LOC)

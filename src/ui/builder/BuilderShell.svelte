@@ -6,7 +6,6 @@
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
-  import { applyTypingIntent } from '../shared/typingIntent';
 
   let { builderFacade }: { builderFacade: BuilderFacade } = $props();
 
@@ -30,7 +29,7 @@
     <section class="flex flex-col gap-4">
       <div class="relative overflow-x-auto">
         <Grid vm={vm.grid} allCellsClickable={vm.toolbar.mode === 'design'} onCellClick={onCellClick} />
-        <TypingSurface enabled={vm.toolbar.mode === 'fill'} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, builderFacade.actions.grid)} />
+        <TypingSurface enabled={vm.toolbar.mode === 'fill'} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} actions={builderFacade.actions.grid} />
       </div>
       <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
     </section>

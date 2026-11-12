@@ -7,7 +7,6 @@
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
-  import { applyTypingIntent } from '../shared/typingIntent';
 
   let { playerFacade }: { playerFacade: PlayerFacade } = $props();
 
@@ -41,7 +40,7 @@
         <ActiveClueBanner vm={vm.banner} />
         <div class="relative overflow-x-auto">
           <Grid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.anagram === null} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} onDispatch={(intent) => applyTypingIntent(intent, playerFacade.actions.grid)} />
+          <TypingSurface enabled={vm.anagram === null} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} actions={playerFacade.actions.grid} />
         </div>
         <ActiveClueBanner vm={vm.banner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />

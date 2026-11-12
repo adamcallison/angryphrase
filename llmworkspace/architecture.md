@@ -418,9 +418,9 @@ Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yello
 | `Modal` | Backdrop, Confirm/Cancel, Escape cancels; Confirm invokes the facade's `confirm()` action, which dispatches the pending confirm intent (the component never receives that intent). No focus trap (a11y out of scope). |
 | `ToastHost` / `Toast` | Stacked top-right (bottom-center on mobile); click or timeout dismisses. Per-toast timer `Map<ToastId, timer>` — sibling mutations never reset unrelated timers. |
 | `Grid` | The crossword grid leaf shared by Builder and Player (replaces the former twin `BuilderGrid`/`PlayerGrid`). Props `GridVM` + `onCellClick(row, col)` + `allCellsClickable` (true in Builder design mode; omitted/false otherwise). |
-| `TypingSurface` | The single hidden `<input>`. Props `enabled` + `cursorRow`/`cursorCol`/`cursorDirection` (plain values); a state-driven `$effect` refocuses on cursor change. Normalizes mobile composition/IME/Unidentified keys into `TypingIntent` values, applied to a grid action bag via `applyTypingIntent` (`ui/shared/typingIntent.ts`). The character is dispatched **raw** — letter casing and validation are the domain's (`Letter.try`, called by the facade action). |
+| `TypingSurface` | The single hidden `<input>`. Props `enabled` + `cursorRow`/`cursorCol`/`cursorDirection` (plain values) + `actions` — `Pick<GridActions, 'typeLetter' \| 'backspace' \| 'moveCursor' \| 'escape'>` (type-only import from `ui/bindings/gridActions`; the leaf declares exactly the bag methods it invokes, and both experiences' grid bags satisfy it structurally, so the shells pass `facade.actions.grid` straight through — `BuilderGridActions` is a superset, `PlayerGridActions` identical). A state-driven `$effect` refocuses on cursor change. Normalizes mobile composition/IME/Unidentified keys into direct bag calls. The character is dispatched **raw** — letter casing and validation are the domain's (`Letter.try`, called by the facade action). |
 | `FilePicker` | Fully presentational file-pick/drop surface (§6 prop shape); all IO and failure handling live in the facades. |
-| `typingIntent.ts` / `clueScroll.ts` | Plain shared helpers: `TypingIntent` + `applyTypingIntent(intent, actions)` mapping a `TypingIntent` onto any grid action bag (structural type); `scrollRowIntoView(panelEl, liRefs, id)` — the scroll-into-view logic shared by both clue panels. Word identity is not re-encoded here: the clue-panel view-model carries each entry's `id`. |
+| `clueScroll.ts` | Plain shared helper: `scrollRowIntoView(panelEl, liRefs, id)` — the scroll-into-view logic shared by both clue panels. Word identity is not re-encoded here: the clue-panel view-model carries each entry's `id`. |
 | `VersionStamp` | Footer rendering the build-time-injected `__APP_COMMIT_HASH__` / `__APP_BUILD_TIME__` globals (Vite `define` from an inline `gitInfo()` in `vite.config.ts`; ambient-declared in `src/vite-env.d.ts`). No props, no imports. |
 
 ### Top-level layout
@@ -476,7 +476,7 @@ angryphrase/
 │  │  ├─ player/      PlayerShell, ImportScreen, PlayerCluePanel,
 │  │  │               ActiveClueBanner, PlayerToolbar, AnagramModal
 │  │  ├─ shared/      Modal, ToastHost, Toast, TypingSurface, FilePicker,
-│  │  │               VersionStamp, Grid, typingIntent.ts, clueScroll.ts
+│  │  │               VersionStamp, Grid, clueScroll.ts
 │  │  └─ bindings/    appStore.svelte.ts, builderFacade.ts, playerFacade.ts,
 │  │                  modalFacade.ts, toastFacade.ts, persistenceCodec.ts,
 │  │                  persistenceScheduler.ts, gridActions.ts,

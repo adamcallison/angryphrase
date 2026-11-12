@@ -1,19 +1,19 @@
 <script lang="ts">
   import type { Direction } from '../../domain/word/Direction';
-  import type { TypingIntent } from './typingIntent';
+  import type { GridActions } from '../bindings/gridActions';
 
   let {
     enabled,
     cursorRow,
     cursorCol,
     cursorDirection,
-    onDispatch,
+    actions,
   }: {
     enabled: boolean;
     cursorRow: number | null;
     cursorCol: number | null;
     cursorDirection: Direction | null;
-    onDispatch: (intent: TypingIntent) => void;
+    actions: Pick<GridActions, 'typeLetter' | 'backspace' | 'moveCursor' | 'escape'>;
   } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
@@ -46,27 +46,27 @@
     switch (event.key) {
       case 'Backspace':
         event.preventDefault();
-        onDispatch({ kind: 'backspace' });
+        actions.backspace();
         return;
       case 'Escape':
         event.preventDefault();
-        onDispatch({ kind: 'escape' });
+        actions.escape();
         return;
       case 'ArrowLeft':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'across', sign: -1 });
+        actions.moveCursor('across', -1);
         return;
       case 'ArrowRight':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'across', sign: 1 });
+        actions.moveCursor('across', 1);
         return;
       case 'ArrowUp':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'down', sign: -1 });
+        actions.moveCursor('down', -1);
         return;
       case 'ArrowDown':
         event.preventDefault();
-        onDispatch({ kind: 'move-cursor', direction: 'down', sign: 1 });
+        actions.moveCursor('down', 1);
         return;
       case 'Enter':
       case 'Tab':
@@ -75,7 +75,7 @@
 
     if (isLetter(event.key)) {
       event.preventDefault();
-      onDispatch({ kind: 'type-letter', letter: event.key });
+      actions.typeLetter(event.key);
       return;
     }
 
@@ -85,13 +85,13 @@
   function onInput(event: Event): void {
     if (!enabled) return;
     // Mobile keyboards often don't fire keydown for typed characters; they fire `input`.
-    // Read the current value and emit each character as a type-letter intent, then clear.
+    // Read the current value and emit each character as a type-letter call, then clear.
     const target = event.target as HTMLInputElement;
     if (target.value === '') return;
     // Take only the LAST character (typing one letter at a time):
     const lastChar = target.value.slice(-1);
     if (isLetter(lastChar)) {
-      onDispatch({ kind: 'type-letter', letter: lastChar });
+      actions.typeLetter(lastChar);
     }
     // Clear the input so the next input event reports only the new keystroke cleanly.
     target.value = '';
@@ -104,7 +104,7 @@
     // Letter casing and validation are owned by the facade action via Letter.try.
     const lastChar = event.data.slice(-1);
     if (isLetter(lastChar)) {
-      onDispatch({ kind: 'type-letter', letter: lastChar });
+      actions.typeLetter(lastChar);
     }
     // Clear any pending value so onInput doesn't double-fire.
     if (inputEl !== null) inputEl.value = '';

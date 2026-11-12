@@ -15,7 +15,8 @@ dead / test-only API surface), O4 (dissolve the `GridOps` wrapper; array-iterati
 grid scan sites), O6 (facade / action-bag / intent-type boilerplate), O7 (persistence plumbing
 duplication), O8 (player solving handlers: one cursor-change fold), O9 (`WordTopology.partOfRun`
 consolidation), O10 (`WordGeometry` consolidation), O11 (chain-boundary marker logic — one owner),
-O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O16 (guarded-action modal events —
+O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O14 (`typingIntent.ts` deleted —
+`TypingSurface` drives the grid bag directly), O16 (guarded-action modal events —
 one `confirmEvent` constructor), O18 (`reducer.ts` wiring — declined, no change; substance consumed
 by O6.2 and O8's decline).
 
@@ -1963,3 +1964,110 @@ None.
 
 *(Empty — the closure walk covered S1–S4; S1/S2 carry the "no change needed" decision, S3 was
 migrated under O6.2, S4's premise was removed by O8's decline.)*
+
+---
+
+## O14 — Delete `typingIntent.ts`; `TypingSurface` drives the action bag directly — resolved 2026-11-12
+
+### The item (recap)
+
+`TypingIntent` + `applyTypingIntent` (`ui/shared/typingIntent.ts`, 31 lines) existed only to decouple
+`TypingSurface` from the grid action-bag shape: the component built intent data objects and handed
+them to an `onDispatch` callback, and both shells unwrapped them with
+`(intent) => applyTypingIntent(intent, facade.actions.grid)`. The item proposed the component take
+the bag and call it directly, estimated −35 LOC, risk "none".
+
+### Site inventory (Gate 0)
+
+| # | Site | File | Outcome |
+|---|---|---|---|
+| S1 | `TypingIntent` + `TypingActions` + `applyTypingIntent` (whole module) | `src/ui/shared/typingIntent.ts` | deleted |
+| S2 | `onDispatch` prop + 7 intent emissions (backspace, escape, 4 arrows, 3 letter sites) | `src/ui/shared/TypingSurface.svelte` | rewritten to direct bag calls; prop becomes `actions` |
+| S3 | wrapper lambda + `applyTypingIntent` import | `src/ui/builder/BuilderShell.svelte` | pass-through `actions={builderFacade.actions.grid}` |
+| S4 | wrapper lambda + `applyTypingIntent` import | `src/ui/player/PlayerShell.svelte` | pass-through `actions={playerFacade.actions.grid}` |
+| S5 | `applyTypingIntent` suite (58 lines, 4 cases) | `test/ui/shared/typingIntent.test.ts` | deleted |
+
+### Decision
+
+- **S1–S4: executed as written.** `TypingSurface` was the last leaf with a bespoke
+  callback-plus-intent indirection; every other leaf already takes an action bag (§5 "Leaves invoke
+  typed action-bag props… intents are data at the dispatch seam, not callbacks"). The change removes
+  the deviation rather than introducing one.
+- **Prop type (options: plain `GridActions` vs `Pick<GridActions, …>` vs inline bag literal):
+  `Pick<GridActions, 'typeLetter' | 'backspace' | 'moveCursor' | 'escape'>`.** Deciding property: the
+  §6 prop-contract rule that a leaf declares *exactly* the bag it invokes. Plain `GridActions` would
+  hand the component an unused `selectCell`; an inline literal would add a fourth hand-written
+  expression of the bag shape (`GridActions`, `PlayerGridActions`, `BuilderGridActions` already
+  exist). `Pick` derives from the single source and names the exact subset. Type-only import from
+  `ui/bindings/gridActions` — allowed by the §4 matrix (`ui/**` may type-import bindings types).
+- **S5: deleted, no replacement test.** The deleted suite pinned only the trivial 4-case
+  intent→method switch; the component's actual logic (IME/mobile key normalization) was never under
+  test — before or after — and the repo deliberately has no component/DOM test harness (§12). The
+  bag methods the component now calls directly are pinned by `test/ui/bindings/gridActions.test.ts`.
+
+### Corrections to the item
+
+1. **"`TypingActions` *is* structurally `GridActions`" is imprecise.** `TypingActions` was a *subset*
+   (no `selectCell`); `BuilderGridActions` is a *superset* (+`clickCell`); `PlayerGridActions` is
+   identical to `GridActions`. Structural typing makes the proposal work regardless — both bags
+   satisfy the `Pick` with no adapter or cast — but the identity claim as stated is false.
+2. **"Risk: none" understates the test tree.** The deletion removes a test file; the audit's own
+   verification-plan preamble (item 3) anticipated this. Measured cost: one file, 4 cases, all
+   pinning deleted code.
+3. **The estimate is corrected from "−35 LOC" to −91 net lines** (+15/−106 across 5 files):
+   −33 production (the deleted module plus the two shell wrapper lambdas; the component rewrite is
+   line-neutral at +13/−13) and −58 the deleted test file.
+
+### Design as implemented
+
+- `TypingSurface.svelte`: `actions: Pick<GridActions, 'typeLetter' | 'backspace' | 'moveCursor' | 'escape'>`
+  prop; the 7 emission sites call `actions.<method>(…)` directly with identical arguments
+  (arrows: Left across/−1, Right across/+1, Up down/−1, Down down/+1; letters raw). The `$effect`
+  focus/blur block, `isLetter`, IME guards, input-clearing logic and `<input>` markup untouched.
+- Both shells: the wrapper lambda replaced by the bag pass-through; the `applyTypingIntent` import
+  removed. Nothing else in either file touched.
+- Post-review lead fix in S2: one stale comment ("emit each character as a type-letter intent" —
+  the intent vocabulary died with the module) reworded to "type-letter call".
+
+### Deliberate behaviour changes
+
+None. Same keys handled and ignored, same `preventDefault` sites, same raw-character emission,
+same focus/blur semantics; casing and validation remain the domain's (`Letter.try` in the facade
+action). The component's emitted bag calls carry exactly what the old `applyTypingIntent` branch did.
+
+### Files
+
+- Production (4, +15/−48): `src/ui/shared/TypingSurface.svelte` (rewrite), deleted
+  `src/ui/shared/typingIntent.ts`, `src/ui/builder/BuilderShell.svelte`, `src/ui/player/PlayerShell.svelte`.
+- Tests (1, −58): deleted `test/ui/shared/typingIntent.test.ts`. **No surviving test file was
+  edited.**
+- Docs: `architecture.md` §11 (`TypingSurface` row rewritten; the `typingIntent.ts / clueScroll.ts`
+  helpers row now `clueScroll.ts` alone; §13 file tree), `code_reduction_audit.md` (O14 status line;
+  "Resolved so far" header list), this entry.
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| `npm run test` | 91 files / **1349 tests** green (was 92/1353 — one file, 4 cases deleted) |
+| `npm run typecheck` | svelte-check 0 errors / 0 warnings |
+| `npm run lint` | eslint clean; madge — no cycles |
+| grep `typingIntent\|TypingIntent\|TypingActions\|applyTypingIntent` across `src/` + `test/` | **0** matches — no reference survives |
+| `git status` | exactly the 5 inventory files changed — no scope creep |
+| unchanged suites as preservation proof | every surviving suite passes with zero edits (`git diff test/` is a single deletion); the bag methods now called directly are pinned by `gridActions.test.ts` |
+
+### Consequence
+
+- The last bespoke callback-plus-intent leaf is gone; every leaf in `ui/` now takes a typed
+  action-bag prop. `ui/shared` holds only components plus `clueScroll.ts`.
+- Future grid-interaction bag changes (a sixth method, a signature tweak) propagate to
+  `TypingSurface` through the one `GridActions` type — no parallel `TypingActions` shape to keep
+  in step, which was the maintenance cost the old indirection charged for a decoupling nothing used.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| — | — | — |
+
+*(Empty — the closure walk covered S1–S5; every site is migrated or deleted with the module.)*
