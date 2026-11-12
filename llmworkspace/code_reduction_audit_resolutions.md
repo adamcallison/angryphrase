@@ -16,7 +16,8 @@ grid scan sites), O6 (facade / action-bag / intent-type boilerplate), O7 (persis
 duplication), O8 (player solving handlers: one cursor-change fold), O9 (`WordTopology.partOfRun`
 consolidation), O10 (`WordGeometry` consolidation), O11 (chain-boundary marker logic — one owner),
 O12 (view-model redundancy), O13 (boot.ts `freshBlank` removal), O16 (guarded-action modal events —
-one `confirmEvent` constructor).
+one `confirmEvent` constructor), O18 (`reducer.ts` wiring — declined, no change; substance consumed
+by O6.2 and O8's decline).
 
 ---
 
@@ -1852,3 +1853,113 @@ None. The emitted `DomainEvent` at each of S1–S4 deep-equals the hand-rolled l
 | — | — | — |
 
 *(Empty — the closure walk covered S1–S5; every site is migrated.)*
+
+---
+
+## O18 — `reducer.ts` wiring in both state modules — declined 2026-11-12 (no change)
+
+### The item (recap)
+
+`reduceBuilder` and `reducePlayer` are "90% switch-case → one-line delegation" (136 and 102 lines).
+The item proposed two squeezes: (1) group/inline the cases delegating to internal handlers —
+`fillMode.ts`'s cursor handlers, "with O8's shared fold they collapse to the point where inlining
+is defensible; whether to inline is taste — keep the files, shrink the bodies"; (2) remove "the
+`import type { … } from '../intents'` + `Extract` ceremony on every internal handler signature —
+the real cost (covered by O6.2)". Est. −40 LOC combined, "Risk: none beyond churn."
+
+**The item is declined whole.** Both of its mechanisms were consumed by the O6 and O8 resolutions
+(which postdate its writing); what remains in the two files is the architecture's documented shape,
+and the residual squeezes trade documented properties for ≈0 lines — the audit's own method note
+disqualifies that trade.
+
+### Site inventory (Gate 0)
+
+| # | Site | Kind | Outcome |
+|---|---|---|---|
+| S1 | inline pure one-liner cases in `reduceBuilder` (`switch-to-fill`, `escape`, `edit-title`, `edit-author`) | already-inline case bodies | **no change** — the item's own "cases that are already pure one-liners stay inline" |
+| S2 | switch cases delegating to `internal/` handlers (both reducers) | routing wiring | **no change** — already one-line delegations; the thin routing file is the documented §3 split |
+| S3 | `Extract<BuilderIntent, { kind: '…' }>` ceremony on internal handler signatures | intent-typing ceremony | **migrated under O6.2** (2026-11-11, 21 sites → `BuilderIntentOf<K>` / `PlayerIntentOf<K>`; O6's inventory S3) |
+| S4 | `fillMode` `handleSelectCell` / `handleMoveCursor` bodies ("8-line guards + delegation") | handler bodies | **no change** — already a 3-line `mode` guard plus one ternary each; the "collapse with O8's shared fold" premise died with O8's builder-half decline |
+
+### Decision
+
+- **S3 is done — by O6.2, not by this item.** Grep over `builder/state/internal/` +
+  `player/state/internal/`: zero `Extract<…Intent>` sites remain; every handler signature is
+  `XIntentOf<'…'>` on a single import line. The item's "real cost" was the only concrete mechanism
+  it carried, and O6.2 already collected it.
+- **S4's premise is gone.** O8's resolution declined the builder fold ("the `fillMode` sites are
+  already ternary one-liners"; a second fold would re-duplicate the concept; sharing is blocked by
+  the sibling-import boundary and wrong-layered for `domain/`). Without the fold there is nothing to
+  collapse — the bodies are guard-plus-ternary, the minimum a mode-gated adapter can be. The item's
+  own hedge ("whether to inline is taste — keep the files, shrink the bodies") leaves no bodies to
+  shrink.
+- **S1/S2 are the documented shape, not waste.** `reducer.ts` as root routing file plus
+  `internal/` behavior modules is the architecture.md §3 Layer-1 layout, and the exhaustive switch
+  with the `assertUnreachable` fallthrough is a §5-documented property ("the reducer switches are
+  exhaustive over the intent unions"). Compressing it trades a documented property for line count —
+  the trade the method note at the top of the audit forbids (the O6.5 lesson: the guard survives
+  because the `ReducerResult` contract requires it).
+- **Residual squeezes considered and rejected.** (a) A handler-map record keyed by intent kind:
+  handler signatures are heterogeneous (`intent`-taking, `deps.rng`-taking, argument-less — see
+  `handleImportNewPuzzle()`, `handleAnagramScramble(state, deps.rng)`, `handleSelectCell(state,
+  intent)`), so a uniform map value needs wrapper adapters or casts, and it dissolves the exhaustive
+  switch the types currently prove. ~20 hypothetical lines against a compile-time guarantee —
+  declined. (b) Inlining `fillMode`'s cursor handlers into the reducer: the item itself calls it
+  taste; it moves `mode`-gating policy into the routing file and breaks §3's documented
+  `fillMode.ts` home for ≈0 lines (S4 bodies are already minimal) — declined.
+
+### Corrections to the item
+
+1. **The item was written before O6 and O8 landed and is stale on both mechanisms.** Its "real cost"
+   sentence already defers to O6.2 ("covered by O6.2"), and its grouping sentence depends on an O8
+   outcome that was subsequently declined. An implementer following it today would find nothing to
+   do — or, worse, invent one of the rejected squeezes to hit the estimate.
+2. **The "90% switch-case → one-line delegation" framing mistakes the design for the smell.** The
+   one-line delegation *is* the Layer-1 contract: routing in `reducer.ts`, behavior in `internal/`,
+   exhaustiveness proven by the switch. The framing is the same shape O6.4's was (compression
+   offered where the structure is the point).
+3. **The estimate is corrected from "−40 LOC combined" to 0.** Line counts today (136/102) match the
+   audit's baseline exactly — but the waste the item identified (Extract ceremony, fat `fillMode`
+   bodies) no longer exists; the remainder is imports, the switch, and the guard, all load-bearing.
+
+### Design as implemented
+
+None. No production or test file was touched; this entry and the audit's status line are the whole
+change.
+
+### Deliberate behaviour changes
+
+None.
+
+### Files
+
+- Docs only: `code_reduction_audit_resolutions.md` (this entry),
+  `code_reduction_audit.md` (O18 status line; "Resolved so far" header list).
+
+### Verification
+
+| Command / check | Result |
+|---|---|
+| grep `Extract<.*Intent` in `src/{builder,player}/state/internal/` | **0** matches (the one surviving `Extract<PlayerState, { phase: 'solving' }>` in `solving.ts` is state-phase typing, a different concept O6 already ruled out of scope) |
+| `reduceBuilder` / `reducePlayer` body inspection | every case is an inline one-liner (S1) or a single delegation call (S2); no case body exceeds the `edit-title`/`edit-author` two-line spread |
+| `fillMode` `handleSelectCell` / `handleMoveCursor` inspection | 3-line `mode` guard + one ternary each — the minimum mode-gated adapter; nothing to shrink |
+| `git status` | working tree unchanged by this resolution — doc-only, so the unchanged suites *are* the preservation proof by vacuity |
+
+### Consequence
+
+- The O8 "Not addressed" row that named this item as the landing site for the `fillMode`
+  body-shrinking idea is now fully closed: the decline stands on its own reasons (LOC-neutral,
+  concept re-duplication, import boundary) and the deferred follow-up turned out to need no work —
+  the bodies O18 was to shrink were already minimal once O6.2 landed.
+- With O18 closed, every remaining line in both `reducer.ts` files is attributable to a documented
+  §3/§5 property (root routing file, `internal/` split, exhaustive switch, unknown-kind throw).
+  Future reducer-intent additions land as one switch case + one handler, unchanged.
+
+### Not addressed
+
+| Site | Reason | Landing site |
+|---|---|---|
+| — | — | — |
+
+*(Empty — the closure walk covered S1–S4; S1/S2 carry the "no change needed" decision, S3 was
+migrated under O6.2, S4's premise was removed by O8's decline.)*

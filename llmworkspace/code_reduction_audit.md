@@ -769,6 +769,21 @@ disappear. Two further squeezes:
 
 **Risk:** none beyond churn.
 
+**Status (2026-11-12): declined, no change — the item's substance was consumed by later
+resolutions.** Resolution in `code_reduction_audit_resolutions.md` ("O18 — `reducer.ts` wiring in
+both state modules — declined"). Corrections to this item, made during the resolution: (a) both
+mechanisms are stale — the `Extract` ceremony ("the real cost") was already migrated under O6.2
+(21 sites → `BuilderIntentOf`/`PlayerIntentOf`, zero `Extract<…Intent>` sites remain), and the
+`fillMode` collapse premise died with O8's builder-half decline (the sites are already
+guard-plus-ternary, the minimum a mode-gated adapter can be); (b) what remains in both reducers
+(136/102 lines, matching this item's own baseline) is the documented shape itself — §3's
+root-routing + `internal/` split, §5's exhaustive switch with `assertUnreachable` — and the
+residual squeezes (handler-map record, inlining `fillMode`) trade those documented properties for
+≈0 lines, the trade the method note at the top of this document forbids; (c) the estimate is
+corrected from "−40 LOC combined" to 0. The decline also closes the O8 "Not addressed" row that
+named this item as its landing site. Do not re-propose without first re-deriving a site inventory
+against the post-O6/O8 tree.
+
 ---
 
 ## O19. Odds and ends (est. −30 LOC combined)
