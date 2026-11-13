@@ -175,6 +175,10 @@ function describeViolation(violation: ChainViolation): string {
     case 'self-reference':
       return `self-reference at ${WordKey.toCanonical(violation.word)}`;
     default:
-      return JSON.stringify(violation);
+      assertUnreachable(violation);
   }
+}
+
+function assertUnreachable(value: never): never {
+  throw new Error(`Unexpected value: ${JSON.stringify(value)}`);
 }

@@ -99,7 +99,7 @@ export function handleTypeLetter(
   state: PlayerState,
   intent: PlayerIntentOf<'type-letter'>,
 ): ReducerResult<PlayerState> {
-  if (state.phase !== 'solving' || state.cursor === null) {
+  if (state.phase !== 'solving') {
     return Result.ok(state);
   }
 
@@ -117,7 +117,7 @@ export function handleTypeLetter(
 }
 
 export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> {
-  if (state.phase !== 'solving' || state.cursor === null) {
+  if (state.phase !== 'solving') {
     return Result.ok(state);
   }
 
@@ -178,9 +178,7 @@ export function handleClearErrors(state: PlayerState): ReducerResult<PlayerState
     const cell = Grid.cellAt(newGrid, row, col);
     newGrid = Grid.setCell(newGrid, row, col, Cell.setPlayerLetter(cell, null));
   }
-  const newPuzzle = newGrid === state.puzzle.grid
-    ? state.puzzle
-    : Puzzle.withGrid(state.puzzle, newGrid);
+  const newPuzzle = Puzzle.withGrid(state.puzzle, newGrid);
 
   return Result.ok({
     ...state,

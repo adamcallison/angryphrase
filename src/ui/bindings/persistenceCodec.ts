@@ -72,7 +72,7 @@ export function serializePlayerProgress(state: PlayerState): string | null {
   if (state.phase !== 'solving') return null;
   const size = Number(state.puzzle.gridSize);
   const playerLetters = state.puzzle.grid.map((row) =>
-    row.map((cell) => (cell.playerLetter === null ? null : cell.playerLetter)),
+    row.map((cell) => cell.playerLetter),
   );
   return JSON.stringify({
     version: 1,
