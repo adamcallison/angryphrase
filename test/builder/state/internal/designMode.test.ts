@@ -17,8 +17,13 @@ import { WordNumber } from '../../../../src/domain/word/WordNumber';
 import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import { SeededRng } from '../../../fakes/SeededRng';
+import { brand } from '../../../../src/domain/brand';
 
 const rng = new SeededRng(42);
+
+function cell(g: Grid, r: number, c: number) {
+  return Grid.tryCoord(g, r, c)!;
+}
 
 function blankState() {
   return BuilderState.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(1)));
@@ -80,7 +85,7 @@ describe('toggle-design-cell', () => {
   it('white cell becomes black', () => {
     const state = blankState();
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 0) }, rng);
 
     expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(true);
   });
@@ -89,7 +94,7 @@ describe('toggle-design-cell', () => {
     const grid = Grid.setCell(Grid.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), Cell.black());
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 0) }, rng);
 
     expect(Grid.cellAt(result.state.puzzle.grid, Row.of(0), Col.of(0)).black).toBe(false);
   });
@@ -100,7 +105,7 @@ describe('toggle-design-cell', () => {
       cursor: { row: Row.of(0), col: Col.of(0), direction: 'across' as const },
     };
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 0) }, rng);
 
     expect(result.state.cursor).toBeNull();
   });
@@ -120,7 +125,7 @@ describe('toggle-design-cell', () => {
     const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, grid) };
     const acrossKey = key(0, 0, 'across');
 
-    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
+    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', cell: cell(before.puzzle.grid, 0, 1) }, rng);
 
     expect(result.state.puzzle.words.find((w) => WordKey.toCanonical(w.key) === WordKey.toCanonical(acrossKey))).toBeUndefined();
   });
@@ -138,7 +143,7 @@ describe('toggle-design-cell', () => {
     ]);
     const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, grid) };
 
-    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
+    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', cell: cell(before.puzzle.grid, 0, 1) }, rng);
 
     expect(result.state.displacedClues).toHaveLength(1);
     expect(result.state.displacedClues[0]!.clue).toBe('My clue');
@@ -149,7 +154,7 @@ describe('toggle-design-cell', () => {
     // (0,0) is white, (0,1) is black, (0,2) is black: no words initially.
     const state = designState(GridSize.of(3), [[0, 1], [0, 2]], []);
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(1) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 1) }, rng);
 
     const acrossKey = key(0, 0, 'across');
     const newWord = result.state.puzzle.words.find((w) => WordKey.toCanonical(w.key) === WordKey.toCanonical(acrossKey));
@@ -162,7 +167,7 @@ describe('toggle-design-cell', () => {
     // Length-4 across word at (0,0)-(0,3); (0,4) is black to cap the run.
     const state = designState(GridSize.of(5), [[0, 4]], [word(0, 0, 'across', 1, 4, 'A clue')]);
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(3) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 3) }, rng);
 
     expect(result.events).toContainEqual({
       kind: 'toast',
@@ -174,23 +179,24 @@ describe('toggle-design-cell', () => {
   it('no-op when state.mode is fill', () => {
     const state = { ...blankState(), mode: 'fill' as const };
 
-    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
+    const result = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 0) }, rng);
 
     expect(result.state).toEqual(state);
     expect(result.events).toEqual([]);
   });
 
-  it('no-op when row/col out of bounds', () => {
+  it('throws RangeError when an out-of-grid CellCoord reaches the handler (mint bypass or changed grid)', () => {
     const state = blankState();
+    const outOfGrid = brand<'CellCoord', { row: Row; col: Col }>({
+      row: Row.of(Number(GridSize.DEFAULT)),
+      col: Col.of(Number(GridSize.DEFAULT)),
+    });
 
-    const result = handleToggleDesignCell(
+    expect(() => handleToggleDesignCell(
       state,
-      { target: 'builder', kind: 'toggle-design-cell', row: Row.of(Number(GridSize.DEFAULT)), col: Col.of(Number(GridSize.DEFAULT)) },
+      { target: 'builder', kind: 'toggle-design-cell', cell: outOfGrid },
       rng,
-    );
-
-    expect(result.state).toEqual(state);
-    expect(result.events).toEqual([]);
+    )).toThrow(RangeError);
   });
 
   it('toggled cell resets answerLetter and marker', () => {
@@ -200,10 +206,10 @@ describe('toggle-design-cell', () => {
     const grid = Grid.setCell(Grid.blank(GridSize.DEFAULT), Row.of(0), Col.of(0), whiteCell);
     const state = { ...blankState(), puzzle: Puzzle.withGrid(blankState().puzzle, grid) };
 
-    const afterBlack = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) }, rng);
+    const afterBlack = handleToggleDesignCell(state, { target: 'builder', kind: 'toggle-design-cell', cell: cell(state.puzzle.grid, 0, 0) }, rng);
     const afterWhite = handleToggleDesignCell(
       afterBlack.state,
-      { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(0) },
+      { target: 'builder', kind: 'toggle-design-cell', cell: cell(afterBlack.state.puzzle.grid, 0, 0) },
       rng,
     );
 
@@ -227,7 +233,7 @@ describe('toggle-design-cell', () => {
     ]);
     const before = { ...state, puzzle: Puzzle.withGrid(state.puzzle, markedGrid) };
 
-    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', row: Row.of(0), col: Col.of(2) }, rng);
+    const result = handleToggleDesignCell(before, { target: 'builder', kind: 'toggle-design-cell', cell: cell(before.puzzle.grid, 0, 2) }, rng);
 
     const reconciled = result.state.puzzle.grid;
     expect(Grid.cellAt(reconciled, Row.of(0), Col.of(2)).black).toBe(true);

@@ -148,7 +148,9 @@ describe('playerFacade.ts', () => {
     playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
     store.dispatch({ kind: 'navigate', route: 'play' });
 
-    playerFacade.dispatch({ kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) });
+    const playerBefore = store.getPlayer();
+    if (playerBefore.phase !== 'solving') throw new Error('expected solving');
+    playerFacade.dispatch({ kind: 'select-cell', target: 'player', cell: Grid.tryCoord(playerBefore.puzzle.grid, 0, 0)! });
 
     const player = store.getPlayer();
     expect(player.phase).toBe('solving');
@@ -163,7 +165,9 @@ describe('playerFacade.ts', () => {
     const fileContent = serializeComplete(puzzle);
     playerFacade.dispatch({ kind: 'import-puzzle', target: 'player', fileContent });
     store.dispatch({ kind: 'navigate', route: 'play' });
-    playerFacade.dispatch({ kind: 'select-cell', target: 'player', row: Row.of(1), col: Col.of(1) });
+    const player = store.getPlayer();
+    if (player.phase !== 'solving') throw new Error('expected solving');
+    playerFacade.dispatch({ kind: 'select-cell', target: 'player', cell: Grid.tryCoord(player.puzzle.grid, 1, 1)! });
 
     const vm = playerFacade.playerShellVM();
 

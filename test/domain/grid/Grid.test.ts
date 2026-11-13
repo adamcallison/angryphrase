@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { CellCoord } from '../../../src/domain/grid/CellCoord';
 import { Cell } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
 import { Grid } from '../../../src/domain/grid/Grid';
@@ -122,6 +123,55 @@ describe('Grid', () => {
     const result = Grid.updateCells(g, updates);
 
     expect(result).not.toBe(g);
+  });
+
+  describe('Grid.tryCoord', () => {
+    it('Grid.tryCoord mints a CellCoord with the branded row/col for in-bounds input', () => {
+      const grid = blankGrid(15);
+      const coord: CellCoord | null = Grid.tryCoord(grid, 3, 7);
+
+      expect(coord).not.toBeNull();
+      expect(Number(coord!.row)).toBe(3);
+      expect(Number(coord!.col)).toBe(7);
+    });
+
+    it('Grid.tryCoord returns null on negative row / negative col', () => {
+      const grid = blankGrid(15);
+      expect(Grid.tryCoord(grid, -1, 5)).toBeNull();
+      expect(Grid.tryCoord(grid, 5, -1)).toBeNull();
+    });
+
+    it('Grid.tryCoord returns null on non-integer input', () => {
+      const grid = blankGrid(15);
+      expect(Grid.tryCoord(grid, 1.5, 5)).toBeNull();
+      expect(Grid.tryCoord(grid, 5, 1.5)).toBeNull();
+      expect(Grid.tryCoord(grid, Number.NaN, 5)).toBeNull();
+      expect(Grid.tryCoord(grid, 5, Number.NaN)).toBeNull();
+    });
+
+    it('Grid.tryCoord returns null for in-range-but-out-of-grid coordinates', () => {
+      const defaultGrid = blankGrid(15);
+      expect(Grid.tryCoord(defaultGrid, 15, 14)).toBeNull();
+      expect(Grid.tryCoord(defaultGrid, 14, 15)).toBeNull();
+
+      const smallGrid = blankGrid(2);
+      expect(Grid.tryCoord(smallGrid, 1, 2)).toBeNull();
+      expect(Grid.tryCoord(smallGrid, 2, 1)).toBeNull();
+    });
+
+    it('Grid.tryCoord accepts every corner of the grid', () => {
+      const grid = blankGrid(15);
+      const topLeft = Grid.tryCoord(grid, 0, 0);
+      const bottomRight = Grid.tryCoord(grid, 14, 14);
+
+      expect(topLeft).not.toBeNull();
+      expect(Number(topLeft!.row)).toBe(0);
+      expect(Number(topLeft!.col)).toBe(0);
+
+      expect(bottomRight).not.toBeNull();
+      expect(Number(bottomRight!.row)).toBe(14);
+      expect(bottomRight!.col).toBe(14);
+    });
   });
 
   it('Grid.updateCells throws RangeError when any update is out-of-bounds', () => {

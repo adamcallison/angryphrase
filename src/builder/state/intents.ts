@@ -1,5 +1,4 @@
-import type { Row } from '../../domain/grid/Row';
-import type { Col } from '../../domain/grid/Col';
+import type { CellCoord } from '../../domain/grid/CellCoord';
 import type { GridSize } from '../../domain/grid/GridSize';
 import type { CellSeparator } from '../../domain/grid/CellSeparator';
 import type { CellMarkerAxis } from '../../domain/grid/CellMarker';
@@ -22,7 +21,7 @@ export type BuilderIntent =
   | { target: 'builder'; kind: 'request-switch-to-design' }
   | { target: 'builder'; kind: 'confirm-switch-to-design' }
   // design
-  | { target: 'builder'; kind: 'toggle-design-cell'; row: Row; col: Col }
+  | { target: 'builder'; kind: 'toggle-design-cell'; cell: CellCoord }
   | { target: 'builder'; kind: 'change-grid-size'; size: GridSize }
   // fill — cell selection & cursor
   | ({ target: 'builder' } & SelectCellIntent)

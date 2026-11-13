@@ -2,8 +2,6 @@ import type { BuilderIntent, BuilderIntentMinusTarget } from '../../builder/stat
 import { deriveBuilderShellVM } from './viewmodels/builderVM';
 import type { BuilderShellVM } from './viewmodels/builderVM';
 import type { AppStore } from './appStore.svelte';
-import { Row } from '../../domain/grid/Row';
-import { Col } from '../../domain/grid/Col';
 import { GridSize } from '../../domain/grid/GridSize';
 import { Grid } from '../../domain/grid/Grid';
 import { Title } from '../../domain/puzzle/Title';
@@ -134,16 +132,19 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     },
   };
 
-  const sharedGrid = createGridActions('builder', (intent) => appStore.dispatch(intent));
+  const sharedGrid = createGridActions(
+    'builder',
+    () => appStore.getBuilder().puzzle.grid,
+    (intent) => appStore.dispatch(intent),
+  );
   const grid: BuilderGridActions = {
     ...sharedGrid,
     clickCell(row: number, col: number) {
       const mode = appStore.getBuilder().mode;
       if (mode === 'design') {
-        const r = Row.try(row);
-        const c = Col.try(col);
-        if (r === null || c === null) return;
-        d({ kind: 'toggle-design-cell', row: r, col: c });
+        const cell = Grid.tryCoord(appStore.getBuilder().puzzle.grid, row, col);
+        if (cell === null) return;
+        d({ kind: 'toggle-design-cell', cell });
       } else {
         sharedGrid.selectCell(row, col);
       }

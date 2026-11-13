@@ -304,21 +304,26 @@ words / head-with-empty-clue, plus the four `*-not-found` reason tests. The
 `ok ⇒ both exist` implication the dead branches re-check is exactly what those test
 pairs pin.
 
-### B4. `designMode.handleToggleDesignCell` — bounds pre-check duplicates `Grid`'s throw `[free]` — **RETRACTED as a deletion; recast as a pinned defensive no-op**
+### B4. `designMode.handleToggleDesignCell` — bounds pre-check duplicates `Grid`'s throw `[free]` — **RETRACTED as a deletion; superseded by the `CellCoord` design (2026-11-13)**
 `src/builder/state/internal/designMode.ts`: `if (!Grid.withinBounds(grid, row, col))
 return Result.ok(state)` followed immediately by `Grid.cellAt` / `Grid.setCell`, each of
-which re-checks bounds and throws `RangeError`. The pre-check is a second owner of the
+which re-checks bounds and throws `RangeError`. The pre-check was a second owner of the
 same rule with the *opposite* failure semantics (silent no-op vs throw).
 
-**But the no-op is pinned:** `test/builder/state/internal/designMode.test.ts` — "no-op
-when row/col out of bounds" — mints an in-brand but off-grid coordinate
-(`Row.of(GridSize.DEFAULT)` on a default grid) and asserts state unchanged, no events.
-Under the code-as-contract rule the silent no-op is contract surface: deleting the
-pre-check would turn that pinned path into a `RangeError`. The deletion recommended in
-the first draft is retracted; B4 joins the "(defensive)" family (see the retained
-table) — it is `toggle-design-cell`'s member of the systematic reducer policy that
-`fillMode`'s "select-cell: no-op on out-of-bounds coords" pin (`fillMode.test.ts:105`)
-also belongs to.
+**Retraction:** the silent no-op was pinned (`designMode.test.ts:183`), so the
+recommended deletion broke contract — same class as A6/D1.
+
+**Supersession — the question is now resolved structurally, not by guard removal:**
+U8 was decided toward the `CellCoord` provenance design (see
+`defensive_programming_undecided.md`). `toggle-design-cell` now carries a
+`Grid.tryCoord`-minted `CellCoord`; the reducer's withinBounds pre-check is **gone**
+(deleted in the accepted implementation), and an out-of-grid coord reaching the
+handler is a mint bypass or a changed grid — a bug — detected by `Grid.cellAt`'s
+pinned `RangeError`, now itself pinned at the reducer level as a throw-pin. The
+outcome the first draft wanted (one owner of the bounds rule per tier, bug-class
+inputs fail loud) was achieved by making the invalid value unproducible at the seam
+rather than by deleting the guard. The observation that motivated this entry was
+correct; the removal route was wrong.
 
 **The observation that survives, now read correctly:** the codebase runs a
 *two-tier* bounds policy. Reducer intent handlers treat out-of-bounds coordinates as
@@ -332,20 +337,19 @@ elimination (see U8 in `defensive_programming_undecided.md`), so whether the no-
 tier is deliberate robustness or an accident of the "(defensive)" family's shape is
 an open design question, not closed by the pin.
 
-**Why the guard is irreducible even though the current pipeline cannot produce its
-input:** the facade mints coords from render indices (always in-grid), but that
-impossibility is an emergent property of the current dispatch seam, not a type-level
-fact — `Row`/`Col` are branded `0..∞` *by design*, because grid-relative validity is a
-**relational** property (true of `Row.of(20)` on a 25-grid, false on a 15-grid) that
-no static brand can express; even a `0..24` brand would leave `Row.of(20)` in-brand on
-a 5×5 grid. So a runtime check is permanent in this design, and the intent's public
-interface (`{ row: Row; col: Col }`) admits in-brand off-grid values to any future
-minter. The pinned no-op is the *specified behaviour for the type-admissible inputs
-the current seam doesn't emit* — the handler's contract over its interface, not a
-defence against its own pipeline. Same epistemic status as the U2 stale-dispatch
-family: seam-impossibility deliberately not relied upon.
-**Pinned by:** `Grid.test.ts` RangeError tests (the throw tier);
-`designMode.test.ts:183` and `fillMode.test.ts:105` (the no-op tier).
+**Why the guard was held to be irreducible before the `CellCoord` design (historical
+reasoning; superseded above):** the facade mints coords from render indices (always
+in-grid), but that impossibility was an emergent property of the current dispatch
+seam, not a type-level fact — `Row`/`Col` are branded `0..∞` *by design*, because
+grid-relative validity is a **relational** property (true of `Row.of(20)` on a
+25-grid, false on a 15-grid) that no static brand can express; even a `0..24` brand
+would leave `Row.of(20)` in-brand on a 5×5 grid. That reasoning was correct about
+plain `Row`/`Col` — and it is exactly what `CellCoord` answers: the relational check
+moved into the mint (`Grid.tryCoord`), where the grid is in hand, so the *intent
+type* now carries the proof and the reducer-side check became removable.
+**Pinned by:** `Grid.test.ts` RangeError tests (the throw tier, unchanged);
+`gridActions.test.ts` no-dispatch pins (the invalid-raw-input tier, relocated to the
+facade per §5); `designMode.test.ts` throw-pin (the bug detector, new).
 
 ### B5. `AnagramModal.svelte` — `?? 'none'` fallback contradicts the model's length contract `[forced today; fix is a VM restructure]`
 `src/ui/player/AnagramModal.svelte`: `{@const sep = vm.separators[i - 1] ?? 'none'}`.
@@ -459,11 +463,44 @@ not "architecture.md says so". Every row below was re-derived accordingly.
 | `ports/*` try/catch (`localStoragePort`, `downloadPort`, `filePickPort`) — the never-throw contract's *minter* | `test/ports/*` — e.g. `localStoragePort.test.ts`: "saveBuilder returns an Error when localStorage.setItem throws (graceful failure)" with `expect(() => result).not.toThrow()` |
 | `v1Json.parsePuzzle` / `persistenceCodec` JSON catches and shape checks | codec/parser test suites pin the failure-as-data shapes for corrupt input |
 | Reducer-side `mode`/`phase`/`isBlank`/gate checks (`fillMode`, `solving`, `designMode`, `handleRequest*`) | the guard-rejection test series pins each as no-op contract — e.g. `fillMode.test.ts`: "no-op in design mode" / "no-op when cursor is null" per intent; `lifecycle.test.ts`: "request-reset-player: import phase is no-op" |
-| The "(defensive)" guard family (stale-id no-ops: `edit-clue`, `click-clue-panel-word`, `begin-join`, `unjoin`, `resolveJoin`, `begin-reattach`, `delete-displaced-clue`, `resolveReattach`, `confirm-reset-player` import-phase, anagram guards, VM banner fallbacks, **out-of-bounds intent coords: `toggle-design-cell`, `select-cell`**) | **pinned deliberately**, test titles say so — `fillMode.test.ts:650`, `solving.test.ts:658`, `joinSubMode.test.ts:92/387/404`, `reattachSubMode.test.ts:75/153/294/311`, `lifecycle.test.ts:595`, `builderVM.test.ts:297/317`, `designMode.test.ts:183`, `fillMode.test.ts:105`. These are contract surface, not removable defence (see the meta-finding in the admission section) |
+| The "(defensive)" guard family (stale-id no-ops: `edit-clue`, `click-clue-panel-word`, `begin-join`, `unjoin`, `resolveJoin`, `begin-reattach`, `delete-displaced-clue`, `resolveReattach`, `confirm-reset-player` import-phase, anagram guards, VM banner fallbacks) | **pinned deliberately**, test titles say so — `fillMode.test.ts`, `solving.test.ts`, `joinSubMode.test.ts`, `reattachSubMode.test.ts`, `lifecycle.test.ts`, `builderVM.test.ts`. These are contract surface, not removable defence (see the meta-finding in the admission section). **Coords tier retired 2026-11-13 by the `CellCoord` design (U8, decided):** `toggle-design-cell` no longer no-ops on out-of-grid coords — the intent now carries a `Grid.tryCoord`-minted `CellCoord`, the reducer's pre-check is gone, and an out-of-grid coord reaching it is a bug (`RangeError` throw-pin). `select-cell` intents likewise carry `CellCoord`; its out-of-grid tolerance now lives in `GridInteraction.select`'s own pinned graceful path. The out-of-grid no-op UX pins live at the facade (`gridActions.test.ts`: out-of-grid raw coords / null grid → no dispatch), which is where architecture.md §5 assigns invalid-raw-input handling |
 | `Anagram.scramble` internal count/length throws | `scramble`'s own contract for arbitrary callers; reducer path relies on them |
 | `WordTopology.whiteAt` `withinBounds` | code logic: brand range (0..∞) ≠ grid size (2..25); `try(c ± 1)` can mint in-brand-but-off-grid values — the contrast with `measureRun`'s dominated check is the Class C finding |
 | `gridActions` `Row.try`/`Col.try`/`Letter.try` + silent return | `gridActions.test.ts` pins the invalid-input→no-op dispatch contract |
 | `TypingSurface` IME/composition guards; `FilePicker` `dataTransfer?.files?.[0]` | browser-event reality; `TypingSurface` has no DOM harness (manual checklist), so these stay by nature, unpinned by suite |
+
+---
+
+## Open-items index (post-2026-11-13 — the remaining work at a glance)
+
+Straight dispatchable work (no decision needed, mechanical with the named fix):
+
+| Item | What | Fix | Status tag |
+|---|---|---|---|
+| A1 | `GridInteraction.select` unreachable cursor-null re-check | restructure the narrowing; the comment self-identifies it | `[forced]` |
+| A2 | `reconcileWords` unreachable throw on missing reconciled word | build `derivedWords` from the maps in insertion order | `[forced]` |
+| A3 | `handleUnjoin` findIndex + indexed access + impossible re-check | single `.find()` (the file's own form two handlers up) | `[forced]` |
+| A5 | ~~identity conditional~~ | resolved 2026-11-13 | done |
+| A7 | ~~unreachable `default`~~ | resolved 2026-11-13 (`assertUnreachable`) | done |
+| B2 | ~~solving cursor pre-checks~~ | resolved 2026-11-13 | done |
+| B5 | `AnagramModal` `?? 'none'` fallback | VM carries separator-per-tile (`AnagramTileVM.separatorAfter`), template stops indexing | `[forced]` |
+| A8 | `appStore` shift-undefined break | low value; restructure only if touching the loop anyway | `[forced]` |
+
+Interface work (real design value, tests should stay green):
+
+| Item | What | Fix |
+|---|---|---|
+| B1 | `WriteOutcome.cursor` typed wider than `GridInteraction` produces | tighten to `NonNullable<Cursor>`; the dead guards in `solving.ts` fail to compile and go. Same seam argument as A6's retraction — the codec/scheduler pair would shed a check the same way if `serializePlayerProgress` ever narrows its input type |
+| B3 | post-admission re-finds duplicate `ChainAdmission.ok` | `canLink`/`canReattach` return the found objects on `ok` |
+
+Needs a human/style decision before any work:
+
+| Item | What | Decision |
+|---|---|---|
+| Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | the U6 policy: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
+
+Retired by design (recorded, nothing to do): A6, B4, D1, D2-observation, U8 (the
+`CellCoord` implementation, landed 2026-11-13), U1–U5, U7.
 
 ---
 
@@ -476,8 +513,10 @@ invoked, the minting site (`ChainAdmission`, `Grid`, `Anagram` model builders,
 on grep alone. Sites where the contract could not be pinned down went to
 `defensive_programming_undecided.md` rather than being classified here.
 
-Post-audit code changes are recorded on their findings (currently: A5, resolved
-2026-11-13).
+Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved by
+deletion; the `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
+final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
+single-file build).
 
 **Second-pass re-derivation (2026-11-13, later).** After the epistemology correction
 (contracts are interfaces and pinned tests; architecture.md is a map), every finding
@@ -490,6 +529,9 @@ fresh-grid fact *is* pinned; the first two drafts of that paragraph were wrong i
 opposite directions). A later check retracted A6's deletion entirely: a minimal tsc
 repro proved the "redundant" clause is a required narrowing (`state.puzzle.key`
 fails without it) — A6 is recast as an interface-shape observation, same status as
-D1. A further pin check retracted B4 as well: `designMode.test.ts:183` pins the
-out-of-bounds silent no-op, making the bounds pre-check contract surface — the
-"(defensive)" family's coords tier — rather than a duplicated rule.
+D1. A further pin check retracted B4's deletion as well (`designMode.test.ts:183`
+pinned the out-of-bounds silent no-op). **B4's underlying question was then decided
+and implemented the structural way:** U8 resolved toward `CellCoord` — the provenance
+brand whose sole minter is `Grid.tryCoord` — with `toggle-design-cell` flipping to
+fail-loud; the B4 entry and the "(defensive)"-family row above are updated to the
+landed state, and architecture.md §2/§3/§4/§5 carry the authoritative design.

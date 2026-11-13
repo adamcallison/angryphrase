@@ -24,8 +24,13 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 import { SeededRng } from '../../../fakes/SeededRng';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import { WordKey } from '../../../../src/domain/word/WordKey';
+import { brand } from '../../../../src/domain/brand';
 
 type SolvingPlayerState = Extract<PlayerState, { phase: 'solving' }>;
+
+function cell(g: Grid, r: number, c: number) {
+  return Grid.tryCoord(g, r, c)!;
+}
 
 function assertSolving(state: PlayerState): SolvingPlayerState {
   if (state.phase !== 'solving') throw new Error('expected solving');
@@ -150,7 +155,7 @@ function findWordKey(
 describe('handleSelectCell', () => {
   it('select-cell: no-op when phase is import', () => {
     const state = importState();
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(Grid.blank(GridSize.of(5)), 0, 0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -160,7 +165,7 @@ describe('handleSelectCell', () => {
 
   it('select-cell: no-op on out-of-bounds coords', () => {
     const state = solvingState(5);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(999), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: brand<'CellCoord', { row: Row; col: Col }>({ row: Row.of(999), col: Col.of(0) }) };
 
     const result = handleSelectCell(state, intent);
 
@@ -170,7 +175,7 @@ describe('handleSelectCell', () => {
 
   it('select-cell: no-op on black cell', () => {
     const state = solvingState(5, [[0, 0]]);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 0, 0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -183,7 +188,7 @@ describe('handleSelectCell', () => {
       [0, 1],
       [1, 0],
     ]);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 0, 0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -196,7 +201,7 @@ describe('handleSelectCell', () => {
       [1, 2],
       [3, 2],
     ]);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -213,7 +218,7 @@ describe('handleSelectCell', () => {
       [2, 1],
       [2, 3],
     ]);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -227,7 +232,7 @@ describe('handleSelectCell', () => {
 
   it('select-cell: on selectable cell part of both words → direction defaults across', () => {
     const state = solvingState(5);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -241,7 +246,7 @@ describe('handleSelectCell', () => {
 
   it('select-cell: clicking already-selected cell that is in both words → toggles direction', () => {
     const state = withCursor(solvingState(5), { row: 2, col: 2, direction: 'across' });
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -260,7 +265,7 @@ describe('handleSelectCell', () => {
     ]);
     state = withCursor(state, { row: 2, col: 2, direction: 'across' });
     state = withCheckResult(state);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -272,7 +277,7 @@ describe('handleSelectCell', () => {
   it('select-cell: clears checkResult', () => {
     let state = solvingState(5);
     state = withCheckResult(state);
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -292,7 +297,7 @@ describe('handleSelectCell', () => {
     if (acrossWord === undefined) throw new Error('expected across word');
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(2), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(stateWithAnagram.puzzle.grid, 2, 0) };
     const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -315,7 +320,7 @@ describe('handleSelectCell', () => {
     if (acrossWord === undefined) throw new Error('expected across word');
     const stateWithAnagram = withAnagram(state, acrossWord.key);
 
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(stateWithAnagram.puzzle.grid, 0, 2) };
     const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -339,7 +344,7 @@ describe('handleSelectCell', () => {
       aKey,
     );
 
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(1), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(stateWithAnagram.puzzle.grid, 1, 2) };
     const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -363,7 +368,7 @@ describe('handleSelectCell', () => {
       aKey,
     );
 
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(stateWithAnagram.puzzle.grid, 0, 0) };
     const result = handleSelectCell(stateWithAnagram, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({
@@ -383,7 +388,7 @@ describe('handleSelectCell', () => {
       [1, 4],
     ]);
 
-    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(2) };
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 0, 2) };
     const result = handleSelectCell(state, intent);
 
     expect(assertSolving(result.state).cursor).toEqual({

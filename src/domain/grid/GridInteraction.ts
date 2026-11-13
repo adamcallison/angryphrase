@@ -1,5 +1,6 @@
 import type { Row } from './Row';
 import type { Col } from './Col';
+import type { CellCoord } from './CellCoord';
 import type { Cursor } from './Cursor';
 import type { Direction } from '../word/Direction';
 import type { Letter } from '../letter/Letter';
@@ -10,7 +11,7 @@ import { Cell } from './Cell';
 import { Row as RowCtor } from './Row';
 import { Col as ColCtor } from './Col';
 
-export type SelectCellIntent = { kind: 'select-cell'; row: Row; col: Col };
+export type SelectCellIntent = { kind: 'select-cell'; cell: CellCoord };
 export type MoveCursorIntent = { kind: 'move-cursor'; direction: Direction; sign: -1 | 1 };
 export type TypeLetterIntent = { kind: 'type-letter'; letter: Letter };
 export type BackspaceIntent = { kind: 'backspace' };

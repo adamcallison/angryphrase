@@ -26,7 +26,7 @@ export function handleSelectCell(
     return Result.ok(state);
   }
 
-  const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
+  const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.cell.row, intent.cell.col);
   return cursor === null ? Result.ok(state) : Result.ok({ ...state, cursor });
 }
 

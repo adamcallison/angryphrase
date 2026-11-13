@@ -1,6 +1,5 @@
 import type { GridInteractionIntent } from '../../domain/grid/GridInteraction';
-import { Row } from '../../domain/grid/Row';
-import { Col } from '../../domain/grid/Col';
+import { Grid } from '../../domain/grid/Grid';
 import { Letter } from '../../domain/letter/Letter';
 
 type TargetedGridIntent = { target: 'builder' | 'player' } & GridInteractionIntent;
@@ -15,14 +14,16 @@ export type GridActions = {
 
 export function createGridActions(
   target: 'builder' | 'player',
+  getGrid: () => Grid | null,
   dispatch: (intent: TargetedGridIntent) => void,
 ): GridActions {
   return {
     selectCell(row: number, col: number) {
-      const r = Row.try(row);
-      const c = Col.try(col);
-      if (r === null || c === null) return;
-      dispatch({ target, kind: 'select-cell', row: r, col: c });
+      const g = getGrid();
+      if (g === null) return;
+      const cell = Grid.tryCoord(g, row, col);
+      if (cell === null) return;
+      dispatch({ target, kind: 'select-cell', cell });
     },
     typeLetter(letter: string) {
       const l = Letter.try(letter);

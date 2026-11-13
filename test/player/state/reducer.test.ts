@@ -688,9 +688,11 @@ describe('reducePlayer', () => {
     }
 
     it('select-cell is delegated: solving-phase cursor navigation', () => {
+      const state = solvingStateWithWords();
+      if (state.phase !== 'solving') throw new Error('expected solving');
       const result = reducePlayer(
-        solvingStateWithWords(),
-        { kind: 'select-cell', target: 'player', row: Row.of(0), col: Col.of(0) },
+        state,
+        { kind: 'select-cell', target: 'player', cell: Grid.tryCoord(state.puzzle.grid, 0, 0)! },
         deps,
       );
 

@@ -120,12 +120,10 @@ describe('reduceBuilder', () => {
   });
 
   it('toggle-design-cell is delegated to designMode and toggles a white cell to black', () => {
-    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-design-cell',
-      row: Row.of(0),
-      col: Col.of(0),
-    };
+    const state = blank();
+    const intent: BuilderIntent = { target: 'builder', kind: 'toggle-design-cell', cell: Grid.tryCoord(state.puzzle.grid, 0, 0)! };
 
-    const result = reduceBuilder(blank(), intent, deps);
+    const result = reduceBuilder(state, intent, deps);
 
     expect(result.state.puzzle.grid[0]![0]!.black).toBe(true);
   });
@@ -215,7 +213,7 @@ describe('reduceBuilder', () => {
       [3, 2],
     ]);
 
-    const result = reduceBuilder(state, { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) }, deps);
+    const result = reduceBuilder(state, { target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(state.puzzle.grid, 2, 2)! }, deps);
 
     expect(result.state.cursor).toEqual({
       row: Row.of(2),

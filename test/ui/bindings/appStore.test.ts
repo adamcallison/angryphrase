@@ -147,7 +147,8 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: a builder request-* guard emits modal-request event → getModal() populated and getPendingConfirmIntent() populated', () => {
     store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    const builder = store.getBuilder();
+    store.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
     store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
     store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
@@ -159,7 +160,8 @@ describe('appStore.svelte.ts', () => {
 
   it('appStore: dispatch cancel-modal clears getModal() and getPendingConfirmIntent()', () => {
     store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    const builder = store.getBuilder();
+    store.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
     store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
     store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
 
@@ -499,7 +501,7 @@ describe('appStore.svelte.ts', () => {
     const puzzle = makeCompletePuzzle(7, 3);
     store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
     store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    store.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(puzzle.grid, 0, 0)! });
     store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
     inMemoryStorage.nextWriteError = new Error('clear fail');

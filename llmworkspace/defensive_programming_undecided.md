@@ -83,12 +83,34 @@ decision with a test-edit bill, not a cleanup.
 
 ## Still undecided
 
-### U8 — Out-of-grid intent coordinates: data (no-op) or bug (throw)?
-Raised after the B4 retraction. The bounds pre-checks on `toggle-design-cell`
-(`designMode.test.ts:183`) and `select-cell` (`fillMode.test.ts:105`) pin **silent
-no-op** for in-brand out-of-grid coordinates; `Grid.cellAt`/`setCell` pin **throw**
-for the same condition. Both tiers are contract — but they encode contradictory
-semantics for one input class, and the producer analysis favours the throw side:
+### U8 — Out-of-grid intent coordinates: data (no-op) or bug (throw)? — **DECIDED 2026-11-13: CellCoord + fail-loud; implementation in progress**
+**Decision:** option 2 + the refined option 3 (grid-scoped minting + mint-gated phantom
+brand, no payload) — `CellCoord` provenance brand, sole minter `Grid.tryCoord`;
+`select-cell` / `toggle-design-cell` intents carry `cell: CellCoord`;
+`toggle-design-cell`'s reducer drops its `withinBounds` pre-check and treats a
+mismatch as a bug (`Grid.cellAt`'s pinned `RangeError` is the detector);
+`select-cell` keeps its graceful domain path. The architecture doc was amended
+FIRST (§2 principle 4 grid-scoped constructor, §3 `grid/`, §4 owners 13→15, §5 facade
+minting) — architecture.md is the authoritative spec for the design; this entry
+records only the decision history.
+
+**Implementation state (final, 2026-11-13):**
+- T1 (domain): `CellCoord.ts` + `Grid.tryCoord` + boundary owners — landed &
+  accepted (Grid suite + boundary suites + tsc green).
+- T2 (seam flip): intents/facades/reducers + 51 test constructions (38 `select-cell`
+  + 13 `toggle-design-cell`, accounting closed by grep) + pin rewrites — landed &
+  accepted. `toggle-design-cell`'s out-of-grid pin is now a `RangeError` throw-pin
+  ("mint bypass or changed grid"); `select-cell`'s no-op pin survives via
+  `GridInteraction.select`'s graceful path (construction method changed only); the
+  no-dispatch UX pins live at the facade (`gridActions.test.ts`: out-of-grid raw
+  coords, null grid). No test pinned the old player import-phase dispatch, so the
+  no-dispatch behaviour change needed no rewrite.
+- Post-T2 closers: this status line, the audit record's B4/"(defensive)"-family row
+  update, and the gate — `npm run ci` green end-to-end (1356 tests, svelte-check,
+  madge, single-file build), run 2026-11-13.
+
+**U8 is closed.** The only remaining open item from this audit's undecided set is U6
+(the indexed-access idiom policy), which is a style decision, not a design question.
 
 - The `Row`/`Col` brands cannot carry grid-relative validity (context-free minting;
   relational fact; no dependent types) — so the intent *interface* admits such values.
@@ -171,4 +193,4 @@ the only indefensible state.
 | U5 VM sub-mode fallbacks | kept — pinned (`builderVM.test.ts`) |
 | U6 indexed-access idiom policy | **open** — style/policy decision |
 | U7 progress-blob validation split | closed — partial-apply pinned; recommendation retracted |
-| U8 out-of-grid intent coords: data or bug? | **open** — pinned no-op vs fail-loud philosophy; raised from the B4 retraction |
+| U8 out-of-grid intent coords: data or bug? | **decided 2026-11-13** — CellCoord + fail-loud; see U8's decision block for implementation state |

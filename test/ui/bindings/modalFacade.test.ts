@@ -7,10 +7,9 @@ import { InMemoryStoragePort } from '../../fakes/InMemoryStoragePort';
 import { StubDownloadPort } from '../../fakes/StubDownloadPort';
 import { SeededRng } from '../../fakes/SeededRng';
 import { FakeClock } from '../../fakes/FakeClock';
+import { Grid } from '../../../src/domain/grid/Grid';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
-import { Row } from '../../../src/domain/grid/Row';
-import { Col } from '../../../src/domain/grid/Col';
 import { Letter } from '../../../src/domain/letter/Letter';
 import type { ModalRequest } from '../../../src/domain/notifications/Event';
 
@@ -39,7 +38,8 @@ describe('modalFacade.ts', () => {
 
   function populateDesignSwitchModal(): void {
     store.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    store.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    const builder = store.getBuilder();
+    store.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
     store.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
     store.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
   }
@@ -135,7 +135,8 @@ describe('modalFacade.ts', () => {
     function triggerModal(target: AppStore): void {
       target.dispatch({ kind: 'navigate', route: 'build' });
       target.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-      target.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+      const builder = target.getBuilder();
+      target.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
       target.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
       target.dispatch({ target: 'builder', kind: 'request-switch-to-design' });
     }

@@ -26,8 +26,13 @@ import { WordKey } from '../../../../src/domain/word/WordKey';
 import { WordDerivation } from '../../../../src/domain/word/WordDerivation';
 import { Numbering } from '../../../../src/domain/word/Numbering';
 import { DisplacedClue } from '../../../../src/domain/builder/DisplacedClue';
+import { brand } from '../../../../src/domain/brand';
 
 const rng = new SeededRng(1);
+
+function cell(g: Grid, r: number, c: number) {
+  return Grid.tryCoord(g, r, c)!;
+}
 
 function makeState(
   size: number,
@@ -94,7 +99,7 @@ function makeState(
   describe('handleSelectCell', () => {
   it('select-cell: no-op in design mode', () => {
     const state = makeState(5, [], null, 'design');
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -104,7 +109,7 @@ function makeState(
 
   it('select-cell: no-op on out-of-bounds coords', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(999), col: Col.of(0) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: brand<'CellCoord', { row: Row; col: Col }>({ row: Row.of(999), col: Col.of(0) }) };
 
     const result = handleSelectCell(state, intent);
 
@@ -114,7 +119,7 @@ function makeState(
 
   it('select-cell: no-op on black cell', () => {
     const state = makeState(5, [[0, 0]]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 0, 0) };
 
     const result = handleSelectCell(state, intent);
 
@@ -128,7 +133,7 @@ function makeState(
       [1, 2],
       [3, 2],
     ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -146,7 +151,7 @@ function makeState(
       [2, 1],
       [2, 3],
     ]);
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -160,7 +165,7 @@ function makeState(
 
   it('select-cell: on selectable cell part of both → direction defaults across', () => {
     const state = makeState(5, []);
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -174,7 +179,7 @@ function makeState(
 
   it('select-cell: clicking already-selected cell that is in both words → toggles direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -195,7 +200,7 @@ function makeState(
       ],
       { row: 2, col: 2, direction: 'across' },
     );
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(2), col: Col.of(2) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
 
     const result = handleSelectCell(state, intent);
 
@@ -210,7 +215,7 @@ function makeState(
 
   it('select-cell: clicking a different already-selectable cell replaces cursor with new cell + computed direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
-    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', row: Row.of(3), col: Col.of(3) };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 3, 3) };
 
     const result = handleSelectCell(state, intent);
 

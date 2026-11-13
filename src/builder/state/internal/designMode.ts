@@ -20,13 +20,9 @@ export function handleToggleDesignCell(
     return Result.ok(state);
   }
 
-  if (!Grid.withinBounds(state.puzzle.grid, intent.row, intent.col)) {
-    return Result.ok(state);
-  }
-
-  const currentCell = Grid.cellAt(state.puzzle.grid, intent.row, intent.col);
+  const currentCell = Grid.cellAt(state.puzzle.grid, intent.cell.row, intent.cell.col);
   const newCell = currentCell.black ? Cell.white() : Cell.black();
-  const newGrid = Grid.setCell(state.puzzle.grid, intent.row, intent.col, newCell);
+  const newGrid = Grid.setCell(state.puzzle.grid, intent.cell.row, intent.cell.col, newCell);
 
   const newDerived = WordDerivation.derive(newGrid);
   const { grid: reconciledGrid, words, displacedClues, events } = reconcileWords(

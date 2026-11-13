@@ -165,7 +165,7 @@ describe('reduceApp', () => {
     const deps = makeDeps();
     const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(new SeededRng(5)));
     const playState = { ...state, route: 'play' as const, player: PlayerState.loaded(puzzle) };
-    const result = reduceApp(playState, { target: 'player', kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = reduceApp(playState, { target: 'player', kind: 'select-cell', cell: Grid.tryCoord(puzzle.grid, 0, 0)! }, deps);
     expect(result.state.player.phase).toBe('solving');
     if (result.state.player.phase !== 'solving') throw new Error('expected solving');
     expect(result.state.player.cursor).not.toBeNull();
@@ -181,7 +181,7 @@ describe('reduceApp', () => {
       route: 'build' as const,
       builder: { ...state.builder, mode: 'fill' as const },
     };
-    const result = reduceApp(buildState, { target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) }, deps);
+    const result = reduceApp(buildState, { target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(buildState.builder.puzzle.grid, 0, 0)! }, deps);
     expect(result.state.builder.cursor).not.toBeNull();
     expect(result.state.builder.cursor!.row).toBe(Row.of(0));
     expect(result.state.builder.cursor!.col).toBe(Col.of(0));

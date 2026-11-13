@@ -83,7 +83,14 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     },
   };
 
-  const grid: PlayerGridActions = createGridActions('player', (intent) => appStore.dispatch(intent));
+  const grid: PlayerGridActions = createGridActions(
+    'player',
+    () => {
+      const p = appStore.getPlayer();
+      return p.phase === 'solving' ? p.puzzle.grid : null;
+    },
+    (intent) => appStore.dispatch(intent),
+  );
 
   const cluePanel: PlayerCluePanelActions = {
     clickCluePanelWord(wordKey: WordKey) {

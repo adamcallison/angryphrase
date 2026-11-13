@@ -58,7 +58,7 @@ export function handleSelectCell(
     return Result.ok(state);
   }
 
-  const nextCursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.row, intent.col);
+  const nextCursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.cell.row, intent.cell.col);
   return Result.ok(applyCursorChange(state, nextCursor === null ? null : { cursor: nextCursor }));
 }
 

@@ -128,7 +128,8 @@ describe('builderFacade.ts', () => {
 
   it('builderFacade: dispatchBuilder select-cell intent mutates state.builder.cursor', () => {
     builderFacade.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    const builder = store.getBuilder();
+    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
 
     expect(store.getBuilder().cursor).not.toBeNull();
     expect(builderFacade.builderShellVM().grid.cursorRow).not.toBeNull();
@@ -137,7 +138,8 @@ describe('builderFacade.ts', () => {
   it('builderFacade: dispatchBuilder then builderShellVM() reflects the new state ladder', () => {
     builderFacade.dispatch({ target: 'builder', kind: 'change-grid-size', size: GridSize.of(12) });
     builderFacade.dispatch({ target: 'builder', kind: 'switch-to-fill' });
-    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', row: Row.of(0), col: Col.of(0) });
+    const builder = store.getBuilder();
+    builderFacade.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
     builderFacade.dispatch({ target: 'builder', kind: 'type-letter', letter: Letter.try('A')! });
 
     const vm = builderFacade.builderShellVM();

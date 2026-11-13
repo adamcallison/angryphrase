@@ -1,6 +1,8 @@
+import { brand } from '../brand';
 import { Cell } from './Cell';
-import type { Row } from './Row';
-import type { Col } from './Col';
+import type { CellCoord } from './CellCoord';
+import { Row } from './Row';
+import { Col } from './Col';
 import type { GridSize } from './GridSize';
 
 export type Grid = Cell[][];
@@ -15,6 +17,7 @@ export const Grid: {
   setCell(g: Grid, row: Row, col: Col, c: Cell): Grid;
   updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid;
   withinBounds(g: Grid, row: Row, col: Col): boolean;
+  tryCoord(g: Grid, r: number, c: number): CellCoord | null;
 } = {
   blank(size: GridSize): Grid {
     const n = Number(size);
@@ -68,5 +71,14 @@ export const Grid: {
     const r = Number(row);
     const c = Number(col);
     return r >= 0 && c >= 0 && r < g.length && c < g.length;
+  },
+
+  tryCoord(g: Grid, r: number, c: number): CellCoord | null {
+    const row = Row.try(r);
+    if (row === null) return null;
+    const col = Col.try(c);
+    if (col === null) return null;
+    if (!Grid.withinBounds(g, row, col)) return null;
+    return brand<'CellCoord', { row: Row; col: Col }>({ row, col });
   },
 };
