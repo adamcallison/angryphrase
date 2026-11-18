@@ -31,6 +31,10 @@ Forward-looking material, not a description of the current system. Companion to 
 
 **The precondition nobody has measured.** The prize is the *render* side; the derivation is already linear and 4× cheaper. Before building any of this, measure what a keystroke actually costs in a real browser with a GPU — how much is Svelte re-evaluating 625 cell items, and how much is the browser's own layout and paint. If cell re-evaluation is a small share, none of this is worth doing and the open half of #14 should be closed as "not worth the complexity at this scale" rather than left dangling. If it is a large share, build it derivation-first, in the order above — and settle the placement question as part of that, not after it.
 
+## Dead-guard proof tooling (open)
+
+The defensive-programming audit (`defensive_programming_audit.md`) keeps finding guards that are dead by a contract's type but that no current tool flags: TS 5.9 narrows `x === null` on a non-nullable type to `never` without error, and the ESLint config (`ts.configs.recommended`) does not enable `@typescript-eslint/no-unnecessary-condition` — the one rule that would flag always-false conditions. B1's resolution (2026-11-18) deleted three such guards by type-reasoning alone, and the audit's original "fail to compile" mechanism claim was retracted there. Enabling the rule repo-wide would mechanically surface every same-shape guard — including the Class-C/U6 indexed-access family — but its blast radius is the whole tree at once, so it belongs inside the U6 policy decision, not in any single finding's fix.
+
 ## Anticipated future requirements (out of scope today, designed-not-to-block)
 
 - **Undo/redo.** The pure-reducer + intent dispatch model suits a snapshot stack: reducers are not reversible, but storing past `BuilderState`/`PlayerState` snapshots and popping on undo is. Strict immutability makes snapshots cheap via structural sharing.

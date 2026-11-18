@@ -30,7 +30,7 @@ export type LetterSlot = {
   set: (cell: Cell, letter: Letter | null) => Cell;
 };
 
-export type WriteOutcome = { grid: Grid; cursor: Cursor };
+export type WriteOutcome = { grid: Grid; cursor: NonNullable<Cursor> };
 
 const DELTA: Record<Direction, { dr: number; dc: number }> = {
   across: { dr: 0, dc: 1 },

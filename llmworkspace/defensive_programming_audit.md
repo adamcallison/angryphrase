@@ -351,7 +351,7 @@ interface is currently too wide to carry a proof it already holds semantically, 
 guard is the rent. `[free]`/`[forced]` tags give the compile status of the guard
 as-written.
 
-### B1. `WriteOutcome.cursor` is typed wider than `GridInteraction` ever produces `[forced today, by the wide type itself]`
+### B1. `WriteOutcome.cursor` is typed wider than `GridInteraction` ever produces `[forced today, by the wide type itself]` — **RESOLVED 2026-11-18 (contract change, human-approved)**
 `src/domain/grid/GridInteraction.ts` declares `WriteOutcome = { grid: Grid; cursor:
 Cursor }` with nullable `Cursor`, but `typeLetter` and `backspace` return a
 `WriteOutcome` only on paths where `cursor !== null` (a null cursor exits early through
@@ -367,6 +367,56 @@ paid* for the over-wide interface, not a free-will choice.
 **Contract source:** the `WriteOutcome` interface itself (compile-level). No test can
 pin the dead branch — it is unreachable — which is exactly why the wide type is the
 problem: the interface is the only place the fact could live, and it currently lies.
+
+**Decision (2026-11-18, human-approved; A6 precedent's second instance):** the
+contract change is in remit. Inventory (verified by grep — no other `WriteOutcome`
+consumers exist): S1 `GridInteraction.ts:33` (the `WriteOutcome.cursor` type), S2
+`solving.ts:115` / S3 `:128` (the two dead guards), plus **S4 — a same-concept site
+this entry originally missed**, folded in with the human's approval:
+`anagramAfterCursorChange`'s parameter was typed nullable `Cursor` while its single
+call site (`solving.ts:34`) passes `out.cursor`, already `NonNullable<Cursor>` via
+the private `CursorChange` type (`solving.ts:24`). Unlike S2/S3, S4's guard was *not*
+compile-required (downstream `findContainingWord` accepts nullable and null-guards
+itself — a `[free]` mirror of B2's parameter distrust), but the B1-shaped interface
+fix is the consistent form: the type tells the truth and the file ends with zero
+cursor-null guards.
+
+**Retraction of this entry's own mechanism claim:** the sentence above that says the
+dead guards "fail to compile and are deleted" is wrong. TS 5.9.3 under `strict: true`
+does not fire TS2367 for `x === null` on a non-nullable object type — the comparison
+narrows to `never` silently (minimal repro under the project's own `tsc`: exit 0),
+and the ESLint config (`ts.configs.recommended`) does not enable
+`@typescript-eslint/no-unnecessary-condition`, the one rule that would flag it. The
+guards are still exactly as dead as the entry claims — the minting-site invariant
+(`typeLetter`/`backspace` exit a null cursor through the whole-result `return null`;
+every later cursor construction uses the narrowed value) is the proof, and the
+tightened type carries the fact — but no tool in this repo evicts them. Deletion was
+by type-reasoning, with `tsc` clean against the tightened type as the load-bearing
+check (it proves every consumer compiles on the non-null fact). The first dispatch
+correctly stopped on this discrepancy instead of forcing it.
+
+**Resolution (2026-11-18):** implemented exactly as the decision block specifies.
+`WriteOutcome.cursor: NonNullable<Cursor>` (S1); `anagramAfterCursorChange`'s
+parameter tightened to `NonNullable<Cursor>` (S4); the three dead guards (S2, S3,
+S4's `if (newCursor === null) return null;`) deleted — `solving.ts` now contains zero
+cursor-null guards. `typeLetter`/`backspace` **parameters** stay nullable: the
+null-input → whole-result-null contract is pinned ("returns null when input cursor
+is null") and untouched. `fillMode.ts` unchanged — assigning non-null `out.cursor`
+into the Builder's nullable `cursor` field remains valid by subtyping.
+
+**Deliberate behaviour changes:** none. The deleted branches were unreachable; the
+pinned no-op-when-null-input paths pass byte-unchanged through the whole-result
+`null` channel.
+
+**Verification:** `npx tsc --noEmit -p tsconfig.json` clean; `npx vitest run
+test/domain/grid/ test/player/ test/builder/` **581/581 across 22 files with zero
+test edits** (working tree: only the two source files modified); `npx eslint` on both
+files clean; `grep "cursor === null"` no hits in `solving.ts`; diff is exactly 5
+changed lines across 2 files — one type, one parameter, three guard deletions,
+nothing else. Not addressed: none — all four inventory sites migrated. Follow-up
+(deferral with landing site): enabling `@typescript-eslint/no-unnecessary-condition`
+is recorded in `future_considerations.md` — open, tied to the Class C / U6 policy
+decision, because its blast radius is every same-shape guard in the tree at once.
 
 ### B2. `solving` pre-checks `state.cursor === null` before calling `GridInteraction` `[free]` — **RESOLVED 2026-11-13**
 `src/player/state/internal/solving.ts`, `handleTypeLetter` / `handleBackspace`: the
@@ -598,7 +648,7 @@ Interface work (real design value, tests should stay green):
 
 | Item | What | Fix |
 |---|---|---|
-| B1 | `WriteOutcome.cursor` typed wider than `GridInteraction` produces | tighten to `NonNullable<Cursor>`; the dead guards in `solving.ts` fail to compile and go. Same seam argument as A6, which has now executed exactly this move (resolved 2026-11-18) — B1 is the precedent's second instance, with A6's verification record as the template |
+| B1 | ~~`WriteOutcome.cursor` typed wider than `GridInteraction` produces~~ | resolved 2026-11-18 (contract change, human-approved): tightened to `NonNullable<Cursor>`, three dead guards deleted on type-reasoning (S4 same-concept site folded in; the "fail to compile" mechanism claim retracted in the B1 entry — TS 5.9 narrows `=== null` on non-nullable without error) |
 | B3 | post-admission re-finds duplicate `ChainAdmission.ok` | `canLink`/`canReattach` return the found objects on `ok` |
 
 Needs a human/style decision before any work:
@@ -628,7 +678,11 @@ Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved
 restructure, A2 by map-spread, A3 by `.find()` restructure; A6 resolved
 2026-11-18 by the human-approved contract change — `serializePlayerProgress`
 narrowed to the solving variant, never-null return, scheduler keeps one narrowing
-check, the two null-channel pins retired with the channel; the
+check, the two null-channel pins retired with the channel; B1 resolved 2026-11-18 by
+the human-approved contract change — `WriteOutcome.cursor` narrowed to
+`NonNullable<Cursor>`, three dead guards deleted by type-reasoning with the S4
+same-concept fold-in, and the entry's "fail to compile" mechanism claim retracted
+(TS 5.9 narrows `=== null` on non-nullable silently; see the B1 entry); the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).

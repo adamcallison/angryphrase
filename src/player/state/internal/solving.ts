@@ -38,10 +38,9 @@ function applyCursorChange(state: SolvingState, out: CursorChange | null): Solvi
 function anagramAfterCursorChange(
   anagram: AnagramModalState | null,
   puzzle: Puzzle,
-  newCursor: Cursor,
+  newCursor: NonNullable<Cursor>,
 ): AnagramModalState | null {
   if (anagram === null) return null;
-  if (newCursor === null) return null;
   const word = WordSelection.findContainingWord(puzzle.words, newCursor);
   if (word === null) return null;
   const index = ChainIndex.build(puzzle.words);
@@ -112,7 +111,6 @@ export function handleTypeLetter(
   if (out === null) return Result.ok(state);
 
   const { grid, cursor } = out;
-  if (cursor === null) return Result.ok(state);
   return Result.ok(applyCursorChange(state, { grid, cursor }));
 }
 
@@ -125,7 +123,6 @@ export function handleBackspace(state: PlayerState): ReducerResult<PlayerState> 
   if (out === null) return Result.ok(state);
 
   const { grid, cursor } = out;
-  if (cursor === null) return Result.ok(state);
   return Result.ok(applyCursorChange(state, { grid, cursor }));
 }
 
