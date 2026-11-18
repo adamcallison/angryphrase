@@ -51,14 +51,12 @@ export const GridInteraction: {
       return null;
     }
 
-    const sameCell =
+    let direction: Direction;
+    if (
       cursor !== null &&
       Number(cursor.row) === Number(row) &&
-      Number(cursor.col) === Number(col);
-
-    let direction: Direction;
-    if (sameCell) {
-      if (cursor === null) return null; // unreachable: sameCell implies cursor !== null
+      Number(cursor.col) === Number(col)
+    ) {
       if (inAcross && inDown) {
         direction = cursor.direction === 'across' ? 'down' : 'across';
       } else {

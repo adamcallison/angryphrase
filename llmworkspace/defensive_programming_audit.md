@@ -103,7 +103,7 @@ small local restructure their entry names (`[forced]` — see §0). Two of them 
 B6 in the next class) use the Class C mechanism but have non-loop fixes, which is why
 they are not in the C table.
 
-### A1. `GridInteraction.select` — unreachable cursor-null re-check `[forced]`
+### A1. `GridInteraction.select` — unreachable cursor-null re-check `[forced]` — **RESOLVED 2026-11-18**
 `src/domain/grid/GridInteraction.ts`, the `sameCell` branch:
 `if (cursor === null) return null; // unreachable: sameCell implies cursor !== null`.
 The comment is correct: `sameCell` is computed with `cursor !== null && …` as its first
@@ -112,6 +112,18 @@ as written — TypeScript cannot narrow `cursor` through the computed boolean `s
 so reading `cursor.direction` in that branch fails without it. Fix: restructure the
 narrowing (e.g. branch on `cursor !== null` first, or inline the conjunct), which
 removes the guard rather than re-checking what the branch condition already proved.
+
+**Resolution (2026-11-18):** the `sameCell` const was dissolved into the `if`
+condition itself — same three conjuncts, same order, same short-circuit — and the
+dead re-check is gone with it (4 lines removed, 4 added, single file; the condition
+wraps across lines for formatting only). The narrowing now carries the proof where
+the compiler reads it: `cursor.direction` type-checks with no assertion, cast, or
+predicate helper. The `else` path (cursor null OR different cell) is byte-identical;
+both callers (`fillMode.ts`, `solving.ts`) and the signature are untouched.
+Verification: `GridInteraction.test.ts` 38/38, both caller trees (`test/player/state/`
++ `test/builder/state/`) 451/451, `tsc --noEmit -p tsconfig.json` and `eslint` on the
+file clean — all with zero test edits; `git diff` confirmed single-file,
+single-function.
 
 ### A2. `reconcileWords` — "unreachable" throw on missing reconciled word `[forced]`
 `src/builder/state/internal/reconcileWords.ts`, the `derivedWords` loop: throws when a
@@ -477,7 +489,7 @@ Straight dispatchable work (no decision needed, mechanical with the named fix):
 
 | Item | What | Fix | Status tag |
 |---|---|---|---|
-| A1 | `GridInteraction.select` unreachable cursor-null re-check | restructure the narrowing; the comment self-identifies it | `[forced]` |
+| A1 | ~~`GridInteraction.select` unreachable cursor-null re-check~~ | resolved 2026-11-18 (inline-conjunct narrowing restructure) | done |
 | A2 | `reconcileWords` unreachable throw on missing reconciled word | build `derivedWords` from the maps in insertion order | `[forced]` |
 | A3 | `handleUnjoin` findIndex + indexed access + impossible re-check | single `.find()` (the file's own form two handlers up) | `[forced]` |
 | A5 | ~~identity conditional~~ | resolved 2026-11-13 | done |
@@ -513,8 +525,9 @@ invoked, the minting site (`ChainAdmission`, `Grid`, `Anagram` model builders,
 on grep alone. Sites where the contract could not be pinned down went to
 `defensive_programming_undecided.md` rather than being classified here.
 
-Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved by
-deletion; the `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
+Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved
+2026-11-13 by deletion; A1 resolved 2026-11-18 by narrowing restructure; the
+`CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).
 
