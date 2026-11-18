@@ -318,14 +318,27 @@ error. Verification: `reconcileWords.test.ts` 23/23 with zero test edits, and
 narrowing is the proof that the union has exactly the four cased kinds (a fifth would
 fail to compile).
 
-### A8. `appStore.dispatch` — `shift()` undefined break `[forced]`
+### A8. `appStore.dispatch` — `shift()` undefined break `[forced]` — **RESOLVED 2026-11-18**
 `src/ui/bindings/appStore.svelte.ts`: `while (activeQueue.length > 0) { const next =
 activeQueue.shift(); if (next === undefined) break; … }`. `length > 0` guarantees
 `shift()` is defined, but the guard is compile-required — the lib signature of
 `Array.shift()` is `T | undefined` unconditionally (same effect as Class C's
-`noUncheckedIndexedAccess`, from a different source). Restructure (e.g. drain with a
-snapshot loop) removes it. Lowest value of this class — record, don't necessarily
-change.
+`noUncheckedIndexedAccess`, from a different source). The original "record, don't
+necessarily change" verdict was overridden at the human's direction: the exercise's
+mandate is guard removal, the re-entrancy queue semantics are pinned by an explicit
+test, so the risk the verdict hedged against is covered.
+Resolution: the loop was restructured to a batch drain — `const batch =
+activeQueue.splice(0)` inside the outer `while`, inner `for (const next of batch)`.
+`splice(0)` empties the array in place, so re-entrant pushes and leftoverEvents
+followups still land in the object the outer `while` re-checks; `for...of` types the
+element as `AnyIntent` (no `undefined`), so the break-guard dissolves because the
+type itself carries the non-undefined fact — no non-null assertion. Behaviour
+preservation proven directly: `appStore.test.ts` 33/33 (including the re-entrancy
+case 're-entrant dispatch joins the active work-queue') plus the full
+`test/ui/bindings/` suite (294) and `main.test.ts` (3) pass **without a single
+edit**, `npx tsc --noEmit -p tsconfig.json` compiles clean with the guard deleted,
+and `git diff --ignore-all-space` shows the change is exactly the drain lines
+(3+/2−). Grep confirms `shift(` no longer appears in the file.
 
 ---
 
@@ -579,7 +592,7 @@ Straight dispatchable work (no decision needed, mechanical with the named fix):
 | A7 | ~~unreachable `default`~~ | resolved 2026-11-13 (`assertUnreachable`) | done |
 | B2 | ~~solving cursor pre-checks~~ | resolved 2026-11-13 | done |
 | B5 | `AnagramModal` `?? 'none'` fallback | VM carries separator-per-tile (`AnagramTileVM.separatorAfter`), template stops indexing | `[forced]` |
-| A8 | `appStore` shift-undefined break | low value; restructure only if touching the loop anyway | `[forced]` |
+| A8 | ~~`appStore` shift-undefined break~~ | resolved 2026-11-18 (batch drain via `splice(0)` + `for...of`; type carries the non-undefined fact, suite unedited) | done |
 
 Interface work (real design value, tests should stay green):
 
