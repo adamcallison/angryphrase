@@ -102,15 +102,7 @@ export function reconcileWords(
     });
   }
 
-  const derivedWords: DerivedWord[] = [];
-  for (const newWord of newWords) {
-    const canonical = WordKey.toCanonical(newWord.key);
-    const reconciled = survivingByCanonical.get(canonical);
-    if (reconciled === undefined) {
-      throw new Error(`reconcileWords: unreachable: new word ${canonical} missing from reconciled set`);
-    }
-    derivedWords.push(reconciled);
-  }
+  const derivedWords: DerivedWord[] = [...survivingByCanonical.values()];
 
   const reconciledGrid = applyBoundaryMarkerRule(grid, oldWords, newByCanonical, survivingByCanonical);
 

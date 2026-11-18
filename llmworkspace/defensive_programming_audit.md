@@ -135,6 +135,23 @@ survivor loop (old∩new) or the new-word loop (new-only), and the loop iterates
 `noUncheckedIndexedAccess`). Fix: derive `derivedWords` directly from the maps in
 insertion order rather than re-looking-up — removes both the lookup and the guard.
 
+**Resolution (2026-11-18):** the re-lookup loop (9 lines, throw included) is now
+`const derivedWords: DerivedWord[] = [...survivingByCanonical.values()];` (single
+file; 1 insertion, 9 deletions). The invariant that makes the spread equivalent was
+verified before dispatch: every `newByCanonical` key is inserted into
+`survivingByCanonical` by the survivor loop (old∩new) or the new-word loop
+(new-only), `newWords` has unique canonical keys (`WordDerivation.derive` emits one
+word per grid run), and the earlier mutation loops re-`.set` existing keys — which
+preserves insertion position and replaces the value — so the spread captures
+post-mutation objects, as the old lookups did. The order change (map insertion
+order = survivors-then-new-only, versus raw `newWords` order) is inert:
+`derivedWords` has one consumer, `Numbering.assign`, whose output is sorted by
+(row, col, direction) — a total order over unique keys — and whose numbering is
+per start cell, order-independent. Verification: `reconcileWords.test.ts` 23/23,
+full `test/builder/state/` tree 253/253 (9 files), `tsc --noEmit -p tsconfig.json`
+clean, eslint clean, `grep -n "unreachable"` on the file zero hits — all with
+zero test edits; `git diff` confirmed single-file, single-loop.
+
 ### A3. `joinSubMode.handleUnjoin` — findIndex + indexed access + impossible re-check `[forced]`
 `src/builder/state/internal/joinSubMode.ts`: `findIndex(…)`, then
 `state.puzzle.words[sourceIdx]`, then `if (source === undefined) return`. With
@@ -490,7 +507,7 @@ Straight dispatchable work (no decision needed, mechanical with the named fix):
 | Item | What | Fix | Status tag |
 |---|---|---|---|
 | A1 | ~~`GridInteraction.select` unreachable cursor-null re-check~~ | resolved 2026-11-18 (inline-conjunct narrowing restructure) | done |
-| A2 | `reconcileWords` unreachable throw on missing reconciled word | build `derivedWords` from the maps in insertion order | `[forced]` |
+| A2 | ~~`reconcileWords` unreachable throw on missing reconciled word~~ | resolved 2026-11-18 (`[...survivingByCanonical.values()]` spread; order inert via `Numbering.assign`'s total sort) | done |
 | A3 | `handleUnjoin` findIndex + indexed access + impossible re-check | single `.find()` (the file's own form two handlers up) | `[forced]` |
 | A5 | ~~identity conditional~~ | resolved 2026-11-13 | done |
 | A7 | ~~unreachable `default`~~ | resolved 2026-11-13 (`assertUnreachable`) | done |
