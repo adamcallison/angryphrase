@@ -151,11 +151,6 @@ describe('persistenceScheduler.ts', () => {
   });
 
   describe('serializePlayerProgress + parsePlayerProgress', () => {
-    it('serializePlayerProgress: phase=import → null (nothing to save)', () => {
-      const state = PlayerState.importScreen();
-      expect(serializePlayerProgress(state)).toBeNull();
-    });
-
     it('serializePlayerProgress: phase=solving → JSON has version=1, kind="player-progress", key, gridSize, playerLetters grid', () => {
       const state = makePlayerSolvingState(8);
       const json = serializePlayerProgress(state);

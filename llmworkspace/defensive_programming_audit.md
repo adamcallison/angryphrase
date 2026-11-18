@@ -223,7 +223,7 @@ Resolution: the conditional was replaced with the bare field (one line). Verific
 round-trip suite pins the serialized output, so passing unchanged is the
 byte-identical proof. Diff confirmed single-line, single-file by `git diff`.
 
-### A6. `persistenceScheduler` — duplicated phase gate `[forced]` — **RETRACTED as a deletion; recast as an interface-shape observation**
+### A6. `persistenceScheduler` — duplicated phase gate `[forced]` — **RESOLVED 2026-11-18 (contract change, human-approved)**
 `src/ui/bindings/persistenceScheduler.ts`: `if (blob === null || state.phase !== 'solving')
 return`. `serializePlayerProgress` returns non-null **iff** `state.phase === 'solving'`
 — that is its entire gate, and the codec test titles the pin ("returns null when
@@ -249,9 +249,58 @@ The duplication is forced by the interface shape, not chosen by the caller.
 taking `Extract<PlayerState, { phase: 'solving' }>` and returning `string` (never
 null), so the caller keeps one check (the phase narrow) and loses the other. That
 rewrites the pinned codec test that asserts the null return — a contract change, not a
-guard removal. Out of this audit's remit; recorded here as an observation with the
-same status as D1. First draft of this entry tagged it `[free]` with "drop the phase
+guard removal. First draft of this entry tagged it `[free]` with "drop the phase
 clause" — wrong; the tag and the instruction are both retracted.
+
+**Decision (2026-11-18, human-approved):** the contract change is now in remit.
+Rationale: (1) the single-owner property is preserved and strengthened — the codec
+still owns the phase invariant, but at compile time (its parameter type rejects a
+non-solving state) instead of at runtime (null return); (2) the cascade is small and
+fully inventoried: one signature (`persistenceCodec.ts:71`), one production call site
+(`persistenceScheduler.ts:94` — grep confirms no other), and two pinned test cases
+whose subject is the retired null channel (`persistenceCodec.test.ts:214`,
+`persistenceScheduler.test.ts:154`); (3) no behaviour change: the scheduler's phase
+check stays inside the `doSave` closure, so a non-solving snapshot still arms the
+400 ms timer and no-ops at fire time (the coalescing behaviour recorded in
+`archive/architecture_smell_resolutions.md` item 11); (4) the "non-solving ⇒ no
+write" behaviour remains pinned at the scheduler level by tests that do not touch
+the codec's return type (`persistenceScheduler.test.ts:286, 335, 370`) and must pass
+unchanged. The variant type follows the house idiom of a private per-file
+`Extract` alias (`player/state/internal/solving.ts:22` precedent), not a new export
+from `state.ts`. `architecture.md` §8 pins only the blob shape, not the function
+signature, so no design-doc rule is amended by this change.
+
+**Resolution (2026-11-18):** implemented exactly as the decision block specifies.
+`persistenceCodec.ts` gains the private per-file alias `type SolvingState =
+Extract<PlayerState, { phase: 'solving' }>` (house idiom, `solving.ts:22` form — no
+new export from `state.ts`); `serializePlayerProgress(state: SolvingState): string`,
+body's phase guard deleted. `persistenceScheduler.ts`'s player `doSave` closure keeps
+one check — `if (state.phase !== 'solving') return;` — now the sole first statement,
+ahead of the call; the `blob === null` channel is gone; `state.puzzle.key` reads on
+the narrowed state. The check stays inside the `doSave` closure (not `schedule()`), so
+the coalescing behaviour recorded in `archive/architecture_smell_resolutions.md`
+item 11 is preserved: a non-solving snapshot still arms the 400 ms timer and no-ops at
+fire time. The two pinned tests of the retired null channel
+(`persistenceCodec.test.ts` "returns null when state.phase !== 'solving' (single
+owner of the phase guard)", `persistenceScheduler.test.ts` "phase=import → null
+(nothing to save)") were deleted; the ownership they pinned is now the parameter type.
+
+**Deliberate behaviour changes:** none. The three scheduler-level behaviour pins
+("phase=import → no save ever fires", "flush() with phase=import pending PlayerSave
+is a no-op", "does not report when schedulePlayerSave is skipped for phase=import")
+pass byte-unchanged — they are the proof the no-op semantics survived.
+
+**Verification:** `npx vitest run test/ui/bindings/` 294/294 across 17 files;
+accounting closes at 296 → 294 (stashed-tree run confirmed the pre-change count —
+delta is exactly the two deleted null-channel tests, nothing invented or lost);
+`npx tsc --noEmit -p tsconfig.json` clean — the clean check is itself part of the
+proof, since the narrowing the deleted clauses used to provide must now come from
+the parameter type at every call site. Blob bytes: the serialization body is untouched
+(diff-confirmed — signature and guard line only), and the round-trip suites that pin
+the serialized output pass without a single edit, so the persisted-blob contract is
+byte-identical. Not addressed: none — all four inventory sites (codec signature,
+scheduler call site, two pinned tests) migrated; grep confirms the old encoding
+(`blob === null` conjunct, codec null return) no longer appears in `src/`.
 
 ### A7. `reconcileWords.describeViolation` — unreachable `default` arm `[free]` — **RESOLVED 2026-11-13**
 `src/builder/state/internal/reconcileWords.ts`: the switch covers all four
@@ -536,7 +585,7 @@ Interface work (real design value, tests should stay green):
 
 | Item | What | Fix |
 |---|---|---|
-| B1 | `WriteOutcome.cursor` typed wider than `GridInteraction` produces | tighten to `NonNullable<Cursor>`; the dead guards in `solving.ts` fail to compile and go. Same seam argument as A6's retraction — the codec/scheduler pair would shed a check the same way if `serializePlayerProgress` ever narrows its input type |
+| B1 | `WriteOutcome.cursor` typed wider than `GridInteraction` produces | tighten to `NonNullable<Cursor>`; the dead guards in `solving.ts` fail to compile and go. Same seam argument as A6, which has now executed exactly this move (resolved 2026-11-18) — B1 is the precedent's second instance, with A6's verification record as the template |
 | B3 | post-admission re-finds duplicate `ChainAdmission.ok` | `canLink`/`canReattach` return the found objects on `ok` |
 
 Needs a human/style decision before any work:
@@ -545,8 +594,10 @@ Needs a human/style decision before any work:
 |---|---|---|
 | Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | the U6 policy: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
 
-Retired by design (recorded, nothing to do): A6, B4, D1, D2-observation, U8 (the
-`CellCoord` implementation, landed 2026-11-13), U1–U5, U7.
+Retired by design (recorded, nothing to do): B4, D1, D2-observation, U8 (the
+`CellCoord` implementation, landed 2026-11-13), U1–U5, U7. (A6 was in this list
+until 2026-11-18; the human approved the B1-shaped contract change and it is
+resolved above.)
 
 ---
 
@@ -561,7 +612,10 @@ on grep alone. Sites where the contract could not be pinned down went to
 
 Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved
 2026-11-13 by deletion; A1, A2, A3 resolved 2026-11-18 — A1 by narrowing
-restructure, A2 by map-spread, A3 by `.find()` restructure; the
+restructure, A2 by map-spread, A3 by `.find()` restructure; A6 resolved
+2026-11-18 by the human-approved contract change — `serializePlayerProgress`
+narrowed to the solving variant, never-null return, scheduler keeps one narrowing
+check, the two null-channel pins retired with the channel; the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).
@@ -577,7 +631,8 @@ fresh-grid fact *is* pinned; the first two drafts of that paragraph were wrong i
 opposite directions). A later check retracted A6's deletion entirely: a minimal tsc
 repro proved the "redundant" clause is a required narrowing (`state.puzzle.key`
 fails without it) — A6 is recast as an interface-shape observation, same status as
-D1. A further pin check retracted B4's deletion as well (`designMode.test.ts:183`
+D1. (That observation was later decided the other way: the human approved the
+contract change, and A6 is resolved 2026-11-18 — see the A6 entry.) A further pin check retracted B4's deletion as well (`designMode.test.ts:183`
 pinned the out-of-bounds silent no-op). **B4's underlying question was then decided
 and implemented the structural way:** U8 resolved toward `CellCoord` — the provenance
 brand whose sole minter is `Grid.tryCoord` — with `toggle-design-cell` flipping to

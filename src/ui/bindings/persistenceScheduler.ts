@@ -91,8 +91,8 @@ export function createPersistenceScheduler(
 
   const player = createSliceScheduler<PlayerState, PuzzleKey>(
     (state) => {
+      if (state.phase !== 'solving') return;
       const blob = serializePlayerProgress(state);
-      if (blob === null || state.phase !== 'solving') return;
       const err = storage.savePlayerProgress(state.puzzle.key, blob);
       onWriteResult('player', err);
     },

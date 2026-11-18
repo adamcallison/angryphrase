@@ -62,14 +62,15 @@ export function parseBuilderSnapshot(blob: string): BuilderSnapshot | null {
 
 // ----- Player progress -----
 
+type SolvingState = Extract<PlayerState, { phase: 'solving' }>;
+
 export type PlayerProgressBlob = {
   key: PuzzleKey;
   gridSize: GridSize;
   playerLetters: (Letter | null)[][];
 };
 
-export function serializePlayerProgress(state: PlayerState): string | null {
-  if (state.phase !== 'solving') return null;
+export function serializePlayerProgress(state: SolvingState): string {
   const size = Number(state.puzzle.gridSize);
   const playerLetters = state.puzzle.grid.map((row) =>
     row.map((cell) => cell.playerLetter),

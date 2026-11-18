@@ -211,11 +211,6 @@ describe('persistenceCodec.ts', () => {
       expect(parsed.playerLetters[0][0]).toBeNull();
     });
 
-    it('serializePlayerProgress: returns null when state.phase !== "solving" (single owner of the phase guard)', () => {
-      const state = PlayerState.importScreen();
-      expect(serializePlayerProgress(state)).toBeNull();
-    });
-
     it('parsePlayerProgress: round-trips a PlayerProgressBlob built via serializePlayerProgress', () => {
       const state = makePlayerSolvingState(10);
       const puzzle = Puzzle.withGrid(
