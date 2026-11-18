@@ -41,12 +41,10 @@ export function handleUnjoin(
     return Result.ok(state);
   }
 
-  const sourceIdx = state.puzzle.words.findIndex(w => WordKey.equals(w.key, intent.source));
-  if (sourceIdx === -1) {
+  const source = state.puzzle.words.find(w => WordKey.equals(w.key, intent.source));
+  if (source === undefined) {
     return Result.ok(state);
   }
-  const source = state.puzzle.words[sourceIdx];
-  if (source === undefined) return Result.ok(state);
   if (source.nextWord === null) {
     return Result.ok(state);
   }

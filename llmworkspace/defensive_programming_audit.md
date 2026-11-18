@@ -152,7 +152,7 @@ full `test/builder/state/` tree 253/253 (9 files), `tsc --noEmit -p tsconfig.jso
 clean, eslint clean, `grep -n "unreachable"` on the file zero hits — all with
 zero test edits; `git diff` confirmed single-file, single-loop.
 
-### A3. `joinSubMode.handleUnjoin` — findIndex + indexed access + impossible re-check `[forced]`
+### A3. `joinSubMode.handleUnjoin` — findIndex + indexed access + impossible re-check `[forced]` — **RESOLVED 2026-11-18**
 `src/builder/state/internal/joinSubMode.ts`: `findIndex(…)`, then
 `state.puzzle.words[sourceIdx]`, then `if (source === undefined) return`. With
 `sourceIdx !== -1` already guaranteed, the indexed access cannot yield `undefined`.
@@ -161,6 +161,23 @@ index), parked here rather than in the C table because the fix is not a loop
 restructure: a single `.find()` — the exact shape `handleBeginJoin` two handlers above
 already uses — removes the indexed access, the guard, and the double lookup in one
 move.
+
+**Resolution (2026-11-18):** the findIndex + indexed access + dead re-check (4 lines)
+is now `handleBeginJoin`'s own `.find()` form — same predicate
+(`WordKey.equals(w.key, intent.source)`), same early-return, one real not-found
+guard (2 insertions, 4 deletions, single file; nothing below the lookup in
+`handleUnjoin` touched, `handleBeginJoin` / `resolveJoin` untouched). The invariant
+that makes the forms equivalent: same list, same predicate, same call order —
+`.find()` yields a defined element iff `findIndex` returned `idx !== -1`. With the
+index gone, `noUncheckedIndexedAccess` has nothing to force a guard on; the
+"valid index, usable?" question is never asked. Verification:
+`joinSubMode.test.ts` 36/36 (the 14 `handleUnjoin` pins, incl. no-op not-found and
+the defensive `nextWord`-null no-op) and the full `test/builder/state/` tree
+253/253, `tsc --noEmit -p tsconfig.json` clean, eslint clean — all with zero test
+edits (passing unchanged is the behaviour-preservation proof, per this file's own
+epistemology); `git diff` single-file single-function; repo-wide grep for
+`findIndex` / `sourceIdx` over `src/` + `test/` zero hits, so no unnamed
+same-kind site survives.
 
 ### A4. `solving.handleClearErrors` — dead grid-identity check `[free]` — **RESOLVED 2026-11-13**
 `src/player/state/internal/solving.ts`: `newGrid === state.puzzle.grid ? state.puzzle :
@@ -508,7 +525,7 @@ Straight dispatchable work (no decision needed, mechanical with the named fix):
 |---|---|---|---|
 | A1 | ~~`GridInteraction.select` unreachable cursor-null re-check~~ | resolved 2026-11-18 (inline-conjunct narrowing restructure) | done |
 | A2 | ~~`reconcileWords` unreachable throw on missing reconciled word~~ | resolved 2026-11-18 (`[...survivingByCanonical.values()]` spread; order inert via `Numbering.assign`'s total sort) | done |
-| A3 | `handleUnjoin` findIndex + indexed access + impossible re-check | single `.find()` (the file's own form two handlers up) | `[forced]` |
+| A3 | ~~`handleUnjoin` findIndex + indexed access + impossible re-check~~ | resolved 2026-11-18 (single `.find()`, `handleBeginJoin`'s own form) | done |
 | A5 | ~~identity conditional~~ | resolved 2026-11-13 | done |
 | A7 | ~~unreachable `default`~~ | resolved 2026-11-13 (`assertUnreachable`) | done |
 | B2 | ~~solving cursor pre-checks~~ | resolved 2026-11-13 | done |
@@ -543,7 +560,8 @@ on grep alone. Sites where the contract could not be pinned down went to
 `defensive_programming_undecided.md` rather than being classified here.
 
 Post-audit code changes are recorded on their findings (A4, A5, A7, B2 resolved
-2026-11-13 by deletion; A1 resolved 2026-11-18 by narrowing restructure; the
+2026-11-13 by deletion; A1, A2, A3 resolved 2026-11-18 — A1 by narrowing
+restructure, A2 by map-spread, A3 by `.find()` restructure; the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).
