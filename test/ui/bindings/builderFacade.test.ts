@@ -321,6 +321,15 @@ describe('builderFacade.ts', () => {
       expect(store.getBuilder().puzzle.grid[0]![0]!.marker.right).toBe('none');
     });
 
+    it('dispatchSetMarker dispatches nothing when cursor is null', () => {
+      builderFacade.actions.toolbar.switchToFill();
+      const dispatchSpy = vi.spyOn(store, 'dispatch');
+
+      builderFacade.actions.toolbar.setMarker('right', 'space');
+
+      expect(dispatchSpy).not.toHaveBeenCalled();
+    });
+
     it('dispatchEditTitle("Hello") sets puzzle title to "Hello"', () => {
       builderFacade.actions.toolbar.editTitle('Hello');
 

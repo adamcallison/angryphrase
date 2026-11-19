@@ -25,12 +25,12 @@ it would be a behaviour change requiring test edits. The original question ("is 
 guard dead under the modal invariant?") is moot — deadness is not the test here,
 pinning is.
 
-**By-product — documentation inaccuracy:** architecture.md §7 (Guarded actions) says
-`confirm-*` intents "execute unconditionally". Pinned behaviour disagrees for
+**By-product — documentation inaccuracy:** architecture.md §7 (Guarded actions) said
+`confirm-*` intents "execute unconditionally". Pinned behaviour disagreed for
 `confirm-reset-player` (import phase → no-op), while the three Builder `confirm-*`
 handlers genuinely are unconditional — an asymmetry the doc sentence hides. The doc is
 not a contract, but it self-describes as a map, and a map that misstates pinned
-behaviour is a bad map. Suggested one-line amendment (lead's to make, on approval):
+behaviour is a bad map. **Amended 2026-11-19 (human-approved):** §7 now reads
 "`confirm-*` executes unconditionally in the state it was granted from; the Player
 reset confirm is pinned to no-op outside the solving phase."
 
@@ -70,7 +70,7 @@ under code-as-contract.)
 with missing source word → fallback { kind: 'none' } **(defensive)**" and the reattach
 counterpart. Contract surface; nothing to decide.
 
-### U7 — Player-progress blob dimension validation ownership → **CLOSED (pinned behaviour; recommendation retracted)**
+### U7 — Player-progress blob dimension validation ownership → **CLOSED 2026-11-19 via the D1 resolution (codec-owns-dimensions; the 2026-11-13 "retraction" below is superseded)**
 `lifecycle.test.ts` pins the intersection semantics explicitly: "apply-loaded-progress:
 truncated saved arrays (fewer rows/cols than grid) → **applies only the intersection**"
 and the oversized-arrays counterpart. Partial application is not an accident of a
@@ -79,11 +79,23 @@ recommendation would change pinned behaviour and is retracted (the audit's D1 en
 was rewritten accordingly). If whole-blob-reject is ever *wanted*, that is a product
 decision with a test-edit bill, not a cleanup.
 
+**Supersession (2026-11-19).** The paragraph above is the 2026-11-13 re-derivation
+record, kept for history. The human later ruled the retraction a misunderstanding —
+the pin reflected the implementation, not intent (`serializePlayerProgress` always
+writes an exact square, so a dimension-mismatched blob is corruption or tampering) —
+and approved the codec-owns-dimensions contract change. It landed 2026-11-19: the
+codec rejects dimension-invalid blobs whole, the reducer's `Math.min` clamps and
+undefined-row skip are deleted, the two former partial-apply pins were replaced by
+codec-level rejection tests. Full record: the audit doc's D1 entry (authoritative).
+The U1-style caveat cuts both ways: even a human-approved reversal of a pin is on
+record here, so a *future* reversal back to partial-apply would likewise be a product
+decision with a test-edit bill.
+
 ---
 
-## Still undecided
+## Decided after the 2026-11-13 re-derivation (this section was "Still undecided" until every item below was decided)
 
-### U8 — Out-of-grid intent coordinates: data (no-op) or bug (throw)? — **DECIDED 2026-11-13: CellCoord + fail-loud; implementation in progress**
+### U8 — Out-of-grid intent coordinates: data (no-op) or bug (throw)? — **DECIDED 2026-11-13: CellCoord + fail-loud; landed 2026-11-13**
 **Decision:** option 2 + the refined option 3 (grid-scoped minting + mint-gated phantom
 brand, no payload) — `CellCoord` provenance brand, sole minter `Grid.tryCoord`;
 `select-cell` / `toggle-design-cell` intents carry `cell: CellCoord`;
@@ -109,8 +121,10 @@ records only the decision history.
   update, and the gate — `npm run ci` green end-to-end (1356 tests, svelte-check,
   madge, single-file build), run 2026-11-13.
 
-**U8 is closed.** The only remaining open item from this audit's undecided set is U6
-(the indexed-access idiom policy), which is a style decision, not a design question.
+**U8 is closed** (landed 2026-11-13 — implementation state above, final). The
+undecided set is now **empty**: U6, the last open item (the indexed-access idiom
+policy, a style decision), was **decided 2026-11-19** — option (a), the uniform
+restructure sweep; see the U6 entry below and the audit doc's Class C policy table.
 
 - The `Row`/`Col` brands cannot carry grid-relative validity (context-free minting;
   relational fact; no dependent types) — so the intent *interface* admits such values.
@@ -233,11 +247,11 @@ restructure away indexed access where a loop bound dominates (`for…of` / `entr
 
 | Item | Status |
 |---|---|
-| U1 confirm/follow-up phase guards | kept — pinned (`lifecycle.test.ts`); doc §7 inaccuracy flagged |
+| U1 confirm/follow-up phase guards | kept — pinned (`lifecycle.test.ts`); doc §7 inaccuracy amended 2026-11-19 (human-approved) |
 | U2 stale-dispatch family (~9 guards) | kept — pinned, tests titled "(defensive)" |
 | U3 anagram `openedForWord` guards | kept — pinned family (miss path lacks its own titled test; noted) |
 | U4 cursor-never-black guards | kept — pinned (`GridInteraction.test.ts`, `fillMode.test.ts`) |
 | U5 VM sub-mode fallbacks | kept — pinned (`builderVM.test.ts`) |
 | U6 indexed-access idiom policy | **closed 2026-11-19** — sweep landed (7 sites); S4 decided: keep loud guards (random-access tier, loudly commented); zero-suppression package removes both lint exceptions; `no-non-null-assertion` now absolute |
-| U7 progress-blob validation split | closed — partial-apply pinned; recommendation retracted |
+| U7 progress-blob validation split | **closed 2026-11-19 via D1** (human-approved contract change superseded the 2026-11-13 retraction): codec-owns-dimensions landed; see U7's supersession note |
 | U8 out-of-grid intent coords: data or bug? | **decided 2026-11-13** — CellCoord + fail-loud; see U8's decision block for implementation state |

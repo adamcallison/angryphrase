@@ -136,7 +136,7 @@ Verification: `GridInteraction.test.ts` 38/38, both caller trees (`test/player/s
 file clean — all with zero test edits; `git diff` confirmed single-file,
 single-function.
 
-### A2. `reconcileWords` — "unreachable" throw on missing reconciled word `[forced]`
+### A2. `reconcileWords` — "unreachable" throw on missing reconciled word `[forced]` — **RESOLVED 2026-11-18**
 `src/builder/state/internal/reconcileWords.ts`, the `derivedWords` loop: throws when a
 `newWords` entry is missing from `survivingByCanonical`. Self-acknowledged unreachable:
 every key of `newByCanonical` is inserted into `survivingByCanonical` by either the
@@ -684,7 +684,7 @@ only open item — see U6.
 **U6 closed (2026-11-19, same human direction) — scramble decided + zero-suppression
 package.** `Anagram.scramble` keeps its loud guards (option 1: the guards violate no
 lint rule, fail loud where `!` would fail silent, and preserve the O(n) loop and the
-pinned SeededRng stream); the file now carries a RETAINED-REDUNDANT-GUARDS comment
+pinned SeededRng stream); the file now carries a RETAINED REDUNDANT GUARDS comment
 naming it the codebase's only sanctioned redundant-guard site. On the same principle —
 no exceptions in the config file — both lint suppressions were eliminated:
 `Grid.cellAt`/`setCell` converted to **check-by-read** (the indexed read is the
@@ -764,7 +764,7 @@ contract change (decision recorded 2026-11-19, same shape as the A6 reversal):
   matching `savedGridSize` were squared (fill nulls) so no pin rests on the
   contract-violating-input path.
 
-### D2. `builderFacade.setMarker` dispatches an intent it knows will no-op
+### D2. `builderFacade.setMarker` dispatches an intent it knows will no-op — **RESOLVED 2026-11-19 (human-approved behaviour change)**
 `src/ui/bindings/builderFacade.ts`: when `cursor === null || mode !== 'fill'`, it
 dispatches `{ kind: 'set-marker', axis, separator: 'none' }` — an intent whose reducer
 path is guaranteed to change nothing. Not a guard, but a defensive *dispatch*: noise in
@@ -773,6 +773,20 @@ the intent log for every marker-button click with nothing selected. Doing nothin
 cursor-present paths, so no test edit is needed to change it — but it is a (small)
 behaviour change in the dispatch stream, so it stays an observation rather than a
 finding.
+
+**Resolved 2026-11-19 (human-approved behaviour change; the "retired by design" status
+was a misunderstanding, same shape as the D1 reversal).** The facade now returns
+without dispatching on that branch; the honest form is itself pinned —
+`builderFacade.test.ts`: "dispatchSetMarker dispatches nothing when cursor is null"
+(spy on `store.dispatch`, `switchToFill()` first so the cursor-null branch is the only
+bail reason). The `mode !== 'fill'` disjunct is co-covered: design-mode transitions null
+the cursor (`designMode.ts`), so no separate design-mode pin exists. The reducer-side
+guards in `fillMode.ts` are untouched pinned contract surface ("no-op in design mode" /
+"no-op when cursor is null" / "no-op on black cursor cell (defensive)"). The toolbar UI
+was already gated (`BuilderToolbar.svelte` disables marker buttons without
+`cellSelected`), so no user-visible path changed — only direct facade callers see the
+new silent return. Verification: full suite 92 files / 1362 passed with the reducer
+suites unedited; typecheck and lint clean.
 
 ---
 
@@ -827,14 +841,16 @@ Needs a human/style decision before any work:
 
 | Item | What | Decision |
 |---|---|---|
-| Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | B6 **resolved 2026-11-19** (human-directed: keyed-Set reshape, `partOfRunMask` → `partOfRunCells`, mask + internal Class C guard + both consumer guard levels gone, cell-key format consolidated into `domain/grid/CellKey.ts`). The U6 policy question remains open for the ~9 surviving table rows: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
+| Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | B6 **resolved 2026-11-19** (human-directed: keyed-Set reshape, `partOfRunMask` → `partOfRunCells`, mask + internal Class C guard + both consumer guard levels gone, cell-key format consolidated into `domain/grid/CellKey.ts`). Class C **resolved 2026-11-19 by the U6 sweep (human-directed option (a), restructure)**: 7 walk sites via `for…of`/`entries()` (`measureRun` ×2, `Anagram.buildWordModel`, `Anagram.buildChainModel`, `LengthPattern.chainPattern`, `format/v1.crossCheckWords`, `format/v1.validateNextWordReferences`) plus `LengthPattern.separatorAt` (callers pass the `WordCell`); `Anagram.scramble` decided as the single sanctioned retained-guard site (loud RETAINED comment); `Grid.cellAt`/`setCell` check-by-read, `Grid.updateCells` pre-validation loop deleted; `no-non-null-assertion` now absolute, zero disables in `src/`. Code-verified 2026-11-19. (This row previously said the U6 policy question remained open — stale; the Class C section's resolution entries are authoritative.) |
 
-Retired by design (recorded, nothing to do): B4, D2-observation, U8 (the
+Retired by design (recorded, nothing to do): B4, U8 (the
 `CellCoord` implementation, landed 2026-11-13), U1–U5, U7. (A6 was in this list
 until 2026-11-18; the human approved the B1-shaped contract change and it is
 resolved above. D1 was in this list until 2026-11-19; the human ruled its
 "pinned behaviour" retraction a misunderstanding, approved the codec-owns-
-dimensions contract change, and it is resolved above.)
+dimensions contract change, and it is resolved above. D2 was likewise retired as
+an observation until 2026-11-19; the human ruled that retirement a misunderstanding
+and it is resolved at its §D2 entry above.)
 
 ---
 

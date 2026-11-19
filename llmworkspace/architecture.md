@@ -298,7 +298,7 @@ Discriminated by phase:
 
 ### Guarded actions (request/confirm pairs)
 
-Four user actions are guarded: switch-to-design, Builder import, Builder reset, Player reset. Each is two intent variants: `request-*` checks the guard — blank state executes directly, non-blank state returns state unchanged plus a `modal-request` event carrying the matching `confirmIntent` — and `confirm-*` (dispatched by the modal's Confirm button) executes unconditionally. No `force` flag; no reducer ever refuses and re-fires.
+Four user actions are guarded: switch-to-design, Builder import, Builder reset, Player reset. Each is two intent variants: `request-*` checks the guard — blank state executes directly, non-blank state returns state unchanged plus a `modal-request` event carrying the matching `confirmIntent` — and `confirm-*` (dispatched by the modal's Confirm button) executes unconditionally in the state it was granted from; the Player reset confirm is pinned to no-op outside the solving phase (`lifecycle.ts` phase guard, pinned `lifecycle.test.ts`: "confirm-reset-player: import phase is no-op (defensive)"). The three Builder `confirm-*` handlers are genuinely unconditional. No `force` flag; no reducer ever refuses and re-fires.
 
 ### Polysemous click intents
 

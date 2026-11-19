@@ -101,7 +101,6 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
       const state = appStore.getBuilder();
       const cursor = state.cursor;
       if (cursor === null || state.mode !== 'fill') {
-        d({ kind: 'set-marker', axis, separator: 'none' });
         return;
       }
       const cell = Grid.cellAt(state.puzzle.grid, cursor.row, cursor.col);
