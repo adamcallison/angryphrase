@@ -9,12 +9,12 @@ export type AnagramTileVM = {
   position: number;
   fixed: boolean;
   letter: string | null;
+  separatorAfter: CellSeparator;
 };
 
 export type AnagramModalVM = {
   wordLength: number;
   tiles: AnagramTileVM[];
-  separators: CellSeparator[];
   input: string;
   expectedUniqueLetterCounts: { letter: string; count: number }[];
   inputValid: boolean;
@@ -63,22 +63,34 @@ export function deriveAnagramModalVM(input: {
   });
 
   const scrambled = anagramModal.scrambledArrangement;
-  const tiles = entries.map((entry, i) => ({
-    position: i,
-    fixed: entry.fixed,
-    letter: entry.fixed
-      ? String(entry.letter)
-      : scrambled !== null
-        ? (scrambled[i] == null ? null : String(scrambled[i]))
-        : null,
-  }));
+  const last = entries.length - 1;
+  const tiles = entries.map((entry, i) => {
+    // Domain contract: separators.length === entries.length - 1. The last tile
+    // mints its own 'none'; a missing mid-chain separator is drift, not a
+    // default to mask.
+    const sep: CellSeparator | undefined = i === last ? 'none' : separators[i];
+    if (sep === undefined) {
+      throw new Error(
+        `Anagram.buildChainModel contract violated: no separator for tile ${i} of ${entries.length}`,
+      );
+    }
+    return {
+      position: i,
+      fixed: entry.fixed,
+      letter: entry.fixed
+        ? String(entry.letter)
+        : scrambled !== null
+          ? (scrambled[i] == null ? null : String(scrambled[i]))
+          : null,
+      separatorAfter: sep,
+    };
+  });
 
   const scrambleEnabled = inputValid && entries.some((e) => !e.fixed);
 
   return {
     wordLength: totalLength,
     tiles,
-    separators,
     input: anagramModal.input,
     expectedUniqueLetterCounts,
     inputValid,

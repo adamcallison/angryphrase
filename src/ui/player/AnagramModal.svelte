@@ -48,15 +48,7 @@
 
       <!-- Tile row -->
       <div class="mb-4 flex flex-wrap items-center gap-1">
-        {#each vm.tiles as tile, i}
-          {#if i > 0}
-            {@const sep = vm.separators[i - 1] ?? 'none'}
-            {#if sep === 'space'}
-              <div class="w-4"></div>
-            {:else if sep === 'hyphen'}
-              <div class="px-1 font-bold text-gray-700">-</div>
-            {/if}
-          {/if}
+        {#each vm.tiles as tile}
           <div
             class="flex h-12 w-10 items-center justify-center rounded border text-lg font-bold {tile.fixed
               ? 'bg-gray-200 text-gray-500'
@@ -64,6 +56,11 @@
           >
             {tile.letter ?? ''}
           </div>
+          {#if tile.separatorAfter === 'space'}
+            <div class="w-4"></div>
+          {:else if tile.separatorAfter === 'hyphen'}
+            <div class="px-1 font-bold text-gray-700">-</div>
+          {/if}
         {/each}
       </div>
 

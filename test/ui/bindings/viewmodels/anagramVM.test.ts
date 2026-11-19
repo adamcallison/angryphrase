@@ -138,9 +138,9 @@ describe('deriveAnagramModalVM', () => {
     assertOpen(result);
     expect(result.wordLength).toBe(3);
     expect(result.tiles).toHaveLength(3);
-    expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
-    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null });
-    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
+    expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A', separatorAfter: 'none' });
+    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null, separatorAfter: 'none' });
+    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C', separatorAfter: 'none' });
   });
 
   it('deriveAnagramModalVM: non-fixed positions get null when scrambledArrangement is null', () => {
@@ -166,9 +166,9 @@ describe('deriveAnagramModalVM', () => {
     const modal = makeAnagramModal('ABC', 'ABC');
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
     assertOpen(result);
-    expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A' });
-    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: 'B' });
-    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C' });
+    expect(result.tiles[0]).toEqual({ position: 0, fixed: true, letter: 'A', separatorAfter: 'none' });
+    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: 'B', separatorAfter: 'none' });
+    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'C', separatorAfter: 'none' });
   });
 
   it('deriveAnagramModalVM: non-fixed tile reads entries-aligned scrambledArrangement[i] (short input does not desync)', () => {
@@ -178,12 +178,12 @@ describe('deriveAnagramModalVM', () => {
     const modal = makeAnagramModalAligned('B', ['B', null, 'A']);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
     assertOpen(result);
-    expect(result.tiles[0]).toEqual({ position: 0, fixed: false, letter: 'B' });
-    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null });
-    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'A' });
+    expect(result.tiles[0]).toEqual({ position: 0, fixed: false, letter: 'B', separatorAfter: 'none' });
+    expect(result.tiles[1]).toEqual({ position: 1, fixed: false, letter: null, separatorAfter: 'none' });
+    expect(result.tiles[2]).toEqual({ position: 2, fixed: true, letter: 'A', separatorAfter: 'none' });
   });
 
-  it('deriveAnagramModalVM: separators echo from Anagram.buildWordModel', () => {
+  it('deriveAnagramModalVM: tile separatorAfter echoes Anagram.buildWordModel separators', () => {
     let grid = grid3x3();
     grid = setPlayerLetter(grid, 0, 0, 'A');
     grid = setPlayerLetter(grid, 0, 1, 'B');
@@ -194,7 +194,7 @@ describe('deriveAnagramModalVM', () => {
     const modal = makeAnagramModal('ABC', null);
     const result = deriveAnagramModalVM({ anagramModal: modal, grid, words: [word] });
     assertOpen(result);
-    expect(result.separators).toEqual(['space', 'hyphen']);
+    expect(result.tiles.map((t) => t.separatorAfter)).toEqual(['space', 'hyphen', 'none']);
   });
 
   it('deriveAnagramModalVM: input echoed unchanged; inputLength field no longer exists', () => {
@@ -335,7 +335,9 @@ describe('deriveAnagramModalVM', () => {
     assertOpen(result);
     expect(result.wordLength).toBe(7);
     expect(result.tiles).toHaveLength(7);
-    expect(result.separators).toHaveLength(6);
+    expect(result.tiles.map((t) => t.separatorAfter)).toEqual([
+      'none', 'none', 'none', 'none', 'none', 'none', 'none',
+    ]);
     expect(result.tiles.map((t) => t.position)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
@@ -354,7 +356,9 @@ describe('deriveAnagramModalVM', () => {
       words: [head, tail],
     });
     assertOpen(spaceResult);
-    expect(spaceResult.separators).toEqual(['none', 'space', 'space', 'hyphen', 'none', 'none']);
+    expect(spaceResult.tiles.map((t) => t.separatorAfter)).toEqual([
+      'none', 'space', 'space', 'hyphen', 'none', 'none', 'none',
+    ]);
 
     let hyphenBoundaryGrid = grid4x4();
     hyphenBoundaryGrid = setMarker(hyphenBoundaryGrid, 0, 1, 'space-right');
@@ -366,7 +370,9 @@ describe('deriveAnagramModalVM', () => {
       words: [head, tail],
     });
     assertOpen(hyphenResult);
-    expect(hyphenResult.separators).toEqual(['none', 'space', 'hyphen', 'space', 'none', 'none']);
+    expect(hyphenResult.tiles.map((t) => t.separatorAfter)).toEqual([
+      'none', 'space', 'hyphen', 'space', 'none', 'none', 'none',
+    ]);
 
     let noneBoundaryGrid = grid4x4();
     noneBoundaryGrid = setMarker(noneBoundaryGrid, 0, 1, 'space-right');
@@ -377,6 +383,8 @@ describe('deriveAnagramModalVM', () => {
       words: [head, tail],
     });
     assertOpen(noneResult);
-    expect(noneResult.separators).toEqual(['none', 'space', 'none', 'hyphen', 'none', 'none']);
+    expect(noneResult.tiles.map((t) => t.separatorAfter)).toEqual([
+      'none', 'space', 'none', 'hyphen', 'none', 'none', 'none',
+    ]);
   });
 });

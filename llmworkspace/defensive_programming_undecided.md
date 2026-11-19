@@ -173,10 +173,12 @@ record of it, no payload.
 Unchanged by the epistemology shift — this was never a contract question, it is a
 style policy. The codebase treats the same impossible-indexed-access situation four
 ways (`throw`, `continue`, optional chaining, `?? default`); the `?? default` form is
-the dangerous one (audit B5 — it masks drift). Options remain: (a) restructure away
+the dangerous one — its worst instance was audit B5, resolved 2026-11-19 by the VM
+restructure (per-tile `separatorAfter`, loud throw on drift), so no `?? default`
+remains over a provably-in-range index; options remain for the rest: (a) restructure away
 indexed access where a loop bound dominates (`for…of` / `entries()`), or (b) keep
-indexed access and standardize on the throw-with-context form, banning `continue` and
-`?? default` for the provably-in-range case — a policy the project could enforce with
+indexed access and standardize on the throw-with-context form, banning `continue`
+for the provably-in-range case — a policy the project could enforce with
 a lint tail, as it does its other boundaries. Either is defensible; the current mix is
 the only indefensible state.
 
@@ -191,6 +193,6 @@ the only indefensible state.
 | U3 anagram `openedForWord` guards | kept — pinned family (miss path lacks its own titled test; noted) |
 | U4 cursor-never-black guards | kept — pinned (`GridInteraction.test.ts`, `fillMode.test.ts`) |
 | U5 VM sub-mode fallbacks | kept — pinned (`builderVM.test.ts`) |
-| U6 indexed-access idiom policy | **open** — style/policy decision |
+| U6 indexed-access idiom policy | **open** — style/policy decision (its worst instance, B5's `?? default`, resolved 2026-11-19 by the VM restructure; no `?? default` remains over a provably-in-range index) |
 | U7 progress-blob validation split | closed — partial-apply pinned; recommendation retracted |
 | U8 out-of-grid intent coords: data or bug? | **decided 2026-11-13** — CellCoord + fail-loud; see U8's decision block for implementation state |

@@ -556,7 +556,7 @@ type* now carries the proof and the reducer-side check became removable.
 `gridActions.test.ts` no-dispatch pins (the invalid-raw-input tier, relocated to the
 facade per §5); `designMode.test.ts` throw-pin (the bug detector, new).
 
-### B5. `AnagramModal.svelte` — `?? 'none'` fallback contradicts the model's length contract `[forced today; fix is a VM restructure]`
+### B5. `AnagramModal.svelte` — `?? 'none'` fallback contradicts the model's length contract `[resolved 2026-11-19]`
 `src/ui/player/AnagramModal.svelte`: `{@const sep = vm.separators[i - 1] ?? 'none'}`.
 `Anagram.buildWordModel` / `buildChainModel` construct `separators.length ===
 entries.length − 1` by construction (one separator per adjacent pair, one per chain
@@ -570,6 +570,24 @@ contract is visible) so the template never indexes the array at all.
 **Pinned by:** `test/domain/anagram/Anagram.test.ts` — "buildWordModel returns
 separators length = word.length − 1" and "buildChainModel separators length ===
 totalLength − 1". The length contract the fallback second-guesses is pinned.
+
+**Resolution (2026-11-19).** The recommended restructure landed. `AnagramTileVM`
+gained `separatorAfter: CellSeparator`; the VM `separators` field was removed (the
+template was its sole consumer); `AnagramModal.svelte` iterates `vm.tiles` with no
+index, no `{@const sep = … ?? 'none'}`. The separator is minted in
+`deriveAnagramModalVM`, where the length contract is visible: the last tile mints
+`'none'` as its own case, and a missing mid-chain separator is **drift made loud** —
+a `throw` naming the violated `buildChainModel` contract, not a default. The
+narrowing is a plain `if (sep === undefined)`, which satisfies
+`noUncheckedIndexedAccess` without a masking `??`. Rendered DOM order is unchanged
+(the old code drew tile *i*'s separator before it; the new code draws tile *i−1*'s
+after it — identical sequence). VM tests rewritten per-tile (the separators-echo
+and chain-boundary pins now read `tiles.map(t => t.separatorAfter)`; the
+chain-span assert additionally pins `position` — stronger than the old
+length-only check). `Anagram.test.ts` untouched and green — the domain contract
+held. Gate: `npm run typecheck` (svelte-check 0 errors / 0 warnings — the compile
+blocker that forced the fallback is gone), `npm run lint` clean, full suite
+1354 tests / 91 files green.
 
 ### B6. `gridVM` — optional chaining over a mask derived from the same grid `[forced; Class C family]`
 `src/ui/bindings/viewmodels/gridVM.ts`: `mask[r]?.[c] === true` where `mask =
@@ -688,7 +706,7 @@ Straight dispatchable work (no decision needed, mechanical with the named fix):
 | A5 | ~~identity conditional~~ | resolved 2026-11-13 | done |
 | A7 | ~~unreachable `default`~~ | resolved 2026-11-13 (`assertUnreachable`) | done |
 | B2 | ~~solving cursor pre-checks~~ | resolved 2026-11-13 | done |
-| B5 | `AnagramModal` `?? 'none'` fallback | VM carries separator-per-tile (`AnagramTileVM.separatorAfter`), template stops indexing | `[forced]` |
+| B5 | ~~`AnagramModal` `?? 'none'` fallback~~ | resolved 2026-11-19 (`AnagramTileVM.separatorAfter` minted in the VM, last tile its own `'none'` case, mid-chain gap a loud throw; template index-free; `separators` field removed) | done |
 | A8 | ~~`appStore` shift-undefined break~~ | resolved 2026-11-18 (batch drain via `splice(0)` + `for...of`; type carries the non-undefined fact, suite unedited) | done |
 
 Interface work (real design value, tests should stay green):
@@ -733,7 +751,12 @@ same-concept fold-in, and the entry's "fail to compile" mechanism claim retracte
 2026-11-19 by the human-approved contract change — `LinkAdmission` /
 `ReattachAdmission` carry the found objects on `ok`, both admission-mismatch
 re-find guards deleted, the interface's own ok-shape pins updated in place
-(count unchanged, reducer suites zero-edit); the
+(count unchanged, reducer suites zero-edit); B5 resolved 2026-11-19 by the
+recommended VM restructure — `AnagramTileVM.separatorAfter` minted in
+`deriveAnagramModalVM` (last tile its own `'none'` case; a missing mid-chain
+separator throws as contract drift, no masking `??`), the `AnagramModalVM.separators`
+field removed with the template now index-free, VM pins rewritten per-tile with
+`Anagram.test.ts` zero-edit and green; the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).
