@@ -442,7 +442,7 @@ use. Verification: solving suite 85/85, full player tree 198/198, `tsc --noEmit 
 tsconfig.json` and `eslint` on the file both clean — all with zero test edits, and the
 no-op-when-cursor-null pins pass unchanged through the domain's own null handling.
 
-### B3. Post-admission re-find guards duplicate `ChainAdmission`'s `ok` contract `[forced today; the fix is the interface carrying the proof]`
+### B3. Post-admission re-find guards duplicate `ChainAdmission`'s `ok` contract `[forced today; the fix is the interface carrying the proof]` — **RESOLVED 2026-11-19 (contract change, human-approved)**
 `src/builder/state/internal/joinSubMode.ts` (`resolveJoin`):
 `if (source === undefined || target === undefined) return Result.ok(state); //
 defensive — admission mismatch` — `ChainAdmission.canLink` returning `{ ok: true }`
@@ -461,6 +461,53 @@ it is an interface change beyond "unnecessary guard removal" and is offered as s
 words / head-with-empty-clue, plus the four `*-not-found` reason tests. The
 `ok ⇒ both exist` implication the dead branches re-check is exactly what those test
 pairs pin.
+
+**Decision (2026-11-19, human-approved):** the full fix is in remit (third instance of
+the A6/B1 precedent). The single shared `AdmissionResult` cannot carry both payloads
+honestly — `canLink`'s `ok` proves two `Word`s exist, `canReattach`'s proves a
+`DisplacedClue` and a `Word` exist — so the type splits into `LinkAdmission` /
+`ReattachAdmission` (failure variants byte-unchanged; the reason unions split into
+`LinkRejection` / `ReattachRejection`, retiring `AdmissionResult` / `AdmissionReason`,
+which grep confirmed have zero external consumers). `message` keeps accepting the ok
+variant with `ok → ''` unchanged — narrowing it to failures was considered and ruled
+out of scope. Cascade, verified by grep before dispatch: one type owner
+(`ChainAdmission.ts`), two call sites (`joinSubMode.ts`, `reattachSubMode.ts`), and
+the interface's own pins in `ChainAdmission.test.ts` (five ok-shape `toStrictEqual`
+assertions + the `message({ ok: true })` literal). The reducer suites pin the
+*stale-dispatch* paths (`source/target/clue not found` → no-op), which flow through
+the `ok: false` reason branches and are untouched — no test can pin the dead
+admission-mismatch branches, and none tried (grep: zero "admission mismatch" in
+`test/`). architecture.md names only `canLink` / `canReattach` / `message` as the
+module surface, not the result-type shape, so no design-doc rule is amended.
+
+**Resolution (2026-11-19):** implemented as the decision block specifies.
+`canLink` now returns `{ ok: true, source, target }` — the exact objects its own
+`find`s located in the caller's array, same references; `canReattach` returns
+`{ ok: true, clue, target }`. `resolveJoin`'s two `words.find` re-lookups and the
+`admission mismatch` guard are replaced by a destructure of the admission payload;
+`resolveReattach`'s `displacedClues.find` re-lookup and its guard likewise (bound to
+the local name `displacedClue`, so the downstream clue-move line is byte-identical).
+Everything above the deleted guards — self-link cancel, stale-UI-dispatch no-ops,
+toast rejections — and below them is unchanged. The six interface pins in
+`ChainAdmission.test.ts` were updated in place to assert the payload objects (the
+returned references are the fixture array elements themselves, so `toStrictEqual`
+against the fixture variables is exact); test names and count unchanged. The
+invariant that makes the destructure equivalent: pure functions, no mutation between
+the admission's `find`s and the use — the payload objects are identical to what the
+deleted re-finds produced.
+
+**Deliberate behaviour changes:** none. Both reducer suites pass byte-unchanged —
+that is the behaviour-preservation proof.
+
+**Verification:** `npx vitest run test/domain/chain/ test/builder/` 348/348 across
+17 files; reducer files zero-edit (diff shows exactly the four inventory files);
+joinSubMode/reattachSubMode suites pass with zero test edits;
+`npx tsc --noEmit -p tsconfig.json` clean; eslint on the three source files clean;
+`grep "admission mismatch"` and `grep "AdmissionResult\|AdmissionReason"` over `src/`
+both zero hits; final gate `npm run ci` green end-to-end (svelte-check 0/0, 91 files /
+1354 tests, single-file build) — count identical to the stashed pre-change tree
+(1354 → 1354), so B3's test delta is exactly zero, nothing invented or lost. Not
+addressed: none — all four inventory sites migrated.
 
 ### B4. `designMode.handleToggleDesignCell` — bounds pre-check duplicates `Grid`'s throw `[free]` — **RETRACTED as a deletion; superseded by the `CellCoord` design (2026-11-13)**
 `src/builder/state/internal/designMode.ts`: `if (!Grid.withinBounds(grid, row, col))
@@ -621,7 +668,7 @@ not "architecture.md says so". Every row below was re-derived accordingly.
 | `ports/*` try/catch (`localStoragePort`, `downloadPort`, `filePickPort`) — the never-throw contract's *minter* | `test/ports/*` — e.g. `localStoragePort.test.ts`: "saveBuilder returns an Error when localStorage.setItem throws (graceful failure)" with `expect(() => result).not.toThrow()` |
 | `v1Json.parsePuzzle` / `persistenceCodec` JSON catches and shape checks | codec/parser test suites pin the failure-as-data shapes for corrupt input |
 | Reducer-side `mode`/`phase`/`isBlank`/gate checks (`fillMode`, `solving`, `designMode`, `handleRequest*`) | the guard-rejection test series pins each as no-op contract — e.g. `fillMode.test.ts`: "no-op in design mode" / "no-op when cursor is null" per intent; `lifecycle.test.ts`: "request-reset-player: import phase is no-op" |
-| The "(defensive)" guard family (stale-id no-ops: `edit-clue`, `click-clue-panel-word`, `begin-join`, `unjoin`, `resolveJoin`, `begin-reattach`, `delete-displaced-clue`, `resolveReattach`, `confirm-reset-player` import-phase, anagram guards, VM banner fallbacks) | **pinned deliberately**, test titles say so — `fillMode.test.ts`, `solving.test.ts`, `joinSubMode.test.ts`, `reattachSubMode.test.ts`, `lifecycle.test.ts`, `builderVM.test.ts`. These are contract surface, not removable defence (see the meta-finding in the admission section). **Coords tier retired 2026-11-13 by the `CellCoord` design (U8, decided):** `toggle-design-cell` no longer no-ops on out-of-grid coords — the intent now carries a `Grid.tryCoord`-minted `CellCoord`, the reducer's pre-check is gone, and an out-of-grid coord reaching it is a bug (`RangeError` throw-pin). `select-cell` intents likewise carry `CellCoord`; its out-of-grid tolerance now lives in `GridInteraction.select`'s own pinned graceful path. The out-of-grid no-op UX pins live at the facade (`gridActions.test.ts`: out-of-grid raw coords / null grid → no dispatch), which is where architecture.md §5 assigns invalid-raw-input handling |
+| The "(defensive)" guard family (stale-id no-ops: `edit-clue`, `click-clue-panel-word`, `begin-join`, `unjoin`, `resolveJoin`, `begin-reattach`, `delete-displaced-clue`, `resolveReattach`, `confirm-reset-player` import-phase, anagram guards, VM banner fallbacks) | **pinned deliberately**, test titles say so — `fillMode.test.ts`, `solving.test.ts`, `joinSubMode.test.ts`, `reattachSubMode.test.ts`, `lifecycle.test.ts`, `builderVM.test.ts`. These are contract surface, not removable defence (see the meta-finding in the admission section). **Admission-mismatch sub-guards retired 2026-11-19 by B3:** `resolveJoin` / `resolveReattach` no longer re-find what admission already proved — the `LinkAdmission` / `ReattachAdmission` ok payloads carry the objects; the stale-dispatch no-ops listed above remain pinned and untouched. **Coords tier retired 2026-11-13 by the `CellCoord` design (U8, decided):** `toggle-design-cell` no longer no-ops on out-of-grid coords — the intent now carries a `Grid.tryCoord`-minted `CellCoord`, the reducer's pre-check is gone, and an out-of-grid coord reaching it is a bug (`RangeError` throw-pin). `select-cell` intents likewise carry `CellCoord`; its out-of-grid tolerance now lives in `GridInteraction.select`'s own pinned graceful path. The out-of-grid no-op UX pins live at the facade (`gridActions.test.ts`: out-of-grid raw coords / null grid → no dispatch), which is where architecture.md §5 assigns invalid-raw-input handling |
 | `Anagram.scramble` internal count/length throws | `scramble`'s own contract for arbitrary callers; reducer path relies on them |
 | `WordTopology.whiteAt` `withinBounds` | code logic: brand range (0..∞) ≠ grid size (2..25); `try(c ± 1)` can mint in-brand-but-off-grid values — the contrast with `measureRun`'s dominated check is the Class C finding |
 | `gridActions` `Row.try`/`Col.try`/`Letter.try` + silent return | `gridActions.test.ts` pins the invalid-input→no-op dispatch contract |
@@ -649,7 +696,7 @@ Interface work (real design value, tests should stay green):
 | Item | What | Fix |
 |---|---|---|
 | B1 | ~~`WriteOutcome.cursor` typed wider than `GridInteraction` produces~~ | resolved 2026-11-18 (contract change, human-approved): tightened to `NonNullable<Cursor>`, three dead guards deleted on type-reasoning (S4 same-concept site folded in; the "fail to compile" mechanism claim retracted in the B1 entry — TS 5.9 narrows `=== null` on non-nullable without error) |
-| B3 | post-admission re-finds duplicate `ChainAdmission.ok` | `canLink`/`canReattach` return the found objects on `ok` |
+| B3 | ~~post-admission re-finds duplicate `ChainAdmission.ok`~~ | resolved 2026-11-19 (contract change, human-approved): `LinkAdmission`/`ReattachAdmission` carry the found objects on `ok`, both re-find guards dissolved at the boundary |
 
 Needs a human/style decision before any work:
 
@@ -682,7 +729,11 @@ check, the two null-channel pins retired with the channel; B1 resolved 2026-11-1
 the human-approved contract change — `WriteOutcome.cursor` narrowed to
 `NonNullable<Cursor>`, three dead guards deleted by type-reasoning with the S4
 same-concept fold-in, and the entry's "fail to compile" mechanism claim retracted
-(TS 5.9 narrows `=== null` on non-nullable silently; see the B1 entry); the
+(TS 5.9 narrows `=== null` on non-nullable silently; see the B1 entry); B3 resolved
+2026-11-19 by the human-approved contract change — `LinkAdmission` /
+`ReattachAdmission` carry the found objects on `ok`, both admission-mismatch
+re-find guards deleted, the interface's own ok-shape pins updated in place
+(count unchanged, reducer suites zero-edit); the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
 single-file build).

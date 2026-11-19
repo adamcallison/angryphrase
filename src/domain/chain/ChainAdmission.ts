@@ -5,30 +5,34 @@ import { WordKey } from '../word/WordKey';
 import type { DisplacedClue } from '../builder/DisplacedClue';
 import { DisplacedClueId } from '../builder/DisplacedClueId';
 
-export type AdmissionReason =
+export type LinkRejection =
   | 'source-not-found'
   | 'target-not-found'
   | 'source-has-link'
-  | 'target-already-linked'
+  | 'target-already-linked';
+export type ReattachRejection =
   | 'clue-not-found'
+  | 'target-not-found'
   | 'target-has-clue'
   | 'target-non-head';
-
-export type AdmissionResult =
-  | { ok: true }
-  | { ok: false; reason: AdmissionReason };
+export type LinkAdmission =
+  | { ok: true; source: Word; target: Word }
+  | { ok: false; reason: LinkRejection };
+export type ReattachAdmission =
+  | { ok: true; clue: DisplacedClue; target: Word }
+  | { ok: false; reason: ReattachRejection };
 
 export const ChainAdmission: {
-  canLink(words: readonly Word[], source: WordKey, target: WordKey): AdmissionResult;
+  canLink(words: readonly Word[], source: WordKey, target: WordKey): LinkAdmission;
   canReattach(
     words: readonly Word[],
     displacedClues: readonly DisplacedClue[],
     displacedClueId: DisplacedClueId,
     target: WordKey,
-  ): AdmissionResult;
-  message(result: AdmissionResult): string;
+  ): ReattachAdmission;
+  message(result: LinkAdmission | ReattachAdmission): string;
 } = {
-  canLink(words: readonly Word[], source: WordKey, target: WordKey): AdmissionResult {
+  canLink(words: readonly Word[], source: WordKey, target: WordKey): LinkAdmission {
     const sourceWord = words.find(w => WordKey.equals(w.key, source));
     if (sourceWord === undefined) {
       return { ok: false, reason: 'source-not-found' };
@@ -50,7 +54,7 @@ export const ChainAdmission: {
       return { ok: false, reason: 'target-already-linked' };
     }
 
-    return { ok: true };
+    return { ok: true, source: sourceWord, target: targetWord };
   },
 
   canReattach(
@@ -58,7 +62,7 @@ export const ChainAdmission: {
     displacedClues: readonly DisplacedClue[],
     displacedClueId: DisplacedClueId,
     target: WordKey,
-  ): AdmissionResult {
+  ): ReattachAdmission {
     const displacedClue = displacedClues.find(d => DisplacedClueId.equals(d.id, displacedClueId));
     if (displacedClue === undefined) {
       return { ok: false, reason: 'clue-not-found' };
@@ -80,10 +84,10 @@ export const ChainAdmission: {
       return { ok: false, reason: 'target-non-head' };
     }
 
-    return { ok: true };
+    return { ok: true, clue: displacedClue, target: targetWord };
   },
 
-  message(result: AdmissionResult): string {
+  message(result: LinkAdmission | ReattachAdmission): string {
     if (result.ok) {
       return '';
     }

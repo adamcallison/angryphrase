@@ -73,12 +73,7 @@ export function resolveReattach(
   }
 
   // Success. Move text; remove displaced clue from list; reset sub-mode.
-  const displacedClue = state.displacedClues.find(d =>
-    DisplacedClueId.equals(d.id, displacedClueId),
-  );
-  if (displacedClue === undefined) {
-    return Result.ok(state); // defensive — admission mismatch
-  }
+  const { clue: displacedClue } = admission;
   const words = state.puzzle.words;
   const newWords = words.map(w =>
     WordKey.equals(w.key, targetKey) ? { ...w, clue: displacedClue.clue } : w,

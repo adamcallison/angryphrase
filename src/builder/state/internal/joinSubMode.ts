@@ -93,11 +93,7 @@ export function resolveJoin(
   }
 
   // Success. Set source.nextWord = target.key; if target had a non-empty clue, displace it.
-  const source = words.find(w => WordKey.equals(w.key, sourceKey));
-  const target = words.find(w => WordKey.equals(w.key, targetKey));
-  if (source === undefined || target === undefined) {
-    return Result.ok(state); // defensive — admission mismatch
-  }
+  const { source, target } = admission;
   const newDisplacedClues = target.clue !== ''
     ? [...state.displacedClues, DisplacedClue.create(rng, target.clue, target.key.direction)]
     : state.displacedClues;

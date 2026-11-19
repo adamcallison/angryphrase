@@ -35,6 +35,8 @@ describe('ChainAdmission', () => {
 
       expect(ChainAdmission.canLink([source, target], source.key, target.key)).toStrictEqual({
         ok: true,
+        source,
+        target,
       });
     });
 
@@ -86,6 +88,8 @@ describe('ChainAdmission', () => {
 
       expect(ChainAdmission.canLink([source, target], source.key, target.key)).toStrictEqual({
         ok: true,
+        source,
+        target,
       });
     });
 
@@ -97,7 +101,7 @@ describe('ChainAdmission', () => {
 
       expect(
         ChainAdmission.canLink([source, targetWithOutgoing, chainTail], source.key, target.key),
-      ).toStrictEqual({ ok: true });
+      ).toStrictEqual({ ok: true, source, target: targetWithOutgoing });
     });
   });
 
@@ -109,7 +113,7 @@ describe('ChainAdmission', () => {
       const clue = DisplacedClue.create(rng, 'displaced', 'across');
 
       expect(ChainAdmission.canReattach([target, other], [clue], clue.id, target.key)).toStrictEqual(
-        { ok: true },
+        { ok: true, clue, target },
       );
     });
 
@@ -164,6 +168,8 @@ describe('ChainAdmission', () => {
 
       expect(ChainAdmission.canReattach([target], [clue], clue.id, target.key)).toStrictEqual({
         ok: true,
+        clue,
+        target,
       });
     });
   });
@@ -212,7 +218,10 @@ describe('ChainAdmission', () => {
     });
 
     it('message: returns empty string for ok result', () => {
-      expect(ChainAdmission.message({ ok: true })).toBe('');
+      const source = makeWord(0, 0, 'across', 1, 'source clue');
+      const target = makeWord(1, 0, 'down', 2, 'target clue');
+
+      expect(ChainAdmission.message({ ok: true, source, target })).toBe('');
     });
   });
 });
