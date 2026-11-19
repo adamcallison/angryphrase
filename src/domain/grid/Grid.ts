@@ -26,20 +26,28 @@ export const Grid: {
     );
   },
 
+  // Check-by-read: the indexed read is the bounds check (noUncheckedIndexedAccess
+  // makes the compiler read it); it also catches ragged rows, which a square-grid
+  // length comparison would not.
   cellAt(g: Grid, row: Row, col: Col): Cell {
-    if (!Grid.withinBounds(g, row, col)) {
+    const cells = g[Number(row)];
+    const cell = cells?.[Number(col)];
+    if (cell === undefined) {
       throw new RangeError(outOfBoundsMessage(g, row, col));
     }
-    return g[Number(row)]![Number(col)]!;
+    return cell;
   },
 
   setCell(g: Grid, row: Row, col: Col, c: Cell): Grid {
-    if (!Grid.withinBounds(g, row, col)) {
-      throw new RangeError(outOfBoundsMessage(g, row, col));
-    }
     const rowIndex = Number(row);
     const colIndex = Number(col);
-    const newRow = [...g[rowIndex]!];
+    const source = g[rowIndex];
+    // The col length check is load-bearing: an out-of-range write silently
+    // extends a JS array, so no compiler or runtime error would surface it.
+    if (source === undefined || colIndex >= source.length) {
+      throw new RangeError(outOfBoundsMessage(g, row, col));
+    }
+    const newRow = [...source];
     newRow[colIndex] = c;
     const newGrid = [...g];
     newGrid[rowIndex] = newRow;
@@ -48,21 +56,22 @@ export const Grid: {
 
   updateCells(g: Grid, updates: ReadonlyArray<{ row: Row; col: Col; cell: Cell }>): Grid {
     if (updates.length === 0) return g;
-    for (const u of updates) {
-      if (!Grid.withinBounds(g, u.row, u.col)) {
-        throw new RangeError(outOfBoundsMessage(g, u.row, u.col));
-      }
-    }
     const newGrid = [...g];
-    const clonedRows = new Set<number>();
+    const cloned = new Map<number, Cell[]>();
     for (const u of updates) {
       const r = Number(u.row);
       const c = Number(u.col);
-      if (!clonedRows.has(r)) {
-        newGrid[r] = [...g[r]!];
-        clonedRows.add(r);
+      const source = g[r];
+      if (source === undefined || c >= source.length) {
+        throw new RangeError(outOfBoundsMessage(g, u.row, u.col));
       }
-      newGrid[r]![c] = u.cell;
+      let target = cloned.get(r);
+      if (target === undefined) {
+        target = [...source];
+        cloned.set(r, target);
+        newGrid[r] = target;
+      }
+      target[c] = u.cell;
     }
     return newGrid;
   },

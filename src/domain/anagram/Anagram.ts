@@ -61,9 +61,7 @@ export const Anagram: {
     const direction = word.key.direction;
 
     const cells = WordGeometry.cells(word);
-    for (let i = 0; i < cells.length; i++) {
-      const cellCoord = cells[i];
-      if (cellCoord === undefined) throw new Error('Anagram.buildWordModel: cell undefined');
+    for (const [i, cellCoord] of cells.entries()) {
       const cell = Grid.cellAt(grid, cellCoord.row, cellCoord.col);
       if (cell.black) {
         throw new Error('Anagram.buildWordModel: word cell is black');
@@ -87,9 +85,7 @@ export const Anagram: {
     const entries: AnagramEntry[] = [];
     const separators: CellSeparator[] = [];
 
-    for (let i = 0; i < members.length; i++) {
-      const member = members[i];
-      if (member === undefined) throw new Error('Anagram.buildChainModel: members[i] undefined');
+    for (const [i, member] of members.entries()) {
       const memberModel = Anagram.buildWordModel(grid, member);
 
       for (const entry of memberModel.entries) {
@@ -158,6 +154,15 @@ export const Anagram: {
       }
     }
 
+    // RETAINED REDUNDANT GUARDS — the codebase's ONLY sanctioned redundant-guard
+    // site (random-access tier). The pool[k]/pool[j] throws below are compiler-
+    // forced (noUncheckedIndexedAccess types every indexed read T | undefined) and
+    // provably dead at runtime: the loop bound i < pool.length - 1 bounds k, and
+    // rng.nextInt(pool.length - i) bounds j. Fisher–Yates has no for…of
+    // restructure, and non-null assertions are banned absolutely, so the guards
+    // stay. Do not convert to `!` or delete without changing the recorded policy —
+    // see llmworkspace/defensive_programming_undecided.md (U6, closed 2026-11-19)
+    // and the defensive-programming audit's Class C resolution.
     for (let i = 0; i < pool.length - 1; i++) {
       const j = rng.nextInt(pool.length - i);
       const k = pool.length - 1 - i;

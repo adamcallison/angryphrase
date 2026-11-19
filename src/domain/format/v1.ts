@@ -417,9 +417,7 @@ function crossCheckWords(
   const listedKeys = new Set<string>();
   let ok = true;
 
-  for (let i = 0; i < parsedWords.length; i++) {
-    const pw = parsedWords[i];
-    if (pw === undefined) throw new Error('v1.crossCheckWords: parsedWords[i] undefined');
+  for (const [i, pw] of parsedWords.entries()) {
     const key = WordKey.toCanonical({
       startRow: Row.of(pw.startRow),
       startCol: Col.of(pw.startCol),
@@ -454,9 +452,7 @@ function validateNextWordReferences(words: Word[], failures: ParseFailure[]): bo
   const map = WordMap.fromWords(words);
   let ok = true;
 
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    if (w === undefined) throw new Error('v1.checkNextWordReferences: words[i] undefined');
+  for (const [i, w] of words.entries()) {
     if (w.nextWord !== null && !WordMap.has(map, w.nextWord)) {
       failures.push({ message: `Word ${i} has a dangling nextWord reference.` });
       ok = false;

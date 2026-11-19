@@ -55,7 +55,6 @@ function measureRun(
     let c = sc;
     while (c < size) {
       const col = ColCtor.of(c);
-      if (!Grid.withinBounds(grid, startRow, col)) break;
       if (!CellCtor.isWhite(Grid.cellAt(grid, startRow, col))) break;
       length++;
       c++;
@@ -64,7 +63,6 @@ function measureRun(
     let r = sr;
     while (r < size) {
       const row = RowCtor.of(r);
-      if (!Grid.withinBounds(grid, row, startCol)) break;
       if (!CellCtor.isWhite(Grid.cellAt(grid, row, startCol))) break;
       length++;
       r++;

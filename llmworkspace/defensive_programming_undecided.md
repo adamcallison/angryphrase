@@ -169,18 +169,63 @@ if U8 is decided toward throw: **option 2 + the mint-gated phantom brand** (the
 refined option 3) — grid-scoped minting as the mechanism, the tag as the type-level
 record of it, no payload.
 
-### U6 — House idiom for provably-in-range indexed access (Class C policy)
-Unchanged by the epistemology shift — this was never a contract question, it is a
-style policy. The codebase treats the same impossible-indexed-access situation four
-ways (`throw`, `continue`, optional chaining, `?? default`); the `?? default` form is
-the dangerous one — its worst instance was audit B5, resolved 2026-11-19 by the VM
-restructure (per-tile `separatorAfter`, loud throw on drift), so no `?? default`
-remains over a provably-in-range index; options remain for the rest: (a) restructure away
-indexed access where a loop bound dominates (`for…of` / `entries()`), or (b) keep
-indexed access and standardize on the throw-with-context form, banning `continue`
-for the provably-in-range case — a policy the project could enforce with
-a lint tail, as it does its other boundaries. Either is defensible; the current mix is
-the only indefensible state.
+### U6 — House idiom for provably-in-range indexed access (Class C policy) — **DECIDED 2026-11-19: option (a), uniform restructure sweep**
+Style policy, never a contract question. Human direction at inventory review: (a)
+restructure away indexed access where a loop bound dominates (`for…of` / `entries()`)
+— not (b) throw-with-context standardization. Decision block:
+
+- **Sweep inventory (S1–S8, built from the Class C table plus same-kind sites named
+  in §0):** S1 `WordTopology.measureRun` (both axes, redundant `withinBounds`
+  breaks); S2 `Anagram.buildWordModel` throw; S3 `Anagram.buildChainModel` throw;
+  S4 `Anagram.scramble` pool throws (see deferral below); S5
+  `LengthPattern.chainPattern` `continue`; S6 `LengthPattern.separatorAt` throw —
+  in scope beyond the C table because the audit's own judgement line says
+  "whichever policy wins, these two must agree", and the sweep makes both Length
+  Pattern sites agree by removal; S7 `format/v1.crossCheckWords` throw; S8
+  `format/v1.validateNextWordReferences` throw. (`partOfRunMask` was already resolved
+  with B6; `?? default` with B5; optional-chaining with B6/A8.)
+- **Deferred — S4 `Anagram.scramble`, human direction 2026-11-19 ("fix the others,
+  then come back"):** Fisher–Yates requires indexed reads (`pool[j]`, `pool[k]`);
+  no `for…of` shape exists; `noUncheckedIndexedAccess` forces the guard; non-null
+  assertions banned repo-wide by eslint. Options on record: (1) keep the
+  throw-with-context guards as the sweep's single sanctioned exception, mirroring
+  `Grid.ts`'s raw-indexing leaf; (2) splice-extraction restructure — guard-free but
+  consumes a different rng stream, so the ~3 pinned SeededRng-deterministic tests
+  would need rewriting (A6/B1/B3-style human-approved behaviour change); (3) amend
+  the eslint allowlist for one non-null assertion. **Open item — tracked until
+  closed.**
+- **S4 DECIDED 2026-11-19: option (1), keep the loud guards** — human direction.
+  The deciding argument: the guards are already exception-free (a runtime throw
+  violates no lint rule), they fail loud where `!` would fail silent, and the
+  Fisher–Yates loop is O(n) where the guard-free splice alternative is O(n²) and
+  breaks the pinned SeededRng stream. Per the same human direction, the guards now
+  carry a loud comment marking them as the codebase's **only** sanctioned
+  redundant-guard site (random-access tier), so a future reader does not "clean them
+  up" into a lint exception.
+- **Zero-suppression package (same human direction, 2026-11-19):** the config-file
+  carve-out is gone on principle — "sanctioning exceptions in the config file sets
+  a precedent for allowing exceptions." `Grid.cellAt`/`setCell` converted to
+  check-by-read (the read is the check; same single runtime check as the old
+  `withinBounds` call, now in a compiler-visible channel — relocation, not
+  addition; strictly stronger on ragged rows); `Grid.updateCells`' batch
+  pre-validation loop deleted, its apply-loop checks are now the primary bounds
+  owners (row via the forced read, col via an explicit length check — needed
+  regardless, since an out-of-range write silently extends a JS array; the pinned
+  original-grid-untouched assertion holds structurally either way); `main.ts`'s
+  per-line disable replaced by an explicit null-check throw. The resulting policy,
+  one tier per situation, no overlap:
+
+  | Situation | Form | Sites |
+  |---|---|---|
+  | walk over a collection | restructure — no guard | 7 (the sweep) |
+  | read with bounds to prove | check-by-read — the read is the check | `Grid` ×3 |
+  | random access | one loud guard, loudly commented | `Anagram.scramble` only |
+  | `!` assertions / config exceptions | banned absolutely | nowhere |
+
+  `eslint.config.js`'s `no-non-null-assertion` rule is now absolute — no `ignores`,
+  no per-line disables in `src/`. **U6 is closed.**
+- After the sweep lands, the §0 four-way mix reduces to one residual case (S4's
+  throws) — the only remaining decision is S4's own.
 
 ---
 
@@ -193,6 +238,6 @@ the only indefensible state.
 | U3 anagram `openedForWord` guards | kept — pinned family (miss path lacks its own titled test; noted) |
 | U4 cursor-never-black guards | kept — pinned (`GridInteraction.test.ts`, `fillMode.test.ts`) |
 | U5 VM sub-mode fallbacks | kept — pinned (`builderVM.test.ts`) |
-| U6 indexed-access idiom policy | **open** — style/policy decision (its worst instance, B5's `?? default`, resolved 2026-11-19 by the VM restructure; no `?? default` remains over a provably-in-range index) |
+| U6 indexed-access idiom policy | **closed 2026-11-19** — sweep landed (7 sites); S4 decided: keep loud guards (random-access tier, loudly commented); zero-suppression package removes both lint exceptions; `no-non-null-assertion` now absolute |
 | U7 progress-blob validation split | closed — partial-apply pinned; recommendation retracted |
 | U8 out-of-grid intent coords: data or bug? | **decided 2026-11-13** — CellCoord + fail-loud; see U8's decision block for implementation state |

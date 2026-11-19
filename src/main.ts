@@ -26,7 +26,8 @@ const store = createAppStore(initial, deps, ports);
 
 installTeardown(store);
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- strict-null on DOM API return (#app guaranteed by index.html); not noUncheckedIndexedAccess.
-const app = mount(App, { target: document.getElementById('app')!, props: { appStore: store } });
+const target = document.getElementById('app');
+if (target === null) throw new Error('main: #app element missing from index.html');
+const app = mount(App, { target, props: { appStore: store } });
 
 export default app;

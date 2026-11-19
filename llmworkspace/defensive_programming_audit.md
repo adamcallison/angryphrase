@@ -60,6 +60,9 @@ misread as free-will paranoia:
   `T | undefined` even when the index is provably in range.
 - `eslint.config.js` bans `@typescript-eslint/no-non-null-assertion` everywhere except
   `src/domain/grid/Grid.ts` (the sanctioned raw-indexing leaf).
+  *(Status 2026-11-19: superseded — the carve-out is gone. Grid.ts converted to
+  check-by-read, main.ts's per-line disable replaced by an explicit throw, and the
+  rule is now absolute; see the Class C resolution block and U6.)*
 
 So a guard like `const x = arr[i]; if (x === undefined) throw …` inside a
 `for (let i = 0; i < arr.length; i++)` loop is partly *the idiom this codebase uses to
@@ -92,6 +95,12 @@ impossible-indexed-access situation four different ways — throw (`Anagram`, `v
 `LengthPattern.separatorAt`), `continue` (`LengthPattern.chainPattern`,
 `partOfRunMask`), optional-chaining (`gridVM`, `appStore`), and `?? default`
 (`AnagramModal`). Whatever policy wins, one form should win.
+**Status (2026-11-19, U6 decided):** the uniform restructure sweep landed
+(Class C table resolution block) — the `?? default` form died with B5, the
+optional-chaining forms with B6/A8, and the sweep removed every throw/`continue`
+instance except one: `Anagram.scramble`, whose indexed reads are algorithmically
+required by Fisher–Yates and cannot be restructured away. The four-way mix is closed
+at one form, one site, one open decision — see U6.
 
 ---
 
@@ -648,14 +657,54 @@ without changing behaviour. Listed with the invariant that kills them:
 
 | Site | Guard | Killing invariant |
 |---|---|---|
-| `WordTopology.measureRun` (both axes) | `if (!Grid.withinBounds(grid, …, col)) break` | loop condition `c < size` where `size = grid.length`; square-grid; `startRow` from a caller iterating `i < size` |
+| `WordTopology.measureRun` (both axes) | `if (!Grid.withinBounds(grid, …, col)) break` | loop condition `c < size` where `size = grid.length`; square-grid; `startRow` from a caller iterating `i < size` | **resolved 2026-11-19 — both breaks deleted (U6 sweep, C1); fail-loud stays via `Grid.cellAt`'s pinned RangeError** |
 | `WordTopology.partOfRunMask` | `if (rowMask === undefined) continue` | `mask` is `grid.map(…)` — one row per grid row; `r = startRow + i` inside a run derived from that grid | **resolved 2026-11-19 with B6 — the mask itself is gone (`partOfRunCells` keyed Set); no indexed access on the path** |
-| `Anagram.buildWordModel` | `cells[i] === undefined` throw | `i < cells.length`, loop over the array just built |
-| `Anagram.buildChainModel` | `members[i] === undefined` throw | `i < members.length` |
-| `Anagram.scramble` | `pool[k]` / `pool[j]` undefined throws | Fisher–Yates loop `i < pool.length − 1`; `j = rng.nextInt(pool.length − i)` ∈ `[0, pool.length − i)` |
-| `LengthPattern.chainPattern` | `members[memberIndex] === undefined` → `continue` | `memberIndex < members.length` |
-| `format/v1.crossCheckWords` | `parsedWords[i] === undefined` throw | `i < parsedWords.length` (`i` also used in messages — `entries()` restructure) |
-| `format/v1.validateNextWordReferences` | `words[i] === undefined` throw | `i < words.length` (same) |
+| `Anagram.buildWordModel` | `cells[i] === undefined` throw | `i < cells.length`, loop over the array just built | **resolved 2026-11-19 — `cells.entries()` restructure (U6 sweep, C2); throw deleted** |
+| `Anagram.buildChainModel` | `members[i] === undefined` throw | `i < members.length` | **resolved 2026-11-19 — `members.entries()` restructure (U6 sweep, C2)** |
+| `Anagram.scramble` | `pool[k]` / `pool[j]` undefined throws | Fisher–Yates loop `i < pool.length − 1`; `j = rng.nextInt(pool.length − i)` ∈ `[0, pool.length − i)` | **decided 2026-11-19: guards kept (option 1, human-directed)** — Fisher–Yates requires indexed reads, no restructure exists; the guards are the random-access tier of the U6 policy and now carry a loud RETAINED-REDUNDANT-GUARDS comment in the file (the codebase's only such site); no lint exception involved |
+| `LengthPattern.chainPattern` | `members[memberIndex] === undefined` → `continue` | `memberIndex < members.length` | **resolved 2026-11-19 — `members.entries()` restructure (U6 sweep, C3)** |
+| `format/v1.crossCheckWords` | `parsedWords[i] === undefined` throw | `i < parsedWords.length` (`i` also used in messages — `entries()` restructure) | **resolved 2026-11-19 — `parsedWords.entries()` (U6 sweep, C4); failure messages byte-identical** |
+| `format/v1.validateNextWordReferences` | `words[i] === undefined` throw | `i < words.length` (same) | **resolved 2026-11-19 — `words.entries()` (U6 sweep, C4)** |
+
+**Policy resolution (U6, 2026-11-19, human-directed):** the restructure sweep —
+option (a) — was taken, not the throw-with-context standard. The sweep inventory was
+the table above **plus `LengthPattern.separatorAt`** (in scope because the judgement
+below requires the two LengthPattern sites to agree): its callers now pass the
+`WordCell` directly (`cells.slice(0, cells.length - 1)` + `for…of`), the `offset`
+param, the indexed access, and the throw are gone — `LengthPattern.ts` contains no
+indexed array access at all. Deliberate behaviour changes: none — every touched suite
+passed with zero test edits (`WordTopology` 37, `Anagram` 26, `LengthPattern` 17,
+`format/v1` 51), full tree 1357/1357, `tsc --noEmit` clean. The §0 four-way mix is now
+down to one residual case: `Anagram.scramble`, which is structurally unsweepable
+(indexed reads are algorithmically required; non-null assertions banned) and is the
+only open item — see U6.
+
+**U6 closed (2026-11-19, same human direction) — scramble decided + zero-suppression
+package.** `Anagram.scramble` keeps its loud guards (option 1: the guards violate no
+lint rule, fail loud where `!` would fail silent, and preserve the O(n) loop and the
+pinned SeededRng stream); the file now carries a RETAINED-REDUNDANT-GUARDS comment
+naming it the codebase's only sanctioned redundant-guard site. On the same principle —
+no exceptions in the config file — both lint suppressions were eliminated:
+`Grid.cellAt`/`setCell` converted to **check-by-read** (the indexed read is the
+bounds check — same single runtime check as the old `withinBounds` call, relocated
+into the compiler-visible channel; strictly stronger, catches ragged rows);
+`Grid.updateCells`' batch pre-validation loop deleted, its apply-loop checks are the
+primary bounds owners (row via the forced read, col via an explicit length check —
+load-bearing, since an out-of-range write silently extends a JS array); the pinned
+original-grid-untouched assertion holds structurally (writes only ever land on cloned
+rows); `main.ts`'s per-line disable replaced by an explicit null-check throw.
+`eslint.config.js`'s `no-non-null-assertion` rule is now **absolute** — no `ignores`,
+no disables in `src/` — which makes the rule itself the regression guard against the
+exception precedent. Verification: `Grid.test.ts` 18/18 and full tree 1357/1357 with
+zero test edits, `tsc` clean, `eslint .` clean under the absolute rule, repo grep zero
+non-null assertions and zero disables. Final policy, one tier per situation:
+
+| Situation | Form | Sites |
+|---|---|---|
+| walk over a collection | restructure — no guard | 7 (the sweep) |
+| read with bounds to prove | check-by-read — the read is the check | `Grid` ×3 |
+| random access | one loud guard, loudly commented | `Anagram.scramble` only |
+| `!` assertions / config exceptions | banned absolutely | nowhere |
 
 Two judgements inside this class:
 
@@ -665,9 +714,13 @@ Two judgements inside this class:
   (Row/Col have no upper bound) but can exceed the grid size, since grids run 2..25
   while the brand range is 0..∞. `measureRun`'s check, by contrast, is dominated by its
   own loop bound. Remove `measureRun`'s; keep `whiteAt`'s.
+  *(Resolved 2026-11-19 exactly so: `measureRun`'s breaks deleted, `whiteAt`'s kept.)*
 - **`LengthPattern` is internally inconsistent**: `separatorAt` *throws* on the
   impossible out-of-range offset while `chainPattern` *skips* the impossible undefined
   member. Whichever policy the house adopts (§0) should make these two agree.
+  *(Resolved 2026-11-19 by removal of both forms: `separatorAt` now takes the cell
+  directly — no offset, no indexed access, no throw; `chainPattern` iterates
+  `entries()`. Nothing left to agree.)*
 
 ---
 
