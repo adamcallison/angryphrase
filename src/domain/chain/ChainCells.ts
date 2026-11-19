@@ -1,3 +1,4 @@
+import { cellKey } from '../grid/CellKey';
 import type { Word } from '../word/Word';
 import { WordGeometry } from '../word/WordGeometry';
 import { ChainIndex } from './ChainIndex';
@@ -9,7 +10,7 @@ export const ChainCells: {
   cellsOfWord(w: Word): Set<string> {
     const set = new Set<string>();
     for (const cell of WordGeometry.cells(w)) {
-      set.add(`${Number(cell.row)},${Number(cell.col)}`);
+      set.add(cellKey(cell.row, cell.col));
     }
     return set;
   },

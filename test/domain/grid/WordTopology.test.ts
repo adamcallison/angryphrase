@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Cell } from '../../../src/domain/grid/Cell';
 import type { Cell as CellType } from '../../../src/domain/grid/Cell';
 import { Col } from '../../../src/domain/grid/Col';
+import { cellKey } from '../../../src/domain/grid/CellKey';
 import { Grid } from '../../../src/domain/grid/Grid';
 import { GridSize } from '../../../src/domain/grid/GridSize';
 import { Row } from '../../../src/domain/grid/Row';
@@ -404,17 +405,21 @@ describe('WordTopology', () => {
     });
   });
 
-  describe('partOfRunMask', () => {
-    it('WordTopology.partOfRunMask returns a mask aligned with the grid', () => {
+  describe('partOfRunCells', () => {
+    it('WordTopology.partOfRunCells keys are in-bounds grid coordinates', () => {
       const g = blankGrid(3);
-      const mask = WordTopology.partOfRunMask(g);
-      expect(mask.length).toBe(g.length);
-      for (let r = 0; r < g.length; r++) {
-        expect(mask[r]).toHaveLength(g[r]!.length);
+      const cells = WordTopology.partOfRunCells(g);
+      expect(cells.size).toBe(9);
+      for (const key of cells) {
+        const [r, c] = key.split(',').map(Number);
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(r).toBeLessThan(3);
+        expect(c).toBeGreaterThanOrEqual(0);
+        expect(c).toBeLessThan(3);
       }
     });
 
-    it('WordTopology.partOfRunMask agrees with partOfRun on every cell', () => {
+    it('WordTopology.partOfRunCells agrees with partOfRun on every cell', () => {
       const allWhite3 = blankGrid(3);
 
       let withBlack = blankGrid(3);
@@ -431,19 +436,19 @@ describe('WordTopology', () => {
 
       const grids = [allWhite3, withBlack, isolated];
       for (const g of grids) {
-        const mask = WordTopology.partOfRunMask(g);
+        const cells = WordTopology.partOfRunCells(g);
         for (let r = 0; r < g.length; r++) {
           for (let c = 0; c < g.length; c++) {
             const expected =
               WordTopology.partOfRun(g, Row.of(r), Col.of(c), 'across') ||
               WordTopology.partOfRun(g, Row.of(r), Col.of(c), 'down');
-            expect(mask[r]![c]).toBe(expected);
+            expect(cells.has(cellKey(r, c))).toBe(expected);
           }
         }
       }
     });
 
-    it('WordTopology.partOfRunMask marks the cells of a length-2 run', () => {
+    it('WordTopology.partOfRunCells marks the cells of a length-2 run', () => {
       let g = blankGrid(3);
       g = setBlack(g, 1, 2);
       for (let r = 0; r < 3; r++) {
@@ -453,23 +458,20 @@ describe('WordTopology', () => {
           }
         }
       }
-      const mask = WordTopology.partOfRunMask(g);
-      expect(mask[1]![0]).toBe(true);
-      expect(mask[1]![1]).toBe(true);
+      const cells = WordTopology.partOfRunCells(g);
+      expect(cells.has('1,0')).toBe(true);
+      expect(cells.has('1,1')).toBe(true);
     });
 
-    it('WordTopology.partOfRunMask leaves black cells and isolated cells false', () => {
+    it('WordTopology.partOfRunCells leaves black cells and isolated cells out', () => {
       let g = blankGrid(3);
       g = setBlack(g, 0, 1);
       g = setBlack(g, 1, 0);
       g = setBlack(g, 1, 2);
       g = setBlack(g, 2, 1);
-      const mask = WordTopology.partOfRunMask(g);
-      expect(mask[1]![1]).toBe(false);
-      expect(mask[0]![0]).toBe(false);
-      expect(mask[0]![2]).toBe(false);
-      expect(mask[2]![0]).toBe(false);
-      expect(mask[2]![2]).toBe(false);
+      const cells = WordTopology.partOfRunCells(g);
+      expect(cells.has('1,1')).toBe(false);
+      expect(cells.has('0,0')).toBe(false);
     });
   });
 

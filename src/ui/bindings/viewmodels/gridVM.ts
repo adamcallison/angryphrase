@@ -1,6 +1,7 @@
 import type { Grid } from '../../../domain/grid/Grid';
 import { CellMarker } from '../../../domain/grid/CellMarker';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
+import { cellKey } from '../../../domain/grid/CellKey';
 import { WordTopology } from '../../../domain/grid/WordTopology';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../domain/grid/Cursor';
@@ -30,10 +31,6 @@ export type GridVM = {
   cursorDirection: Direction | null;
 };
 
-function cellKey(r: number, c: number): string {
-  return `${r},${c}`;
-}
-
 export function deriveGridVM(input: {
   grid: Grid;
   cursor: Cursor;
@@ -42,7 +39,7 @@ export function deriveGridVM(input: {
   selectedWordCells: ReadonlySet<string>;
 }): GridVM {
   const { grid, cursor, words, whichLetter, selectedWordCells } = input;
-  const mask = WordTopology.partOfRunMask(grid);
+  const runCells = WordTopology.partOfRunCells(grid);
   const size = grid.length;
   const cursorRow = cursor ? Number(cursor.row) : null;
   const cursorCol = cursor ? Number(cursor.col) : null;
@@ -86,7 +83,7 @@ export function deriveGridVM(input: {
         ? 'none'
         : CellMarker.read(cell.marker, 'bottom');
 
-      const selectable = black ? false : mask[r]?.[c] === true;
+      const selectable = black ? false : runCells.has(key);
 
       return {
         row: r,

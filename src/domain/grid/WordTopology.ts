@@ -1,7 +1,10 @@
 import type { Row } from './Row';
 import type { Col } from './Col';
 import type { Direction } from '../word/Direction';
+import { WordGeometry } from '../word/WordGeometry';
+import { WordLength } from '../word/WordLength';
 import { Grid } from './Grid';
+import { cellKey } from './CellKey';
 import { Cell as CellCtor } from './Cell';
 import { Row as RowCtor } from './Row';
 import { Col as ColCtor } from './Col';
@@ -80,7 +83,7 @@ function whiteAt(g: Grid, row: Row | null, col: Col | null): boolean {
 export const WordTopology: {
   runs(grid: Grid, direction: Direction): readonly WordRun[];
   partOfRun(grid: Grid, row: Row, col: Col, direction: Direction): boolean;
-  partOfRunMask(grid: Grid): boolean[][];
+  partOfRunCells(grid: Grid): Set<string>;
   isSelectable(grid: Grid, row: Row, col: Col): boolean;
 } = {
   runs(grid: Grid, direction: Direction): readonly WordRun[] {
@@ -126,25 +129,24 @@ export const WordTopology: {
     return whiteAt(grid, prev, col) || whiteAt(grid, next, col);
   },
 
-  partOfRunMask(grid: Grid): boolean[][] {
-    const mask: boolean[][] = grid.map((row) => row.map(() => false));
+  partOfRunCells(grid: Grid): Set<string> {
+    const cells = new Set<string>();
 
     for (const direction of ['across', 'down'] as const) {
       for (const run of WordTopology.runs(grid, direction)) {
+        // WordLength.of throws below its minimum of 2, and runs enumerates
+        // length-1 runs — the filter must run before the mint.
         if (run.length < 2) continue;
-        const startRow = Number(run.startRow);
-        const startCol = Number(run.startCol);
-        for (let i = 0; i < run.length; i++) {
-          const r = direction === 'across' ? startRow : startRow + i;
-          const c = direction === 'across' ? startCol + i : startCol;
-          const rowMask = mask[r];
-          if (rowMask === undefined) continue;
-          rowMask[c] = true;
+        for (const cell of WordGeometry.cells({
+          key: run,
+          length: WordLength.of(run.length),
+        })) {
+          cells.add(cellKey(cell.row, cell.col));
         }
       }
     }
 
-    return mask;
+    return cells;
   },
 
   isSelectable(grid: Grid, row: Row, col: Col): boolean {

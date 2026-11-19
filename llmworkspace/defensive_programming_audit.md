@@ -602,6 +602,40 @@ without double indexed access, or accept the idiom under the Class C policy.
 aligned with the grid". Alignment is pinned; only the template-side optional chaining
 is the open question.
 
+**Resolution (2026-11-19, human-directed contract change).** The restructure option was
+taken one step further than the finding proposed: the mask itself is gone.
+`partOfRunMask(grid): boolean[][]` became `partOfRunCells(grid): Set<string>` — one
+`` `${row},${col}` `` key per cell in a length-≥-2 run on either axis, built from
+`runs` with each run's cells enumerated through `WordGeometry.cells` (the single owner
+of word-coordinate walking; a `WordRun` is structurally a `WordKey`). The killing
+invariant for the `WordLength.of` mint (brand min 2) is the `run.length < 2` filter,
+deliberately ordered before it — `runs` enumerates length-1 runs, so the filter is
+load-bearing, and it is commented as such at the mint. Both consumer guard levels
+(`mask[r]?.[c] === true`, gridVM) and this class's own internal guard
+(`rowMask === undefined continue`, the Class C table row below) are deleted — no
+indexed access remains anywhere on the derivation path, which is the property
+`noUncheckedIndexedAccess` was forcing guards onto. The consumer now reads
+`runCells.has(key)` on the key the loop already mints. The key format matched
+`ChainCells.cellsOfChain`'s output and gridVM's local `cellKey` de facto; the
+follow-through gave the format one owner — new `domain/grid/CellKey.ts`
+`cellKey(row, col)` — and migrated all six minting sites (gridVM's local fn deleted;
+`Numbering.assign`'s mint/read pair at lines 13/28; `ChainCells.cellsOfChain`;
+`partOfRunCells`; the conformance test's lookup). Deliberately not migrated:
+`WordKey.toCanonical` (three-part word-identity key — a different concept),
+`format/v1.ts:444` and the two test "word not found at" messages (interpolation, not
+keys). The four `partOfRunMask` pins were rewritten Set-side — a representation change
+to pinned tests, out of this audit's original remit, authorized by the human's
+"eliminate both guards" directive; semantics preserved and re-pinned (in-bounds keys;
+per-cell conformance with `partOfRun` on the same three fixtures; the length-2 run
+membership case; the black/isolated exclusion case — the old corner assertions
+(0,2)/(2,0)/(2,2) folded into the exhaustive conformance case rather than restated).
+Preservation evidence: the three gridVM pins (`selectable ≡ isSelectable`) and every
+other downstream suite passed **unedited**; `Numbering.test.ts`,
+`ChainCells.test.ts`, `gridVM.test.ts` zero-edit and green; full suite 1357 tests /
+92 files (was 1354/91; +3 are the new `CellKey.test.ts` pins); `svelte-check` 0
+errors / 0 warnings; `npm run lint` clean; grep `partOfRunMask` in `*.{ts,svelte,js}`
+zero hits. `architecture.md` §3 amended first (WordTopology row; new `CellKey` entry).
+
 ---
 
 ## Class C — compiler-forced dead guards on provably-in-range indexed access
@@ -615,7 +649,7 @@ without changing behaviour. Listed with the invariant that kills them:
 | Site | Guard | Killing invariant |
 |---|---|---|
 | `WordTopology.measureRun` (both axes) | `if (!Grid.withinBounds(grid, …, col)) break` | loop condition `c < size` where `size = grid.length`; square-grid; `startRow` from a caller iterating `i < size` |
-| `WordTopology.partOfRunMask` | `if (rowMask === undefined) continue` | `mask` is `grid.map(…)` — one row per grid row; `r = startRow + i` inside a run derived from that grid |
+| `WordTopology.partOfRunMask` | `if (rowMask === undefined) continue` | `mask` is `grid.map(…)` — one row per grid row; `r = startRow + i` inside a run derived from that grid | **resolved 2026-11-19 with B6 — the mask itself is gone (`partOfRunCells` keyed Set); no indexed access on the path** |
 | `Anagram.buildWordModel` | `cells[i] === undefined` throw | `i < cells.length`, loop over the array just built |
 | `Anagram.buildChainModel` | `members[i] === undefined` throw | `i < members.length` |
 | `Anagram.scramble` | `pool[k]` / `pool[j]` undefined throws | Fisher–Yates loop `i < pool.length − 1`; `j = rng.nextInt(pool.length − i)` ∈ `[0, pool.length − i)` |
@@ -720,7 +754,7 @@ Needs a human/style decision before any work:
 
 | Item | What | Decision |
 |---|---|---|
-| Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | the U6 policy: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
+| Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | B6 **resolved 2026-11-19** (human-directed: keyed-Set reshape, `partOfRunMask` → `partOfRunCells`, mask + internal Class C guard + both consumer guard levels gone, cell-key format consolidated into `domain/grid/CellKey.ts`). The U6 policy question remains open for the ~9 surviving table rows: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
 
 Retired by design (recorded, nothing to do): B4, D1, D2-observation, U8 (the
 `CellCoord` implementation, landed 2026-11-13), U1–U5, U7. (A6 was in this list
@@ -759,7 +793,15 @@ field removed with the template now index-free, VM pins rewritten per-tile with
 `Anagram.test.ts` zero-edit and green; the
 `CellCoord` design landed 2026-11-13 resolving U8/B4 structurally —
 final gate `npm run ci` green end-to-end: 1356 tests / 91 files, svelte-check, madge,
-single-file build).
+single-file build). B6 resolved 2026-11-19 by the human-directed keyed-Set reshape —
+`partOfRunMask` → `partOfRunCells` (`Set<string>` of `cellKey`-minted keys, run cells
+walked through `WordGeometry.cells`, the `run.length < 2` filter carrying the
+`WordLength.of` mint invariant), both gridVM guard levels and the internal Class C
+guard deleted with no indexed access left on the path, the four mask pins rewritten
+Set-side under the human's authorization, gridVM/`Numbering`/`ChainCells` suites
+zero-edit and green, and the two-part cell-key format given one owner
+(`domain/grid/CellKey.ts`) across all six minting sites; full suite 1357 / 92 files
+(+3 `CellKey.test.ts`), svelte-check 0/0, grep `partOfRunMask` zero hits.
 
 **Second-pass re-derivation (2026-11-13, later).** After the epistemology correction
 (contracts are interfaces and pinned tests; architecture.md is a map), every finding

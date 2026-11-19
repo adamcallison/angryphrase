@@ -1,4 +1,5 @@
 import type { Grid } from '../grid/Grid';
+import { cellKey } from '../grid/CellKey';
 import type { DerivedWord } from './DerivedWord';
 import type { Word } from './Word';
 import { WordKey } from './WordKey';
@@ -10,7 +11,7 @@ export const Numbering: {
   assign(grid: Grid, words: DerivedWord[]): Word[] {
     const startCellMap = new Map<string, DerivedWord[]>();
     for (const word of words) {
-      const key = `${word.key.startRow},${word.key.startCol}`;
+      const key = cellKey(word.key.startRow, word.key.startCol);
       const existing = startCellMap.get(key) ?? [];
       const canonical = WordKey.toCanonical(word.key);
       if (!existing.some((w) => WordKey.toCanonical(w.key) === canonical)) {
@@ -25,7 +26,7 @@ export const Numbering: {
     const size = grid.length;
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-        const key = `${r},${c}`;
+        const key = cellKey(r, c);
         const cellWords = startCellMap.get(key);
         if (cellWords !== undefined && cellWords.length > 0) {
           counter++;
