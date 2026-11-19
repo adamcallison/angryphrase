@@ -494,6 +494,86 @@ describe('persistenceCodec.ts', () => {
       warnSpy.mockRestore();
     });
 
+    it('parsePlayerProgress: returns null when playerLetters has fewer rows than gridSize (no warn)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'player-progress',
+        key: '00000000-0000-4000-8000-000000000000',
+        gridSize: 2,
+        playerLetters: [['A', 'B']],
+      });
+      expect(parsePlayerProgress(blob)).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('parsePlayerProgress: returns null when playerLetters has more rows than gridSize (no warn)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'player-progress',
+        key: '00000000-0000-4000-8000-000000000000',
+        gridSize: 2,
+        playerLetters: [
+          ['A', 'B'],
+          ['C', 'D'],
+          ['E', 'F'],
+        ],
+      });
+      expect(parsePlayerProgress(blob)).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('parsePlayerProgress: returns null when a row has fewer cells than gridSize (no warn)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'player-progress',
+        key: '00000000-0000-4000-8000-000000000000',
+        gridSize: 2,
+        playerLetters: [['A'], ['B']],
+      });
+      expect(parsePlayerProgress(blob)).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('parsePlayerProgress: returns null when a row has more cells than gridSize (no warn)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'player-progress',
+        key: '00000000-0000-4000-8000-000000000000',
+        gridSize: 2,
+        playerLetters: [
+          ['A', 'B', 'C'],
+          ['D', 'E', 'F'],
+        ],
+      });
+      expect(parsePlayerProgress(blob)).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('parsePlayerProgress: returns null when playerLetters is ragged (mixed row lengths vs gridSize) (no warn)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const blob = JSON.stringify({
+        version: 1,
+        kind: 'player-progress',
+        key: '00000000-0000-4000-8000-000000000000',
+        gridSize: 2,
+        playerLetters: [
+          ['A', 'B'],
+          ['C'],
+        ],
+      });
+      expect(parsePlayerProgress(blob)).toBeNull();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
     it('persistenceCodec: tests assert no console.warn fired by parsing failures (spy on console.warn, expect not called)', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       for (const { blob } of invalidBuilderBlobs) {

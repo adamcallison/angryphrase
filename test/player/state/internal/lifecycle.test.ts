@@ -301,7 +301,7 @@ describe('handleApplyLoadedProgress', () => {
       state,
       {
         kind: 'apply-loaded-progress', target: 'player',
-        playerLetters: [[Letter.try('X'), null]],
+        playerLetters: [[Letter.try('X'), null], [null, null]],
         savedGridSize: GridSize.of(2),
       },
     );
@@ -311,7 +311,7 @@ describe('handleApplyLoadedProgress', () => {
       withLetter.state,
       {
         kind: 'apply-loaded-progress', target: 'player',
-        playerLetters: [[null, null]],
+        playerLetters: [[null, null], [null, null]],
         savedGridSize: GridSize.of(2),
       },
     );
@@ -358,26 +358,10 @@ describe('handleApplyLoadedProgress', () => {
     ).toBe(true);
   });
 
-  it('apply-loaded-progress: truncated saved arrays (fewer rows/cols than grid) → applies only the intersection', () => {
+  it('apply-loaded-progress: oversized playerLetters (impossible via codec — dimension contract) → throws RangeError (bug-signal)', () => {
     const state = solving();
-    const result = handleApplyLoadedProgress(
-      state,
-      {
-        kind: 'apply-loaded-progress', target: 'player',
-        playerLetters: [[Letter.try('X')]],
-        savedGridSize: GridSize.of(2),
-      },
-    );
-
-    expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 0)).toBe(Letter.try('X'));
-    expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 1)).toBe(null);
-  });
-
-  it('apply-loaded-progress: oversized saved arrays (more rows/cols than grid) → applies only the intersection', () => {
-    const state = solving();
-    const result = handleApplyLoadedProgress(
-      state,
-      {
+    expect(() =>
+      handleApplyLoadedProgress(state, {
         kind: 'apply-loaded-progress', target: 'player',
         playerLetters: [
           [Letter.try('A'), Letter.try('B'), Letter.try('C')],
@@ -385,11 +369,8 @@ describe('handleApplyLoadedProgress', () => {
           [Letter.try('G'), Letter.try('H'), Letter.try('I')],
         ],
         savedGridSize: GridSize.of(2),
-      },
-    );
-
-    expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 0)).toBe(Letter.try('A'));
-    expect(cellPlayerLetter(result.state as ReturnType<typeof solving>, 0, 1)).toBe(Letter.try('B'));
+      }),
+    ).toThrow(RangeError);
   });
 
   it('apply-loaded-progress: returns original state reference when nothing changed (all saved null or dropped)', () => {
@@ -415,7 +396,7 @@ describe('handleApplyLoadedProgress', () => {
       state,
       {
         kind: 'apply-loaded-progress', target: 'player',
-        playerLetters: [[Letter.try('X'), Letter.try('Y')]],
+        playerLetters: [[Letter.try('X'), Letter.try('Y')], [null, null]],
         savedGridSize: GridSize.of(2),
       },
     );

@@ -34,7 +34,9 @@ narrows precisely to the **unpinned** defences:
 
 A finding that would require editing a pinned test is not a guard removal — it is a
 behaviour change, and it leaves this audit's remit. (One such item was demoted on this
-pass: the player-progress "partial apply" clamps are pinned behaviour, see D1.)
+pass: the player-progress "partial apply" clamps — D1. That demotion was later ruled a
+misunderstanding; the human approved the behaviour change and D1 is resolved 2026-11-19,
+same shape as the A6 reversal.)
 
 **Admission criterion (unchanged in substance).** A site is a finding only if a
 contract fact — compile-level interface, pinned test, or same-expression code logic
@@ -726,23 +728,41 @@ Two judgements inside this class:
 
 ## Class D — observations that are not guard removals but belong to this audit
 
-### D1. Player-progress blob validation is split across two owners — **demoted from recommendation to observation (pinned behaviour)**
-`persistenceCodec.parsePlayerProgress` validates the blob's content (arrays of arrays,
-`Letter.try` per cell, branded `gridSize`) but not its *dimensions* — a ragged or
-short `playerLetters` passes. `solving`-tree `handleApplyLoadedProgress` then defends
-with `Math.min` row/col clamps and a `savedRow === undefined` continue. The first
-draft of this audit called that a split and recommended codec-owned dimension
-validation; the re-derivation **retracts the recommendation**: the partial-application
-semantics are *deliberate, pinned contract* — `test/player/state/internal/lifecycle.test.ts`:
-"apply-loaded-progress: truncated saved arrays (fewer rows/cols than grid) → applies
-only the intersection" and the oversized-arrays counterpart. Moving dimension
-validation into the codec would change pinned behaviour (partial apply → whole-blob
-reject) — a behaviour change, outside this audit's remit. What remains is the
-observation: the two layers each carry part of a pinned contract, and a reader
-looking for "what shape is a valid progress blob" must read both files. If the
-split ever bothers anyone, the fix is a behaviour-change decision, not a cleanup.
-The `saved == null` continue is legitimate data filtering either way (a stored `null`
-letter is a cell not yet solved).
+### D1. Player-progress blob validation is split across two owners — **resolved 2026-11-19 by behaviour change (human-approved contract change)**
+`persistenceCodec.parsePlayerProgress` validated the blob's content (arrays of arrays,
+`Letter.try` per cell, branded `gridSize`) but not its *dimensions* — a ragged, short
+or oversized `playerLetters` passed. `solving`-tree `handleApplyLoadedProgress` then
+defended with `Math.min` row/col clamps and a `savedRow === undefined` continue. The
+first draft called that a split and recommended codec-owned dimension validation; the
+2026-11-13 re-derivation retracted it on the ground that partial-application semantics
+were pinned (`lifecycle.test.ts` truncated/oversized → "applies only the intersection").
+**The human later ruled that retraction a misunderstanding**: the pin reflected the
+implementation, not intent — architecture.md never promised partial apply, and
+`serializePlayerProgress` always writes an exact `gridSize`×`gridSize` square built from
+the live grid, so a dimension-mismatched blob can only be corruption or tampering;
+partially applying corrupted data was never a design goal. The human approved the
+contract change (decision recorded 2026-11-19, same shape as the A6 reversal):
+- **Codec now owns dimensions:** `parsePlayerProgress` rejects the blob whole unless
+  `playerLetters` is exactly `gridSize` rows of `gridSize` cells. A dimension-invalid
+  blob lands on the existing corrupt-blob path (warn, no dispatch, state unchanged —
+  already pinned in `appStore.test.ts`).
+- **Reducer defence removed:** the `Math.min` clamps and the undefined-row continue
+  are gone (dominated — the appStore is the sole minter of `apply-loaded-progress`
+  intents, always through the codec). An out-of-dimension array reaching the reducer is
+  now a bug that fails loud via `Grid.cellAt`'s `RangeError`.
+- **What stays:** the `savedGridSize !== puzzle.gridSize` no-op (the codec cannot know
+  the current puzzle), the black-cell drop, and the `saved == null` letter skip
+  (a stored `null` letter is a cell not yet solved — data filtering, not defence).
+- **Test changes:** the two former partial-apply pins (truncated/oversized →
+  intersection) replaced by codec-level rejection tests; authoritative contract:
+  architecture.md §7 player import flow + §8 dimension contract.
+- **Verification (2026-11-19):** full suite 1361 / 92 files green, svelte-check
+  0/0. Fixture closure walk over all 12 `apply-loaded-progress` intent sites: 8
+  conform to the dimension contract; 4 intentionally non-square — 3 no-op-path
+  tests (phase guard / gridSize mismatch: the array is never read) and 1 the
+  deliberate oversized throw-pin. The three tests that fed truncated arrays with
+  matching `savedGridSize` were squared (fill nulls) so no pin rests on the
+  contract-violating-input path.
 
 ### D2. `builderFacade.setMarker` dispatches an intent it knows will no-op
 `src/ui/bindings/builderFacade.ts`: when `cursor === null || mode !== 'fill'`, it
@@ -809,10 +829,12 @@ Needs a human/style decision before any work:
 |---|---|---|
 | Class C table + B6 | ~10 compiler-forced dead guards on provably-in-range indexed access, four inconsistent escape hatches in use | B6 **resolved 2026-11-19** (human-directed: keyed-Set reshape, `partOfRunMask` → `partOfRunCells`, mask + internal Class C guard + both consumer guard levels gone, cell-key format consolidated into `domain/grid/CellKey.ts`). The U6 policy question remains open for the ~9 surviving table rows: restructure away indexed access (`for…of`) vs standardize the throw-with-context idiom (possible lint tail) |
 
-Retired by design (recorded, nothing to do): B4, D1, D2-observation, U8 (the
+Retired by design (recorded, nothing to do): B4, D2-observation, U8 (the
 `CellCoord` implementation, landed 2026-11-13), U1–U5, U7. (A6 was in this list
 until 2026-11-18; the human approved the B1-shaped contract change and it is
-resolved above.)
+resolved above. D1 was in this list until 2026-11-19; the human ruled its
+"pinned behaviour" retraction a misunderstanding, approved the codec-owns-
+dimensions contract change, and it is resolved above.)
 
 ---
 

@@ -52,15 +52,13 @@ export function handleApplyLoadedProgress(
   }
 
   const g = state.puzzle.grid;
-  const size = g.length;
   const updates: { row: Row; col: Col; cell: Cell }[] = [];
-  const rowsLen = Math.min(intent.playerLetters.length, size);
-  for (let r = 0; r < rowsLen; r++) {
-    const savedRow = intent.playerLetters[r];
-    if (savedRow === undefined) continue;
-    const rowLen = Math.min(savedRow.length, size);
-    for (let c = 0; c < rowLen; c++) {
-      const saved = savedRow[c];
+  // The codec guarantees playerLetters is exactly savedGridSize × savedGridSize and
+  // savedGridSize === state.puzzle.gridSize was checked above, so iterating the saved
+  // array stays in bounds. An out-of-dimension array here is a bug: it fails loud via
+  // Grid.cellAt's RangeError.
+  for (const [r, savedRow] of intent.playerLetters.entries()) {
+    for (const [c, saved] of savedRow.entries()) {
       if (saved == null) continue;
 
       const cell = Grid.cellAt(g, Row.of(r), Col.of(c));

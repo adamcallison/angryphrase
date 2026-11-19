@@ -397,7 +397,7 @@ describe('reducePlayer', () => {
         state,
         {
           kind: 'apply-loaded-progress', target: 'player',
-          playerLetters: [[Letter.try('X'), null]],
+          playerLetters: [[Letter.try('X'), null], [null, null]],
           savedGridSize: GridSize.of(2),
         },
         deps,

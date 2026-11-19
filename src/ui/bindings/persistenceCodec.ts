@@ -111,9 +111,15 @@ export function parsePlayerProgress(blob: string): PlayerProgressBlob | null {
   const gridSize = GridSizeCtor.try(gridSizeRaw);
   if (gridSize === null) return null;
 
+  // Dimension contract owner: a parsed blob's playerLetters is exactly gridSize
+  // rows, each exactly gridSize cells. Anything else is corruption, rejected whole.
+  const size = Number(gridSize);
+  if (rawLetters.length !== size) return null;
+
   const playerLetters: (Letter | null)[][] = [];
   for (const rawRow of rawLetters) {
     if (!Array.isArray(rawRow)) return null;
+    if (rawRow.length !== size) return null;
     const row: (Letter | null)[] = [];
     for (const rawCell of rawRow) {
       if (rawCell === null) { row.push(null); continue; }
