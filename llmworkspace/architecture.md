@@ -387,7 +387,9 @@ Key rules enforced by `parsePuzzle` (strict — the failure list is the contract
 
 ### Visual conventions
 
-Selected cell `bg-yellow-400`/`bg-yellow-300`; in-word `bg-yellow-100`/`bg-yellow-50`; black cells `bg-black`; space markers render as gray bars between cells; hyphen markers as `-` glyphs; word numbers in the top-left corner (`text-[0.6rem]`); the active-clue banner area is always reserved (`min-h-2em`).
+Selected cell `bg-yellow-400`; in-word `bg-yellow-100`; ordinary cells `bg-white`; black cells `bg-black`; space markers render as `bg-gray-800` bars on a cell's right/bottom edge; hyphen markers as oversized `-` glyphs straddling the border; word numbers in the top-left corner (`text-[calc(30cqi/var(--grid-size))]`, letters `text-[calc(52cqi/var(--grid-size))]`, cell pitch 2.5rem via `--grid-size` container formulas); the active-clue banner area is always reserved (`min-h-[3rem]`, surface `bg-gray-50`).
+
+*(Baseline corrected 2026-11-20 against the code — the former values `bg-yellow-300`, `bg-yellow-50`, `min-h-2em`, `text-[0.6rem]` matched nothing in `src/`. As display-rework conventions are decided, amend this paragraph, not the components' ad-hoc spellings, so it stays the single map.)*
 
 ### Builder (`ui/builder/`)
 

@@ -167,6 +167,12 @@ amendment and a human decision, not a cleanup.
   `text-[calc(30cqi/var(--grid-size))]`. Any rework that trusts the map starts from a
   wrong baseline. Doc edit is the lead's and is cheap; it should land before any
   component work so the new conventions get written down as they are decided.
+  *Resolved 2026-11-20: §11 visual-conventions paragraph rewritten against the code
+  (grep-verified: `bg-yellow-300`/`bg-yellow-50`/`min-h-2em`/`text-[0.6rem]` matched
+  nothing in `src/`; the paragraph now names `bg-white` default, gray-800 separator
+  bars, both cqi formulas, 2.5rem pitch, and `min-h-[3rem]`/`bg-gray-50` banner, and
+  carries a note that rework conventions amend the paragraph, not per-component
+  spellings). Leftover from Class D: none.*
 
 ## Class E — minor / examined and retained
 
