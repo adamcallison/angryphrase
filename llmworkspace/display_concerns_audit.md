@@ -61,6 +61,32 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   Modal's `<svelte:window onkeydown>` is mounted unconditionally and dispatches
   `cancel-modal` even when no modal is open — a no-op today, a landmine if
   `cancel-modal` ever gains side effects.
+  *Resolved 2026-11-20 (converged on a chrome primitive, not a shared "modal" —
+  inventory: S1 `Modal.svelte`, S2 `AnagramModal.svelte`, plus their §11 rows).
+  Confirmed during design that the two are NOT one concept: Modal is a blocking
+  prompt (dismiss dispatches `cancel-modal` over a pending intent); AnagramModal
+  is a tool panel (typed input persists in player state across close/reopen;
+  close is non-destructive). What actually drifted was only the overlay chrome,
+  so that is what converged: new `ui/shared/OverlayDialog.svelte` owns
+  backdrop-click close, `role="dialog" aria-modal aria-labelledby`, Escape while
+  open, Tab containment, initial focus, and return-focus; both consumers embed
+  it and keep their distinct contracts (spec in architecture.md §11). The
+  landmine is dead — the window keydown listener is effect-gated on `open`, so
+  no listener exists when no dialog is on screen (verified in the compiled
+  bundle, not just in source). AnagramModal's focus-textbox-on-open behaviour
+  is preserved via `initialFocusId`; its input-only Escape (dead on
+  Scramble/Close focus) and missing dialog semantics are gone. Width remains a
+  caller fact (`max-w-md` confirm, `max-w-2xl` anagram) — retained by decision
+  as a content fact, recorded in §11. A11y is now in scope: §11's "No focus
+  trap (a11y out of scope)" note removed. z-drift half was already closed by
+  B3 (both `z-overlay`). Residual, examined and retained: if both dialogs were
+  ever open simultaneously, each mounts its own window keydown, so one Escape
+  would close both — pre-existing pathology, not a regression, unreachable in
+  the current UI. Verification: full CI green (eslint + madge, svelte-check 0
+  errors/0 warnings, build), 1362 tests unchanged and untouched, diff confined
+  to the three specced files + the §11 doc rows; no DOM harness exists (§12),
+  so trap/Escape/return-focus behaviour joins the manual checklist.
+  Leftover from A2: none.*
 - **A3 — toasts are the app's failure channel and are never announced.**
   `src/ui/shared/ToastHost.svelte`: no `role="status"` / `aria-live="polite"`. Save
   failures, export gate violations, import rejections, and download failures all land
