@@ -68,8 +68,8 @@
   <li
     bind:this={liRefs[entry.id]}
     class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected
-      ? 'bg-yellow-100'
-      : ''} {entry.isLinkableFromJoinSource ? 'ring-2 ring-blue-400' : ''}"
+      ? 'bg-hilite-word'
+      : ''} {entry.isLinkableFromJoinSource ? 'ring-2 ring-accent-join' : ''}"
     onclick={() => dispatchRowClick(entry)}
   >
     <span class="font-bold text-gray-800">{entry.number}</span>

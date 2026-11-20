@@ -30,7 +30,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
+    class="fixed inset-0 z-overlay flex items-center justify-center bg-black/40"
     onclick={onBackdropClick}
   >
     <div class="max-w-2xl w-full rounded-lg bg-white p-6 shadow-xl">
@@ -98,12 +98,12 @@
       <div class="mt-4 flex justify-end gap-2">
         <button
           type="button"
-          class="rounded bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="btn btn-md bg-purple-600 text-white hover:bg-purple-700"
           disabled={!vm.scrambleEnabled}
           onclick={() => actions.scramble()}>Scramble</button>
         <button
           type="button"
-          class="rounded bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+          class="btn btn-md btn-secondary"
           onclick={() => actions.close()}>Close</button>
       </div>
     </div>

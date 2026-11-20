@@ -385,9 +385,18 @@ Key rules enforced by `parsePuzzle` (strict — the failure list is the contract
 
 ## 11. Component Inventory
 
+### Style vocabulary (B3 — single home per style concept)
+
+Two levels, one home each. **Tokens** (`tailwind.config.ts` `theme.extend`) name values chosen by code or shared across files; **recipes** (`app.css` `@layer components`, via `@apply`) own repeated multi-utility compositions.
+
+- Tokens: `colors.primary` (blue-600, hover blue-700) — the one repeated button hue; green/red/purple button hues are per-component status choices and stay literal. `colors.hilite` — `selected` (yellow-400, cursor cell), `word` (yellow-100, other cells of the active word and the selected clue row). `colors.accent` — sub-mode affordances: `join` (blue-400 ring), `reattach` (amber-400 ring), `join-surface` (blue-50), `reattach-surface` (amber-50). `colors.surface` (gray-50, reserved neutral surface). `zIndex` scale: `typing-surface: -50`, `grid-decor: 10`, `overlay: 40`, `toast: 50` — toast sits above every overlay; both modals share `z-overlay` (Modal moved 50→40, closing the drift where a toast overlaid the anagram modal but not the confirm modal).
+- Recipes: `.btn` (base `rounded-md text-sm font-medium` + `disabled:cursor-not-allowed disabled:opacity-50`), sizes `.btn-md` (`px-4 py-2`), `.btn-sm` (`px-3 py-1.5`), `.btn-hero` (`px-6 py-12 text-xl font-bold`); colour variants `.btn-primary`, `.btn-secondary` (gray-200), `.btn-outline` (bordered), `.btn-danger` (red-100). Sites append content-specific utilities after a recipe (e.g. `flex-1`, a literal status hue); the recipe owns shape, the site owns content facts. Inline link-buttons (`text-xs <hue> underline`) are a deliberate non-recipe — already drift-free.
+- Canonical unifications (deliberate visual deltas, 2026-11-20): every `.btn` is `rounded-md` (was mixed `rounded`/`rounded-md`); `.btn` weight is `font-medium` (PlayerToolbar/AnagramModal were `font-semibold`); all toolbar buttons are `.btn-sm` (marker buttons were `px-2 py-1`, toolbar rows `py-1`); disabled treatment (`opacity-50` + `cursor-not-allowed`) is uniform wherever a button can be disabled; buttons that previously carried no explicit size render at `.btn`'s `text-sm` (Modal's Cancel/Confirm, FilePicker's pick).
+- Examined, retained: toast `kindColor` map and status hues (component-local exhaustive maps per §9), text inputs (`rounded border border-gray-300 px-2 py-1 text-sm` — already consistent), `Header` page chrome, FilePicker drag-over state, AnagramModal tiles.
+
 ### Visual conventions
 
-Selected cell `bg-yellow-400`; in-word `bg-yellow-100`; ordinary cells `bg-white`; black cells `bg-black`; space markers render as `bg-gray-800` bars on a cell's right/bottom edge; hyphen markers as oversized `-` glyphs straddling the border; word numbers in the top-left corner (`text-[calc(30cqi/var(--grid-size))]`, letters `text-[calc(52cqi/var(--grid-size))]`, cell pitch 2.5rem via `--grid-size` container formulas); the active-clue banner area is always reserved (`min-h-[3rem]`, surface `bg-gray-50`).
+Selected cell `bg-hilite-selected` (yellow-400); in-word `bg-hilite-word` (yellow-100); ordinary cells `bg-white`; black cells `bg-black`; space markers render as `bg-gray-800` bars on a cell's right/bottom edge; hyphen markers as oversized `-` glyphs straddling the border; word numbers in the top-left corner (`text-[calc(30cqi/var(--grid-size))]`, letters `text-[calc(52cqi/var(--grid-size))]`, cell pitch 2.5rem via `--grid-size` container formulas); the active-clue banner area is always reserved (`min-h-[3rem]`, surface `bg-surface` (gray-50)).
 
 *(Baseline corrected 2026-11-20 against the code — the former values `bg-yellow-300`, `bg-yellow-50`, `min-h-2em`, `text-[0.6rem]` matched nothing in `src/`. As display-rework conventions are decided, amend this paragraph, not the components' ad-hoc spellings, so it stays the single map.)*
 

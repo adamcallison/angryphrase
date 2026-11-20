@@ -68,18 +68,14 @@
     <span class="text-sm text-gray-700">Mode:</span>
     <button
       type="button"
-      class="rounded px-3 py-1 text-sm font-medium {vm.mode === 'design'
-        ? 'bg-blue-600 text-white'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
+      class="btn btn-sm {vm.mode === 'design' ? 'btn-primary' : 'btn-secondary'}"
       onclick={() => actions.requestSwitchToDesign()}
     >
       Design
     </button>
     <button
       type="button"
-      class="rounded px-3 py-1 text-sm font-medium {vm.mode === 'fill'
-        ? 'bg-blue-600 text-white'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
+      class="btn btn-sm {vm.mode === 'fill' ? 'btn-primary' : 'btn-secondary'}"
       onclick={() => actions.switchToFill()}
     >
       Fill
@@ -102,9 +98,7 @@
       <button
         type="button"
         disabled={!vm.cellSelected}
-        class="rounded px-2 py-1 text-sm font-medium {vm.markerFlags[axis] === separator
-          ? 'bg-blue-600 text-white'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50 disabled:cursor-not-allowed"
+        class="btn btn-sm {vm.markerFlags[axis] === separator ? 'btn-primary' : 'btn-secondary'}"
         onclick={() => actions.setMarker(axis, separator)}
       >
         {label}
@@ -117,7 +111,7 @@
     <FilePicker label="Import" pick={pick} onpick={(text) => actions.requestImportPuzzle(text)} ondropfile={(file) => actions.importDroppedFile(file)} />
     <button
       type="button"
-      class="rounded bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-300"
+      class="btn btn-sm btn-secondary"
       onclick={() => actions.exportIncomplete()}
     >
       Export Incomplete
@@ -125,9 +119,9 @@
     <button
       type="button"
       disabled={!vm.canExportComplete}
-      class="rounded px-3 py-1 text-sm font-medium {vm.canExportComplete
+      class="btn btn-sm {vm.canExportComplete
         ? 'bg-green-600 text-white hover:bg-green-700'
-        : 'bg-gray-200 text-gray-400 cursor-not-allowed'}"
+        : 'bg-gray-200 text-gray-400'}"
       onclick={() => actions.exportComplete()}
     >
       Export Complete
@@ -141,7 +135,7 @@
     {/if}
     <button
       type="button"
-      class="rounded bg-red-100 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-200"
+      class="btn btn-sm btn-danger"
       onclick={() => actions.requestResetBuilder()}
     >
       Reset

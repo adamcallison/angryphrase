@@ -21,7 +21,7 @@
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <li
     bind:this={liRefs[entry.id]}
-    class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-yellow-100' : ''}"
+    class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-hilite-word' : ''}"
     onclick={() => {
       actions.clickCluePanelWord(entry.wordKey);
     }}

@@ -6,7 +6,7 @@
 </script>
 
 {#if vm.kind === 'join'}
-  <div class="rounded bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800 flex items-center justify-between gap-4">
+  <div class="rounded bg-accent-join-surface border border-blue-200 p-3 text-sm text-blue-800 flex items-center justify-between gap-4">
     <div class="flex-1">
       <strong>Join sub-mode:</strong>
       Click the next clue-list entry to link it after #{vm.sourceNumber} {vm.sourceDirection}.
@@ -15,7 +15,7 @@
     <button class="text-xs text-blue-700 underline" onclick={() => actions.escape()}>Cancel</button>
   </div>
 {:else if vm.kind === 'reattach'}
-  <div class="rounded bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900 flex items-center justify-between gap-4">
+  <div class="rounded bg-accent-reattach-surface border border-amber-200 p-3 text-sm text-amber-900 flex items-center justify-between gap-4">
     <div class="flex-1">
       <strong>Reattach sub-mode (direction: {vm.clueDirection}):</strong>
       Beginning to rehome "{vm.cluePreview}". Click a <em>clue list</em> target that is a chain head with an empty clue.

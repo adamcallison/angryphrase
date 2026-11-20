@@ -114,6 +114,27 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   independently spelled. z-index is magic numbers across four files (`z-50`, `z-40`,
   `z-10`, `-z-50`). A "make them all fit together" rework has no single place to define
   what "together" means.
+  *Resolved 2026-11-20 (Option 3, hybrid — tokens + recipes, spec in
+  architecture.md §11 "Style vocabulary"). `tailwind.config.ts` `theme.extend`
+  owns the named values (z-scale `typing-surface/-50`, `grid-decor/10`,
+  `overlay/40`, `toast/50`; colours `primary`/`hilite`/`accent`/`surface`);
+  `app.css` `@layer components` owns the repeated compositions (`.btn` base +
+  size/colour variants). Inventory walk found 29 button instances (the audit's
+  "~22" folded the six inline link-buttons and the four marker buttons rendered
+  by one template into its count's blind spot), 10 hilite-family sites, 6
+  z-index sites across 4 files — all migrated. Deliberate visual deltas,
+  recorded in §11: uniform `rounded-md` + `font-medium`; toolbar buttons
+  unified to `.btn-sm`; uniform disabled treatment; `text-sm` gained where
+  absent (Modal, FilePicker); Modal backdrop `z-50`→`z-overlay` (40) so the
+  toast overlays both modals deterministically — closes the z-drift half of
+  A2, though A2's convergence work (semantics, Escape handling, focus)
+  remains open. Retained by decision (each single-owner or already
+  drift-free): Toast `kindColor` status hues, Header page chrome, FilePicker
+  drag-over state, inline link-buttons, text inputs, per-component status
+  hues (green/red/purple/amber). Verification: full CI green — build,
+  1362 tests unchanged and untouched, eslint + madge, svelte-check 0 errors —
+  and grep walk: no old spellings remain outside the retained list.
+  Leftover from B3: none.*
 - **B4 — grid form-factor constants are inline in the cell template.**
   `Grid.svelte`: the 2.5rem cell (`grid-cols-[repeat(var(--grid-size),minmax(0,2.5rem))]`,
   `w-[min(100%,calc(var(--grid-size)*2.5rem))]`) and the cqi font formulas

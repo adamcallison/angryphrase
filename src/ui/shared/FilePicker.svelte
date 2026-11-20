@@ -50,7 +50,7 @@
 >
   <button
     type="button"
-    class="rounded-md bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700"
+    class="btn btn-md btn-primary"
     onclick={triggerPick}>
     {label}
   </button>

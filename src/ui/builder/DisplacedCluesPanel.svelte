@@ -13,7 +13,7 @@
     {:else}
       <ul class="flex flex-col gap-2">
         {#each vm.entries as entry}
-          <li class="flex flex-col gap-1 rounded p-2 {entry.isBeingReattached ? 'ring-2 ring-amber-400' : 'bg-gray-50'}">
+          <li class="flex flex-col gap-1 rounded p-2 {entry.isBeingReattached ? 'ring-2 ring-accent-reattach' : 'bg-surface'}">
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold text-gray-500 uppercase">{entry.direction}</span>
               <span class="text-sm text-gray-800 flex-1">{entry.clue || '(empty)'}</span>

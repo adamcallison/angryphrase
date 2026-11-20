@@ -119,7 +119,7 @@
   autocorrect="off"
   spellcheck="false"
   inert={!enabled}
-  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-1 opacity-0 -z-50"
+  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-1 opacity-0 z-typing-surface"
   onkeydown={onKeyDown}
   oninput={onInput}
   oncompositionend={onCompositionEnd}

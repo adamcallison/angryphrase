@@ -9,13 +9,13 @@
   <div class="flex w-full max-w-md gap-6">
     <button
       type="button"
-      class="flex-1 rounded-md bg-blue-600 px-6 py-12 text-white text-xl font-bold hover:bg-blue-700"
+      class="btn btn-hero btn-primary flex-1"
       onclick={actions.build}>
       Build
     </button>
     <button
       type="button"
-      class="flex-1 rounded-md bg-green-600 px-6 py-12 text-white text-xl font-bold hover:bg-green-700"
+      class="btn btn-hero flex-1 bg-green-600 text-white hover:bg-green-700"
       onclick={actions.play}>
       Play
     </button>
