@@ -83,6 +83,7 @@ describe('toastFacade.ts', () => {
       kind: 'success',
       message: 'saved',
       ttlMs: toast.ttlMs,
+      announcement: 'Success: saved',
     });
   });
 

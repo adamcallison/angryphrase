@@ -31,6 +31,13 @@ describe('deriveToastVM', () => {
     const vm = deriveToastVM(toast);
     expect(vm.id).toBe(toast.id);
   });
+
+  it('deriveToastVM: announcement prefixes the kind word for each ToastKind', () => {
+    expect(deriveToastVM(fixture('info', 'Saving failed')).announcement).toBe('Info: Saving failed');
+    expect(deriveToastVM(fixture('success', 'Saving failed')).announcement).toBe('Success: Saving failed');
+    expect(deriveToastVM(fixture('warning', 'Saving failed')).announcement).toBe('Warning: Saving failed');
+    expect(deriveToastVM(fixture('error', 'Saving failed')).announcement).toBe('Error: Saving failed');
+  });
 });
 
 describe('deriveToastListVM', () => {
@@ -51,5 +58,13 @@ describe('deriveToastListVM', () => {
   it('deriveToastListVM: empty input → empty output', () => {
     const vms = deriveToastListVM([]);
     expect(vms).toEqual([]);
+  });
+
+  it('deriveToastListVM: announcements derive per toast in order', () => {
+    const a: Toast = fixture('info', 'first');
+    const b: Toast = fixture('error', 'second');
+    const vms = deriveToastListVM([a, b]);
+    expect(vms[0]!.announcement).toBe('Info: first');
+    expect(vms[1]!.announcement).toBe('Error: second');
   });
 });

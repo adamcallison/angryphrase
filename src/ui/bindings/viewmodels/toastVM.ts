@@ -2,10 +2,32 @@ import type { Toast } from '../../../domain/notifications/Toast';
 import type { ToastId } from '../../../domain/notifications/Toast';
 import type { ToastKind } from '../../../domain/notifications/Toast';
 
-export type ToastVM = { id: ToastId; kind: ToastKind; message: string; ttlMs: number };
+// `kind` is colour-only in the visual toast, so the announcement prefix is its
+// only encoding for assistive tech. Exhaustive Record: a fifth ToastKind fails
+// to compile here instead of announcing undefined.
+const KIND_WORD: Record<ToastKind, string> = {
+  info: 'Info:',
+  success: 'Success:',
+  warning: 'Warning:',
+  error: 'Error:',
+};
+
+export type ToastVM = {
+  id: ToastId;
+  kind: ToastKind;
+  message: string;
+  ttlMs: number;
+  announcement: string;
+};
 
 export function deriveToastVM(toast: Toast): ToastVM {
-  return { id: toast.id, kind: toast.kind, message: toast.message, ttlMs: toast.ttlMs };
+  return {
+    id: toast.id,
+    kind: toast.kind,
+    message: toast.message,
+    ttlMs: toast.ttlMs,
+    announcement: `${KIND_WORD[toast.kind]} ${toast.message}`,
+  };
 }
 
 export function deriveToastListVM(toasts: Toast[]): ToastVM[] {

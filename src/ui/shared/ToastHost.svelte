@@ -37,3 +37,13 @@
     <Toast {toast} onDismiss={actions.dismiss} />
   {/each}
 </div>
+
+<!-- Visually-hidden announcer: sibling of the visual stack so it is independent
+     of toast placement and contains no interactive elements. role="status"
+     implies aria-live="polite"; removals (auto-dismiss) are not announced,
+     insertions are. -->
+<div class="sr-only" role="status">
+  {#each vms as toast (toast.id)}
+    <div>{toast.announcement}</div>
+  {/each}
+</div>

@@ -136,6 +136,45 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   failures, export gate violations, import rejections, and download failures all land
   here (architecture.md §5: "the rejection is explained by the logic layer (a toast…)")
   — every one is invisible to AT users. The four `kind` colours are pure sight.
+  *Resolved 2026-11-21 (Option 1 — hidden mirror live region; alternatives presented to
+  the human and rejected: marking the visible container live (cruder — announces the
+  dismiss buttons, no phrasing control) and a `role="alert"` split for errors
+  (interruptive; single polite region chosen). Design discussion with the human first
+  examined whether the toast channel itself is the problem; conclusion recorded as
+  follow-up F1: transient toasts are acceptable where the failure is *also* encoded in
+  visible state (join/export/grid-size/anagram all show their own failure), but the
+  autosave-failure toast is a sole-signal missable channel — a channel bug, tracked
+  below, not fixed here. This fix makes every toast speak without prejudicing that
+  decision, per the audit's own route (leave the copy where it is; handle announcement
+  at the live-region site, which no architecture rule forbids). Inventory: S1
+  `ToastHost.svelte` (live region), S2 `toastVM.ts` (`announcement` field + kind map),
+  S3 `toastVM.test.ts` (2 new cases), S4 `toastFacade.test.ts` (one-line full-shape
+  `toEqual` update — authorized mid-task, see below), S5 `toastFacade.ts` (examined,
+  unchanged: passthrough). Design as implemented: `deriveToastVM` mints
+  `announcement` as kind word + `": "` + message (`Info:`/`Success:`/`Warning:`/
+  `Error:` — exhaustive `Record<ToastKind, string>`, a fifth kind fails to compile
+  instead of announcing undefined; the prefix is `kind`'s only spoken encoding since
+  the visual toast encodes it as colour alone); `ToastHost` renders a
+  `sr-only role="status"` sibling of the visual stack — sibling so it is independent of
+  toast placement (B5 may rework placement) and contains no interactive elements;
+  `role="status"` implies `aria-live="polite"`, not spelled; auto-dismiss removals from
+  a status region are silent while insertions announce. VM-layer minting follows the
+  A1/C3 precedent (§9: the VM layer is the architecture-sanctioned home for display
+  copy). Copy stays where the reducers mint it. Spec bug caught by the implementer (the
+  deviation mechanism working again): the Lead's "existing tests must not break" was
+  verified against `toastVM.test.ts` only — `toastFacade.test.ts` pins the full VM
+  shape with `toEqual`, so the new field necessarily broke it; fixed by adding the one
+  expected line, full-shape intent preserved. Verification: full CI green, re-run by the
+  lead — lint + madge, svelte-check 0 errors/0 warnings, 1370 tests (1368 existing
+  with the one authorized shape-line edit + 2 new), build; grep walk: `aria-live`/
+  `role="status"` exist nowhere outside ToastHost, `announcement` confined to
+  `toastVM.ts` + ToastHost, `Toast.svelte` and all state/domain modules untouched.
+  No DOM harness (§12), so actual screen-reader announcement of a toast joins the
+  manual checklist. Accepted limitation, examined: a toast's 3.5 s ttl means a
+  screen reader busy speaking something else may queue past the visual dismissal;
+  if this bites in practice, the follow-up decision is keeping announcement text in
+  the region longer than the visual toast — a state-shape question, not taken now.
+  Leftover from A3: F1 (save-failure channel bug) — see Follow-ups.*
 - **A4 — clue rows are clickable `<li>`s behind suppressions.**
   `src/ui/builder/BuilderCluePanel.svelte`,
   `src/ui/player/PlayerCluePanel.svelte`: rows have no keyboard activation, no role, no
@@ -317,3 +356,32 @@ amendment and a human decision, not a cleanup.
 
 Every finding above names its site(s) in the repo; no site was silently classified.
 Nothing in this audit changed code.
+
+---
+
+## Follow-ups (out-of-audit items surfaced during resolutions)
+
+Items the human examined but that are not resolution leftovers of any single finding —
+real work with a named landing site, tracked here so they are not lost.
+
+- **F1 — the autosave-failure toast is a sole-signal missable channel (channel bug,
+  not an a11y gap).** Surfaced during the A3 design discussion (2026-11-21). The
+  toast channel is acceptable where the failure is *also* encoded in visible state
+  (join/export-gate/grid-size/anagram all show their own failure; the import
+  rejection already has a persistent inline error box on `ImportScreen`), but
+  `report-builder-save-failure` / `report-player-save-failure` land only as a
+  3.5 s toast: a persistent condition (writes keep failing) signalled by an
+  ephemeral, dismissable, missable toast with no state encoding. A user who looks
+  away believes their work is saved while it is not — a data-loss risk behind an
+  ephemeral signal. The 60 s re-toast latch (architecture.md persistence section)
+  is itself a symptom: the condition is continuous, the warning is not. Proper
+  fix: a persistent inline banner (e.g. "Saving failed — changes not kept") that
+  renders while the condition holds, in place of (or in addition to) the first
+  toast; this likely needs an architecture amendment — §5 blesses "the rejection
+  is explained by the logic layer (a toast carrying the domain's message)", and
+  the save-failure copy is minted in `app/state/reducer.ts` — so it is a human
+  decision and a design round of its own (state shape: the failure latch is
+  bindings-layer today, not reducer state; a banner the VMs derive needs it as
+  state). Not started; no code exists for it. A3's live region announces whatever
+  the channel delivers, so it does not preclude this. Landing site: a future
+  design round on "save-failure persistence banner", human-initiated.
