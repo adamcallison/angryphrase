@@ -59,7 +59,7 @@
     role="option"
     aria-selected={entry.id === vm.highlightedId}
     tabindex={entry.id === tabStopId ? 0 : -1}
-    class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected ? 'bg-hilite-word' : ''}"
+    class="flex items-start gap-2 rounded p-1 cursor-pointer focus-ring {entry.isSelected ? 'bg-hilite-word' : ''}"
     onclick={() => {
       actions.clickCluePanelWord(entry.wordKey);
     }}

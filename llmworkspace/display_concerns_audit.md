@@ -333,6 +333,58 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   buttons lack `type="button"`: BuilderCluePanel "Link next"/"Unlink",
   JoinReattachBanner Cancel ×2, DisplacedCluesPanel "Reattach"/"Delete". Harmless
   today (no form), inconsistent regardless.
+  *Resolved 2026-11-21 (Option 2 — own the ring in the B3 vocabulary; alternatives
+  presented to the human and rejected: keep the UA default and record it — a passive
+  decision whose ring varies by browser/OS and may clash with the reworked visual
+  language; and a full focus round also taking F2's two deferred interaction-model
+  questions — independent behavioural redesigns, F3-harness-gated, not hygiene).
+  Human decision on record: ring colour `primary` (blue-600), `:focus-visible` only.
+  Inventory reconciliation: the audit named six type-less buttons; two were already
+  closed by A4's ride-along (BuilderCluePanel Link next/Unlink), so four remained.
+  Sites: S1 `app.css` (the convention's single home — new `.link` recipe plus one
+  combined rule `.btn, .link, .focus-ring` applying `focus-visible:outline
+  focus-visible:outline-2 focus-visible:outline-offset-2
+  focus-visible:outline-primary`), S2 JoinReattachBanner Cancel ×2 (`type="button"`
+  + `.link`), S3 DisplacedCluesPanel Reattach/Delete (same), S4 BuilderCluePanel
+  Link next/Unlink (`.link`, type already fixed by A4), S5 Toast dismiss
+  (`.focus-ring`), S6 AnagramModal × close + input (`.focus-ring`), S7
+  PlayerCluePanel `role="option"` rows (`.focus-ring` — focused programmatically
+  during arrow browsing; browsers match `:focus-visible` there after keyboard
+  interaction), S8 the text inputs GridSizeControl / BuilderToolbar title / Builder
+  author / BuilderCluePanel clue / AnagramModal input (`.focus-ring` appended,
+  compositions otherwise retained), S9 TypingSurface's hidden input — deliberately NO
+  ring (invisible 1px surface; its focus is never meant to be seen), S10 the
+  `tabindex="-1"` pointer affordances (Grid cell buttons, BuilderCluePanel row
+  underlay) — deliberately NO ring (never focused). The six inline link-buttons are
+  now a recipe (`.link` = `text-xs underline` + ring; site keeps its hue) — this
+  supersedes B3's "deliberate non-recipe" note, because adding a repeated focus
+  composition to six sites made them recipe-worthy by B3's own rule; §11 amended
+  before code, per design-first. No `outline-none` anywhere: explicit author-origin
+  outline longhands unconditionally beat the UA `outline: auto` (origin trumps
+  shorthand shape in the cascade), so the default ring is replaced, not duplicated.
+  Spec bug caught by the implementer (the deviation mechanism working; A3
+  precedent): the Lead's dispatch site list omitted BuilderCluePanel's clue input
+  while the amended doc named it — the doc is the spec, so the input got
+  `.focus-ring`; correct call. Design as implemented — behaviour-preserving on every
+  existing path (the `.link` recipe emits identical font-size/underline, verified in
+  the emitted CSS); the only visual delta is the new ring. Files: `src/app.css`,
+  `src/ui/builder/JoinReattachBanner.svelte`, `DisplacedCluesPanel.svelte`,
+  `BuilderCluePanel.svelte`, `GridSizeControl.svelte`, `BuilderToolbar.svelte`,
+  `src/ui/player/AnagramModal.svelte`, `PlayerCluePanel.svelte`,
+  `src/ui/shared/Toast.svelte`; doc: architecture.md §11 (recipes + focus
+  convention + retained list, lead-edited pre-dispatch). Verification: full CI green,
+  re-run by the lead — eslint + madge, svelte-check 0 errors/0 warnings, 1397 tests
+  (all existing, untouched — `test/` unmodified in the diff is the
+  behaviour-preservation proof), build; grep walk: zero type-less buttons remain
+  (multiline-tag-aware walk), `underline` exists only inside the `.link` recipe,
+  `.focus-ring` at exactly the eight non-button sites, and the emitted
+  single-file-build CSS carries
+  `.btn:focus-visible,.link:focus-visible,.focus-ring:focus-visible{outline-style:solid;outline-width:2px;outline-offset:2px;outline-color:#2563eb}`
+  (#2563eb = primary/blue-600). No DOM harness (§12), so real-browser/AT checks join
+  the manual checklist: ring on Tab into buttons, inputs, and clue rows; no ring on
+  pointer clicks; forced-colors behaviour. Leftover from A6: none — the two F2
+  interaction-model questions previously landed at "the A6/focus-visible round" are
+  re-pointed (see F2's addendum).*
 - **A7 — landmarks and headings.** `App.svelte` wraps content in `<main>`, and
   `ImportScreen.svelte` renders its own `<main>` inside it — nested main landmarks.
   The Builder route has no heading at all (Player route uses `h2`, Landing uses `p`).
@@ -555,6 +607,12 @@ real work with a named landing site, tracked here so they are not lost.
   rather than the first entry" needs state-driven focus ordering — both
   interaction-model decisions for the A6/focus-visible round, human-initiated.
   Not started.
+  *Addendum 2026-11-21 (A6 closed as hygiene + ring only): A6 landed without these
+  two questions, per the human's Option-2 choice (A6's resolution entry). They are
+  re-landed here: destination is a **focus-model round**, human-initiated and gated
+  on the F3 harness (both are behavioural decisions exactly the harness exists to
+  pin). A6's focus convention does not pre-empt either: it styles where focus
+  lands, it does not change where focus goes.*
 - **F3 — DOM harness decision, proven twice in one day, still pending.** The
   focus-steal (F2) and its round-2 fix were both invisible to the repo's test
   suite by construction: no test renders a `.svelte` file (architecture.md §12),

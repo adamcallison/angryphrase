@@ -12,7 +12,7 @@
       Click the next clue-list entry to link it after #{vm.sourceNumber} {vm.sourceDirection}.
       Press Escape or click Cancel to abort.
     </div>
-    <button class="text-xs text-blue-700 underline" onclick={() => actions.escape()}>Cancel</button>
+    <button type="button" class="link text-blue-700" onclick={() => actions.escape()}>Cancel</button>
   </div>
 {:else if vm.kind === 'reattach'}
   <div class="rounded bg-accent-reattach-surface border border-amber-200 p-3 text-sm text-amber-900 flex items-center justify-between gap-4">
@@ -21,6 +21,6 @@
       Beginning to rehome "{vm.cluePreview}". Click a <em>clue list</em> target that is a chain head with an empty clue.
       Press Escape or click Cancel to abort.
     </div>
-    <button class="text-xs text-amber-800 underline" onclick={() => actions.escape()}>Cancel</button>
+    <button type="button" class="link text-amber-800" onclick={() => actions.escape()}>Cancel</button>
   </div>
 {/if}

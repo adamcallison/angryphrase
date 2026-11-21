@@ -45,7 +45,7 @@
     bind:value={draft}
     {disabled}
     onblur={onBlur}
-    class="w-16 rounded border border-gray-300 px-2 py-1 text-sm disabled:bg-gray-100 disabled:text-gray-400"
+    class="w-16 rounded border border-gray-300 px-2 py-1 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus-ring"
   />
   {#if disabled}
     <span class="text-xs text-gray-500">Disabled — clear the grid first.</span>

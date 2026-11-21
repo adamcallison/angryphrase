@@ -19,9 +19,9 @@
               <span class="text-sm text-gray-800 flex-1">{entry.clue || '(empty)'}</span>
             </div>
             <div class="flex gap-2">
-              <button class="text-xs text-blue-600 underline"
+              <button type="button" class="link text-blue-600"
                       onclick={() => actions.beginReattach(entry.id)}>Reattach</button>
-              <button class="text-xs text-red-600 underline"
+              <button type="button" class="link text-red-600"
                       onclick={() => actions.deleteDisplacedClue(entry.id)}>Delete</button>
               {#if entry.isBeingReattached}
                 <span class="text-xs text-amber-700">(Reattaching…)</span>

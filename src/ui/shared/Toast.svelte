@@ -17,7 +17,7 @@
 
 <button
   type="button"
-  class={`pointer-events-auto block w-full rounded-md border px-4 py-2 text-left text-sm shadow-sm ${kindColor[toast.kind]}`}
+  class={`pointer-events-auto block w-full rounded-md border px-4 py-2 text-left text-sm shadow-sm focus-ring ${kindColor[toast.kind]}`}
   onclick={onClick}>
   {toast.message}
 </button>

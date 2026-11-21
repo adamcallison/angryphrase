@@ -23,7 +23,7 @@
       <h2 id="anagram-dialog-title" class="text-lg font-bold text-gray-800">Anagram Helper</h2>
       <button
         type="button"
-        class="text-2xl text-gray-500 hover:text-gray-700"
+        class="text-2xl text-gray-500 hover:text-gray-700 focus-ring"
         onclick={() => actions.close()}
         aria-label="Close"
       >
@@ -61,7 +61,7 @@
       autocorrect="off"
       spellcheck="false"
       maxlength={vm.wordLength}
-      class="w-full rounded border border-gray-300 px-3 py-2 text-lg uppercase tracking-widest"
+      class="w-full rounded border border-gray-300 px-3 py-2 text-lg uppercase tracking-widest focus-ring"
     />
     <div class="mt-1 text-xs text-gray-500">Entered: {vm.input.length} / {vm.wordLength}</div>
 

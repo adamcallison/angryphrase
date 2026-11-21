@@ -79,7 +79,7 @@
       <div class="relative flex flex-1 flex-col gap-1">
         <input
           type="text"
-          class="rounded border border-gray-300 px-2 py-1 text-sm"
+          class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
           value={valueFor(entry.id, entry.displayClue)}
           oninput={(e) => setDraft(entry.id, e.currentTarget.value)}
           onblur={() => dispatchEditClue(entry)}
@@ -91,7 +91,7 @@
           {#if entry.isStartableJoinSource && !isInJoinMode}
             <button
               type="button"
-              class="text-xs text-blue-600 underline"
+              class="link text-blue-600"
               onclick={() => dispatchBeginJoin(entry)}
             >
               Link next
@@ -100,7 +100,7 @@
           {#if entry.isUnjoinable}
             <button
               type="button"
-              class="text-xs text-red-600 underline"
+              class="link text-red-600"
               onclick={() => dispatchUnjoin(entry)}
             >
               Unlink

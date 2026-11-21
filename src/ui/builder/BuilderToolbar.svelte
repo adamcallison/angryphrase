@@ -49,7 +49,7 @@
         type="text"
         bind:value={titleDraft}
         onchange={() => actions.editTitle(titleDraft)}
-        class="rounded border border-gray-300 px-2 py-1 text-sm"
+        class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
       />
     </label>
     <label class="flex items-center gap-2 text-sm text-gray-700">
@@ -58,7 +58,7 @@
         type="text"
         bind:value={authorDraft}
         onchange={() => actions.editAuthor(authorDraft)}
-        class="rounded border border-gray-300 px-2 py-1 text-sm"
+        class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
       />
     </label>
   </div>
