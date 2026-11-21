@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { scrollRowIntoView } from './clueScroll';
+  import { scrollRowIntoView } from './helpers/clueScroll';
 
   let {
     highlightedId,
@@ -17,6 +17,6 @@
   });
 </script>
 
-<aside bind:this={panelEl} class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
+<aside bind:this={panelEl} class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto clue-panel-scroll">
   {@render children(liRefs)}
 </aside>

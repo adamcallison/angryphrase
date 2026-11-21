@@ -35,3 +35,10 @@
    literals: a :root-declared var embedding var(--grid-size) resolves against
    :root, where it does not exist (verified empirically; see §11). */
 @media (min-width: 1024px) { :root { --grid-cell-pitch: 3rem; } }
+
+/* E3: clue-panel auto-scroll motion pairing. scrollRowIntoView assigns
+   scrollTop directly; direct assignment honours scroll-behavior. */
+.clue-panel-scroll { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  .clue-panel-scroll { scroll-behavior: auto; }
+}

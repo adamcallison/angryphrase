@@ -714,8 +714,60 @@ amendment and a human decision, not a cleanup.
   tree, classes, roles). Leftover from E1: none.*
 - **E2 — `TypingSurface` IME/Unidentified normalisation** — correctly owned by the leaf
   display adapter; retained.
+  *Confirmed closed 2026-11-21 (human decision — accept the audit's examination;
+  Option 1, no code change, none warranted). Recap for the record: the leaf's whole
+  job is normalising three keystroke delivery mechanisms into four raw bag calls —
+  desktop `keydown` (incl. the deliberate fall-through for
+  `event.key === "Unidentified"`), mobile soft-keyboard `input` events, and IME
+  `compositionend` (mid-composition keydowns ignored via `isComposing` /
+  `keyCode 229`); letter validation stays in the domain (`Letter.try` via the
+  facade action), so the leaf carries zero crossword knowledge. Single owner, no
+  drift, blocks neither rework goal — a Class-E retained finding is closed by its
+  own examination. The normalisation has no automated coverage (no DOM harness,
+  §12) and sits on the manual checklist; regression pinning is F3's scope, not a
+  defect here. Leftover from E2: none.*
 - **E3 — `clueScroll.ts`** manual delta scroll: one shared owner, right home; the rework
   may want `prefers-reduced-motion` behaviour — an opportunity, not a leak.
+  *Resolved 2026-11-21 (Option 3, human-chosen from the options round; alternatives
+  presented and declined: close-by-examination with no code, the E2 precedent — the
+  audit's own framing was "opportunity, not a leak", and the pre-change instant
+  teleport was already reduced-motion-safe by construction — and smooth scroll
+  alone without the semantics change, which would animate the same snap-to-top
+  abruptness rather than remove it). Inventory: S1 `scrollRowIntoView` in
+  `clueScroll.ts` (snap-to-top → minimal-window), S2 `CluePanelShell.svelte`'s aside
+  class string, S3 `app.css` (new named motion home), S4 `clueScroll.test.ts`
+  (three new fake-element cases; the two pre-existing guards verbatim). Design as
+  implemented (spec in architecture.md §11, lead-edited before code): the helper
+  scrolls the panel only as far as needed to bring the highlighted row fully into
+  the visible band — no-op when already fully visible (the former form snapped
+  every highlighted row to the panel's top, abrupt since A4 arrow browsing
+  re-derives `highlightedId` per keypress); manual-delta arithmetic retained —
+  native `scrollIntoView` would also scroll ancestor containers / the page;
+  smooth-vs-instant is owned by one named CSS pairing, `.clue-panel-scroll` in
+  `app.css` (`scroll-behavior: smooth`, gated to `auto` under
+  `prefers-reduced-motion: reduce`; direct `scrollTop` assignment honours the
+  element's `scroll-behavior`), appended to the shell's aside. Deliberate
+  behaviour changes, examined: highlighted rows no longer snap to top (minimal
+  reveal, gentle under arrow browsing); the scroll animates smoothly unless OS
+  reduced-motion is set. Implementer honesty note: the above-band test case
+  passes under both old and new forms (for a fully-above row, minimal reveal
+  equals the old snap) — still meaningful, it pins the exact delta rather than a
+  snap overshoot. Follow-up the same round, human-directed (not a finding —
+  recorded because it re-paths this entry's files): the two loose non-component
+  UI helpers moved into per-folder `helpers/` subfolders —
+  `ui/shared/helpers/clueScroll.ts`, `ui/builder/helpers/gridSizeInput.ts`
+  (mirrored test files moved with them per §12's mirror rule; §13 tree amended);
+  `gridSizeInput.ts` was a pure rename, 0 content change, and the move's whole
+  textual delta is four import lines. Files:
+  `src/ui/shared/helpers/clueScroll.ts`, `src/ui/shared/CluePanelShell.svelte`,
+  `src/app.css`, `test/ui/shared/helpers/clueScroll.test.ts`, plus the moved
+  gridSizeInput pair and `GridSizeControl.svelte`'s import line.
+  Verification: full CI green, re-run by the lead — eslint + madge, svelte-check
+  0 errors/0 warnings, 1400 tests (1397 pre-existing + 3 new), build; grep walk:
+  zero stale paths, no `scrollIntoView`/`scroll-smooth` anywhere,
+  `clue-panel-scroll` at exactly its three sites. No DOM harness (§12), so actual
+  smooth-scroll feel and the reduced-motion toggle join the manual checklist
+  (§12 amended with the E3 items). Leftover from E3: none.*
 - **E4 — `PlayerToolbar`'s `COLOR_CLASS`** component-local exhaustive map: the
   architecture-sanctioned §9 pattern; retained.
 - **E5 — `VersionStamp.svelte`** fixed `bottom-0 right-0` overlay can collide with

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGridSizeDraft } from '../../../src/ui/builder/gridSizeInput';
+import { parseGridSizeDraft } from '../../../../src/ui/builder/helpers/gridSizeInput';
 
 describe('parseGridSizeDraft', () => {
   it('parseGridSizeDraft returns the number as typed', () => {

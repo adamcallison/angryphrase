@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseGridSizeDraft } from './gridSizeInput';
+  import { parseGridSizeDraft } from './helpers/gridSizeInput';
 
   let {
     value,
