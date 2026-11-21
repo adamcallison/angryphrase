@@ -17,4 +17,12 @@
 
 :root {
   color-scheme: light;
+
+  /* Grid form-factor constants (design §11, B4): the named home for the per-cell
+     size cap and the number/letter font ratios (percent of one cell's width).
+     Consumed only by Grid.svelte's container formulas, which keep the dynamic
+     --grid-size inline: these vars must stay pure static constants. */
+  --grid-cell-pitch: 2.5rem;
+  --grid-number-font-ratio: 30;
+  --grid-letter-font-ratio: 52;
 }

@@ -491,6 +491,43 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   (`text-[calc(30cqi/var(--grid-size))]`). Single-owner (good — one file to edit), but
   the values are unlabelled magic: a form-factor rework wants named, per-breakpoint cell
   sizing, and today the grid also never grows past 2.5rem/cell on large screens.
+  *Resolved 2026-11-21 (Option 1 — name only, behaviour-preserving; alternatives
+  presented to the human and rejected: name + decide large-screen growth now (the
+  grid would exceed 2.5rem/cell — breakpoint facts interact with the B1/B2 shell
+  rework and would be re-decided there) and defer entirely into the responsive
+  round (leaves unlabelled magic until then). Inventory: S1 container width
+  `w-[min(...)]`, S2 `grid-cols-[...]`, S3 `grid-rows-[...]`, S4 the word-number
+  font span, S5 the letter font span — all five in `Grid.svelte`, grep-verified the
+  constants exist nowhere else; plus the new named home in `app.css`. Design as
+  implemented (spec in architecture.md §11, lead-edited before code): `app.css`
+  `:root` owns three pure static custom properties — `--grid-cell-pitch` (2.5rem),
+  `--grid-number-font-ratio` (30), `--grid-letter-font-ratio` (52, the fonts
+  expressed as a percentage of one cell's width) — consumed only by `Grid.svelte`'s
+  container formulas, which keep the dynamic `--grid-size` references inline. The
+  static/dynamic split is load-bearing, not style: the Lead's first design (name
+  the whole font expression at `:root`, e.g.
+  `--grid-letter-font: calc(52cqi/var(--grid-size))`) was killed by a throwaway
+  Chrome probe before dispatch (F3 method, no repo changes) — custom properties
+  substitute inner `var()` references at the declaring element and inherit the
+  result, so a `:root` var embedding `var(--grid-size)` resolves against `:root`,
+  where it doesn't exist (probe: 16px inherited fallback vs 20.8px correct); the
+  static-scalar form verified identical (20.8px both). Custom properties rather
+  than `theme.extend` tokens because the values feed `calc()` formulas inside
+  arbitrary-value class strings where CSS vars are the native mechanism, and any
+  future per-breakpoint overrides land in `app.css` beside them. Verification:
+  full CI green, re-run by the lead — eslint + madge, svelte-check 0 errors/0
+  warnings, 1397 tests all existing and untouched (`test/` absent from the diff
+  is the behaviour-preservation proof), build; grep walk: zero
+  `2.5rem`/`30cqi`/`52cqi` literals remain in `src/ui` (the values live only in
+  `app.css` `:root`); and the strongest available proof, run by the lead with the
+  throwaway rig (no DOM harness, §12): built the pre-change and post-change apps,
+  imported `puzzles/puzzle1.json` through the Player import screen in real Chrome,
+  and diffed computed styles — grid width 600px, cell track 39.9219px, number font
+  11.98px, letter font 20.7653px, byte-identical across builds. Deferred with a
+  named landing site (human decision): per-breakpoint cell sizing and the
+  large-screen growth decision — the grid never exceeds 2.5rem/cell today, now a
+  one-line edit in a named home — belong to the responsive shell round (B1/B2).
+  Leftover from B4: none.*
 - **B5 — toast placement is inline per-branch.**
   `ToastHost.svelte` hand-rolls `max-sm:`/`sm:` dual positioning; no `safe-area-inset`
   for notched phones; `fixed top-4 right-4` can overlay the grid on narrow viewports.
