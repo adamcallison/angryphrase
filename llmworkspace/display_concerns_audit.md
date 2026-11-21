@@ -447,6 +447,10 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   two-column) with per-shell deviations: the Player right column lacks the `flex-1` the
   Builder one has; the Player left column adds `min-w-0` the Builder one lacks. Every
   breakpoint change edits both files and must reconcile drift first.
+  *This round also owns B5's toast-placement re-derivation (human decision,
+  2026-11-21): toast placement interacts with the shells' column layout and
+  breakpoints, so it is decided once here, against the reworked shells — see B5's
+  deferral note for the live defects that stay on record until then.*
 - **B2 — the clue-panel shell is copied verbatim.**
   `BuilderCluePanel.svelte` / `PlayerCluePanel.svelte` duplicate the
   `aside`/section/`h2`/`ul` shell, the `liRefs` + `$effect` scroll wiring, and the
@@ -533,6 +537,24 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   for notched phones; `fixed top-4 right-4` can overlay the grid on narrow viewports.
   Right owner (one component), but the decision should be re-derived for the rework
   alongside the shells it overlays.
+  *Deferred 2026-11-21 (human decision): placement re-derivation belongs to the
+  responsive shell round — the natural owner is B1's entry, which now carries that
+  assignment; the ordering list's shell-pass line names it too. The deferral is a
+  decision, not an omission: Option 2 (minimal repair now — a named safe-area
+  property in `app.css` per the B4 precedent, plus aligning the toast's `sm` switch
+  to the shells' `md` breakpoint) was offered and declined in favour of deciding
+  placement once, against the reworked shells, instead of twice. Two live defects
+  are therefore accepted and on record until that round: (1) no
+  `env(safe-area-inset-bottom)` at the mobile bottom-centre position, so a toast
+  can sit behind the notch/home-indicator zone; (2) the 640–768px band, where the
+  toast is already top-right (`sm`, 640px) while both shells are still
+  single-column (`md`, 768px) — a 288px (`w-72`) toast overlays the grid's
+  top-right corner there. Announcement safety is already by construction: A3's
+  live region is a sibling of the visual stack, independent of placement, so the
+  shell round can rework placement without touching the announcer. `z-toast`
+  (50, above both overlays) is a B3 token and unaffected. architecture.md §11's
+  ToastHost row stays truthful as written ("stacked top-right; bottom-center on
+  mobile") and gets its amendment when the shell round decides the new form.*
 
 ## Class C — user-facing copy has three homes, none of them "display" (friction for aria phrasing and copy structure)
 
@@ -609,7 +631,8 @@ amendment and a human decision, not a cleanup.
    Escape, z-order, width) while the component set is still small.
 4. **A1/A3/A4/A5** — the semantic markup pass, per component, in the order
    Grid → TypingSurface → ToastHost → clue panels → status sites.
-5. **B1/B2** — the responsive shell pass once the vocabulary exists.
+5. **B1/B2** — the responsive shell pass once the vocabulary exists. Also owns B5's
+   toast-placement re-derivation (recorded in B1's entry).
 6. **C — surfaced, not scheduled.** Class C needs a human decision (amend
    architecture.md or accept the friction) before any code moves; the cheapest version
    that unblocks a11y phrasing is leaving the copy *where it is* and handling
