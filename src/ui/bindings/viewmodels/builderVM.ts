@@ -64,7 +64,6 @@ export type DisplacedClueEntryVM = {
   isBeingReattached: boolean;
 };
 export type DisplacedCluesPanelVM = {
-  visible: true;
   entries: DisplacedClueEntryVM[];
   emptyMessage: 'No displaced clues';
 };
@@ -113,7 +112,7 @@ export function deriveDisplacedCluesPanelVM(state: BuilderState): DisplacedClues
     direction: d.direction,
     isBeingReattached: state.subMode.kind === 'reattach' ? state.subMode.displacedClueId === d.id : false,
   }));
-  return { visible: true, entries, emptyMessage: 'No displaced clues' };
+  return { entries, emptyMessage: 'No displaced clues' };
 }
 
 export function deriveBuilderSubModeBannerVM(state: BuilderState): BuilderSubModeBannerVM {

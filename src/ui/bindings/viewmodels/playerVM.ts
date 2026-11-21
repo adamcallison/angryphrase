@@ -16,7 +16,6 @@ import type { LengthPattern as LengthPatternType } from '../../../domain/chain/L
 export type { LengthPatternType as LengthPattern };
 
 export type ActiveClueBannerVM = {
-  visible: true;
   wordNumber: number | null;
   direction: Direction | null;
   displayClue: string | null;
@@ -58,7 +57,6 @@ export type PlayerShellVM =
 
 function emptyBanner(): ActiveClueBannerVM {
   return {
-    visible: true,
     wordNumber: null,
     direction: null,
     displayClue: null,
@@ -93,7 +91,6 @@ export function deriveActiveClueBannerVM(input: {
     (lengthPattern !== null ? ` (${lengthPattern})` : '');
 
   return {
-    visible: true,
     wordNumber,
     direction: word.key.direction,
     displayClue,

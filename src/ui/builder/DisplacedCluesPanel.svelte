@@ -5,31 +5,29 @@
   let { vm, actions }: { vm: DisplacedCluesPanelVM; actions: DisplacedCluesPanelActions } = $props();
 </script>
 
-{#if vm.visible === true}
-  <aside class="rounded border border-gray-200 p-3">
-    <h2 class="text-sm font-semibold text-gray-700 mb-2">Displaced clues</h2>
-    {#if vm.entries.length === 0}
-      <p class="text-xs text-gray-400 italic">{vm.emptyMessage}</p>
-    {:else}
-      <ul class="flex flex-col gap-2">
-        {#each vm.entries as entry}
-          <li class="flex flex-col gap-1 rounded p-2 {entry.isBeingReattached ? 'ring-2 ring-accent-reattach' : 'bg-surface'}">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-gray-500 uppercase">{entry.direction}</span>
-              <span class="text-sm text-gray-800 flex-1">{entry.clue || '(empty)'}</span>
-            </div>
-            <div class="flex gap-2">
-              <button type="button" class="link text-blue-600"
-                      onclick={() => actions.beginReattach(entry.id)}>Reattach</button>
-              <button type="button" class="link text-red-600"
-                      onclick={() => actions.deleteDisplacedClue(entry.id)}>Delete</button>
-              {#if entry.isBeingReattached}
-                <span class="text-xs text-amber-700">(Reattaching…)</span>
-              {/if}
-            </div>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </aside>
-{/if}
+<aside class="rounded border border-gray-200 p-3">
+  <h2 class="text-sm font-semibold text-gray-700 mb-2">Displaced clues</h2>
+  {#if vm.entries.length === 0}
+    <p class="text-xs text-gray-400 italic">{vm.emptyMessage}</p>
+  {:else}
+    <ul class="flex flex-col gap-2">
+      {#each vm.entries as entry}
+        <li class="flex flex-col gap-1 rounded p-2 {entry.isBeingReattached ? 'ring-2 ring-accent-reattach' : 'bg-surface'}">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase">{entry.direction}</span>
+            <span class="text-sm text-gray-800 flex-1">{entry.clue || '(empty)'}</span>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="link text-blue-600"
+                    onclick={() => actions.beginReattach(entry.id)}>Reattach</button>
+            <button type="button" class="link text-red-600"
+                    onclick={() => actions.deleteDisplacedClue(entry.id)}>Delete</button>
+            {#if entry.isBeingReattached}
+              <span class="text-xs text-amber-700">(Reattaching…)</span>
+            {/if}
+          </div>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</aside>

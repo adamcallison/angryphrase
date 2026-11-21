@@ -134,7 +134,6 @@ describe('deriveActiveClueBannerVM', () => {
   it('deriveActiveClueBannerVM: puzzle null + cursor null → all-null blanker', () => {
     const vm = deriveActiveClueBannerVM({ puzzle: null, cursor: null });
     expect(vm).toEqual({
-      visible: true,
       wordNumber: null,
       direction: null,
       displayClue: null,
@@ -147,7 +146,6 @@ describe('deriveActiveClueBannerVM', () => {
     const puzzle = makeBlankPuzzle(3);
     const vm = deriveActiveClueBannerVM({ puzzle, cursor: null });
     expect(vm).toEqual({
-      visible: true,
       wordNumber: null,
       direction: null,
       displayClue: null,
@@ -468,7 +466,6 @@ describe('derivePlayerShellVM', () => {
     expect(vm.title).toBe('Test Title');
     expect(vm.author).toBe('Test Author');
     expect(vm.banner).toEqual({
-      visible: true,
       wordNumber: null,
       direction: null,
       displayClue: null,

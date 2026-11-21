@@ -687,6 +687,31 @@ amendment and a human decision, not a cleanup.
 - **E1 — constant display flags.** `DisplacedCluesPanelVM.visible: true` (consumed by an
   `{#if vm.visible === true}` that cannot be false) and `ActiveClueBannerVM.visible:
   true`. Dead branches; free removal during any VM-touching rework task.
+  *Resolved 2026-11-21 (Option 1 — delete the flag everywhere; alternatives presented
+  to the human and declined: keep field / delete only the dead branch (half measure,
+  type still lies), and make `visible` a real derived boolean (a behaviour/UX change,
+  not a cleanup — E-class records the always-visible state as examined). Inventory
+  (Lead's walk — the audit named the two type fields but not the mints, the consumer,
+  or the test pins): S1/S2/S3 `playerVM.ts` (type field + both mint sites),
+  S4/S5 `builderVM.ts` (type field + mint), S6 `DisplacedCluesPanel.svelte`'s dead
+  `{#if vm.visible === true}` wrapper, S7 three full-shape `toEqual` pins in
+  `playerVM.test.ts` (banner mints ×2, shell banner ×1), S8 `builderVM.test.ts`'s
+  test pinning `visible` by name and assertion. Design as implemented: `visible`
+  deleted from both VM types and all three mints; the panel's `<aside>` renders
+  unconditionally (empty-state `{#if vm.entries.length === 0}` untouched); the
+  banner's field had zero consumers repo-wide (grep-verified pre-dispatch), so no
+  player component changed. Test edits are shape-pin removals only, pre-declared
+  (A3/A5 precedent): three banner pins each lost exactly one `visible: true,` line,
+  and the displaced-panel test renamed to
+  `emptyMessage="No displaced clues"` minus its `vm.visible` assertion — no
+  assertion logic added or reworded elsewhere. Files: the five inventory files,
+  nothing else. Verification: full CI green, re-run by the lead — eslint + madge,
+  svelte-check 0 errors/0 warnings, 1397 tests all passing with count unchanged
+  (the unchanged count is the behaviour-preservation proof: no test could have
+  observed the flag), build; grep walk: `visible` now exists under `src/`/`test/`
+  only as the unrelated `appStore.svelte.ts` prose comment and `focus-visible` CSS;
+  diff walked by the lead — the `.svelte` delta is pure dedent (byte-identical
+  tree, classes, roles). Leftover from E1: none.*
 - **E2 — `TypingSurface` IME/Unidentified normalisation** — correctly owned by the leaf
   display adapter; retained.
 - **E3 — `clueScroll.ts`** manual delta scroll: one shared owner, right home; the rework

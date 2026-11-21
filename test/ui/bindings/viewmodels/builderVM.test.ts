@@ -274,10 +274,9 @@ describe('deriveBuilderToolbarVM', () => {
 });
 
 describe('deriveDisplacedCluesPanelVM', () => {
-  it('deriveDisplacedCluesPanelVM: visible=true always; emptyMessage="No displaced clues"', () => {
+  it('deriveDisplacedCluesPanelVM: emptyMessage="No displaced clues"', () => {
     const state = makeBlankState(3);
     const vm = deriveDisplacedCluesPanelVM(state);
-    expect(vm.visible).toBe(true);
     expect(vm.emptyMessage).toBe('No displaced clues');
   });
 
