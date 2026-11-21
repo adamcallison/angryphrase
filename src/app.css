@@ -10,7 +10,10 @@
   .btn-primary { @apply bg-primary text-white hover:bg-primary-hover; }
   .btn-secondary { @apply bg-gray-200 text-gray-700 hover:bg-gray-300; }
   .btn-outline { @apply border border-gray-300 text-gray-700 hover:bg-gray-100; }
-  .btn-danger { @apply bg-red-100 text-red-700 hover:bg-red-200; }
+  .btn-danger { @apply bg-danger text-white hover:bg-danger-hover; }
+  .btn-success { @apply bg-success text-white hover:bg-success-hover; }
+  .btn-warning { @apply bg-warning text-white hover:bg-warning-hover; }
+  .btn-tool { @apply bg-tool text-white hover:bg-tool-hover; }
   .link { @apply text-xs underline; }
   .btn, .link, .focus-ring { @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary; }
 }
@@ -18,7 +21,7 @@
 :root {
   color-scheme: light;
 
-  /* Grid form-factor constants (design §11, B4): the named home for the per-cell
+  /* Grid form-factor constants (architecture.md §11): the named home for the per-cell
      size cap and the number/letter font ratios (percent of one cell's width).
      Consumed only by Grid.svelte's container formulas, which keep the dynamic
      --grid-size inline: these vars must stay pure static constants. */
@@ -26,17 +29,17 @@
   --grid-number-font-ratio: 30;
   --grid-letter-font-ratio: 52;
 
-  /* B5: named home for the safe-area offset in the below-md toast bottom
+  /* Named home for the safe-area offset in the below-md toast bottom
      position, so notched phones keep the toast clear of the home indicator. */
   --toast-bottom-inset: env(safe-area-inset-bottom);
 }
 
-/* B4 per-breakpoint grid growth. These override points must stay pure static
+/* Per-breakpoint grid growth. These override points must stay pure static
    literals: a :root-declared var embedding var(--grid-size) resolves against
    :root, where it does not exist (verified empirically; see §11). */
 @media (min-width: 1024px) { :root { --grid-cell-pitch: 3rem; } }
 
-/* E3: clue-panel auto-scroll motion pairing. scrollRowIntoView assigns
+/* Clue-panel auto-scroll motion pairing. scrollRowIntoView assigns
    scrollTop directly; direct assignment honours scroll-behavior. */
 .clue-panel-scroll { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {

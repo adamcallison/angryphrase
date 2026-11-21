@@ -161,8 +161,7 @@ export const Anagram: {
     // rng.nextInt(pool.length - i) bounds j. Fisher–Yates has no for…of
     // restructure, and non-null assertions are banned absolutely, so the guards
     // stay. Do not convert to `!` or delete without changing the recorded policy —
-    // see llmworkspace/defensive_programming_undecided.md (U6, closed 2026-11-19)
-    // and the defensive-programming audit's Class C resolution.
+    // see architecture.md §7 (Anagram helper) for the recorded guard policy.
     for (let i = 0; i < pool.length - 1; i++) {
       const j = rng.nextInt(pool.length - i);
       const k = pool.length - 1 - i;

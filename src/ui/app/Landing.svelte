@@ -15,7 +15,7 @@
     </button>
     <button
       type="button"
-      class="btn btn-hero flex-1 bg-green-600 text-white hover:bg-green-700"
+      class="btn btn-hero btn-success flex-1"
       onclick={actions.play}>
       Play
     </button>

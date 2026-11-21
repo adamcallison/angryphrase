@@ -4,10 +4,10 @@
   let { toast, onDismiss }: { toast: ToastVM; onDismiss: (id: ToastVM['id']) => void } = $props();
 
   const kindColor: Record<ToastVM['kind'], string> = {
-    info: 'bg-blue-100 text-blue-900 border-blue-300',
-    success: 'bg-green-100 text-green-900 border-green-300',
-    warning: 'bg-yellow-100 text-yellow-900 border-yellow-300',
-    error: 'bg-red-100 text-red-900 border-red-300',
+    info: 'bg-info-soft text-info-soft-text border-info-border',
+    success: 'bg-success-soft text-success-soft-text border-success-border',
+    warning: 'bg-warning-soft text-warning-soft-text border-warning-border',
+    error: 'bg-danger-soft text-danger-soft-text border-danger-border',
   };
 
   function onClick(): void {

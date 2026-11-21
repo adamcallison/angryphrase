@@ -120,7 +120,7 @@
       type="button"
       disabled={!vm.canExportComplete}
       class="btn btn-sm {vm.canExportComplete
-        ? 'bg-green-600 text-white hover:bg-green-700'
+        ? 'btn-success'
         : 'bg-gray-200 text-gray-400'}"
       onclick={() => actions.exportComplete()}
     >
@@ -129,7 +129,7 @@
     {#if vm.violationSummary.length > 0}
       <div class="flex flex-col gap-1">
         {#each vm.violationSummary as item}
-          <p class="text-sm text-red-600">{item.label}</p>
+          <p class="text-sm text-danger">{item.label}</p>
         {/each}
       </div>
     {/if}

@@ -770,6 +770,73 @@ amendment and a human decision, not a cleanup.
   (§12 amended with the E3 items). Leftover from E3: none.*
 - **E4 — `PlayerToolbar`'s `COLOR_CLASS`** component-local exhaustive map: the
   architecture-sanctioned §9 pattern; retained.
+  *Resolved 2026-11-21 (Option 3 — full status/action colour-vocabulary round; the
+  human challenged the audit's "retained" verdict — "at minimum, fold colours into
+  B3 vocab; the architecture doc is a map, not gospel" — and the challenge was
+  answered by reasoning, not doc deference: the map's §9 *placement* survives on its
+  own merits (moving the resolution up would break the audit's own verified
+  zero-Tailwind-strings seam in `ui/bindings/` and duplicate the semantic field
+  `classification` already carries; the map is one house pattern with
+  `GridVM.hilite`→cell map and `ToastVM.kind`→kindColor), while the map's *values*
+  — raw palette literals — were the real weakness, and those moved into the B3
+  vocabulary. Alternatives presented and declined: E4-site-only (half-measure,
+  ~16 same-kind sites left raw), severity-only sweep (leaves the role family
+  drifted), and moving the resolution into the VM layer (breaks the seam; needs an
+  architecture amendment for zero gain). Human taste decisions, all on record:
+  both Reset buttons strong red-600 — the two-intensity split (Player strong,
+  Builder muted) was drift, not intent; warning hue amber everywhere — Toast's
+  former yellow dead; purple tokenised as `tool`. Inventory (Lead's walk, a
+  superset of the audit's one-line entry, with one honest gap recorded: the first
+  grep pattern omitted blue, so the standalone action-link family surfaced only
+  at review time and was closed by a human-directed addendum): severity S1
+  PlayerToolbar `COLOR_CLASS`, S2 Toast `kindColor`, S3 AnagramModal error
+  message, S4 ImportScreen alert box, S5 BuilderToolbar violation list, S6
+  DisplacedClues "(Reattaching…)" note; role S7–S10 PlayerToolbar's four variant
+  buttons (Clear Errors / Reset / Import New / Anagram Helper), S11 Builder
+  Reset, S12 Export Complete's enabled half, S13 Landing Play, S14 Scramble, S15
+  Unlink, S16 Delete; addendum S17 Link next, S18 Reattach. Design as implemented
+  (spec in architecture.md §11 "Status/action colours" bullet, lead-edited before
+  each code wave, design-first): severity tokens `success`/`danger`/`warning`/
+  `info` (`{ DEFAULT 600, hover 700, soft 100, 'soft-text' 900, border 300 }`;
+  `info` carries no hover — no solid info button exists) + `tool` (purple-600/
+  700) in `theme.extend`, the taxonomy mirroring `ToastKind` — the union the
+  codebase already had; recipes `.btn-success`/`.btn-warning`/`.btn-tool` added,
+  `.btn-danger` rewritten strong (the muted red-100 form deleted, its only
+  consumer Builder Reset moved to the strong form); severity text sites use
+  `text-danger`/`text-success`/`text-warning`, tinted boxes the `*-soft`
+  family; the three component-local exhaustive maps stay component-local per the
+  amended retained note. Deliberate visual deltas, all human-sanctioned: toast
+  warning yellow→amber; ImportScreen tint red-50→red-100 and text red-700→
+  red-900 (unified on Toast's tint); Builder Reset muted→strong; reattaching
+  note amber-700→amber-600. Every other site is byte-identical hue (600/700 map
+  directly onto token DEFAULTs/hovers; the addendum's blue-600 = `primary`'s
+  DEFAULT, emitted rgb(37 99 235) verified). One Lead error corrected on the
+  record: the addendum's option text described the banner Cancel link as
+  normalizable to 600 — on reading the banner it proved to be one of two
+  tint-matched Cancel links (blue-700 under blue-800 text, amber-800 under
+  amber-900 text), banner chrome rather than standalone action links; the
+  mis-description was corrected before dispatch and the banner links retained.
+  Files: `tailwind.config.ts`, `src/app.css`, `src/ui/shared/Toast.svelte`,
+  `src/ui/player/PlayerToolbar.svelte` (also `colorPair`→`variant`, a
+  component-local array field now holding recipe names), `ImportScreen.svelte`,
+  `AnagramModal.svelte`, `src/ui/builder/BuilderToolbar.svelte`,
+  `BuilderCluePanel.svelte`, `DisplacedCluesPanel.svelte`,
+  `src/ui/app/Landing.svelte`; doc: architecture.md §11 (tokens bullet, recipes
+  bullet, retained note, seven component rows, lead-edited before code).
+  Verification: full CI green, re-run by the lead for the main wave — eslint +
+  madge, svelte-check 0 errors/0 warnings, 1400 tests (all pre-existing;
+  `test/` absent from the diff is the behaviour-preservation proof, both waves),
+  build; emitted-bundle walk by the lead: `.btn-danger` carries #dc2626 and
+  red-100 #fee2e2 is absent, `.text-primary` = rgb(37 99 235); grep walks:
+  zero green/red/amber/purple/yellow class literals under `src/ui` outside the
+  retained list, blue at exactly its three retained sites. Inventory closure:
+  18 of 18 sites changed or explicitly retained — retained, with reason and
+  home: JoinReattachBanner's tint ladders (banner chrome under the
+  `accent.join`/`accent.reattach` family), FilePicker drag-over blue-500/50
+  (B3-retained), BuilderToolbar's disabled gray half (the dead look is a content
+  fact), neutral grays everywhere. Leftover from E4: none. Consequence for B3:
+  its "green/red/purple stay literal" retention row is superseded — §11 now
+  records the vocabulary.*
 - **E5 — `VersionStamp.svelte`** fixed `bottom-0 right-0` overlay can collide with
   content on small screens; pointer-events-none already, cosmetic only.
   *Resolved 2026-11-21 (B1-round ride-along, human decision): `max-md:hidden` —

@@ -83,7 +83,7 @@
               {#if entry.isStartableJoinSource && !isInJoinMode}
                 <button
                   type="button"
-                  class="link text-blue-600"
+                  class="link text-primary"
                   onclick={() => dispatchBeginJoin(entry)}
                 >
                   Link next
@@ -92,7 +92,7 @@
               {#if entry.isUnjoinable}
                 <button
                   type="button"
-                  class="link text-red-600"
+                  class="link text-danger"
                   onclick={() => dispatchUnjoin(entry)}
                 >
                   Unlink

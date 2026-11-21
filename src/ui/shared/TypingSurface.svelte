@@ -16,7 +16,8 @@
   // Non-reactive last-applied values: the focus side effect runs only when the
   // token or the enabled flag *actually changes*. Svelte 5 re-runs effects on
   // parent re-render even with unchanged primitive props (verified empirically);
-  // acting on those re-runs was the focus-steal bug (the A4 Tab "cycle").
+  // acting on those re-runs was the former focus-steal bug (Tab focus cycled
+  // between the clue entry and this hidden input).
   let lastSeq: number | null = null;
   let lastEnabled: boolean | null = null;
 

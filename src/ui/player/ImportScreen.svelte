@@ -22,7 +22,7 @@
   <p class="text-sm text-gray-600 text-center">Select a <strong>complete</strong> puzzle JSON file exported from the Builder, or drag one in.</p>
   <FilePicker label="Pick a puzzle JSON file" pick={pick} onpick={onPick} ondropfile={(file) => actions.importDroppedFile(file)} />
   {#if importError !== null}
-    <div role="alert" class="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <div role="alert" class="rounded border border-danger-border bg-danger-soft px-4 py-3 text-sm text-danger-soft-text">
       {importError}
     </div>
   {/if}

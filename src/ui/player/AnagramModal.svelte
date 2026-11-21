@@ -66,7 +66,7 @@
     <div class="mt-1 text-xs text-gray-500">Entered: {vm.input.length} / {vm.wordLength}</div>
 
     {#if vm.errorMessage !== null}
-      <div class="mt-2 text-xs text-red-600">{vm.errorMessage}</div>
+      <div class="mt-2 text-xs text-danger">{vm.errorMessage}</div>
     {/if}
 
     <!-- Expected unique letter counts -->
@@ -81,7 +81,7 @@
     <div class="mt-4 flex justify-end gap-2">
       <button
         type="button"
-        class="btn btn-md bg-purple-600 text-white hover:bg-purple-700"
+        class="btn btn-md btn-tool"
         disabled={!vm.scrambleEnabled}
         onclick={() => actions.scramble()}>Scramble</button>
       <button
