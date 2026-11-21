@@ -1,12 +1,11 @@
 <script lang="ts">
   import type { PlayerFacade, PlayerShellVM } from '../bindings/playerFacade';
-  import Grid from '../shared/Grid.svelte';
   import ActiveClueBanner from './ActiveClueBanner.svelte';
   import PlayerCluePanel from './PlayerCluePanel.svelte';
   import PlayerToolbar from './PlayerToolbar.svelte';
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
-  import TypingSurface from '../shared/TypingSurface.svelte';
+  import GridTypingBlock from '../shared/GridTypingBlock.svelte';
   import TwoColumnShell from '../shared/TwoColumnShell.svelte';
   import SaveFailureBanner from '../shared/SaveFailureBanner.svelte';
 
@@ -44,10 +43,7 @@
       <!-- DOM order load-bearing: clue region must precede Grid so the reader queues clue first, then cell. -->
       <div class="sr-only" role="status">{vm.banner.announcement}</div>
       <ActiveClueBanner vm={vm.banner} />
-      <div class="relative overflow-x-auto">
-        <Grid vm={vm.grid} onCellClick={onCellClick} />
-        <TypingSurface enabled={vm.anagram === null} typingFocusSeq={vm.grid.typingFocusSeq} actions={playerFacade.actions.grid} />
-      </div>
+      <GridTypingBlock grid={vm.grid} enabled={vm.anagram === null} actions={playerFacade.actions.grid} onCellClick={onCellClick} />
       <ActiveClueBanner vm={vm.banner} />
       <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
     {/snippet}

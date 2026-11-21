@@ -1,11 +1,10 @@
 <script lang="ts">
   import type { BuilderFacade, BuilderShellVM } from '../bindings/builderFacade';
   import BuilderToolbar from './BuilderToolbar.svelte';
-  import Grid from '../shared/Grid.svelte';
   import BuilderCluePanel from './BuilderCluePanel.svelte';
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
-  import TypingSurface from '../shared/TypingSurface.svelte';
+  import GridTypingBlock from '../shared/GridTypingBlock.svelte';
   import TwoColumnShell from '../shared/TwoColumnShell.svelte';
   import SaveFailureBanner from '../shared/SaveFailureBanner.svelte';
 
@@ -17,6 +16,13 @@
   function onCellClick(row: number, col: number): void {
     builderFacade.actions.grid.clickCell(row, col);
   }
+
+  // Non-reactive slot for the clue panel's Tab-out handler, registered at
+  // panel init (plain wiring held by the component — OverlayDialog's
+  // returnFocusEl is the precedent). Absent handler means the default Tab
+  // walk, which is today's behaviour for the window before the panel
+  // registers.
+  let tabOutToSelectedClue: (() => boolean) | null = null;
 
 </script>
 
@@ -32,14 +38,11 @@
   {/snippet}
 
   {#snippet left()}
-    <div class="relative overflow-x-auto">
-      <Grid vm={vm.grid} allCellsClickable={vm.toolbar.mode === 'design'} onCellClick={onCellClick} />
-      <TypingSurface enabled={vm.toolbar.mode === 'fill'} typingFocusSeq={vm.grid.typingFocusSeq} actions={builderFacade.actions.grid} />
-    </div>
+    <GridTypingBlock grid={vm.grid} enabled={vm.toolbar.mode === 'fill'} actions={builderFacade.actions.grid} onCellClick={onCellClick} allCellsClickable={vm.toolbar.mode === 'design'} onTabOut={() => tabOutToSelectedClue?.() ?? false} />
     <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
   {/snippet}
 
   {#snippet right()}
-    <BuilderCluePanel vm={vm.cluePanel} actions={builderFacade.actions.cluePanel} />
+    <BuilderCluePanel vm={vm.cluePanel} actions={builderFacade.actions.cluePanel} registerTabOut={(fn) => (tabOutToSelectedClue = fn)} />
   {/snippet}
 </TwoColumnShell>

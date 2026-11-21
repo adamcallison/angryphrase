@@ -4,7 +4,15 @@
   import { SvelteMap } from 'svelte/reactivity';
   import CluePanelShell from '../shared/CluePanelShell.svelte';
 
-  let { vm, actions }: { vm: CluePanelVM; actions: BuilderCluePanelActions } = $props();
+  let {
+    vm,
+    actions,
+    registerTabOut,
+  }: {
+    vm: CluePanelVM;
+    actions: BuilderCluePanelActions;
+    registerTabOut: (fn: () => boolean) => void;
+  } = $props();
 
   const isInJoinMode = $derived(
     vm.across.some((entry) => entry.isLinkableFromJoinSource) ||
@@ -12,6 +20,12 @@
   );
 
   const drafts = new SvelteMap<string, string>();
+
+  // Per-row editor refs, keyed by the same entry ids the shell's liRefs use.
+  // Svelte 5 nulls a bind:this on unmount, so a stale id may map to null;
+  // the Tab-out handler guards both absent and unmounted cases. Non-head
+  // rows have no input — their ids simply never appear here.
+  const inputRefs: Record<string, HTMLInputElement | null> = $state({});
 
   function valueFor(id: string, displayClue: string): string {
     if (!drafts.has(id)) return displayClue;
@@ -46,6 +60,28 @@
   function dispatchRowClick(entry: ClueEntryVM): void {
     actions.clickCluePanelWord(entry.wordKey);
   }
+
+  // Registered once at component init (plain top-level call, no $effect):
+  // the shell holds the function in a non-reactive slot and offers it to the
+  // typing surface on plain Tab. Reading `vm.highlightedId` at CALL time is
+  // load-bearing — the closure over the `vm` prop binding is live in
+  // Svelte 5, so this always sees the row the user last clicked, never the
+  // row selected at registration. A false return (no selection, or the
+  // selected row has no editor) falls through to the default Tab walk — the
+  // contract with TypingSurface. The wrapper only exists so the prop is
+  // referenced inside a closure (state_referenced_locally) — it is invoked
+  // exactly once, synchronously, at component init.
+  function registerTabOutHandler(): void {
+    registerTabOut(() => {
+      const id = vm.highlightedId;
+      if (id === null) return false;
+      const el = inputRefs[id];
+      if (el === undefined || el === null) return false;
+      el.focus();
+      return true;
+    });
+  }
+  registerTabOutHandler();
 </script>
 
 <CluePanelShell highlightedId={vm.highlightedId}>
@@ -72,6 +108,7 @@
             <input
               type="text"
               class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
+              bind:this={inputRefs[entry.id]}
               value={valueFor(entry.id, entry.displayClue)}
               oninput={(e) => setDraft(entry.id, e.currentTarget.value)}
               onblur={() => dispatchEditClue(entry)}

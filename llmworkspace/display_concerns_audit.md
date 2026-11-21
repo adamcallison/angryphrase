@@ -1006,6 +1006,85 @@ real work with a named landing site, tracked here so they are not lost.
   pin). A6's focus convention does not pre-empt either: it styles where focus
   lands, it does not change where focus goes. F4 below later joined this
   destination as the round's third question.*
+  *Resolved 2026-11-21 (the focus-model round, human-initiated; the recorded
+  F3-harness gate was consciously overruled by the human — "no permanent
+  harness yet", verification by the Lead's throwaway Playwright rigs instead,
+  F3 remains open with its offer). Human decisions, all on record from the
+  options round: Q1 letters+Backspace grid-first routing with NO focus
+  movement (over the all-keys+focus-capture form, which would hijack the
+  A4 listbox's arrow browsing after one letter and move the A6 ring off the
+  clicked control); Q2 Tab from grid typing lands in the clicked Builder
+  clue row's editor (over focusing the editor on row click — breaks the
+  select-and-type contract — and over leaving as-is); Q3's plumbing first
+  chosen B1 (the modality boolean as the first-ever shell-local `$state`),
+  then flipped to B2 the same day by the human on pattern-purity grounds,
+  before the round's remaining dispatches landed. Inventory: S1
+  `TypingSurface.svelte`'s window keydown fallback router, S2 its
+  `onTabOut`/`onTypingFocusChange` props, S3 the new
+  `ui/shared/GridTypingBlock.svelte` (wrapper + Grid + TypingSurface as one
+  leaf, owning the modality boolean and `.focus-ring-within`), S4/S5 the two
+  shells (pure composition restored; Builder wires `registerTabOut`/`onTabOut`
+  through a non-reactive slot, OverlayDialog-`returnFocusEl` precedent),
+  S6 `BuilderCluePanel.svelte` (`registerTabOut` prop + per-row
+  `inputRefs` record; handler reads `highlightedId` at call time), S7
+  `app.css` (`.focus-ring-within` recipe — A6 values, unconditional, the
+  JS-made keyboard/pointer decision). Deliberate behaviour changes,
+  examined: letters and Backspace are grid-bound whenever no editable
+  control, open dialog, or modifier chord owns them — typing works with
+  focus on a toolbar button or a clue row, DOM focus never moves (the F2
+  record's "keystrokes go nowhere after a non-minting click" is superseded
+  for letters/Backspace; arrows/Escape/Enter/Tab still follow platform
+  convention); Tab from Builder grid typing lands in the clicked row's
+  editor (Shift+Tab and every other Tab path default); the grid wrapper
+  shows the A6 ring while typing focus was keyboard-acquired (touch/pointer
+  keep the yellow cursor — the recorded caveat holds). Preserved by
+  construction: the `typingFocusSeq` mint is unchanged (a clue/cell click
+  still means select-and-type), the A4 listbox keeps its arrows, dialog
+  traps keep their keys, Ctrl/Meta/Alt chords never type, and the A5
+  announcer is state-driven so grid-first letters announce identically
+  regardless of focus path. Implementer deviations, all accepted: the
+  three listener effects carry last-applied guards (the Lead's sketches
+  would tear down on parent re-render and drop a live ring — the file's own
+  focus-steal lesson applied proactively); `exactOptionalPropertyTypes`
+  forced `(() => boolean) | undefined`; `isContentEditable` is an
+  HTMLElement property; `inputRefs` honestly typed
+  `Record<string, HTMLInputElement | null>` (Svelte 5 nulls `bind:this` on
+  unmount); the init-time registration wrapped per eslint's sanctioned
+  closure fix. Files: `src/ui/shared/TypingSurface.svelte`,
+  `src/ui/shared/GridTypingBlock.svelte` (new), `BuilderShell.svelte`,
+  `BuilderCluePanel.svelte`, `PlayerShell.svelte`, `src/app.css`; doc:
+  architecture.md (Focus section + five §11 rows + §13 tree, lead-edited
+  before each dispatch). Verification: full CI green, re-run by the lead
+  after every dispatch — eslint + madge, svelte-check 0 errors/0 warnings,
+  1409 tests all pre-existing with zero test edits (`test/` absent from
+  the diff is the behaviour-preservation proof), build; the emitted CSS
+  hash was identical across the whole round after the Q3 recipe landed
+  (nothing after Q3 touched the stylesheet). Then the throwaway rig
+ walks in real Chrome (Playwright-core + system Chrome, /tmp only, no
+  repo changes): 19/19 for Q3+B2 (ring on keyboard entry incl. Tab walk and
+  ring value exactly solid/2px/offset-2/rgb(37,99,235); never on pointer
+  mints or touch-suppressed; survives typing with no re-render teardown;
+  clears on anagram-open, dialog-close, and the fill→design enabled flip),
+  then 26/26 for Q1+Q2 (type with focus on Check lands and leaves focus on
+  Check; Backspace from body deletes; Ctrl+letter not routed; arrows still
+  browse the listbox; a letter from a focused option lands in the grid
+  without focus theft; anagram modal owns keys while open and its textbox
+  receives input; Player Tab default walk stands; Builder row click mints
+  and letters land; Tab lands in the clicked row's editor, follows a
+  second click to the new row, Shift+Tab defaults; the confirm modal owns
+  keys while open; design mode routes nothing; back to fill everything
+  live; ring regression green). Rig provenance, recorded honestly: the
+  first Q1+Q2 run's failures were rig bugs — a missing `await` in a
+  capture, `li`-centre clicks hitting the clue input instead of the A4
+  underlay (which is exposed only on row padding — a structural fact
+  worth knowing, not a defect), letter-count detection blind on the
+  solution-filled Builder grid (switched to a content signature), and the
+  anagram input's case-normalising sanitiser. One check N/A on record:
+  puzzle1 has no non-head clue rows, so the Tab false-fall-through path
+  is verified structurally (a plain `false` return), not behaviourally.
+  No DOM harness (F3, open by human choice), so screen-reader behaviour
+  joins the manual checklist — announcements are state-driven and
+  unchanged in mechanism. Leftover from F2: none.*
 - **F3 — DOM harness decision, proven twice in one day, still pending.** The
   focus-steal (F2) and its round-2 fix were both invisible to the repo's test
   suite by construction: no test renders a `.svelte` file (architecture.md §12),
@@ -1066,3 +1145,71 @@ real work with a named landing site, tracked here so they are not lost.
   Touch caveat, pre-recorded: on the B forms a touch tap (pointerdown) suppresses
   the ring — mobile users keep the yellow cursor as their indicator, consistent
   with the convention's meaning.
+  *Resolved 2026-11-21 in the focus-model round (the recorded landing site;
+  same round as F2's two questions, see F2's resolution for the round's
+  human decisions, inventory, and verification — B2, the GridTypingBlock
+  leaf, was this finding's form). The fix is the audit's own Option B
+  sketch: `TypingSurface` tracks last interaction modality via window
+  capture listeners and reports keyboard-acquired focus up
+  (`onTypingFocusChange`); the wrapper div (now `GridTypingBlock`'s own)
+  carries `.focus-ring-within` — the A6 ring values applied
+  unconditionally, the keyboard/pointer decision made in JS because the
+  empirical finding ruled out every pure-CSS form. Rig-verified in real
+  Chrome: ring on Tab entry and on keyboard mints (Enter on a clue
+  option), value exactly solid/2px/offset-2/rgb(37, 99, 235), never on
+  pointer mints or touch (the caveat holds as designed), survives typing,
+  clears on modal-open and on the fill→design enabled flip. The hidden
+  input itself stays ringless; the ring encodes "the grid has your typing
+  focus". Leftover from F4: none.*
+- **F5 — non-central state stands between the app and an undo feature.**
+  Surfaced 2026-11-21 by the human's question during the focus-model round
+  ("tell me all state that doesn't live in the central stores"), directed at a
+  future undo implementation. Inventory (walk date 2026-11-21, mid-round; the
+  round's Q1/Q2 add no new state surface — the router is stateless dispatch,
+  Q2's refs are DOM refs — re-verified at round close): the close held —
+  the router is stateless bag dispatch, and Q2's additions (`inputRefs`
+  record, the shell's non-reactive slot) are DOM-ref/wiring classes
+  already in this inventory's ignore list.
+  **Real user content outside the store — the undo-critical class.** Four
+  input-draft sites hold uncommitted text that a reducer-history undo cannot
+  see: `BuilderCluePanel`'s per-row `drafts` `SvelteMap` (clue edits leave it
+  only on blur, as one `edit-clue` commit — mid-edit keystrokes are invisible
+  to any history keyed on intents); `BuilderToolbar`'s `titleDraft` /
+  `authorDraft`; `GridSizeControl`'s `draft`. Contrast case: the anagram
+  helper's input lives **in** the store (`AnagramModalState.input`, survives
+  close/reopen) — proof that centralizing a composing draft is architecturally
+  permitted by the Focus boundary rule ("the user is composing X" is a
+  headless-actable fact, no pixels required) and is the pattern undo would
+  need. Centralizing the four drafts is a design round of its own: it changes
+  commit semantics (blur-commit becomes state), touches the C2/C3 copy seam
+  (draft text is user content, not minted copy), and forces test-shape churn
+  in the panels' tests.
+  **Ephemeral UI facts — undo-irrelevant, boundary-rule sanctioned.**
+  `FilePicker`'s `dragOver`; DOM refs (`CluePanelShell`'s `panelEl` + `liRefs`,
+  `OverlayDialog`'s `dialogEl` + non-reactive `returnFocusEl`, `TypingSurface`'s
+  `inputEl`); `GridTypingBlock`'s modality boolean; `ToastHost`'s auto-dismiss
+  `timers` Map (store owns the toast list, the leaf owns only the timers);
+  `TypingSurface`'s non-reactive last-applied guards (`lastSeq`, `lastEnabled`,
+  `lastModality`, `lastListenerEnabled`). None should ever be centralized; an
+  undo feature must simply ignore them.
+  **Bindings-layer queue state — undo interplay to design for.**
+  `persistenceScheduler`'s per-slice `timer` + `pending` snapshot (400 ms
+  debounced save, latest-wins coalescing). Any undo must be a dispatched
+  intent, never a silent mutation, so the scheduler re-queues the post-undo
+  state and a stale pending snapshot cannot resurrect the undone one; the
+  flush-on-boot/teardown path and the F1 resolution's stale-keyed-blob edge
+  (failed player clear) are the adjacent recorded facts.
+  **Browser-owned, deliberately never in state** (Focus boundary rule):
+  scroll positions, DOM focus, text selection — undo ignores them by design;
+  an undo that restored scroll would be recording a rendering, which the
+  boundary rule bans.
+  Proper shape if taken: an **undo design round** (human-initiated) deciding
+  (a) history granularity — intent-level (cheap, but the four drafts escape
+  it) vs snapshot (sees mid-edit text only after the drafts centralize), likely
+  both, sequenced drafts-first; (b) whether the four draft sites centralize
+  first (the anagram-input precedent, a prerequisite); (c) undo↔persistence
+  interplay (dispatch-only history; keyed-blob resurrection edges);
+  (d) the undo gesture itself (button vs Ctrl+Z — the focus-model round's
+  window key-routing is the established precedent for where such a handler
+  lives). Not started; no code exists for it. Landing site: an undo design
+  round, human-initiated.
