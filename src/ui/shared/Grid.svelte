@@ -62,3 +62,5 @@
     </div>
   {/each}
 </div>
+
+<div class="sr-only" role="status">{vm.cursorAnnouncement}</div>

@@ -264,6 +264,70 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   before either goes live. Design sketch lives in the A1 resolution entry's
   deferral note. Until A5 lands, grid play is silent to AT users — an accepted,
   recorded state, not an oversight.*
+  *Resolved 2026-11-21 (all recommendations confirmed by the human after a design
+  round; alternatives presented and rejected: dedupe the banner to one visible copy
+  — a visual/placement change that pre-empts the B1/B2 shell round; reuse the full
+  `GridCellVM.label` verbatim as the keystroke announcement — ~8 words per
+  keystroke, punishing for the app's core loop; a single composed region per screen
+  — needs previous-vs-current comparison, and state never records renderings (the
+  Focus-section boundary rule); marking the visible check block live directly —
+  a region mounting fresh is less reliably announced than one that exists and
+  changes content, the exact reason ToastHost used a sibling; `role="alert"` for
+  the Builder violations — the list re-derives on every edit, assertive would
+  interrupt mid-typing constantly). Inventory: S1 PlayerToolbar check-result
+  block, S2 ActiveClueBanner + PlayerShell's double render, S3 ImportScreen
+  error box, S4 BuilderToolbar violation list, S5 the grid state-change
+  announcer (the A1 deferral's landing site), S6 the banner↔grid sequencing
+  requirement. Design as implemented — four VM-minted announcement fields, then
+  five always-mounted region insertions: `GridVM.cursorAnnouncement` (compact
+  grammar `row R, column C,` + `letter X`/`empty`/`blocked` — deliberately NOT the
+  full `label` grammar; minted by reusing the label's existing content clause, one
+  clause owner), `ActiveClueBannerVM.announcement` (`N across: clue (pattern)` —
+  the number+direction prefix makes it unique per word, so content-identity
+  phasing delivers the audit sketch's "clue announces only on word change" with
+  zero extra machinery: a live region holding this string is silent while the
+  cursor moves within one word), `PlayerCheckResultVM.announcement` (message +
+  " (N incorrect)"/" (N empty)" clauses mirroring the visible spans), and
+  `BuilderToolbarVM.violationAnnouncement` (summary labels joined "; "). Regions:
+  `Grid.svelte` an `sr-only role="status"` sibling after the container, ungated —
+  the shared leaf announces cursor moves in both experiences, Builder design
+  mode included (deliberate); `PlayerShell.svelte` a single banner mirror as
+  first child of the columns row — DOM-order load-bearing, it precedes `Grid`,
+  so a word change queues clue speech before cell speech (the sequencing
+  decision, resolved structurally rather than by timers); `PlayerToolbar.svelte`
+  an always-mounted mirror; `ImportScreen.svelte` `role="alert"` on the existing
+  visible box (alerts announce on insertion, no mirror; copy stays in state,
+  blessed C2); `BuilderToolbar.svelte` an always-mounted mirror. The banner
+  double-announce hazard is closed by construction: speech flows through the one
+  PlayerShell mirror, never through the twice-rendered component — both visible
+  copies stay, placement deferred to B1/B2. `aria-live` is never spelled anywhere
+  (role implies polite, the repo convention since A3). Visual UI byte-identical:
+  the whole change is four sr-only divs, one role attribute, one comment.
+  Authorized test-shape edits, pre-declared (A3 precedent): four full-shape
+  `toEqual` pins in `playerVM.test.ts` (two banner nulls, one shell banner, one
+  check-result) each gained exactly one `announcement` line. Implementer notes,
+  both accepted: T2 flagged its fixture choice for the no-incorrect-clause test
+  (spec named behaviour, not fixture — reasonable); T4 flagged an ambiguous
+  "sibling after the {#if}" placement in BuilderToolbar (inside the flex row —
+  fine, `sr-only` is absolutely positioned, layout-neutral). Files:
+  `src/ui/bindings/viewmodels/gridVM.ts`, `playerVM.ts`, `builderVM.ts`;
+  `test/ui/bindings/viewmodels/gridVM.test.ts` (5 new), `playerVM.test.ts`
+  (6 new + 4 pin lines), `builderVM.test.ts` (3 new); `src/ui/shared/Grid.svelte`,
+  `src/ui/player/PlayerShell.svelte`, `PlayerToolbar.svelte`,
+  `ImportScreen.svelte`, `src/ui/builder/BuilderToolbar.svelte`.
+  Verification: full CI green, re-run by the lead — eslint + madge,
+  svelte-check 0 errors/0 warnings (no new a11y warnings, zero new
+  `svelte-ignore`), 1397 tests (1383 existing + 14 new), build green; grep walk:
+  `aria-live` appears only in a ToastHost prose comment, status/alert roles
+  confined to the six expected files (four new + ToastHost + ImportScreen),
+  both new fields confined to VM + consumer + test. No DOM harness (§12), so
+  actual screen-reader behaviour — grid play speech, word-change sequencing,
+  toast/banner interleaving, the alert on import failure — joins the manual
+  checklist. Accepted limitations, examined: identical re-Check result is silent
+  (content-identity); re-clicking the same cell is silent (same); a toast
+  arriving mid-announcement queues politely behind it. Leftover from A5:
+  none — F1 (save-failure channel bug) remains open as its own follow-up,
+  untouched by design.*
 - **A6 — button hygiene.** No `focus-visible` treatment anywhere (keyboard focus relies
   on the UA default ring, which the rework should consciously keep or replace). Six
   buttons lack `type="button"`: BuilderCluePanel "Link next"/"Unlink",

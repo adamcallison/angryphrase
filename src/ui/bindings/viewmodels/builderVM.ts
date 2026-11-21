@@ -54,6 +54,7 @@ export type BuilderToolbarVM = {
   markerFlags: CellMarker;
   canExportComplete: boolean;
   violationSummary: Array<{ count: number; label: string }>;
+  violationAnnouncement: string;
 };
 
 export type DisplacedClueEntryVM = {
@@ -101,6 +102,7 @@ export function deriveBuilderToolbarVM(state: BuilderState): BuilderToolbarVM {
     markerFlags,
     canExportComplete: violations.length === 0,
     violationSummary: summary,
+    violationAnnouncement: summary.map((item) => item.label).join('; '),
   };
 }
 

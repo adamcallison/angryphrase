@@ -45,4 +45,6 @@
       {/if}
     </div>
   {/if}
+
+  <div class="sr-only" role="status">{checkResult === null ? '' : checkResult.announcement}</div>
 </div>

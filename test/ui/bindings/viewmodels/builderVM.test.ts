@@ -223,6 +223,41 @@ describe('deriveBuilderToolbarVM', () => {
     });
   });
 
+  it('deriveBuilderToolbarVM: no violations → violationAnnouncement is empty string', () => {
+    let state = makeBlankState(2);
+    state = stateWithAnswerLetter(state, 0, 0, 'A');
+    state = stateWithAnswerLetter(state, 0, 1, 'B');
+    state = stateWithAnswerLetter(state, 1, 0, 'C');
+    state = stateWithAnswerLetter(state, 1, 1, 'D');
+    state = stateWithWords(state, [
+      makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: 'Head clue' }),
+    ]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.violationAnnouncement).toBe('');
+  });
+
+  it('deriveBuilderToolbarVM: single violation kind → violationAnnouncement is its label alone', () => {
+    let state = makeBlankState(2);
+    state = stateWithAnswerLetter(state, 0, 0, 'A');
+    state = stateWithAnswerLetter(state, 0, 1, 'B');
+    state = stateWithAnswerLetter(state, 1, 0, 'C');
+    state = stateWithAnswerLetter(state, 1, 1, 'D');
+    state = stateWithWords(state, [
+      makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: '' }),
+    ]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.violationAnnouncement).toBe('1 missing clue');
+  });
+
+  it('deriveBuilderToolbarVM: multiple violation kinds → labels joined with "; " in summary order', () => {
+    let state = makeBlankState(2);
+    state = stateWithWords(state, [
+      makeWord({ startRow: 0, startCol: 0, direction: 'across', number: 1, length: 2, clue: '' }),
+    ]);
+    const vm = deriveBuilderToolbarVM(state);
+    expect(vm.violationAnnouncement).toBe('4 missing answer letters; 1 missing clue');
+  });
+
   it('toolbar VM violationSummary is empty when the puzzle is complete', () => {
     let state = makeBlankState(2);
     state = stateWithAnswerLetter(state, 0, 0, 'A');

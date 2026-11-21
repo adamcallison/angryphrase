@@ -27,6 +27,7 @@ export type GridVM = {
   size: number;
   cells: GridCellVM[][];
   typingFocusSeq: number;
+  cursorAnnouncement: string;
 };
 
 export function deriveGridVM(input: {
@@ -46,6 +47,8 @@ export function deriveGridVM(input: {
     wordStartNumber.set(key, Number(word.number));
   }
 
+  let cursorAnnouncement = '';
+
   const cells: GridCellVM[][] = grid.map((rowCells, r): GridCellVM[] =>
     rowCells.map((cell, c): GridCellVM => {
       const black = cell.black;
@@ -63,9 +66,12 @@ export function deriveGridVM(input: {
 
       const number = black ? null : wordStartNumber.get(key) ?? null;
 
+      const isCursorCell =
+        cursor !== null && Number(cursor.row) === r && Number(cursor.col) === c;
+
       const hilite: CellHilite = black
         ? 'none'
-        : cursor && Number(cursor.row) === r && Number(cursor.col) === c
+        : isCursorCell
           ? 'selected'
           : selectedWordCells.has(key)
             ? 'in-word'
@@ -82,6 +88,7 @@ export function deriveGridVM(input: {
       const selectable = black ? false : runCells.has(key);
 
       const content = black ? 'blocked' : letter !== null ? `letter ${letter}` : 'empty';
+      if (isCursorCell) cursorAnnouncement = `row ${r + 1}, column ${c + 1}, ${content}`;
       const labelParts: string[] = [`Row ${r + 1}, column ${c + 1}, ${content}`];
       if (number !== null) labelParts.push(`word ${number} start`);
       if (separatorRight === 'space') labelParts.push('space after');
@@ -105,5 +112,5 @@ export function deriveGridVM(input: {
     }),
   );
 
-  return { size, cells, typingFocusSeq };
+  return { size, cells, typingFocusSeq, cursorAnnouncement };
 }

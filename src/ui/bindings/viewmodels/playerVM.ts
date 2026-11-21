@@ -21,6 +21,7 @@ export type ActiveClueBannerVM = {
   direction: Direction | null;
   displayClue: string | null;
   lengthPattern: LengthPattern | null;
+  announcement: string;
 };
 
 export type PlayerCluePanelVM = CluePanelVM;
@@ -38,6 +39,7 @@ export type PlayerCheckResultVM = {
   incorrectCount: number;
   emptyCount: number;
   message: string;
+  announcement: string;
 } | null;
 
 export type PlayerShellVM =
@@ -61,6 +63,7 @@ function emptyBanner(): ActiveClueBannerVM {
     direction: null,
     displayClue: null,
     lengthPattern: null,
+    announcement: '',
   };
 }
 
@@ -84,12 +87,18 @@ export function deriveActiveClueBannerVM(input: {
     ? LengthPattern.forWord(puzzle.grid, index, word)
     : null;
 
+  const wordNumber = Number(word.number);
+  const announcement =
+    `${wordNumber} ${word.key.direction}: ${displayClue}` +
+    (lengthPattern !== null ? ` (${lengthPattern})` : '');
+
   return {
     visible: true,
-    wordNumber: Number(word.number),
+    wordNumber,
     direction: word.key.direction,
     displayClue,
     lengthPattern,
+    announcement,
   };
 }
 
@@ -148,11 +157,17 @@ export function deriveCheckResultVM(
       break;
   }
 
+  const announcement =
+    message +
+    (incorrectCount > 0 ? ` (${incorrectCount} incorrect)` : '') +
+    (emptyCount > 0 ? ` (${emptyCount} empty)` : '');
+
   return {
     classification: checkResult.classification,
     incorrectCount,
     emptyCount,
     message,
+    announcement,
   };
 }
 

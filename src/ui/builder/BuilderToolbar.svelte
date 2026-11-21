@@ -133,6 +133,7 @@
         {/each}
       </div>
     {/if}
+    <div class="sr-only" role="status">{vm.violationAnnouncement}</div>
     <button
       type="button"
       class="btn btn-sm btn-danger"

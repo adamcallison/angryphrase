@@ -286,4 +286,54 @@ describe('deriveGridVM', () => {
     const vmBottomHyphen = deriveGridVM({ grid: gBottomHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
     expect(vmBottomHyphen.cells[0]![0]!.label).toBe('Row 1, column 1, empty, hyphen below');
   });
+
+  it('deriveGridVM: cursor null → cursorAnnouncement is empty string', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
+    expect(vm.cursorAnnouncement).toBe('');
+  });
+
+  it('deriveGridVM: cursor on empty cell → "row R, column C, empty"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const cursor: Cursor = { row: Row.of(1), col: Col.of(0), direction: 'across' };
+    const vm = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
+    expect(vm.cursorAnnouncement).toBe('row 2, column 1, empty');
+  });
+
+  it('deriveGridVM: cursor on letter cell → "row R, column C, letter X"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const cell = Grid.cellAt(grid, Row.of(1), Col.of(1));
+    const answerLetter = Letter.try('C');
+    expect(answerLetter).not.toBeNull();
+    const gridWithLetter = Grid.setCell(grid, Row.of(1), Col.of(1), Cell.setAnswerLetter(cell, answerLetter!));
+    const cursor: Cursor = { row: Row.of(1), col: Col.of(1), direction: 'across' };
+    const vm = deriveGridVM({ grid: gridWithLetter, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
+    expect(vm.cursorAnnouncement).toBe('row 2, column 2, letter C');
+  });
+
+  it('deriveGridVM: cursor on black cell → "row R, column C, blocked"', () => {
+    const grid = black2x2Grid();
+    const cursor: Cursor = { row: Row.of(1), col: Col.of(1), direction: 'across' };
+    const vm = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
+    expect(vm.cursorAnnouncement).toBe('row 2, column 2, blocked');
+  });
+
+  it('deriveGridVM: cursorAnnouncement contains no "selected"/word/separator clauses regardless of cursor cell features', () => {
+    const grid = Grid.blank(GridSize.of(3));
+    let cell = Grid.cellAt(grid, Row.of(0), Col.of(0));
+    cell = Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'space'));
+    cell = Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'hyphen'));
+    const answerLetter = Letter.try('C');
+    expect(answerLetter).not.toBeNull();
+    cell = Cell.setAnswerLetter(cell, answerLetter!);
+    const g = Grid.setCell(grid, Row.of(0), Col.of(0), cell);
+    const words: Word[] = [wordAt0()];
+    const cursor: Cursor = { row: Row.of(0), col: Col.of(0), direction: 'across' };
+    const vm = deriveGridVM({ grid: g, cursor, words, whichLetter: 'answer', selectedWordCells: new Set(), typingFocusSeq: 0 });
+    expect(vm.cursorAnnouncement).toBe('row 1, column 1, letter C');
+    expect(vm.cursorAnnouncement).not.toContain('selected');
+    expect(vm.cursorAnnouncement).not.toContain('word');
+    expect(vm.cursorAnnouncement).not.toContain('space');
+    expect(vm.cursorAnnouncement).not.toContain('hyphen');
+  });
 });

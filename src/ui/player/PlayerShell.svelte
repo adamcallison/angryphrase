@@ -35,6 +35,8 @@
     </div>
 
     <div class="flex flex-col md:flex-row gap-6">
+      <!-- DOM order load-bearing: clue region must precede Grid so the reader queues clue first, then cell. -->
+      <div class="sr-only" role="status">{vm.banner.announcement}</div>
       <!-- left column: banners + grid + toolbar -->
       <section class="flex flex-col gap-3 flex-1 min-w-0">
         <ActiveClueBanner vm={vm.banner} />

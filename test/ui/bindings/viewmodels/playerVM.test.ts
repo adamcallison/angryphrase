@@ -139,6 +139,7 @@ describe('deriveActiveClueBannerVM', () => {
       direction: null,
       displayClue: null,
       lengthPattern: null,
+      announcement: '',
     });
   });
 
@@ -151,6 +152,7 @@ describe('deriveActiveClueBannerVM', () => {
       direction: null,
       displayClue: null,
       lengthPattern: null,
+      announcement: '',
     });
   });
 
@@ -198,6 +200,51 @@ describe('deriveActiveClueBannerVM', () => {
     expect(vm.direction).toBe('down');
     expect(vm.displayClue).toBe('See 1 Across');
     expect(vm.lengthPattern).toBeNull();
+  });
+
+  it('deriveActiveClueBannerVM: cursor on head word → announcement "1 across: Head clue (3)"', () => {
+    let puzzle = makeBlankPuzzle(3);
+    const word = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 3,
+      clue: 'Head clue',
+    });
+    puzzle = puzzleWithWords(puzzle, [word]);
+    const cursor = makeCursor(0, 1, 'across');
+    const vm = deriveActiveClueBannerVM({ puzzle, cursor });
+    expect(vm.announcement).toBe('1 across: Head clue (3)');
+  });
+
+  it('deriveActiveClueBannerVM: cursor on non-head word → announcement "2 down: See 1 Across" with no length-pattern suffix', () => {
+    let puzzle = makeBlankPuzzle(3);
+    const head = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'across',
+      number: 1,
+      length: 3,
+      clue: 'Head clue',
+    });
+    const tail = makeWord({
+      startRow: 0,
+      startCol: 0,
+      direction: 'down',
+      number: 2,
+      length: 3,
+      clue: '',
+    });
+    puzzle = puzzleWithWords(puzzle, [{ ...head, nextWord: tail.key }, tail]);
+    const cursor = makeCursor(0, 0, 'down');
+    const vm = deriveActiveClueBannerVM({ puzzle, cursor });
+    expect(vm.announcement).toBe('2 down: See 1 Across');
+  });
+
+  it('deriveActiveClueBannerVM: empty banner → announcement is empty string', () => {
+    const vm = deriveActiveClueBannerVM({ puzzle: null, cursor: null });
+    expect(vm.announcement).toBe('');
   });
 });
 
@@ -307,6 +354,7 @@ describe('deriveCheckResultVM', () => {
       incorrectCount: 0,
       emptyCount: 0,
       message: 'Puzzle solved!',
+      announcement: 'Puzzle solved!',
     });
   });
 
@@ -341,6 +389,29 @@ describe('deriveCheckResultVM', () => {
     const vm = deriveCheckResultVM(result);
     expect(vm?.incorrectCount).toBe(5);
     expect(vm?.emptyCount).toBe(7);
+  });
+
+  it('deriveCheckResultVM: complete-correct → announcement "Puzzle solved!"', () => {
+    const result = makeCheckResult('complete-correct', 0, 0);
+    const vm = deriveCheckResultVM(result);
+    expect(vm?.announcement).toBe('Puzzle solved!');
+  });
+
+  it('deriveCheckResultVM: incomplete-incorrect 1/2 → announcement includes " (1 incorrect) (2 empty)"', () => {
+    const result = makeCheckResult('incomplete-incorrect', 1, 2);
+    const vm = deriveCheckResultVM(result);
+    expect(vm?.announcement).toBe(
+      'Some letters are incorrect and some cells are empty. (1 incorrect) (2 empty)',
+    );
+  });
+
+  it('deriveCheckResultVM: incorrectCount 0 → no incorrect clause in announcement', () => {
+    const result = makeCheckResult('incomplete-correct', 0, 3);
+    const vm = deriveCheckResultVM(result);
+    expect(vm?.announcement).toBe(
+      'Looks good so far. No incorrect letters, but some empty cells remain. (3 empty)',
+    );
+    expect(vm?.announcement).not.toContain('incorrect)');
   });
 });
 
@@ -402,6 +473,7 @@ describe('derivePlayerShellVM', () => {
       direction: null,
       displayClue: null,
       lengthPattern: null,
+      announcement: '',
     });
   });
 
