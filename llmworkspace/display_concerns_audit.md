@@ -233,7 +233,15 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   will speak those word changes without further work here. Leftover from A4: none —
   but A6 is now half-closed (its BuilderCluePanel pair rode along as S4; the other
   four type-less buttons live in JoinReattachBanner and DisplacedCluesPanel and
-  remain A6's).*
+  remain A6's).* Addendum 2026-11-21 (later the same day): this entry's Player-panel
+  description — and the "navigation never crosses between the Across and Down
+  listboxes" contract — was superseded by the grouped-listbox form (one
+  `role="listbox"` over both sections, arrows walking all clues, boundary keys
+  `preventDefault`). The human's boundary test showed the two-separate-listboxes
+  model left Down rows keyboard-unreachable whenever the active word was Across
+  (the single Tab stop sat in whichever list held the active clue), and two
+  "single-select" lists sharing one global selection was not honest ARIA. See the
+  §11 row and the focus-token round's rig verification for the superseding form.
 - **A5 — status text is visual-only at four more sites.**
   PlayerToolbar's check-result block, `ActiveClueBanner` (note: `PlayerShell.svelte`
   renders the banner twice, above and below the grid — two copies that would

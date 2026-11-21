@@ -22,18 +22,27 @@
     return first?.id ?? null;
   });
 
-  function onOptionKeydown(e: KeyboardEvent, entry: ClueEntryVM, list: ClueEntryVM[]): void {
+  const allEntries: ClueEntryVM[] = $derived([...vm.across, ...vm.down]);
+
+  function onOptionKeydown(e: KeyboardEvent, entry: ClueEntryVM): void {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const idx = list.findIndex((x) => x.id === entry.id);
-      const next = e.key === 'ArrowDown' ? list.at(idx + 1) : list.at(idx - 1);
-      if (next === undefined) return;
+      const idx = allEntries.findIndex((x) => x.id === entry.id);
+      const next = e.key === 'ArrowDown' ? allEntries.at(idx + 1) : allEntries.at(idx - 1);
+      // A true end of the list: swallow the key so the default scroll never fires.
+      if (next === undefined) {
+        e.preventDefault();
+        return;
+      }
       // Browsing the list must not fight the typing surface for focus (Focus section).
       actions.browseCluePanelWord(next.wordKey);
       liRefs[next.id]?.focus();
       e.preventDefault();
     } else if (e.key === 'Home' || e.key === 'End') {
-      const next = e.key === 'Home' ? list.at(0) : list.at(-1);
-      if (next === undefined) return;
+      const next = e.key === 'Home' ? allEntries.at(0) : allEntries.at(-1);
+      if (next === undefined) {
+        e.preventDefault();
+        return;
+      }
       actions.browseCluePanelWord(next.wordKey);
       liRefs[next.id]?.focus();
       e.preventDefault();
@@ -44,7 +53,7 @@
   }
 </script>
 
-{#snippet clueRow(entry: ClueEntryVM, list: ClueEntryVM[])}
+{#snippet clueRow(entry: ClueEntryVM)}
   <li
     bind:this={liRefs[entry.id]}
     role="option"
@@ -54,7 +63,7 @@
     onclick={() => {
       actions.clickCluePanelWord(entry.wordKey);
     }}
-    onkeydown={(e) => onOptionKeydown(e, entry, list)}
+    onkeydown={(e) => onOptionKeydown(e, entry)}
   >
     <span class="font-bold text-gray-800">{entry.number}.</span>
     <div class="flex flex-col gap-0.5 flex-1">
@@ -67,20 +76,22 @@
 {/snippet}
 
 <aside bind:this={panelEl} class="flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto">
-  <section>
-    <h2 class="text-sm font-semibold text-gray-700">Across</h2>
-    <ul role="listbox" aria-label="Across clues" class="flex flex-col gap-1">
-      {#each vm.across as entry (entry.id)}
-        {@render clueRow(entry, vm.across)}
-      {/each}
-    </ul>
-  </section>
-  <section>
-    <h2 class="text-sm font-semibold text-gray-700">Down</h2>
-    <ul role="listbox" aria-label="Down clues" class="flex flex-col gap-1">
-      {#each vm.down as entry (entry.id)}
-        {@render clueRow(entry, vm.down)}
-      {/each}
-    </ul>
-  </section>
+  <ul role="listbox" aria-label="Clues" class="flex flex-col gap-4">
+    <li role="group" aria-label="Across clues">
+      <h2 class="text-sm font-semibold text-gray-700">Across</h2>
+      <ul class="flex flex-col gap-1">
+        {#each vm.across as entry (entry.id)}
+          {@render clueRow(entry)}
+        {/each}
+      </ul>
+    </li>
+    <li role="group" aria-label="Down clues">
+      <h2 class="text-sm font-semibold text-gray-700">Down</h2>
+      <ul class="flex flex-col gap-1">
+        {#each vm.down as entry (entry.id)}
+          {@render clueRow(entry)}
+        {/each}
+      </ul>
+    </li>
+  </ul>
 </aside>
