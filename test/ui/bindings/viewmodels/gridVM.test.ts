@@ -236,4 +236,69 @@ describe('deriveGridVM', () => {
       }
     }
   });
+
+  it('deriveGridVM: white cell with letter → label "Row R, column C, letter X"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const cell = Grid.cellAt(grid, Row.of(0), Col.of(0));
+    const answerLetter = Letter.try('C');
+    expect(answerLetter).not.toBeNull();
+    const gridWithLetter = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.setAnswerLetter(cell, answerLetter!));
+    const vm = deriveGridVM({ grid: gridWithLetter, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm.cells[0]![0]!.label).toBe('Row 1, column 1, letter C');
+  });
+
+  it('deriveGridVM: white empty cell → label content clause "empty"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm.cells[0]![0]!.label).toBe('Row 1, column 1, empty');
+  });
+
+  it('deriveGridVM: black cell → label content clause "blocked" with no number/separator suffixes', () => {
+    const grid = black2x2Grid();
+    const vm = deriveGridVM({ grid, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm.cells[0]![0]!.label).toBe('Row 1, column 1, blocked');
+    expect(vm.cells[1]![1]!.label).toBe('Row 2, column 2, blocked');
+  });
+
+  it('deriveGridVM: cursor cell → label ends ", selected"; non-cursor cells do not contain "selected"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const cursor: Cursor = { row: Row.of(0), col: Col.of(1), direction: 'across' };
+    const vm = deriveGridVM({ grid, cursor, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm.cells[0]![1]!.label.endsWith(', selected')).toBe(true);
+    expect(vm.cells[0]![1]!.label).toBe('Row 1, column 2, empty, selected');
+    expect(vm.cells[0]![0]!.label.includes('selected')).toBe(false);
+    expect(vm.cells[1]![0]!.label.includes('selected')).toBe(false);
+    expect(vm.cells[1]![1]!.label.includes('selected')).toBe(false);
+  });
+
+  it('deriveGridVM: word-start cell → label contains ", word N start"', () => {
+    const grid = Grid.blank(GridSize.of(3));
+    const words: Word[] = [wordAt0()];
+    const vm = deriveGridVM({ grid, cursor: null, words, whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vm.cells[0]![0]!.label.includes(', word 1 start')).toBe(true);
+    expect(vm.cells[0]![0]!.label).toBe('Row 1, column 1, empty, word 1 start');
+    expect(vm.cells[0]![1]!.label.includes('word')).toBe(false);
+    expect(vm.cells[1]![1]!.label.includes('word')).toBe(false);
+  });
+
+  it('deriveGridVM: separatorRight space → ", space after"; hyphen → ", hyphen after"; separatorBottom space → ", space below"; hyphen → ", hyphen below"', () => {
+    const grid = Grid.blank(GridSize.of(2));
+    const cell = Grid.cellAt(grid, Row.of(0), Col.of(0));
+
+    const gRightSpace = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'space')));
+    const vmRightSpace = deriveGridVM({ grid: gRightSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmRightSpace.cells[0]![0]!.label).toBe('Row 1, column 1, empty, space after');
+
+    const gRightHyphen = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.setMarker(cell, CellMarker.write(cell.marker, 'right', 'hyphen')));
+    const vmRightHyphen = deriveGridVM({ grid: gRightHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmRightHyphen.cells[0]![0]!.label).toBe('Row 1, column 1, empty, hyphen after');
+
+    const gBottomSpace = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'space')));
+    const vmBottomSpace = deriveGridVM({ grid: gBottomSpace, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmBottomSpace.cells[0]![0]!.label).toBe('Row 1, column 1, empty, space below');
+
+    const gBottomHyphen = Grid.setCell(grid, Row.of(0), Col.of(0), Cell.setMarker(cell, CellMarker.write(cell.marker, 'bottom', 'hyphen')));
+    const vmBottomHyphen = deriveGridVM({ grid: gBottomHyphen, cursor: null, words: [], whichLetter: 'answer', selectedWordCells: new Set() });
+    expect(vmBottomHyphen.cells[0]![0]!.label).toBe('Row 1, column 1, empty, hyphen below');
+  });
 });

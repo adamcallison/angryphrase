@@ -21,6 +21,7 @@ export type GridCellVM = {
   separatorRight: CellSeparator;
   separatorBottom: CellSeparator;
   selectable: boolean;
+  label: string;
 };
 
 export type GridVM = {
@@ -85,6 +86,15 @@ export function deriveGridVM(input: {
 
       const selectable = black ? false : runCells.has(key);
 
+      const content = black ? 'blocked' : letter !== null ? `letter ${letter}` : 'empty';
+      const labelParts: string[] = [`Row ${r + 1}, column ${c + 1}, ${content}`];
+      if (number !== null) labelParts.push(`word ${number} start`);
+      if (separatorRight === 'space') labelParts.push('space after');
+      else if (separatorRight === 'hyphen') labelParts.push('hyphen after');
+      if (separatorBottom === 'space') labelParts.push('space below');
+      else if (separatorBottom === 'hyphen') labelParts.push('hyphen below');
+      if (hilite === 'selected') labelParts.push('selected');
+
       return {
         row: r,
         col: c,
@@ -95,6 +105,7 @@ export function deriveGridVM(input: {
         separatorRight,
         separatorBottom,
         selectable,
+        label: labelParts.join(', '),
       };
     }),
   );

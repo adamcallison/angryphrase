@@ -49,6 +49,50 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   also blocks selecting/copying cell letters. Because `Grid` is already shared, one
   semantic treatment (roles/labels per cell, a described cursor state) fixes both
   experiences — but it is a per-component design task, not a sweep.
+  *Resolved 2026-11-20 (Option B — ARIA grid semantics, no restyle; human decision:
+  per-cell label phrasing is coordinates + content, no word membership; the hidden
+  input's typing path — `preventScroll` focus, no page jumps — was preserved as a hard
+  constraint and is untouched by construction, since real focus never enters the
+  grid). Inventory: S1 Grid.svelte semantics, S2 the two `svelte-ignore a11y_*`
+  suppressions, S3 `select-none` on the container, S4 TypingSurface's unlabelled
+  input, S5 the label-copy minting site (VM layer, per the §9 component contract and
+  the C3 precedent that the VM layer is the architecture-sanctioned home for display
+  copy). Design as implemented: `role="grid"` + `aria-label="Crossword grid"` on the
+  container; per-row `role="row"` wrappers via Tailwind `contents` (`display:
+  contents`, layout-neutral — the CSS grid was flat, so rows had to be added without
+  entering layout); each cell `role="gridcell"` + `aria-label` from a new
+  `GridCellVM.label` minted in `deriveGridVM` (grammar: `Row R, column C,` + `letter
+  X`/`empty`/`blocked` + applicable `, word N start`, `, space/hyphen after`,
+  `, space/hyphen below`, `, selected`); click activation moved to a nested
+  `<button type="button" tabindex="-1">` — a native button is click-legal without a
+  keydown handler, adds no tab stop, and let both suppressions be deleted;
+  TypingSurface gained `aria-label="Crossword typing input"`; `select-none` removed.
+  Spec bug caught by the implementer (the deviation mechanism working as intended):
+  the Lead's "black cells get no button" was wrong — Builder design mode
+  click-to-un-black (`toggle-design-cell`) depends on black-cell clicks, with no DOM
+  test to catch the breakage — so the button renders under `!cell.black ||
+  allCellsClickable`; behaviour is byte-preserving on every existing path. Two forced
+  additions, both accepted: the button also carries the cell's `aria-label`
+  (lint requires a label on text-less buttons; inert duplication, never focused) and
+  `z-grid-decor` (equal z + later DOM order keeps hyphen decor from stealing
+  in-cell clicks). Deliberate behaviour change, examined: the ~10px protruding half
+  of a hyphen glyph no longer activates the cell on click (previously bubbled);
+  in-cell hit area is fully preserved via the z-fix. Deferral with a named landing
+  site: per-keystroke AT announcement of typed letters requires a live region —
+  A5's pass, which also owns the known banner double-announce hazard (A5's entry
+  names the banner rendered twice). Files: `src/ui/shared/Grid.svelte`,
+  `src/ui/shared/TypingSurface.svelte`,
+  `src/ui/bindings/viewmodels/gridVM.ts` (+ `label` field, all existing fields and
+  their values unchanged), `test/ui/bindings/viewmodels/gridVM.test.ts` (6 new
+  cases). Verification: full CI green, re-run by the lead — eslint + madge clean,
+  svelte-check 0 errors/0 warnings (the deleted suppressions did not re-fire),
+  1368 tests (1362 existing untouched + 6 new), build green; grep walk: zero
+  `aria-live`/`sr-only` anywhere (live regions correctly not smuggled in), the two
+  A1 suppressions gone (six `svelte-ignore a11y_*` remain repo-wide, owned by A4's
+  clue panels and OverlayDialog's backdrop), diff confined to the four specced
+  files. No DOM harness (§12), so screen-reader grid reading and click behaviour in
+  both modes joined the manual checklist. Leftover from A1: none.*
+
 - **A2 — two hand-rolled modal implementations, drifting in both a11y and form.**
   `src/ui/shared/Modal.svelte` vs `src/ui/player/AnagramModal.svelte`: same concept
   (overlay + backdrop-click cancel + Escape), two owners. Modal has
@@ -104,6 +148,22 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   double-announce the moment the banner becomes a live region), `ImportScreen`'s error
   box, `BuilderToolbar`'s violation list. None announced; several are the only signal
   of a state change.
+  *Scope expanded 2026-11-21 at the human's direction: A5 is also the confirmed home
+  of grid state-change announcements, deferred from A1. Human screen-reader test of
+  the A1 fix (2026-11-21) confirmed the gap: arrow-key cursor moves, typed letters,
+  and backspaces change state but announce nothing — the grid is readable when
+  browsed to, but silent while being played. A5 must include a grid announcer: a
+  visually-hidden `aria-live="polite"` region whose content is the cursor cell's
+  label, minted in `gridVM` (pure derivation of existing state, no new state; the
+  §9 contract keeps the copy in the VM layer). That one mechanism covers arrows,
+  typing (auto-advance moves the cursor), backspace, and cell clicks. Coordination
+  requirement this creates: the banner live region and the grid announcer must not
+  fight — moving to a new word would otherwise announce clue + cell simultaneously;
+  decide the sequencing/phasing here (e.g. cell label announces always, clue text
+  announces only on word change), and the banner's double render must be resolved
+  before either goes live. Design sketch lives in the A1 resolution entry's
+  deferral note. Until A5 lands, grid play is silent to AT users — an accepted,
+  recorded state, not an oversight.*
 - **A6 — button hygiene.** No `focus-visible` treatment anywhere (keyboard focus relies
   on the UA default ring, which the rework should consciously keep or replace). Six
   buttons lack `type="button"`: BuilderCluePanel "Link next"/"Unlink",

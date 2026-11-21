@@ -114,6 +114,7 @@
 <input
   bind:this={inputEl}
   type="text"
+  aria-label="Crossword typing input"
   autocapitalize="off"
   autocomplete="off"
   autocorrect="off"
