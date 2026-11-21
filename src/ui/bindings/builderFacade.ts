@@ -1,6 +1,8 @@
 import type { BuilderIntent, BuilderIntentMinusTarget } from '../../builder/state/intents';
 import { deriveBuilderShellVM } from './viewmodels/builderVM';
 import type { BuilderShellVM } from './viewmodels/builderVM';
+import { deriveSaveBannerVM } from './viewmodels/saveBannerVM';
+import type { SaveBannerVM } from './viewmodels/saveBannerVM';
 import type { AppStore } from './appStore.svelte';
 import { GridSize } from '../../domain/grid/GridSize';
 import { Grid } from '../../domain/grid/Grid';
@@ -58,6 +60,7 @@ export type BuilderBannerActions = {
 export type BuilderFacade = {
   dispatch(intent: BuilderIntent): void;
   builderShellVM(): BuilderShellVM;
+  saveBannerVM(): SaveBannerVM | null;
   pickFile(): Promise<string | null>;
   actions: {
     toolbar: BuilderToolbarActions;
@@ -184,6 +187,9 @@ export function createBuilderFacade(appStore: AppStore): BuilderFacade {
     dispatch: appStore.dispatch,
     builderShellVM() {
       return deriveBuilderShellVM(appStore.getBuilder());
+    },
+    saveBannerVM() {
+      return deriveSaveBannerVM(appStore.getSaveHealth().builder, 'builder');
     },
     async pickFile() {
       return filePick.pickFile();

@@ -7,10 +7,12 @@
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
   import TwoColumnShell from '../shared/TwoColumnShell.svelte';
+  import SaveFailureBanner from '../shared/SaveFailureBanner.svelte';
 
   let { builderFacade }: { builderFacade: BuilderFacade } = $props();
 
   const vm: BuilderShellVM = $derived(builderFacade.builderShellVM());
+  const saveBanner = $derived(builderFacade.saveBannerVM());
 
   function onCellClick(row: number, col: number): void {
     builderFacade.actions.grid.clickCell(row, col);
@@ -21,6 +23,7 @@
 <TwoColumnShell>
   {#snippet header()}
     <h2 class="text-lg font-bold text-gray-800">Build a puzzle</h2>
+    <SaveFailureBanner vm={saveBanner} />
     <BuilderToolbar vm={vm.toolbar} title={vm.title} author={vm.author} actions={builderFacade.actions.toolbar} pick={builderFacade.pickFile} />
 
     {#if vm.subModeBanner.kind !== 'none'}

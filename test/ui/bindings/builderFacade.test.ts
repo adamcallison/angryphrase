@@ -466,6 +466,20 @@ describe('builderFacade.ts', () => {
     warnSpy.mockRestore();
   });
 
+  it('builderFacade: saveBannerVM() returns null while the builder save health flag is unset', () => {
+    expect(builderFacade.saveBannerVM()).toBeNull();
+  });
+
+  it('builderFacade: saveBannerVM() returns the builder message after report-builder-save-result { ok: false }', () => {
+    store.dispatch({ kind: 'report-builder-save-result', ok: false });
+
+    const vm = builderFacade.saveBannerVM();
+    expect(vm).not.toBeNull();
+    expect(vm!.message).toBe(
+      'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
+    );
+  });
+
   it('builderFacade: two createBuilderFacade instances over two appStores are independent', () => {
     const storeA = createAppStore(
       makeBlankAppState(1),

@@ -7,8 +7,8 @@ export type AppIntent =
   | { kind: 'cancel-modal' }
   | { kind: 'dismiss-toast'; id: ToastId }
   | { kind: 'report-download-failure' }
-  | { kind: 'report-builder-save-failure' }
-  | { kind: 'report-player-save-failure' }
+  | { kind: 'report-builder-save-result'; ok: boolean }
+  | { kind: 'report-player-save-result'; ok: boolean }
   | { kind: 'report-grid-size-failure' };
 
 export type AnyIntent = AppIntent | BuilderIntent | PlayerIntent;

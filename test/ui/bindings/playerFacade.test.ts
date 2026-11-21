@@ -113,6 +113,8 @@ describe('playerFacade.ts', () => {
       toasts: [],
       modal: null,
       pendingConfirmIntent: null,
+      builderSaveFailed: false,
+      playerSaveFailed: false,
     };
     const freshStore = createAppStore(
       state,
@@ -437,6 +439,18 @@ describe('playerFacade.ts', () => {
     expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
     expect(storeWithDrop.getPlayer()).toEqual({ phase: 'import', lastImportError: 'Could not read that file. Please try again.' });
     warnSpy.mockRestore();
+  });
+
+  it('playerFacade: saveBannerVM() returns null while the player save health flag is unset', () => {
+    expect(playerFacade.saveBannerVM()).toBeNull();
+  });
+
+  it('playerFacade: saveBannerVM() returns the player message after report-player-save-result { ok: false }', () => {
+    store.dispatch({ kind: 'report-player-save-result', ok: false });
+
+    const vm = playerFacade.saveBannerVM();
+    expect(vm).not.toBeNull();
+    expect(vm!.message).toBe('Saving failed — your solving progress is not being kept.');
   });
 
   it('playerFacade: two createPlayerFacade instances over two appStores are independent', () => {

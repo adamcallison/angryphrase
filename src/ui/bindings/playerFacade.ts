@@ -1,6 +1,8 @@
 import type { PlayerIntent, PlayerIntentMinusTarget } from '../../player/state/intents';
 import { derivePlayerShellVM } from './viewmodels/playerVM';
 import type { PlayerShellVM } from './viewmodels/playerVM';
+import { deriveSaveBannerVM } from './viewmodels/saveBannerVM';
+import type { SaveBannerVM } from './viewmodels/saveBannerVM';
 import type { AppStore } from './appStore.svelte';
 import type { WordKey } from '../../domain/word/WordKey';
 import { createGridActions } from './gridActions';
@@ -43,6 +45,7 @@ export type PlayerAnagramActions = {
 export type PlayerFacade = {
   dispatch(intent: PlayerIntent): void;
   playerShellVM(): PlayerShellVM;
+  saveBannerVM(): SaveBannerVM | null;
   pickFile(): Promise<string | null>;
   actions: {
     toolbar: PlayerToolbarActions;
@@ -127,6 +130,9 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     dispatch: appStore.dispatch,
     playerShellVM() {
       return derivePlayerShellVM(appStore.getPlayer());
+    },
+    saveBannerVM() {
+      return deriveSaveBannerVM(appStore.getSaveHealth().player, 'player');
     },
     async pickFile() {
       return filePick.pickFile();

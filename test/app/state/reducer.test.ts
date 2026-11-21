@@ -73,30 +73,44 @@ describe('reduceApp', () => {
     });
   });
 
-  it('reduceApp: report-builder-save-failure emits an error toast event, state unchanged', () => {
+  it('reduceApp: report-builder-save-result ok false sets builderSaveFailed, player flag untouched', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { kind: 'report-builder-save-failure' }, deps);
-    expect(result.state).toBe(state);
-    expect(result.events).toHaveLength(1);
-    expect(result.events[0]).toEqual({
-      kind: 'toast',
-      toastKind: 'error',
-      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
-    });
+    const result = reduceApp(state, { kind: 'report-builder-save-result', ok: false }, deps);
+    expect(result.state.builderSaveFailed).toBe(true);
+    expect(result.state.playerSaveFailed).toBe(false);
   });
 
-  it('reduceApp: report-player-save-failure emits an error toast event, state unchanged', () => {
+  it('reduceApp: report-builder-save-result ok true clears a set flag', () => {
+    const state = { ...makeState(), builderSaveFailed: true };
+    const deps = makeDeps();
+    const result = reduceApp(state, { kind: 'report-builder-save-result', ok: true }, deps);
+    expect(result.state.builderSaveFailed).toBe(false);
+  });
+
+  it('reduceApp: report-*-save-result is a no-op (same reference) when the flag already matches', () => {
+    const deps = makeDeps();
+
+    const builderSet = { ...makeState(), builderSaveFailed: true };
+    expect(reduceApp(builderSet, { kind: 'report-builder-save-result', ok: false }, deps).state).toBe(builderSet);
+
+    const builderClear = makeState();
+    expect(reduceApp(builderClear, { kind: 'report-builder-save-result', ok: true }, deps).state).toBe(builderClear);
+
+    const playerSet = { ...makeState(), playerSaveFailed: true };
+    expect(reduceApp(playerSet, { kind: 'report-player-save-result', ok: false }, deps).state).toBe(playerSet);
+
+    const playerClear = makeState();
+    expect(reduceApp(playerClear, { kind: 'report-player-save-result', ok: true }, deps).state).toBe(playerClear);
+  });
+
+  it('reduceApp: report-*-save-result emits no events', () => {
     const state = makeState();
     const deps = makeDeps();
-    const result = reduceApp(state, { kind: 'report-player-save-failure' }, deps);
-    expect(result.state).toBe(state);
-    expect(result.events).toHaveLength(1);
-    expect(result.events[0]).toEqual({
-      kind: 'toast',
-      toastKind: 'error',
-      message: 'Saving failed — your solving progress is not being kept.',
-    });
+    const builderResult = reduceApp(state, { kind: 'report-builder-save-result', ok: false }, deps);
+    expect(builderResult.events).toEqual([]);
+    const playerResult = reduceApp(state, { kind: 'report-player-save-result', ok: false }, deps);
+    expect(playerResult.events).toEqual([]);
   });
 
   it('report-grid-size-failure: returns a toast event with the domain message and leaves the state unchanged', () => {

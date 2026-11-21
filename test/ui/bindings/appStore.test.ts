@@ -392,80 +392,61 @@ describe('appStore.svelte.ts', () => {
     expect(inMemoryStorage.getBuilderBlob()).not.toBeNull();
   });
 
-  it('appStore: first failed builder write arms the latch — one error toast (exact message) and one console.warn', () => {
+  it('appStore: failed builder write sets builderSaveFailed — getSaveHealth().builder true, no toast, one warn with the existing prefix', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     inMemoryStorage.nextWriteError = new Error('quota');
 
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
 
-    expect(store.getToasts()).toHaveLength(1);
-    expect(store.getToasts()[0]).toMatchObject({
-      kind: 'error',
-      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
-    });
+    expect(store.getSaveHealth().builder).toBe(true);
+    expect(store.getToasts()).toHaveLength(0);
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('appStore: builder persistence write failed', expect.any(Error));
     warnSpy.mockRestore();
   });
 
-  it('appStore: repeated failed builder writes within the re-toast cadence do not re-toast', () => {
+  it('appStore: repeated failed builder writes keep the flag true and warn on every write', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    inMemoryStorage.nextWriteError = new Error('quota');
 
+    inMemoryStorage.nextWriteError = new Error('quota');
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
-    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getSaveHealth().builder).toBe(true);
 
     inMemoryStorage.nextWriteError = new Error('quota again');
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
 
-    expect(store.getToasts()).toHaveLength(1);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    warnSpy.mockRestore();
-  });
-
-  it('appStore: failed builder write ≥ 60 s after the last toast re-toasts (write-driven cadence)', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    inMemoryStorage.nextWriteError = new Error('quota');
-
-    store.getScheduler().scheduleBuilderSave(store.getBuilder());
-    vi.advanceTimersByTime(400);
-
-    fakeClock.advance(60_000);
-    inMemoryStorage.nextWriteError = new Error('still quota');
-    store.getScheduler().scheduleBuilderSave(store.getBuilder());
-    vi.advanceTimersByTime(400);
-
-    expect(store.getToasts()).toHaveLength(2);
+    expect(store.getSaveHealth().builder).toBe(true);
+    expect(store.getToasts()).toHaveLength(0);
     expect(warnSpy).toHaveBeenCalledTimes(2);
     warnSpy.mockRestore();
   });
 
-  it('appStore: a successful builder write re-arms the latch — the next failure toasts immediately (new episode, no cadence wait)', () => {
+  it('appStore: a successful builder write clears the flag — the next failure re-sets it', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    inMemoryStorage.nextWriteError = new Error('quota');
 
+    inMemoryStorage.nextWriteError = new Error('quota');
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
-    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getSaveHealth().builder).toBe(true);
 
     inMemoryStorage.nextWriteError = null;
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
-    expect(store.getToasts()).toHaveLength(1);
+    expect(store.getSaveHealth().builder).toBe(false);
+    expect(store.getSaveHealth().player).toBe(false);
 
     inMemoryStorage.nextWriteError = new Error('quota again');
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
+    expect(store.getSaveHealth().builder).toBe(true);
 
-    expect(store.getToasts()).toHaveLength(2);
-    expect(warnSpy).toHaveBeenCalledTimes(2);
     warnSpy.mockRestore();
   });
 
-  it('appStore: player slice latch is independent — player failure toasts the player message; builder failure does not toast the player slice', () => {
+  it('appStore: player and builder save-failure flags are independent — a player failure sets only the player flag, no toasts', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const puzzle = makeCompletePuzzle(7, 3);
 
@@ -476,27 +457,23 @@ describe('appStore.svelte.ts', () => {
     store.getScheduler().schedulePlayerSave(store.getPlayer());
     vi.advanceTimersByTime(400);
 
-    expect(store.getToasts()).toHaveLength(1);
-    expect(store.getToasts()[0]).toMatchObject({
-      kind: 'error',
-      message: 'Saving failed — your solving progress is not being kept.',
-    });
+    expect(store.getSaveHealth().player).toBe(true);
+    expect(store.getSaveHealth().builder).toBe(false);
+    expect(store.getToasts()).toHaveLength(0);
     expect(warnSpy).toHaveBeenCalledWith('appStore: player persistence write failed', expect.any(Error));
 
     inMemoryStorage.nextWriteError = new Error('builder quota');
     store.getScheduler().scheduleBuilderSave(store.getBuilder());
     vi.advanceTimersByTime(400);
 
-    expect(store.getToasts()).toHaveLength(2);
-    expect(store.getToasts()[1]).toMatchObject({
-      kind: 'error',
-      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
-    });
+    expect(store.getSaveHealth().builder).toBe(true);
+    expect(store.getSaveHealth().player).toBe(true);
+    expect(store.getToasts()).toHaveLength(0);
 
     warnSpy.mockRestore();
   });
 
-  it('appStore: failed clearBuilder arms the builder latch (toast) and the re-entrant dispatch joins the active work-queue', () => {
+  it('appStore: failed clearBuilder sets the flag (the dispatch joins the active work-queue); a second failed clear via confirm-reset-builder keeps it true', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const puzzle = makeCompletePuzzle(7, 3);
     store.dispatch({ target: 'builder', kind: 'request-import-puzzle', fileContent: serializeComplete(puzzle) });
@@ -507,14 +484,9 @@ describe('appStore.svelte.ts', () => {
     inMemoryStorage.nextWriteError = new Error('clear fail');
     store.getScheduler().clearBuilder();
 
-    expect(store.getToasts()).toHaveLength(1);
-    expect(store.getToasts()[0]).toMatchObject({
-      kind: 'error',
-      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
-    });
+    expect(store.getSaveHealth().builder).toBe(true);
+    expect(store.getToasts()).toHaveLength(0);
     expect(warnSpy).toHaveBeenCalledTimes(1);
-
-    fakeClock.advance(60_000);
 
     inMemoryStorage.nextWriteError = new Error('reset clear fail');
     const beforeKey = store.getBuilder().puzzle.key;
@@ -522,11 +494,7 @@ describe('appStore.svelte.ts', () => {
     store.dispatch({ target: 'builder', kind: 'confirm-reset-builder' });
 
     expect(store.getBuilder().puzzle.key).not.toBe(beforeKey);
-    expect(store.getToasts()).toHaveLength(2);
-    expect(store.getToasts()[1]).toMatchObject({
-      kind: 'error',
-      message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.',
-    });
+    expect(store.getSaveHealth().builder).toBe(true);
 
     warnSpy.mockRestore();
   });

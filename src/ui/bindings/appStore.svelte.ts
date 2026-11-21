@@ -1,5 +1,5 @@
 import type { AppState } from '../../app/state/state';
-import type { AppIntent, AnyIntent } from '../../app/state/intents';
+import type { AnyIntent } from '../../app/state/intents';
 import type { PlayerIntent } from '../../player/state/intents';
 import { reduceApp } from '../../app/state/reducer';
 import { applyEventsToApp } from '../../app/state/effects';
@@ -28,6 +28,7 @@ export type AppStore = {
   getPendingConfirmIntent(): ConfirmableIntent | null;
   getBuilder(): BuilderState;
   getPlayer(): PlayerState;
+  getSaveHealth(): { builder: boolean; player: boolean };
   getScheduler(): PersistenceScheduler;
   getPorts(): AppPorts;
   dispatch(intent: AnyIntent): void;
@@ -37,35 +38,10 @@ export function createAppStore(
   initial: AppState,
   deps: AppDeps,
   ports: AppPorts,
-  options?: { persistenceDebounceMs?: number; saveFailureRetoastMs?: number },
+  options?: { persistenceDebounceMs?: number },
 ): AppStore {
   let state: AppState = $state(initial);
   let activeQueue: AnyIntent[] | null = null;
-  const retoastMs = options?.saveFailureRetoastMs ?? 60_000;
-
-  function makeLatch(warnPrefix: string, failureIntent: AppIntent) {
-    let armed = false;
-    let toastAt: EpochMs | null = null;
-    return {
-      report(err: Error | null): void {
-        if (err === null) {
-          armed = false;
-          toastAt = null;
-          return;
-        }
-        if (armed && toastAt !== null && deps.now() - toastAt < retoastMs) {
-          return;
-        }
-        armed = true;
-        toastAt = deps.now();
-        console.warn(warnPrefix, err);
-        dispatch(failureIntent);
-      },
-    };
-  }
-
-  const builderLatch = makeLatch('appStore: builder persistence write failed', { kind: 'report-builder-save-failure' });
-  const playerLatch = makeLatch('appStore: player persistence write failed', { kind: 'report-player-save-failure' });
 
   function dispatch(intent: AnyIntent): void {
     if (activeQueue !== null) {
@@ -166,7 +142,22 @@ export function createAppStore(
   const scheduler = createPersistenceScheduler(
     ports.storage,
     options?.persistenceDebounceMs ?? 400,
-    (slice, err) => (slice === 'builder' ? builderLatch : playerLatch).report(err),
+    (slice, err) => {
+      if (err !== null) {
+        console.warn(
+          slice === 'builder'
+            ? 'appStore: builder persistence write failed'
+            : 'appStore: player persistence write failed',
+          err,
+        );
+      }
+      // Success dispatches too — the reducer's no-op guard makes it inert on the common path.
+      dispatch(
+        slice === 'builder'
+          ? { kind: 'report-builder-save-result', ok: err === null }
+          : { kind: 'report-player-save-result', ok: err === null },
+      );
+    },
   );
 
   const store: AppStore = {
@@ -187,6 +178,9 @@ export function createAppStore(
     },
     getPlayer() {
       return state.player;
+    },
+    getSaveHealth() {
+      return { builder: state.builderSaveFailed, player: state.playerSaveFailed };
     },
     getScheduler() {
       return scheduler;

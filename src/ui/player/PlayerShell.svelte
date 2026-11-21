@@ -8,10 +8,12 @@
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
   import TwoColumnShell from '../shared/TwoColumnShell.svelte';
+  import SaveFailureBanner from '../shared/SaveFailureBanner.svelte';
 
   let { playerFacade }: { playerFacade: PlayerFacade } = $props();
 
   const vm: PlayerShellVM = $derived(playerFacade.playerShellVM());
+  const saveBanner = $derived(playerFacade.saveBannerVM());
 
   function onCellClick(row: number, col: number): void {
     // Player has no design mode; all grid clicks go through select-cell.
@@ -35,6 +37,7 @@
           {/if}
         </div>
       </div>
+      <SaveFailureBanner vm={saveBanner} />
     {/snippet}
 
     {#snippet left()}

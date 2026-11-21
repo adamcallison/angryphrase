@@ -13,6 +13,8 @@ export type AppState = {
   toasts: Toast[];
   modal: ModalRequest | null;
   pendingConfirmIntent: ConfirmableIntent | null;
+  builderSaveFailed: boolean;   // last attempted builder write failed; cleared by the next successful write (§8)
+  playerSaveFailed: boolean;    // last attempted player write failed; cleared by the next successful write (§8)
 };
 
 export const AppState: {
@@ -26,6 +28,8 @@ export const AppState: {
       toasts: [],
       modal: null,
       pendingConfirmIntent: null,
+      builderSaveFailed: false,
+      playerSaveFailed: false,
     };
   },
 };

@@ -21,6 +21,7 @@ describe('filePickActions.ts', () => {
       getPendingConfirmIntent: () => null,
       getBuilder: () => null as never,
       getPlayer: () => null as never,
+      getSaveHealth: () => ({ builder: false, player: false }),
       getScheduler: () => null as never,
       getPorts: () => ({ storage: null as never, download: null as never, filePick }),
       dispatch: () => {},

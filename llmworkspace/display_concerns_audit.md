@@ -1,6 +1,9 @@
 # angryphrase — Display-Concerns Audit
 
 Audit record (not part of the live doc set, per architecture.md §14). Date: 2026-11-19.
+
+**Referencing rule.** Nothing in `src/`, `test/`, or the live doc set (`architecture.md` and its companions) may reference this audit or its item tags (A1…A7, B1…B5, C1…C3, D1, E1…E5, F1…F4). This file is a historical record — decisions, once made, are restated self-contained where they live: a code comment explains its own rationale, an `architecture.md` row carries its own dates and reasoning. Human instruction, 2026-11-21.
+
 Scope: all of `src/` (read in full: `ui/` components, `ui/bindings/viewmodels/`, the three
 `state/` trees, `domain/` copy-minting sites, `index.html`, `tailwind.config.ts`,
 `app.css`). No code was changed by this audit.
@@ -895,6 +898,62 @@ real work with a named landing site, tracked here so they are not lost.
   state). Not started; no code exists for it. A3's live region announces whatever
   the channel delivers, so it does not preclude this. Landing site: a future
   design round on "save-failure persistence banner", human-initiated.
+  *Resolved 2026-11-21 (Option 1, banner-only — human decision; alternatives
+  presented and rejected in the options round: banner-from-bindings-closure
+  without state (cheaper but the condition stays invisible to reducers and
+  tests — the same testability hole the finding names, and the audit's own
+  text says "a banner the VMs derive needs it as state") and strengthening the
+  toast channel only (paper-over: the channel stays ephemeral by design).
+  Inventory (Lead's walk): S1 `app/state/state.ts` (`builderSaveFailed` /
+  `playerSaveFailed` flags + blank), S2 `app/state/intents.ts`
+  (`report-builder-save-result { ok }` / `report-player-save-result { ok }`
+  replacing the two toast-minting failure intents), S3 `app/state/reducer.ts`
+  (flag flip with a same-reference no-op guard when the flag already matches —
+  load-bearing: the store dispatches on every attempted write, success
+  included), S4 `appStore.svelte.ts` (latch machinery and
+  `saveFailureRetoastMs` deleted; the write-result callback warns per failed
+  write and always dispatches; `getSaveHealth()` named-slice getter), S5
+  `boot.ts` (restored-state literal + two false fields), S6 `saveBannerVM.ts`
+  (new — slice→message exhaustive `Record`, the copy's new home per the §9/C3
+  precedent; state stores booleans only), S7 `SaveFailureBanner.svelte` (new —
+  always-mounted `sr-only role="status"` mirror, empty when healthy, plus the
+  gated visible banner in the danger-soft tint), S8/S9 the two facades
+  (`saveBannerVM()` getters — deliberately NOT folded into the shell VMs: save
+  health is app-level, not slice-level), S10/S11 the shells (Builder header
+  below the h2; Player solving branch only — player writes never happen on the
+  import screen), S12 tests (reducer 4 new; state shape-pin lines; appStore
+  rewrite of the six latch tests to flag semantics, the 60 s cadence test
+  deleted outright as dead machinery; saveBannerVM 4; facades +2 each; two
+  type-forced inert edits, `filePickActions.test.ts`'s `AppStore` stub and
+  `playerFacade.test.ts`'s hand-built `AppState` literal, accepted — same
+  treatment as boot.ts). Design as implemented, two dispatches: architecture.md
+  amended first (§3 appStore/scheduler/viewmodels rows, §5 storage-writes
+  bullet, §6 options/getter list, §7 AppState + AppIntent, §8 write-failure
+  paragraph rewritten, §9 SaveBannerVM, §11 three rows + SaveFailureBanner row,
+  §12 folds list). Deliberate behaviour changes, examined: the save-failure
+  toast is gone (the banner replaces it — A3's announcer no longer speaks save
+  failures because there are none to speak); the 60 s re-toast latch is gone
+  (the banner does not lapse, so reminders are unnecessary); `console.warn`
+  now fires per failed write (was once per episode; the port warns only on the
+  load path, so the write path keeps its diagnostic); the store dispatches on
+  every attempted write, inert via the reducer's no-op guard. The flags pass
+  the Focus-section boundary rule — "saving is failing" is a headless-actable
+  fact, no rendering recorded. Consequence for A3: its "accepted limitation"
+  about toast ttl vs announcement queueing is now moot for this channel;
+  ImportScreen's error box remains the model for load-side failures. Human
+  instruction, same round: comments added by this work must not reference audit
+  items — the banner's comment tag was removed with its rationale kept
+  self-contained (the audit doc, not the live doc set, is where these tags
+  live); architecture.md's F1 pointers were de-tagged the same way. Files:
+  the twelve inventory sites + doc. Verification: full CI green, re-run by the
+  lead — eslint + madge, svelte-check 0 errors/0 warnings, 93 files / 1409
+  tests (1400 pre-change +2 reducer, −1 cadence test, +8 display round — the
+  two type-forced stub edits add no assertions), build green; grep walk by the
+  lead: old intent kinds zero hits repo-wide, save-result/getSaveHealth/
+  saveBanner confined to the inventory files, zero audit-item refs in src/ or
+  test/ comments. No DOM harness (§12), so real screen-reader announcement of
+  the banner (region exists-and-changes) joins the manual checklist.
+  Not addressed: none. Leftover from F1: none.*
 - **F2 — focus architecture: the hidden typing input stole focus on every state
   change.** Surfaced 2026-11-21 by the human's manual test of the A4 fix. Two-round
   history, recorded honestly:

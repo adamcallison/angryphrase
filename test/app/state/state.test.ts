@@ -45,5 +45,7 @@ describe('AppState', () => {
     expect(Array.isArray(typed.toasts)).toBe(true);
     expect(typed.modal).toBeNull();
     expect(typed.pendingConfirmIntent).toBeNull();
+    expect(typed.builderSaveFailed).toBe(false);
+    expect(typed.playerSaveFailed).toBe(false);
   });
 });

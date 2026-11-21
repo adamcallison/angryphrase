@@ -23,10 +23,22 @@ export function reduceApp(
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
     case 'report-download-failure':
       return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Download failed. Please try again.' }] };
-    case 'report-builder-save-failure':
-      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your Builder changes are not being kept. Download an export to keep a copy.' }] };
-    case 'report-player-save-failure':
-      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Saving failed — your solving progress is not being kept.' }] };
+    case 'report-builder-save-result': {
+      // The store dispatches on every attempted write; the no-op guard keeps the
+      // common path (flag already matches) from churning the state reference.
+      const flag = !intent.ok;
+      if (state.builderSaveFailed === flag) {
+        return { state, events: [] };
+      }
+      return { state: { ...state, builderSaveFailed: flag }, events: [] };
+    }
+    case 'report-player-save-result': {
+      const flag = !intent.ok;
+      if (state.playerSaveFailed === flag) {
+        return { state, events: [] };
+      }
+      return { state: { ...state, playerSaveFailed: flag }, events: [] };
+    }
     case 'report-grid-size-failure':
       return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: GridSize.invalidMessage() }] };
   }

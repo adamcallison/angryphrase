@@ -25,5 +25,7 @@ export function createInitialAppState(ports: AppPorts, deps: AppDeps): AppState 
     toasts: [],
     modal: null,
     pendingConfirmIntent: null,
+    builderSaveFailed: false,
+    playerSaveFailed: false,
   };
 }
