@@ -19,6 +19,7 @@ export type BuilderState = {
   mode: BuilderMode;
   subMode: BuilderSubMode;
   cursor: Cursor;
+  typingFocusSeq: number;
 };
 
 export const BuilderState: {
@@ -32,6 +33,7 @@ export const BuilderState: {
       mode: 'design',
       subMode: { kind: 'none' },
       cursor: null,
+      typingFocusSeq: 0,
     };
   },
 

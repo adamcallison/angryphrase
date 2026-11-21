@@ -192,6 +192,17 @@ describe('boot.ts', () => {
     expect(state.player.phase).toBe('import');
   });
 
+  it('boot reload mints typingFocusSeq 0', () => {
+    const storage = new InMemoryStoragePort();
+    const { blob } = makeBuilderSnapshot('fill', 14);
+    storage.saveBuilder(blob);
+
+    const deps = makeDeps(makeRng(15));
+    const state = createInitialAppState(makePorts(storage), deps);
+
+    expect(state.builder.typingFocusSeq).toBe(0);
+  });
+
   it('rng is called exactly once on the blank path', () => {
     const storage = new InMemoryStoragePort();
     const rng = new CountingRng();

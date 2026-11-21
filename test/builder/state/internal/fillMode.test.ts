@@ -213,6 +213,29 @@ function makeState(
     expect(result.events).toEqual([]);
   });
 
+  it('fill-mode select-cell bumps typingFocusSeq (when the cursor moves)', () => {
+    const state = {
+      ...makeState(5, []),
+      typingFocusSeq: 5,
+    };
+    const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 2, 2) };
+
+    const result = handleSelectCell(state, intent);
+
+    expect(result.state.typingFocusSeq).toBe(6);
+    // A click that moves nothing mints nothing.
+    const oneWordState = {
+      ...makeState(5, [[1, 2], [3, 2]], { row: 2, col: 2, direction: 'across' }),
+      typingFocusSeq: 5,
+    };
+    const sameCellIntent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(oneWordState.puzzle.grid, 2, 2) };
+
+    const noMove = handleSelectCell(oneWordState, sameCellIntent);
+
+    expect(noMove.state).toBe(oneWordState);
+    expect(noMove.state.typingFocusSeq).toBe(5);
+  });
+
   it('select-cell: clicking a different already-selectable cell replaces cursor with new cell + computed direction', () => {
     const state = makeState(5, [], { row: 2, col: 2, direction: 'across' });
     const intent: BuilderIntent = { target: 'builder', kind: 'select-cell', cell: cell(state.puzzle.grid, 3, 3) };
@@ -728,6 +751,21 @@ describe('handleEditClue', () => {
     expect(result.events).toEqual([]);
   });
 
+  it('edit-clue leaves typingFocusSeq unchanged', () => {
+    const state = {
+      ...makeStateWithWords(4, []),
+      typingFocusSeq: 5,
+    };
+    const wordKey = state.puzzle.words[0]!.key;
+    const intent: BuilderIntent = { target: 'builder', kind: 'edit-clue', wordKey, clue: 'A fine clue' };
+
+    const result = handleEditClue(state, intent);
+
+    const updated = result.state.puzzle.words.find(w => WordKey.equals(w.key, wordKey));
+    expect(updated!.clue).toBe('A fine clue');
+    expect(result.state.typingFocusSeq).toBe(5);
+  });
+
   it('edit-clue: free-form clue preserved verbatim (whitespace, punctuation)', () => {
     const state = makeStateWithWords(4, []);
     const wordKey = state.puzzle.words[0]!.key;
@@ -801,6 +839,43 @@ describe('handleClickWord', () => {
       direction: wordKey.direction,
     });
     expect(result.events).toEqual([]);
+  });
+
+  it('click-clue-panel-word (subMode none) bumps typingFocusSeq', () => {
+    const state = {
+      ...makeStateWithWords(4, []),
+      typingFocusSeq: 5,
+    };
+    const wordKey = state.puzzle.words[1]!.key;
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey };
+
+    const result = handleClickWord(state, intent, rng);
+
+    expect(result.state.typingFocusSeq).toBe(6);
+    expect(result.state.cursor).toEqual({
+      row: wordKey.startRow,
+      col: wordKey.startCol,
+      direction: wordKey.direction,
+    });
+  });
+
+  it('click-clue-panel-word in join sub-mode resolves the join without bumping typingFocusSeq', () => {
+    const base = makeStateWithWords(4, []);
+    const source = base.puzzle.words[0]!.key;
+    const target = base.puzzle.words[1]!.key;
+    const state = {
+      ...base,
+      typingFocusSeq: 5,
+      subMode: { kind: 'join' as const, source },
+    };
+    const intent: BuilderIntent = { target: 'builder', kind: 'click-clue-panel-word', wordKey: target };
+
+    const result = handleClickWord(state, intent, rng);
+
+    const sourceAfter = result.state.puzzle.words.find(w => WordKey.equals(w.key, source));
+    expect(sourceAfter!.nextWord).toEqual(target);
+    expect(result.state.subMode).toEqual({ kind: 'none' });
+    expect(result.state.typingFocusSeq).toBe(5);
   });
 
   it('click-word: subMode=join delegates to resolveJoin', () => {

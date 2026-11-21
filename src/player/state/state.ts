@@ -29,6 +29,7 @@ export type PlayerState =
       cursor: Cursor;
       checkResult: CheckResult | null;
       anagram: AnagramModalState | null;
+      typingFocusSeq: number;
     };
 
 export const PlayerState: {
@@ -46,6 +47,7 @@ export const PlayerState: {
       cursor: null,
       checkResult: null,
       anagram: null,
+      typingFocusSeq: 0,
     };
   },
 };

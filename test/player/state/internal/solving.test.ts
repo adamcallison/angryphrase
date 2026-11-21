@@ -3,6 +3,7 @@ import {
   handleSelectCell,
   handleMoveCursor,
   handleClickCluePanelWord,
+  handleBrowseCluePanelWord,
   handleTypeLetter,
   handleBackspace,
   handleCheck,
@@ -377,6 +378,16 @@ describe('handleSelectCell', () => {
       direction: 'down',
     });
     expect(assertSolving(result.state).anagram).toBe(null);
+  });
+
+  it('select-cell bumps typingFocusSeq', () => {
+    const state = solvingState(5);
+    const intent: PlayerIntent = { kind: 'select-cell', target: 'player', cell: cell(state.puzzle.grid, 2, 2) };
+
+    const result = handleSelectCell(state, intent);
+
+    expect(assertSolving(result.state).typingFocusSeq).toBe(1);
+    expect(result.events).toEqual([]);
   });
 
   it('select-cell: opens / no effect on anagram when cursor moves to a different word with no anagram currently open', () => {
@@ -774,6 +785,18 @@ describe('handleClickCluePanelWord', () => {
     expect(assertSolving(result.state).anagram).toEqual(stateWithAnagram.anagram);
   });
 
+  it('click-clue-panel-word bumps typingFocusSeq', () => {
+    const state = solvingState(5);
+    const word = state.puzzle.words[0];
+    if (word === undefined) throw new Error('expected a word');
+    const intent: PlayerIntent = { kind: 'click-clue-panel-word', target: 'player', wordKey: word.key };
+
+    const result = handleClickCluePanelWord(state, intent);
+
+    expect(assertSolving(result.state).typingFocusSeq).toBe(1);
+    expect(result.events).toEqual([]);
+  });
+
   it('click-clue-panel-word: cursor resulting cell is selectable (it is the word start)', () => {
     const state = solvingState(5);
     const word = state.puzzle.words[0];
@@ -783,6 +806,24 @@ describe('handleClickCluePanelWord', () => {
     const result = handleClickCluePanelWord(state, intent);
 
     expect(WordTopology.isSelectable(assertSolving(result.state).puzzle.grid, word.key.startRow, word.key.startCol)).toBe(true);
+  });
+});
+
+describe('handleBrowseCluePanelWord', () => {
+  it('browse-clue-panel-word sets the cursor identically to click-clue-panel-word but leaves typingFocusSeq unchanged', () => {
+    const state = solvingState(5);
+    const word = state.puzzle.words[0];
+    if (word === undefined) throw new Error('expected a word');
+    const browseIntent: PlayerIntent = { kind: 'browse-clue-panel-word', target: 'player', wordKey: word.key };
+    const clickIntent: PlayerIntent = { kind: 'click-clue-panel-word', target: 'player', wordKey: word.key };
+
+    const browsed = handleBrowseCluePanelWord(state, browseIntent);
+    const clicked = handleClickCluePanelWord(state, clickIntent);
+
+    expect(assertSolving(browsed.state).cursor).toEqual(assertSolving(clicked.state).cursor);
+    expect(assertSolving(browsed.state).typingFocusSeq).toBe(0);
+    expect(assertSolving(clicked.state).typingFocusSeq).toBe(1);
+    expect(browsed.events).toEqual([]);
   });
 });
 
@@ -1338,6 +1379,14 @@ describe('handleCheck', () => {
     expect(assertSolving(second.state).checkResult).toEqual(
       assertSolving(first.state).checkResult,
     );
+  });
+
+  it('check leaves typingFocusSeq unchanged', () => {
+    const state = { ...solvingState(2), typingFocusSeq: 7 };
+
+    const result = handleCheck(state);
+
+    expect(assertSolving(result.state).typingFocusSeq).toBe(7);
   });
 
   it('check: degenerate case — white cell with answerLetter === null is classified as incorrect (defensive)', () => {

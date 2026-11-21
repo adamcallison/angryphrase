@@ -102,6 +102,7 @@ function makeSolvingState(opts: {
     cursor: opts.cursor ?? null,
     checkResult: opts.checkResult ?? null,
     anagram: opts.anagram ?? null,
+    typingFocusSeq: 0,
   };
 }
 
@@ -395,9 +396,6 @@ describe('derivePlayerShellVM', () => {
     if (vm.phase !== 'solving') throw new Error('unreachable');
     expect(vm.title).toBe('Test Title');
     expect(vm.author).toBe('Test Author');
-    expect(vm.grid.cursorRow).toBeNull();
-    expect(vm.grid.cursorCol).toBeNull();
-    expect(vm.grid.cursorDirection).toBeNull();
     expect(vm.banner).toEqual({
       visible: true,
       wordNumber: null,

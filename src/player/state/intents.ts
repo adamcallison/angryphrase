@@ -7,6 +7,7 @@ import type {
   BackspaceIntent,
   EscapeIntent,
   ClickCluePanelWordIntent,
+  BrowseCluePanelWordIntent,
 } from '../../domain/grid/GridInteraction';
 
 
@@ -26,6 +27,10 @@ export type PlayerIntent =
   | ({ target: 'player' } & BackspaceIntent)
   | ({ target: 'player' } & EscapeIntent)                                               // closes anagram modal; no sub-modes in Player
   | ({ target: 'player' } & ClickCluePanelWordIntent)
+  // Player-only — same cursor effect as click-clue-panel-word, but does NOT mint typing focus;
+  // dispatched by the clue listbox's arrow/Home/End keyboard navigation, so browsing the list
+  // never fights the typing surface for focus
+  | ({ target: 'player' } & BrowseCluePanelWordIntent)
   // checking
   | { kind: 'check'; target: 'player' }                                          // sets checkResult
   | { kind: 'clear-errors'; target: 'player' }                                   // only valid when checkResult has incorrectCells

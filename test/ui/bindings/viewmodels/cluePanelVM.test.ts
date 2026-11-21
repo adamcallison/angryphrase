@@ -282,6 +282,33 @@ describe('deriveCluePanelVM', () => {
     expect(vm.highlightedId).toBeNull();
   });
 
+  it('deriveCluePanelVM: selectLabel is "Select clue N across" / "Select clue N down" matching each entry\'s number and direction', () => {
+    const words = [across1(), across2(), down1()];
+    const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
+    expect(findEntry(vm, across1().key)!.selectLabel).toBe('Select clue 1 across');
+    expect(findEntry(vm, across2().key)!.selectLabel).toBe('Select clue 3 across');
+    expect(findEntry(vm, down1().key)!.selectLabel).toBe('Select clue 1 down');
+  });
+
+  it('deriveCluePanelVM (isBuilder=true): selectLabel minted identically to the player derivation', () => {
+    const words = [across1(), across2(), down1()];
+    const playerVm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
+    const builderVm = deriveCluePanelVM({
+      grid: blankGrid(),
+      words,
+      highlightedWordKey: null,
+      isBuilder: true,
+      builderSubMode: { kind: 'none' },
+    });
+    const playerEntries = [...playerVm.across, ...playerVm.down];
+    const builderEntries = [...builderVm.across, ...builderVm.down];
+    expect(builderEntries).toHaveLength(playerEntries.length);
+    for (const builderEntry of builderEntries) {
+      const playerEntry = findEntry(playerVm, builderEntry.wordKey)!;
+      expect(builderEntry.selectLabel).toBe(playerEntry.selectLabel);
+    }
+  });
+
   it('deriveCluePanelVM: highlightedId is the canonical id of the highlighted word key (null and a non-null sample)', () => {
     const words = [across1(), across2(), down1()];
     const vmNull = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });

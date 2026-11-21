@@ -49,10 +49,6 @@
     actions.clickCluePanelWord(entry.wordKey);
   }
 
-  function stopPropagation(event: Event): void {
-    event.stopPropagation();
-  }
-
   let liRefs: Record<string, HTMLElement> = $state({});
 
   $effect(() => {
@@ -63,50 +59,49 @@
 </script>
 
 {#snippet clueRow(entry: ClueEntryVM)}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <li
     bind:this={liRefs[entry.id]}
-    class="flex items-start gap-2 rounded p-1 cursor-pointer {entry.isSelected
+    class="relative flex items-start gap-2 rounded p-1 {entry.isSelected
       ? 'bg-hilite-word'
       : ''} {entry.isLinkableFromJoinSource ? 'ring-2 ring-accent-join' : ''}"
-    onclick={() => dispatchRowClick(entry)}
   >
-    <span class="font-bold text-gray-800">{entry.number}</span>
-    <span class="text-xs font-semibold text-gray-500 uppercase">{entry.direction === 'across' ? 'A' : 'D'}</span>
+    <button
+      type="button"
+      tabindex="-1"
+      class="absolute inset-0 rounded cursor-pointer"
+      aria-label={entry.selectLabel}
+      onclick={() => dispatchRowClick(entry)}
+    ></button>
+    <span class="relative font-bold text-gray-800">{entry.number}</span>
+    <span class="relative text-xs font-semibold text-gray-500 uppercase">{entry.direction === 'across' ? 'A' : 'D'}</span>
 
     {#if entry.isChainHead}
-      <div class="flex flex-1 flex-col gap-1">
+      <div class="relative flex flex-1 flex-col gap-1">
         <input
           type="text"
           class="rounded border border-gray-300 px-2 py-1 text-sm"
           value={valueFor(entry.id, entry.displayClue)}
           oninput={(e) => setDraft(entry.id, e.currentTarget.value)}
           onblur={() => dispatchEditClue(entry)}
-          onclick={(e) => stopPropagation(e)}
         />
         {#if entry.lengthPattern !== null}
-          <span class="text-xs text-gray-500">({entry.lengthPattern})</span>
+          <span class="relative text-xs text-gray-500">({entry.lengthPattern})</span>
         {/if}
-        <div class="flex gap-2">
+        <div class="relative flex gap-2">
           {#if entry.isStartableJoinSource && !isInJoinMode}
             <button
+              type="button"
               class="text-xs text-blue-600 underline"
-              onclick={(e) => {
-                stopPropagation(e);
-                dispatchBeginJoin(entry);
-              }}
+              onclick={() => dispatchBeginJoin(entry)}
             >
               Link next
             </button>
           {/if}
           {#if entry.isUnjoinable}
             <button
+              type="button"
               class="text-xs text-red-600 underline"
-              onclick={(e) => {
-                stopPropagation(e);
-                dispatchUnjoin(entry);
-              }}
+              onclick={() => dispatchUnjoin(entry)}
             >
               Unlink
             </button>
@@ -114,7 +109,7 @@
         </div>
       </div>
     {:else}
-      <span class="flex-1 text-sm italic text-gray-700">{entry.displayClue}</span>
+      <span class="relative flex-1 text-sm italic text-gray-700">{entry.displayClue}</span>
     {/if}
   </li>
 {/snippet}

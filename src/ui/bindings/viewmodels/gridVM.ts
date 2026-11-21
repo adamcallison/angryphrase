@@ -5,7 +5,6 @@ import { cellKey } from '../../../domain/grid/CellKey';
 import { WordTopology } from '../../../domain/grid/WordTopology';
 import type { Word } from '../../../domain/word/Word';
 import type { Cursor } from '../../../domain/grid/Cursor';
-import type { Direction } from '../../../domain/word/Direction';
 
 export type { CellSeparator };
 
@@ -27,9 +26,7 @@ export type GridCellVM = {
 export type GridVM = {
   size: number;
   cells: GridCellVM[][];
-  cursorRow: number | null;
-  cursorCol: number | null;
-  cursorDirection: Direction | null;
+  typingFocusSeq: number;
 };
 
 export function deriveGridVM(input: {
@@ -38,13 +35,11 @@ export function deriveGridVM(input: {
   words: Word[];
   whichLetter: 'answer' | 'player';
   selectedWordCells: ReadonlySet<string>;
+  typingFocusSeq: number;
 }): GridVM {
-  const { grid, cursor, words, whichLetter, selectedWordCells } = input;
+  const { grid, cursor, words, whichLetter, selectedWordCells, typingFocusSeq } = input;
   const runCells = WordTopology.partOfRunCells(grid);
   const size = grid.length;
-  const cursorRow = cursor ? Number(cursor.row) : null;
-  const cursorCol = cursor ? Number(cursor.col) : null;
-  const cursorDirection = cursor ? cursor.direction : null;
   const wordStartNumber = new Map<string, number>();
   for (const word of words) {
     const key = cellKey(Number(word.key.startRow), Number(word.key.startCol));
@@ -110,5 +105,5 @@ export function deriveGridVM(input: {
     }),
   );
 
-  return { size, cells, cursorRow, cursorCol, cursorDirection };
+  return { size, cells, typingFocusSeq };
 }

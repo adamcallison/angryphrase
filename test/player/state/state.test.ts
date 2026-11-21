@@ -31,6 +31,18 @@ describe('PlayerState', () => {
     }
   });
 
+  it('loaded initializes typingFocusSeq to 0', () => {
+    const rng = new SeededRng(1);
+    const puzzle = Puzzle.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));
+
+    const state = PlayerState.loaded(puzzle);
+
+    expect(state.phase).toBe('solving');
+    if (state.phase === 'solving') {
+      expect(state.typingFocusSeq).toBe(0);
+    }
+  });
+
   it('PlayerState discriminated union narrows by phase', () => {
     const importState = PlayerState.importScreen();
     const rng = new SeededRng(2);

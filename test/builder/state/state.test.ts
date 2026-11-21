@@ -22,6 +22,13 @@ describe('BuilderState', () => {
     expect(state.displacedClues).toEqual([]);
   });
 
+  it('blank() initializes typingFocusSeq to 0', () => {
+    const rng = new SeededRng(6);
+    const state = BuilderState.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));
+
+    expect(state.typingFocusSeq).toBe(0);
+  });
+
   it('blank puzzle has DEFAULT grid size when DEFAULT passed', () => {
     const rng = new SeededRng(2);
     const state = BuilderState.blank(GridSize.DEFAULT, PuzzleKey.generate(rng));

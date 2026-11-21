@@ -1,30 +1,29 @@
 <script lang="ts">
-  import type { Direction } from '../../domain/word/Direction';
   import type { GridActions } from '../bindings/gridActions';
 
   let {
     enabled,
-    cursorRow,
-    cursorCol,
-    cursorDirection,
+    typingFocusSeq,
     actions,
   }: {
     enabled: boolean;
-    cursorRow: number | null;
-    cursorCol: number | null;
-    cursorDirection: Direction | null;
+    typingFocusSeq: number;
     actions: Pick<GridActions, 'typeLetter' | 'backspace' | 'moveCursor' | 'escape'>;
   } = $props();
 
   let inputEl: HTMLInputElement | null = $state(null);
 
-  // Focus the hidden input when enabled; blur when disabled. Reading the three
-  // cursor fields re-runs this effect whenever the active typing position changes.
+  // Non-reactive last-applied values: the focus side effect runs only when the
+  // token or the enabled flag *actually changes*. Svelte 5 re-runs effects on
+  // parent re-render even with unchanged primitive props (verified empirically);
+  // acting on those re-runs was the focus-steal bug (the A4 Tab "cycle").
+  let lastSeq: number | null = null;
+  let lastEnabled: boolean | null = null;
+
   $effect(() => {
-    void cursorRow;
-    void cursorCol;
-    void cursorDirection;
-    void enabled;
+    if (typingFocusSeq === lastSeq && enabled === lastEnabled) return;
+    lastSeq = typingFocusSeq;
+    lastEnabled = enabled;
     if (enabled) {
       inputEl?.focus({ preventScroll: true });
     } else {

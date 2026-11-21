@@ -382,9 +382,6 @@ describe('deriveBuilderShellVM', () => {
   it('deriveBuilderShellVM: cursor null → selectedWordCells empty, highlightedWordKey null, cluePanel has no isSelected entries', () => {
     const state = makeBlankState(3);
     const vm = deriveBuilderShellVM(state);
-    expect(vm.grid.cursorRow).toBeNull();
-    expect(vm.grid.cursorCol).toBeNull();
-    expect(vm.grid.cursorDirection).toBeNull();
     for (const row of vm.grid.cells) {
       for (const cell of row) {
         expect(cell.hilite).toBe('none');

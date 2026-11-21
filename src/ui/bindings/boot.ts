@@ -19,6 +19,7 @@ export function createInitialAppState(ports: AppPorts, deps: AppDeps): AppState 
       mode: snapshot.mode,
       subMode: { kind: 'none' },
       cursor: null,
+      typingFocusSeq: 0,
     },
     player: PlayerState.importScreen(),
     toasts: [],

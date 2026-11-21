@@ -27,7 +27,9 @@ export function handleSelectCell(
   }
 
   const cursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.cell.row, intent.cell.col);
-  return cursor === null ? Result.ok(state) : Result.ok({ ...state, cursor });
+  return cursor === null
+    ? Result.ok(state)
+    : Result.ok({ ...state, cursor, typingFocusSeq: state.typingFocusSeq + 1 });
 }
 
 export function handleMoveCursor(
@@ -156,6 +158,7 @@ export function handleClickWord(
 
   if (state.subMode.kind === 'none') {
     // Navigate the cursor to the word's start cell and set its direction.
+    // A "go there and type" gesture — mint typing focus (Focus section).
     return Result.ok({
       ...state,
       cursor: {
@@ -163,6 +166,7 @@ export function handleClickWord(
         col: target.key.startCol,
         direction: target.key.direction,
       },
+      typingFocusSeq: state.typingFocusSeq + 1,
     });
   }
 

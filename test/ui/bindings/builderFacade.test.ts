@@ -132,7 +132,6 @@ describe('builderFacade.ts', () => {
     builderFacade.dispatch({ target: 'builder', kind: 'select-cell', cell: Grid.tryCoord(builder.puzzle.grid, 0, 0)! });
 
     expect(store.getBuilder().cursor).not.toBeNull();
-    expect(builderFacade.builderShellVM().grid.cursorRow).not.toBeNull();
   });
 
   it('builderFacade: dispatchBuilder then builderShellVM() reflects the new state ladder', () => {
@@ -145,7 +144,6 @@ describe('builderFacade.ts', () => {
     const vm = builderFacade.builderShellVM();
     expect(vm.toolbar.gridSizeInput).toBe(12);
     expect(vm.toolbar.mode).toBe('fill');
-    expect(vm.grid.cursorRow).not.toBeNull();
     expect(vm.grid.cells[0]![0]!.letter).toBe('A');
   });
 

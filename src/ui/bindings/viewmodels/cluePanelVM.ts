@@ -19,6 +19,7 @@ export type ClueEntryVM = {
   isChainHead: boolean;
   hasOutgoingNextWord: boolean;
   isSelected: boolean;
+  selectLabel: string;
   isStartableJoinSource: boolean;
   isLinkableFromJoinSource: boolean;
   isUnjoinable: boolean;
@@ -70,16 +71,20 @@ export function deriveCluePanelVM(input: {
         index.isHead(w.key);
     }
 
+    const entryNumber = Number(w.number);
+    const direction = w.key.direction;
+
     const entry: ClueEntryVM = {
       id: WordKey.toCanonical(w.key),
       wordKey: w.key,
-      number: Number(w.number),
-      direction: w.key.direction,
+      number: entryNumber,
+      direction,
       displayClue: DisplayClue.forWord(index, w),
       lengthPattern: isChainHead ? LengthPattern.forWord(grid, index, w) : null,
       isChainHead,
       hasOutgoingNextWord,
       isSelected,
+      selectLabel: `Select clue ${entryNumber} ${direction}`,
       isStartableJoinSource,
       isLinkableFromJoinSource,
       isUnjoinable,

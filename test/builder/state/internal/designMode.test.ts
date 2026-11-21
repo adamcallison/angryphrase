@@ -71,6 +71,7 @@ function designState(size: GridSize, blackCells: [number, number][], words: Word
     mode: 'design' as const,
     subMode: { kind: 'none' as const },
     cursor: null,
+    typingFocusSeq: 0,
   };
 }
 

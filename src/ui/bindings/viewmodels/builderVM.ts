@@ -148,6 +148,7 @@ export function deriveBuilderShellVM(state: BuilderState): BuilderShellVM {
     words: state.puzzle.words,
     whichLetter: 'answer',
     selectedWordCells,
+    typingFocusSeq: state.typingFocusSeq,
   });
   const cluePanel = deriveCluePanelVM({
     grid: state.puzzle.grid,

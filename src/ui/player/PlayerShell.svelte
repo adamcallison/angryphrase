@@ -40,7 +40,7 @@
         <ActiveClueBanner vm={vm.banner} />
         <div class="relative overflow-x-auto">
           <Grid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.anagram === null} cursorRow={vm.grid.cursorRow} cursorCol={vm.grid.cursorCol} cursorDirection={vm.grid.cursorDirection} actions={playerFacade.actions.grid} />
+          <TypingSurface enabled={vm.anagram === null} typingFocusSeq={vm.grid.typingFocusSeq} actions={playerFacade.actions.grid} />
         </div>
         <ActiveClueBanner vm={vm.banner} />
         <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />

@@ -173,9 +173,8 @@ describe('playerFacade.ts', () => {
 
     expect(vm.phase).toBe('solving');
     if (vm.phase !== 'solving') throw new Error('unreachable');
-    expect(vm.grid.cursorRow).not.toBeNull();
-    expect(vm.grid.cursorRow).toBe(1);
-    expect(vm.grid.cursorCol).toBe(1);
+    // select-cell mints typing focus (Focus section); pin the VM passthrough of the counter.
+    expect(vm.grid.typingFocusSeq).toBe(1);
   });
 
   describe('primitive dispatch helpers', () => {
@@ -310,6 +309,25 @@ describe('playerFacade.ts', () => {
     it('playerFacade: dispatchMoveCursor("down") does not throw', () => {
       enterSolvingPhase();
       expect(() => playerFacade.actions.grid.moveCursor('down', 1)).not.toThrow();
+    });
+
+    it('playerFacade: dispatchBrowseCluePanelWord moves the cursor without bumping typingFocusSeq', () => {
+      enterSolvingPhase();
+      const before = store.getPlayer();
+      if (before.phase !== 'solving') throw new Error('expected solving');
+      const wordKey = before.puzzle.words[0]!.key;
+
+      playerFacade.actions.cluePanel.browseCluePanelWord(wordKey);
+
+      const player = store.getPlayer();
+      expect(player.phase).toBe('solving');
+      if (player.phase !== 'solving') throw new Error('unreachable');
+      expect(player.cursor).toEqual({
+        row: wordKey.startRow,
+        col: wordKey.startCol,
+        direction: wordKey.direction,
+      });
+      expect(player.typingFocusSeq).toBe(0);
     });
   });
 

@@ -181,6 +181,59 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   `tabindex`. The Builder row compounds it: a text input plus two link-buttons inside a
   click row, wired with manual `stopPropagation` — Tab order and click semantics are
   both hand-managed and both fragile.
+  *Resolved 2026-11-21 (Option 3 — full ARIA for the Player list, an honest explicit
+  button for the Builder row; alternatives presented to the human and rejected:
+  nested pointer-affordance buttons in both panels (cheapest, but leaves panel
+  navigation mouse-only) and tabbable row buttons in Player (keyboard parity at the
+  cost of ~60 tab stops on a big puzzle). Human decision #2 on record: the Builder
+  underlay stays `tabindex="-1"` — pointer affordance; grid arrows are the
+  documented keyboard equivalent. Inventory: S1 BuilderCluePanel row + its two
+  suppressions, S2 PlayerCluePanel row + its two suppressions, S3 the manual
+  `stopPropagation` wiring, S4 Link next/Unlink missing `type="button"` (A6
+  ride-along; no `<form>` exists repo-wide, provably inert). Design as implemented —
+  the two panels are NOT one concept (the A2 lesson): Player rows are a
+  single-select navigation list, so each `<ul>` is `role="listbox"` with its own
+  `aria-label`, rows are `role="option"` with `aria-selected` from `highlightedId`
+  (NOT `isSelected`, which is the visual chain-hilite and stays that), and the roving
+  tab stop is derived with zero component state: selection follows focus —
+  arrows/Home/End dispatch `click-clue-panel-word`, the reducer moves the cursor,
+  `highlightedId` advances on re-derivation and moves the tab stop, the handler
+  refocuses via the existing `liRefs`, so the existing scroll effect serves keyboard
+  navigation too; Enter/Space select; navigation never crosses between the Across and
+  Down listboxes. Builder rows are editing units, so the row is a plain `<li>` and
+  click lives on a full-row `<button type="button" tabindex="-1">` underlay
+  (`absolute inset-0` covers padding and flex gaps — hit target byte-preserved;
+  content siblings painted above via `relative` + DOM order, no z-index — the A1
+  mechanism), named by the new VM-minted `ClueEntryVM.selectLabel` ("Select clue N
+  across/down", minted unconditionally in `deriveCluePanelVM` per §9/C3 — no DOM ids
+  exist, so `aria-labelledby` is impossible); `stopPropagation` is deleted — sibling
+  elements make it structurally unnecessary; Link next/Unlink gained `type="button"`.
+  All four suppressions deleted. Deliberate behaviour additions, examined: the Player
+  clue list is now keyboard-navigable (arrows/Home/End/Enter/Space) — that is the
+  point; Home/End at a boundary dispatches a self-click, which is the same semantics
+  as clicking any clue (cursor re-set, check result cleared) and consistent with
+  existing click behaviour. Builder: no behaviour change on any path (click targets,
+  drafts, input, join/unjoin, scroll byte-identical). Implementer deviations, both
+  accepted: Player used `.at()` + `$derived.by` because eslint bans
+  `no-non-null-assertion` (the Lead's sketch would not have passed lint) and passed
+  the row's own list into the snippet; the Builder pass applied `relative` to two
+  nested spans beyond the direct children specced (inert). Files:
+  `src/ui/player/PlayerCluePanel.svelte`, `src/ui/builder/BuilderCluePanel.svelte`,
+  `src/ui/bindings/viewmodels/cluePanelVM.ts` (+ `selectLabel`; all existing fields
+  unchanged), `test/ui/bindings/viewmodels/cluePanelVM.test.ts` (2 new cases).
+  Verification: full CI green, re-run by the lead — eslint + madge, svelte-check
+  0 errors/0 warnings (the deleted suppressions did not re-fire), 1372 tests
+  (1370 existing untouched + 2 new), build; grep walk: four suppressions gone (two
+  remain repo-wide — OverlayDialog's backdrop, owned by A2), zero `stopPropagation`
+  under `src/ui`, `selectLabel` confined to `cluePanelVM.ts` + its test +
+  BuilderCluePanel, diff confined to the four specced files. No DOM harness (§12), so
+  screen-reader listbox reading, arrow navigation, and underlay clicks in both
+  panels join the manual checklist. Consequence for A5: arrow-walking the Player
+  clue list now changes the active word per keypress — when A5's announcer lands, it
+  will speak those word changes without further work here. Leftover from A4: none —
+  but A6 is now half-closed (its BuilderCluePanel pair rode along as S4; the other
+  four type-less buttons live in JoinReattachBanner and DisplacedCluesPanel and
+  remain A6's).*
 - **A5 — status text is visual-only at four more sites.**
   PlayerToolbar's check-result block, `ActiveClueBanner` (note: `PlayerShell.svelte`
   renders the banner twice, above and below the grid — two copies that would
@@ -385,3 +438,60 @@ real work with a named landing site, tracked here so they are not lost.
   state). Not started; no code exists for it. A3's live region announces whatever
   the channel delivers, so it does not preclude this. Landing site: a future
   design round on "save-failure persistence banner", human-initiated.
+- **F2 — focus architecture: the hidden typing input stole focus on every state
+  change.** Surfaced 2026-11-21 by the human's manual test of the A4 fix. Two-round
+  history, recorded honestly:
+  **Round 1 (A4-T4, superseded):** the Lead diagnosed the reported Tab "cycle"
+  (focus alternating between the 1-across clue entry and an invisible stop) as the
+  hidden input being a Tab stop, and landed `tabindex="-1"`. Both halves of that
+  diagnosis were wrong: the cycle's second state was not the input's Tab-stop
+  membership but a programmatic *focus steal*, and removing the stop regressed the
+  only keyboard path into grid typing. The misdiagnosis came from reasoning about
+  the mechanism instead of reproducing it — the exact discipline the Lead demands
+  of dispatched work.
+  **Round 2 (focus-token round, 2026-11-21, verified):** reproduced in a real Chrome
+  with an instrumented build. Root cause: `TypingSurface`'s cursor-refocus `$effect`
+  re-runs not just on cursor change but on *every* state change with byte-identical
+  cursor values (Svelte 5 re-runs effects on parent re-render even with unchanged
+  primitive props — empirically verified), each re-run calling `focus()`; any state
+  change while a clue editor held focus (its blur commits `edit-clue`) yanked focus
+  back. Human chose Option B over a component-level compromise after a design round:
+  **typing focus is a reducer-minted fact** (`typingFocusSeq`, a monotonic counter
+  bumped by pointer/activation intents only — fill-mode `select-cell`;
+  `click-clue-panel-word`/`click-grid-word` in the `subMode none` branch only;
+  Player `select-cell`/`click-clue-panel-word`), carried through `GridVM` to the
+  guarded effect; Player clue-list arrows dispatch a new `browse-clue-panel-word`
+  intent (same cursor effect, no mint) so list browsing never fights the typing
+  surface; A4-T4's `tabindex="-1"` **reverted** — the input is again the
+  keyboard-reachable, aria-labelled entry into grid typing. Boundary rule recorded
+  in architecture.md's Focus section: state records interaction facts any headless
+  consumer could act on (the `cursor`/`subMode` family); it never records
+  renderings. Deliberate behaviour change, examined: after a non-minting click
+  (e.g. Player Check), keystrokes go nowhere until the user re-enters typing (Tab
+  to the labelled stop, or any grid/clue click) — platform-conventional focus
+  behaviour replacing the accidental global theft; also dead: the latent steal on
+  autosave/re-toast dispatches mid-edit. Old `GridVM` cursor fields removed with
+  their mechanism (their only consumer was the old effect). Verification: full CI
+  (1383 tests; +12 B1/B2, −2+1 B3), then a real-browser Playwright rig run by the
+  lead — ten behavioural checks, all passing: clue-click mints typing focus (letter
+  lands), Tab walk never re-enters the hidden input, edit-clue-then-Tab keeps focus
+  on the next control (the reported cycle, dead), toolbar clicks keep focus, Player
+  import→arrow-browse keeps focus in the listbox, Enter mints, letters land, Check
+  keeps focus. Remaining open, named landing site (two questions, same landing):
+  "type after any toolbar click" would need a grid-first global key-routing model
+  (the real-crossword-app convention), and "Tab into the clue row you clicked
+  rather than the first entry" needs state-driven focus ordering — both
+  interaction-model decisions for the A6/focus-visible round, human-initiated.
+  Not started.
+- **F3 — DOM harness decision, proven twice in one day, still pending.** The
+  focus-steal (F2) and its round-2 fix were both invisible to the repo's test
+  suite by construction: no test renders a `.svelte` file (architecture.md §12),
+  and the bug class is focus/keydown/DOM ordering — exactly what only a rendered
+  harness can see. The Lead's throwaway Playwright rig (system Chrome, no repo
+  changes; `playwright-core` installed `--no-save`) found the root cause in one
+  instrumented run and verified the fix in ten behavioural checks. A permanent
+  harness (Playwright + a thin app-driving helper, ~10 checks as regression
+  tests) would pin the A4/F2 behaviours the manual checklist currently holds.
+  Not commissioned — the human has the offer on record; landing site: a harness
+  design round, human-initiated. Until then the manual checklist carries these
+  items.

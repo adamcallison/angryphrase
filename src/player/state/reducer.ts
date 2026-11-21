@@ -14,6 +14,7 @@ import {
 } from './internal/lifecycle';
 import {
   handleBackspace,
+  handleBrowseCluePanelWord,
   handleCheck,
   handleClearErrors,
   handleClickCluePanelWord,
@@ -79,6 +80,9 @@ export function reducePlayer(
 
     case 'click-clue-panel-word':
       return handleClickCluePanelWord(state, intent);
+
+    case 'browse-clue-panel-word':
+      return handleBrowseCluePanelWord(state, intent);
 
     case 'type-letter':
       return handleTypeLetter(state, intent);

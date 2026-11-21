@@ -58,7 +58,9 @@ export function handleSelectCell(
   }
 
   const nextCursor = GridInteraction.select(state.puzzle.grid, state.cursor, intent.cell.row, intent.cell.col);
-  return Result.ok(applyCursorChange(state, nextCursor === null ? null : { cursor: nextCursor }));
+  if (nextCursor === null) return Result.ok(state);
+  const next = applyCursorChange(state, { cursor: nextCursor });
+  return Result.ok({ ...next, typingFocusSeq: state.typingFocusSeq + 1 });
 }
 
 export function handleMoveCursor(
@@ -76,6 +78,28 @@ export function handleMoveCursor(
 export function handleClickCluePanelWord(
   state: PlayerState,
   intent: PlayerIntentOf<'click-clue-panel-word'>,
+): ReducerResult<PlayerState> {
+  if (state.phase !== 'solving') {
+    return Result.ok(state);
+  }
+
+  const target = state.puzzle.words.find((w) => WordKey.equals(w.key, intent.wordKey));
+  if (target === undefined) {
+    return Result.ok(state);
+  }
+
+  const newCursor: NonNullable<Cursor> = {
+    row: target.key.startRow,
+    col: target.key.startCol,
+    direction: target.key.direction,
+  };
+  const next = applyCursorChange(state, { cursor: newCursor });
+  return Result.ok({ ...next, typingFocusSeq: state.typingFocusSeq + 1 });
+}
+
+export function handleBrowseCluePanelWord(
+  state: PlayerState,
+  intent: PlayerIntentOf<'browse-clue-panel-word'>,
 ): ReducerResult<PlayerState> {
   if (state.phase !== 'solving') {
     return Result.ok(state);

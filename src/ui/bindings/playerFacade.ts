@@ -26,6 +26,7 @@ export type PlayerGridActions = {
 
 export type PlayerCluePanelActions = {
   clickCluePanelWord(wordKey: WordKey): void;
+  browseCluePanelWord(wordKey: WordKey): void;
 };
 
 export type PlayerImportScreenActions = {
@@ -95,6 +96,9 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
   const cluePanel: PlayerCluePanelActions = {
     clickCluePanelWord(wordKey: WordKey) {
       d({ kind: 'click-clue-panel-word', wordKey });
+    },
+    browseCluePanelWord(wordKey: WordKey) {
+      d({ kind: 'browse-clue-panel-word', wordKey });
     },
   };
 

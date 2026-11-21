@@ -173,6 +173,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
     words: state.puzzle.words,
     whichLetter: 'player',
     selectedWordCells,
+    typingFocusSeq: state.typingFocusSeq,
   });
   const banner = deriveActiveClueBannerVM({
     puzzle: state.puzzle,

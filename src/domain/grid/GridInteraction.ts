@@ -17,6 +17,7 @@ export type TypeLetterIntent = { kind: 'type-letter'; letter: Letter };
 export type BackspaceIntent = { kind: 'backspace' };
 export type EscapeIntent = { kind: 'escape' };
 export type ClickCluePanelWordIntent = { kind: 'click-clue-panel-word'; wordKey: WordKey };
+export type BrowseCluePanelWordIntent = { kind: 'browse-clue-panel-word'; wordKey: WordKey };
 export type GridInteractionIntent =
   | SelectCellIntent
   | MoveCursorIntent
