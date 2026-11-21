@@ -32,7 +32,7 @@
   });
 </script>
 
-<div class="pointer-events-none fixed top-4 right-4 z-toast flex w-72 flex-col gap-2 sm:right-4 max-sm:bottom-4 max-sm:left-1/2 max-sm:right-4 max-sm:-translate-x-1/2 sm:bottom-auto sm:left-auto sm:translate-x-0">
+<div class="pointer-events-none fixed bottom-[calc(1rem_+_var(--toast-bottom-inset))] left-1/2 -translate-x-1/2 z-toast flex w-72 flex-col gap-2 md:bottom-auto md:left-auto md:translate-x-0 md:top-4 md:right-4">
   {#each vms as toast (toast.id)}
     <Toast {toast} onDismiss={actions.dismiss} />
   {/each}

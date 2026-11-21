@@ -328,6 +328,11 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   arriving mid-announcement queues politely behind it. Leftover from A5:
   none — F1 (save-failure channel bug) remains open as its own follow-up,
   untouched by design.*
+  *Addendum 2026-11-21: the banner-placement deferral ("the two visible copies stay,
+  placement deferred to B1/B2") landed in the B1 round — human decision: both copies
+  stay, deliberately; a scrolled phone user typing in the grid's top or bottom half
+  always has the nearest copy on screen. Speech remains single through the mirror.
+  See B1's resolution.*
 - **A6 — button hygiene.** No `focus-visible` treatment anywhere (keyboard focus relies
   on the UA default ring, which the rework should consciously keep or replace). Six
   buttons lack `type="button"`: BuilderCluePanel "Link next"/"Unlink",
@@ -447,16 +452,87 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   two-column) with per-shell deviations: the Player right column lacks the `flex-1` the
   Builder one has; the Player left column adds `min-w-0` the Builder one lacks. Every
   breakpoint change edits both files and must reconcile drift first.
-  *This round also owns B5's toast-placement re-derivation (human decision,
-  2026-11-21): toast placement interacts with the shells' column layout and
-  breakpoints, so it is decided once here, against the reworked shells — see B5's
-  deferral note for the live defects that stay on record until then.*
+  *Resolved 2026-11-21 (Option 2, the full responsive shell round, sequenced as 1a —
+  human chose the full round with a shared layout leaf inside it; alternatives
+  offered and declined: mechanism-only dedupe (1b was CSS recipes in app.css) and
+  hand-reconciling the drift (rejected as paper-over before it was offered). The
+  round also owned B5's toast-placement re-derivation and B2 (folded in by the
+  human) — see their entries. Human decisions, all on record: D1 the grid column
+  leads a ~60:40 proportional split (`md:flex-[3]` / `md:flex-[2]` + `max-w-md`
+  ceiling on the clue column) — refined once mid-round after the Lead's Chrome rig
+  measured the first form (left `flex-1`, basis 0, against the clue column's fixed
+  448px claim) giving the grid only 264–396px at 768–900px viewports, inverting
+  "grid is the star" at tablet widths and regressing the Builder (whose old form
+  stretched the clue column instead, keeping a 600px grid); refinement alternatives
+  declined: stepped fixed clue width (md 288 / lg 384 / xl 448) and keep-as-measured.
+  D2 grid pitch grows 2.5rem → 3rem at ≥1024px (initially also
+  3.5rem at ≥1280px — dropped the same day after the human's PC screen
+  test: 56px cells read as too big; 48px is the ceiling, a taste decision).
+  D3 the banner
+  stays rendered twice — human rationale: a scrolled phone user typing in the
+  grid's top or bottom half always has the nearest copy on screen. D4 toast
+  md-aligned + safe-area. D5 VersionStamp `max-md:hidden` (E5 ride-along).
+  Inventory (Lead's walk, superset of the audit's): S1/S2 the outer containers,
+  S3/S4 the columns rows, S5–S8 the four column sections — plus two same-kind
+  sites the audit missed: the Player left column's `gap-3` vs Builder `gap-4`
+  (third drift), and `Header.svelte`'s `mx-auto max-w-7xl px-4` (the page-width
+  constant's third speller — examined and retained: single site, App chrome with
+  its own padding; a future width change edits TwoColumnShell + Header, so the
+  coupling is recorded here rather than silently absorbed). Design as implemented
+  (spec in architecture.md §11 shell-layout bullet, lead-edited before each code
+  wave; the mid-round D1 refinement amended the doc before the follow-up
+  dispatch): new `ui/shared/TwoColumnShell.svelte` owns container + columns row +
+  column wrappers; both shells embed it with header/left/right snippets; the
+  Player's sr-only speech mirror stays the first element of the left snippet (A5
+  sequencing preserved); AnagramModal renders after the shell (fixed overlay,
+  container-independent — App renders its own overlays at bottom, same pattern).
+  One spacing delta, on record: Player left-column gap normalizes 3 → 4.
+  Files: `src/ui/shared/TwoColumnShell.svelte` (new), `BuilderShell.svelte`,
+  `PlayerShell.svelte`, `src/app.css`, `src/ui/shared/ToastHost.svelte`,
+  `src/ui/shared/VersionStamp.svelte`, plus B2's four below. Verification: full
+  CI green, re-run by the lead — eslint + madge, svelte-check 0 errors/0 warnings,
+  1397 tests all pre-existing (`test/` absent from the diff — the
+  behaviour-preservation proof), build; then the F3-method Chrome rig (throwaway
+  playwright-core, /tmp only, no repo changes): 26/26 — column switch at `md`,
+  grid column 427/446/506px at 768/800/900px (beats the clue column at every
+  width), pitch tokens flip at 1024/1280 and each cap binds when the column
+  reaches it (grid = min(column, cap) verified at five widths, 840px cap binding
+  at 1440), toast bottom-center at 700px (the old 640–768 band, clear of the
+  grid) and top-right at 800px, typed letters land in both routes at every width
+  (the F2-sensitive path), banner twice, VersionStamp hidden at 375px, clue-click
+  scroll through CluePanelShell. Rig provenance, recorded honestly: rig v1's other
+  failures were instrument bugs (an `<aside>` collision with DisplacedCluesPanel
+  in section selection, CSS resolved-value semantics, a nonexistent toast
+  trigger, `GridSize.MIN` misassumed) — the one real failure (the tablet squeeze)
+  was kept red until the human decided, then re-asserted against the superseding
+  spec. No DOM harness (§12), so real-notch/real-touch phone and tablet ergonomics
+  join the manual checklist. Not addressed: `Header.svelte`'s page-width constant
+  (retained — decision above).*
 - **B2 — the clue-panel shell is copied verbatim.**
   `BuilderCluePanel.svelte` / `PlayerCluePanel.svelte` duplicate the
   `aside`/section/`h2`/`ul` shell, the `liRefs` + `$effect` scroll wiring, and the
   `max-h-[70vh] overflow-y-auto` panel-scroll decision (a form-factor decision with two
   owners). The `{#snippet clueRow}` idiom (architecture.md §9) dedupes *rows within*
   each panel; the shells themselves are two copies.
+  *Resolved 2026-11-21 (folded into the B1 round by the human). Inventory: S1/S2 the
+  two asides (byte-identical class strings
+  `flex w-full max-w-md flex-col gap-4 max-h-[70vh] overflow-y-auto`), S3/S4 the two
+  scroll wirings (`panelEl` + `liRefs` + the `$effect`), S5 the section/h2/ul shells —
+  split by kind on inspection: the Player's listbox `role="group"` wrappers and the
+  Builder's plain `section>`s differ semantically (the A4 forms), so they stay
+  per-panel by decision, not omission. Design as implemented (spec in the §11
+  snippet-convention paragraph, lead-edited before code): new
+  `ui/shared/CluePanelShell.svelte` owns the aside, the refs record, and the scroll
+  effect; each panel embeds it and passes its rows as a children snippet called with
+  the refs record (`{#snippet children(liRefs)}`, probed against the installed
+  compiler by the implementer); Player keydown refocus reads the param; Builder's
+  drafts `SvelteMap` stays per-panel. Consequence: `clueScroll.ts`'s consumer count
+  changes 2 → 1 (the shell) — §11 row amended. Files:
+  `src/ui/shared/CluePanelShell.svelte` (new), `BuilderCluePanel.svelte`,
+  `PlayerCluePanel.svelte`. Verification: CI green (1397 untouched); rig check —
+  clue-click scroll advances the panel's scrollTop through the shell-owned wiring;
+  DOM byte-identical (same tree, classes, roles — only indentation moved).
+  Not addressed: none.*
 - **B3 — the style vocabulary has no home at all.**
   `tailwind.config.ts` `theme.extend` is empty; `app.css` has no `@layer components`.
   ~22 button instances each hand-spell class strings with drift: `rounded` vs
@@ -532,29 +608,31 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   large-screen growth decision — the grid never exceeds 2.5rem/cell today, now a
   one-line edit in a named home — belong to the responsive shell round (B1/B2).
   Leftover from B4: none.*
+  *Addendum 2026-11-21: the deferred landing arrived — the B1 round decided the
+  growth (human decision D2): `--grid-cell-pitch` 3rem at ≥1024px, media override
+  in `app.css` beside the base constants (the static-literal rule unchanged).
+  A second step (3.5rem at ≥1280px) shipped with the round and was dropped the
+  same day after the human's PC screen test — 48px cells is the ceiling.
+  Rig-verified: the token flips at the breakpoint; the cap binds when the grid
+  column reaches it (~1224px viewport under the final proportional split — the
+  cap is a ceiling, not a guarantee, by the `min()` width formula).
+  See B1's resolution.*
 - **B5 — toast placement is inline per-branch.**
   `ToastHost.svelte` hand-rolls `max-sm:`/`sm:` dual positioning; no `safe-area-inset`
   for notched phones; `fixed top-4 right-4` can overlay the grid on narrow viewports.
   Right owner (one component), but the decision should be re-derived for the rework
   alongside the shells it overlays.
-  *Deferred 2026-11-21 (human decision): placement re-derivation belongs to the
-  responsive shell round — the natural owner is B1's entry, which now carries that
-  assignment; the ordering list's shell-pass line names it too. The deferral is a
-  decision, not an omission: Option 2 (minimal repair now — a named safe-area
-  property in `app.css` per the B4 precedent, plus aligning the toast's `sm` switch
-  to the shells' `md` breakpoint) was offered and declined in favour of deciding
-  placement once, against the reworked shells, instead of twice. Two live defects
-  are therefore accepted and on record until that round: (1) no
-  `env(safe-area-inset-bottom)` at the mobile bottom-centre position, so a toast
-  can sit behind the notch/home-indicator zone; (2) the 640–768px band, where the
-  toast is already top-right (`sm`, 640px) while both shells are still
-  single-column (`md`, 768px) — a 288px (`w-72`) toast overlays the grid's
-  top-right corner there. Announcement safety is already by construction: A3's
-  live region is a sibling of the visual stack, independent of placement, so the
-  shell round can rework placement without touching the announcer. `z-toast`
-  (50, above both overlays) is a B3 token and unaffected. architecture.md §11's
-  ToastHost row stays truthful as written ("stacked top-right; bottom-center on
-  mobile") and gets its amendment when the shell round decides the new form.*
+  *Resolved 2026-11-21 in the B1 round (this entry's deferral named that landing
+  site). Both live defects dead by construction: the position breakpoint is
+  aligned to the shells' `md` — bottom-centre below, top-right at `md` and up — so
+  the 640–768px mixed state no longer exists; and `--toast-bottom-inset:
+  env(safe-area-inset-bottom)` (named home in `app.css` `:root`, B4 precedent)
+  keeps notched phones clear of the home-indicator zone. A3's announcer stayed a
+  placement-independent sibling throughout, untouched by construction. §11
+  ToastHost row amended before code. Files: `src/app.css`, `ToastHost.svelte`.
+  Verification: rig — toast bottom-centre and clear of the grid at 700px (the old
+  band), top-right at 800px; the inset var present in the emitted CSS.
+  Not addressed: none.*
 
 ## Class C — user-facing copy has three homes, none of them "display" (friction for aria phrasing and copy structure)
 
@@ -617,6 +695,9 @@ amendment and a human decision, not a cleanup.
   architecture-sanctioned §9 pattern; retained.
 - **E5 — `VersionStamp.svelte`** fixed `bottom-0 right-0` overlay can collide with
   content on small screens; pointer-events-none already, cosmetic only.
+  *Resolved 2026-11-21 (B1-round ride-along, human decision): `max-md:hidden` —
+  hidden below `md` rather than moved; the collision was with the toast's new
+  bottom-centre mobile position. §11 row amended.*
 
 ---
 

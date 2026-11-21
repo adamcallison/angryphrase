@@ -6,6 +6,7 @@
   import DisplacedCluesPanel from './DisplacedCluesPanel.svelte';
   import JoinReattachBanner from './JoinReattachBanner.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import TwoColumnShell from '../shared/TwoColumnShell.svelte';
 
   let { builderFacade }: { builderFacade: BuilderFacade } = $props();
 
@@ -17,27 +18,25 @@
 
 </script>
 
-<div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">
-  <h2 class="text-lg font-bold text-gray-800">Build a puzzle</h2>
-  <BuilderToolbar vm={vm.toolbar} title={vm.title} author={vm.author} actions={builderFacade.actions.toolbar} pick={builderFacade.pickFile} />
+<TwoColumnShell>
+  {#snippet header()}
+    <h2 class="text-lg font-bold text-gray-800">Build a puzzle</h2>
+    <BuilderToolbar vm={vm.toolbar} title={vm.title} author={vm.author} actions={builderFacade.actions.toolbar} pick={builderFacade.pickFile} />
 
-  {#if vm.subModeBanner.kind !== 'none'}
-    <JoinReattachBanner vm={vm.subModeBanner} actions={builderFacade.actions.banner} />
-  {/if}
+    {#if vm.subModeBanner.kind !== 'none'}
+      <JoinReattachBanner vm={vm.subModeBanner} actions={builderFacade.actions.banner} />
+    {/if}
+  {/snippet}
 
-  <div class="flex flex-col md:flex-row gap-6">
-    <!-- left column: grid + displaced clues panel -->
-    <section class="flex flex-col gap-4">
-      <div class="relative overflow-x-auto">
-        <Grid vm={vm.grid} allCellsClickable={vm.toolbar.mode === 'design'} onCellClick={onCellClick} />
-        <TypingSurface enabled={vm.toolbar.mode === 'fill'} typingFocusSeq={vm.grid.typingFocusSeq} actions={builderFacade.actions.grid} />
-      </div>
-      <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
-    </section>
+  {#snippet left()}
+    <div class="relative overflow-x-auto">
+      <Grid vm={vm.grid} allCellsClickable={vm.toolbar.mode === 'design'} onCellClick={onCellClick} />
+      <TypingSurface enabled={vm.toolbar.mode === 'fill'} typingFocusSeq={vm.grid.typingFocusSeq} actions={builderFacade.actions.grid} />
+    </div>
+    <DisplacedCluesPanel vm={vm.displacedClues} actions={builderFacade.actions.displacedClues} />
+  {/snippet}
 
-    <!-- right column: clue panel -->
-    <section class="flex-1">
-      <BuilderCluePanel vm={vm.cluePanel} actions={builderFacade.actions.cluePanel} />
-    </section>
-  </div>
-</div>
+  {#snippet right()}
+    <BuilderCluePanel vm={vm.cluePanel} actions={builderFacade.actions.cluePanel} />
+  {/snippet}
+</TwoColumnShell>

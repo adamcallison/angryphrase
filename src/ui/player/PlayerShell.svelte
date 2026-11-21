@@ -7,6 +7,7 @@
   import ImportScreen from './ImportScreen.svelte';
   import AnagramModal from './AnagramModal.svelte';
   import TypingSurface from '../shared/TypingSurface.svelte';
+  import TwoColumnShell from '../shared/TwoColumnShell.svelte';
 
   let { playerFacade }: { playerFacade: PlayerFacade } = $props();
 
@@ -19,41 +20,39 @@
 
 </script>
 
-  {#if vm.phase === 'import'}
+{#if vm.phase === 'import'}
   <ImportScreen importError={vm.importError} pick={playerFacade.pickFile} actions={playerFacade.actions.importScreen} />
 {:else}
-  <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-lg font-bold text-gray-800">
-          {vm.title === '' ? 'Untitled Puzzle' : vm.title}
-        </h2>
-        {#if vm.author !== ''}
-          <p class="text-xs text-gray-500">by {vm.author}</p>
-        {/if}
+  <TwoColumnShell>
+    {#snippet header()}
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">
+            {vm.title === '' ? 'Untitled Puzzle' : vm.title}
+          </h2>
+          {#if vm.author !== ''}
+            <p class="text-xs text-gray-500">by {vm.author}</p>
+          {/if}
+        </div>
       </div>
-    </div>
+    {/snippet}
 
-    <div class="flex flex-col md:flex-row gap-6">
+    {#snippet left()}
       <!-- DOM order load-bearing: clue region must precede Grid so the reader queues clue first, then cell. -->
       <div class="sr-only" role="status">{vm.banner.announcement}</div>
-      <!-- left column: banners + grid + toolbar -->
-      <section class="flex flex-col gap-3 flex-1 min-w-0">
-        <ActiveClueBanner vm={vm.banner} />
-        <div class="relative overflow-x-auto">
-          <Grid vm={vm.grid} onCellClick={onCellClick} />
-          <TypingSurface enabled={vm.anagram === null} typingFocusSeq={vm.grid.typingFocusSeq} actions={playerFacade.actions.grid} />
-        </div>
-        <ActiveClueBanner vm={vm.banner} />
-        <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
-      </section>
+      <ActiveClueBanner vm={vm.banner} />
+      <div class="relative overflow-x-auto">
+        <Grid vm={vm.grid} onCellClick={onCellClick} />
+        <TypingSurface enabled={vm.anagram === null} typingFocusSeq={vm.grid.typingFocusSeq} actions={playerFacade.actions.grid} />
+      </div>
+      <ActiveClueBanner vm={vm.banner} />
+      <PlayerToolbar vm={vm.toolbar} checkResult={vm.checkResult} actions={playerFacade.actions.toolbar} />
+    {/snippet}
 
-      <!-- right column: clue panel -->
-      <section>
-        <PlayerCluePanel vm={vm.cluePanel} actions={playerFacade.actions.cluePanel} />
-      </section>
-    </div>
+    {#snippet right()}
+      <PlayerCluePanel vm={vm.cluePanel} actions={playerFacade.actions.cluePanel} />
+    {/snippet}
+  </TwoColumnShell>
 
-    <AnagramModal vm={vm.anagram} actions={playerFacade.actions.anagram} />
-  </div>
+  <AnagramModal vm={vm.anagram} actions={playerFacade.actions.anagram} />
 {/if}

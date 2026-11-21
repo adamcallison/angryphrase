@@ -25,4 +25,13 @@
   --grid-cell-pitch: 2.5rem;
   --grid-number-font-ratio: 30;
   --grid-letter-font-ratio: 52;
+
+  /* B5: named home for the safe-area offset in the below-md toast bottom
+     position, so notched phones keep the toast clear of the home indicator. */
+  --toast-bottom-inset: env(safe-area-inset-bottom);
 }
+
+/* B4 per-breakpoint grid growth. These override points must stay pure static
+   literals: a :root-declared var embedding var(--grid-size) resolves against
+   :root, where it does not exist (verified empirically; see §11). */
+@media (min-width: 1024px) { :root { --grid-cell-pitch: 3rem; } }
