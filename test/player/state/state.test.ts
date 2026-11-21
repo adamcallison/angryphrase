@@ -6,12 +6,12 @@ import { GridSize } from '../../../src/domain/grid/GridSize';
 import { SeededRng } from '../../fakes/SeededRng';
 
 describe('PlayerState', () => {
-  it('importScreen produces phase=import with null lastImportError', () => {
+  it('importScreen produces phase=import with empty lastImportErrors', () => {
     const state = PlayerState.importScreen();
 
     expect(state.phase).toBe('import');
     if (state.phase === 'import') {
-      expect(state.lastImportError).toBeNull();
+      expect(state.lastImportErrors).toEqual([]);
     }
   });
 

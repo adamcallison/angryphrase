@@ -60,8 +60,8 @@
         <span class="font-bold text-gray-800">{entry.number}.</span>
         <div class="flex flex-col gap-0.5 flex-1">
           <span class="text-sm text-gray-800">{entry.displayClue}</span>
-          {#if entry.isChainHead && entry.lengthPattern !== null}
-            <span class="text-xs text-gray-500">({entry.lengthPattern})</span>
+          {#if entry.isChainHead && entry.lengthPatternLabel !== null}
+            <span class="text-xs text-gray-500">{entry.lengthPatternLabel}</span>
           {/if}
         </div>
       </li>

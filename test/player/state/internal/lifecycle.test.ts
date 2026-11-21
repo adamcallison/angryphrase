@@ -111,16 +111,27 @@ describe('handleImportPuzzle', () => {
     });
   });
 
-  it('import-puzzle: parse failure → state is phase=import with lastImportError set to joined messages', () => {
+  it('import-puzzle: parse failure → state is phase=import with lastImportErrors as the individual failure messages', () => {
     const result = handleImportPuzzle({ kind: 'import-puzzle', target: 'player', fileContent: '{\"version\":3}' });
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
-    expect(result.state.lastImportError).toContain('Unknown or missing version.');
+    expect(result.state.lastImportErrors).toEqual([
+      'Unknown or missing version.',
+      'Unknown or missing file type.',
+      'Invalid puzzle key (must be a UUID v4).',
+      'Grid size must be an integer between 2 and 25.',
+      'Title and author must be strings.',
+    ]);
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: result.state.lastImportError,
+      message:
+        'Unknown or missing version.\n' +
+        'Unknown or missing file type.\n' +
+        'Invalid puzzle key (must be a UUID v4).\n' +
+        'Grid size must be an integer between 2 and 25.\n' +
+        'Title and author must be strings.',
     });
   });
 
@@ -168,7 +179,7 @@ describe('handleImportPuzzle', () => {
     });
   });
 
-  it('import-puzzle: incomplete rejection → lastImportError is the specific message', () => {
+  it('import-puzzle: incomplete rejection → lastImportErrors is the one-element rejection message', () => {
     const incomplete = JSON.stringify({
       version: 1,
       type: 'incomplete',
@@ -197,9 +208,9 @@ describe('handleImportPuzzle', () => {
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
-    expect(result.state.lastImportError).toBe(
+    expect(result.state.lastImportErrors).toEqual([
       'Only complete puzzle files can be loaded into the Player.',
-    );
+    ]);
   });
 
   it('import-puzzle: incomplete rejection → state phase is import (NOT solving)', () => {
@@ -451,12 +462,12 @@ function cellIsBlack(state: SolvingState, row: number, col: number) {
 }
 
 describe('report-import-read-failure', () => {
-  it('report-import-read-failure → phase=import with lastImportError set + error toast event', () => {
+  it('report-import-read-failure → phase=import with lastImportErrors set + error toast event', () => {
     const result = handleReportImportReadFailure();
 
     expect(result.state).toEqual({
       phase: 'import',
-      lastImportError: 'Could not read that file. Please try again.',
+      lastImportErrors: ['Could not read that file. Please try again.'],
     });
     expect(result.events).toEqual([
       { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
@@ -465,12 +476,12 @@ describe('report-import-read-failure', () => {
 });
 
 describe('report-pick-failure', () => {
-  it('report-pick-failure → phase=import with lastImportError set + error toast event', () => {
+  it('report-pick-failure → phase=import with lastImportErrors set + error toast event', () => {
     const result = handleReportPickFailure();
 
     expect(result.state).toEqual({
       phase: 'import',
-      lastImportError: 'Could not open or read that file. Please try again.',
+      lastImportErrors: ['Could not open or read that file. Please try again.'],
     });
     expect(result.events).toEqual([
       { kind: 'toast', toastKind: 'error', message: 'Could not open or read that file. Please try again.' },
@@ -484,15 +495,15 @@ describe('handleImportNewPuzzle', () => {
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
-    expect(result.state.lastImportError).toBe(null);
+    expect(result.state.lastImportErrors).toEqual([]);
   });
 
-  it('import-new-puzzle: from import phase, returns import screen with null lastImportError', () => {
+  it('import-new-puzzle: from import phase, returns import screen with empty lastImportErrors', () => {
     const result = handleImportNewPuzzle();
 
     expect(result.state.phase).toBe('import');
     if (result.state.phase !== 'import') throw new Error('expected import');
-    expect(result.state.lastImportError).toBe(null);
+    expect(result.state.lastImportErrors).toEqual([]);
   });
 
   it('import-new-puzzle: emits no events — autosave retained via key, no storage clear', () => {

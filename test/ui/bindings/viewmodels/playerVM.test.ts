@@ -86,8 +86,8 @@ function makeWord(opts: {
   };
 }
 
-function makeImportState(lastImportError: string | null = null): PlayerState {
-  return { phase: 'import', lastImportError };
+function makeImportState(lastImportErrors: string[] = []): PlayerState {
+  return { phase: 'import', lastImportErrors };
 }
 
 function makeSolvingState(opts: {
@@ -137,7 +137,7 @@ describe('deriveActiveClueBannerVM', () => {
       wordNumber: null,
       direction: null,
       displayClue: null,
-      lengthPattern: null,
+      lengthPatternLabel: null,
       announcement: '',
     });
   });
@@ -149,12 +149,12 @@ describe('deriveActiveClueBannerVM', () => {
       wordNumber: null,
       direction: null,
       displayClue: null,
-      lengthPattern: null,
+      lengthPatternLabel: null,
       announcement: '',
     });
   });
 
-  it('deriveActiveClueBannerVM: cursor set on a head word → wordNumber, direction, clue, lengthPattern populated', () => {
+  it('deriveActiveClueBannerVM: cursor set on a head word → wordNumber, direction, clue, lengthPatternLabel populated', () => {
     let puzzle = makeBlankPuzzle(3);
     const word = makeWord({
       startRow: 0,
@@ -170,10 +170,10 @@ describe('deriveActiveClueBannerVM', () => {
     expect(vm.wordNumber).toBe(1);
     expect(vm.direction).toBe('across');
     expect(vm.displayClue).toBe('Head clue');
-    expect(vm.lengthPattern).toBe('3');
+    expect(vm.lengthPatternLabel).toBe('(3)');
   });
 
-  it('deriveActiveClueBannerVM: cursor set on a non-head word → displayClue="See N Direction", lengthPattern=null, wordNumber/direction still present', () => {
+  it('deriveActiveClueBannerVM: cursor set on a non-head word → displayClue="See N Direction", lengthPatternLabel=null, wordNumber/direction still present', () => {
     let puzzle = makeBlankPuzzle(3);
     const head = makeWord({
       startRow: 0,
@@ -197,7 +197,7 @@ describe('deriveActiveClueBannerVM', () => {
     expect(vm.wordNumber).toBe(2);
     expect(vm.direction).toBe('down');
     expect(vm.displayClue).toBe('See 1 Across');
-    expect(vm.lengthPattern).toBeNull();
+    expect(vm.lengthPatternLabel).toBeNull();
   });
 
   it('deriveActiveClueBannerVM: cursor on head word → announcement "1 across: Head clue (3)"', () => {
@@ -415,12 +415,24 @@ describe('deriveCheckResultVM', () => {
 
 describe('derivePlayerShellVM', () => {
   it('derivePlayerShellVM: import phase returns a view-model with only phase and importError', () => {
-    const state = makeImportState('bad import');
+    const state = makeImportState(['bad import']);
     const vm = derivePlayerShellVM(state);
     expect(Object.keys(vm)).toEqual(['phase', 'importError']);
     expect(vm.phase).toBe('import');
     if (vm.phase !== 'import') throw new Error('unreachable');
     expect(vm.importError).toBe('bad import');
+
+    const empty = derivePlayerShellVM(makeImportState());
+    if (empty.phase !== 'import') throw new Error('unreachable');
+    expect(empty.importError).toBeNull();
+  });
+
+  it('derivePlayerShellVM: import phase joins the failure list with newlines into importError', () => {
+    const vm = derivePlayerShellVM(makeImportState(['first failure', 'second failure']));
+
+    expect(vm.phase).toBe('import');
+    if (vm.phase !== 'import') throw new Error('unreachable');
+    expect(vm.importError).toBe('first failure\nsecond failure');
   });
 
   it('derivePlayerShellVM: solving phase returns the full view-model', () => {
@@ -469,7 +481,7 @@ describe('derivePlayerShellVM', () => {
       wordNumber: null,
       direction: null,
       displayClue: null,
-      lengthPattern: null,
+      lengthPatternLabel: null,
       announcement: '',
     });
   });

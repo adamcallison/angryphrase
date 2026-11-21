@@ -30,51 +30,67 @@ function buildIndex(words: Word[]) {
 }
 
 describe('DisplayClue', () => {
-  it('head word returns its own clue', () => {
+  it('head word returns a head fact carrying its own clue', () => {
     const head = makeWord(0, 0, 'across', 1, 'Head clue');
     const index = buildIndex([head]);
 
-    expect(DisplayClue.forWord(index, head)).toBe('Head clue');
+    expect(DisplayClue.forWord(index, head)).toEqual({ kind: 'head', clue: 'Head clue' });
   });
 
-  it('non-head across word returns "See N Across" with head number and direction', () => {
+  it('non-head across word returns a reference fact with the head number and direction', () => {
     const tail = makeWord(0, 2, 'across', 5, 'Tail clue');
     const head = makeWord(0, 0, 'across', 3, 'Head clue', tail.key);
     const index = buildIndex([head, tail]);
 
-    expect(DisplayClue.forWord(index, tail)).toBe('See 3 Across');
+    expect(DisplayClue.forWord(index, tail)).toEqual({
+      kind: 'reference',
+      headNumber: 3,
+      headDirection: 'across',
+    });
   });
 
-  it('non-head down word returns "See N Down" with head number and direction', () => {
+  it('non-head down word returns a reference fact with the head number and direction', () => {
     const tail = makeWord(2, 0, 'down', 9, 'Tail clue');
     const head = makeWord(0, 0, 'down', 7, 'Head clue', tail.key);
     const index = buildIndex([head, tail]);
 
-    expect(DisplayClue.forWord(index, tail)).toBe('See 7 Down');
+    expect(DisplayClue.forWord(index, tail)).toEqual({
+      kind: 'reference',
+      headNumber: 7,
+      headDirection: 'down',
+    });
   });
 
-  it("three-deep chain A->B->C: C returns 'See A\'s number A\'s direction'", () => {
+  it("three-deep chain A->B->C: C returns a reference fact with A's number and direction", () => {
     const c = makeWord(0, 4, 'across', 6, 'C clue');
     const b = makeWord(0, 2, 'across', 5, 'B clue', c.key);
     const a = makeWord(0, 0, 'across', 4, 'A clue', b.key);
     const index = buildIndex([a, b, c]);
 
-    expect(DisplayClue.forWord(index, c)).toBe('See 4 Across');
+    expect(DisplayClue.forWord(index, c)).toEqual({
+      kind: 'reference',
+      headNumber: 4,
+      headDirection: 'across',
+    });
   });
 
-  it('non-head word with empty own clue still returns See N Direction', () => {
+  it('non-head word with empty own clue still returns a reference fact', () => {
     const tail = makeWord(0, 2, 'across', 3, '');
     const head = makeWord(0, 0, 'across', 2, '', tail.key);
     const index = buildIndex([head, tail]);
 
-    expect(DisplayClue.forWord(index, tail)).toBe('See 2 Across');
+    expect(DisplayClue.forWord(index, tail)).toEqual({
+      kind: 'reference',
+      headNumber: 2,
+      headDirection: 'across',
+    });
   });
 
-  it('head word with empty own clue returns empty string', () => {
+  it('head word with empty own clue returns a head fact with an empty clue', () => {
     const head = makeWord(0, 0, 'across', 1, '');
     const index = buildIndex([head]);
 
-    expect(DisplayClue.forWord(index, head)).toBe('');
+    expect(DisplayClue.forWord(index, head)).toEqual({ kind: 'head', clue: '' });
   });
 
   it('throws when a non-head word has no predecessor (unreachable state)', () => {

@@ -6,8 +6,7 @@ import { DisplayClue } from '../../../domain/chain/DisplayClue';
 import { LengthPattern } from '../../../domain/chain/LengthPattern';
 import { WordKey } from '../../../domain/word/WordKey';
 import { ChainIndex } from '../../../domain/chain/ChainIndex';
-
-export type { LengthPattern };
+import { renderDisplayClue, renderLengthPatternLabel } from './clueCopy';
 
 export type ClueEntryVM = {
   id: string;
@@ -15,7 +14,7 @@ export type ClueEntryVM = {
   number: number;
   direction: Direction;
   displayClue: string;
-  lengthPattern: LengthPattern | null;
+  lengthPatternLabel: string | null;
   isChainHead: boolean;
   hasOutgoingNextWord: boolean;
   isSelected: boolean;
@@ -79,8 +78,10 @@ export function deriveCluePanelVM(input: {
       wordKey: w.key,
       number: entryNumber,
       direction,
-      displayClue: DisplayClue.forWord(index, w),
-      lengthPattern: isChainHead ? LengthPattern.forWord(grid, index, w) : null,
+      displayClue: renderDisplayClue(DisplayClue.forWord(index, w)),
+      lengthPatternLabel: isChainHead
+        ? renderLengthPatternLabel(LengthPattern.forWord(grid, index, w))
+        : null,
       isChainHead,
       hasOutgoingNextWord,
       isSelected,

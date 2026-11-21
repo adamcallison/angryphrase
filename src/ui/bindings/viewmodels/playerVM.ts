@@ -11,15 +11,13 @@ import { ChainIndex } from '../../../domain/chain/ChainIndex';
 import { deriveGridVM, type GridVM } from './gridVM';
 import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
 import { deriveAnagramModalVM, type AnagramModalVM } from './anagramVM';
-import type { LengthPattern as LengthPatternType } from '../../../domain/chain/LengthPattern';
-
-export type { LengthPatternType as LengthPattern };
+import { renderDisplayClue, renderLengthPatternLabel } from './clueCopy';
 
 export type ActiveClueBannerVM = {
   wordNumber: number | null;
   direction: Direction | null;
   displayClue: string | null;
-  lengthPattern: LengthPattern | null;
+  lengthPatternLabel: string | null;
   announcement: string;
 };
 
@@ -60,7 +58,7 @@ function emptyBanner(): ActiveClueBannerVM {
     wordNumber: null,
     direction: null,
     displayClue: null,
-    lengthPattern: null,
+    lengthPatternLabel: null,
     announcement: '',
   };
 }
@@ -80,21 +78,21 @@ export function deriveActiveClueBannerVM(input: {
   }
 
   const index = ChainIndex.build(puzzle.words);
-  const displayClue = DisplayClue.forWord(index, word);
-  const lengthPattern = index.isHead(word.key)
-    ? LengthPattern.forWord(puzzle.grid, index, word)
+  const displayClue = renderDisplayClue(DisplayClue.forWord(index, word));
+  const lengthPatternLabel = index.isHead(word.key)
+    ? renderLengthPatternLabel(LengthPattern.forWord(puzzle.grid, index, word))
     : null;
 
   const wordNumber = Number(word.number);
   const announcement =
     `${wordNumber} ${word.key.direction}: ${displayClue}` +
-    (lengthPattern !== null ? ` (${lengthPattern})` : '');
+    (lengthPatternLabel !== null ? ` ${lengthPatternLabel}` : '');
 
   return {
     wordNumber,
     direction: word.key.direction,
     displayClue,
-    lengthPattern,
+    lengthPatternLabel,
     announcement,
   };
 }
@@ -170,7 +168,10 @@ export function deriveCheckResultVM(
 
 export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   if (state.phase === 'import') {
-    return { phase: 'import', importError: state.lastImportError };
+    return {
+      phase: 'import',
+      importError: state.lastImportErrors.length > 0 ? state.lastImportErrors.join('\n') : null,
+    };
   }
 
   const cursorWord = state.cursor

@@ -113,8 +113,8 @@
               oninput={(e) => setDraft(entry.id, e.currentTarget.value)}
               onblur={() => dispatchEditClue(entry)}
             />
-            {#if entry.lengthPattern !== null}
-              <span class="relative text-xs text-gray-500">({entry.lengthPattern})</span>
+            {#if entry.lengthPatternLabel !== null}
+              <span class="relative text-xs text-gray-500">{entry.lengthPatternLabel}</span>
             {/if}
             <div class="relative flex gap-2">
               {#if entry.isStartableJoinSource && !isInJoinMode}

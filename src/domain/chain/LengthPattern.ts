@@ -8,20 +8,20 @@ import { Direction } from '../word/Direction';
 import { ChainMarker } from './ChainMarker';
 import type { ChainIndex } from './ChainIndex';
 
-export type LengthPattern = string;
+export type LengthPattern = readonly (number | CellSeparator)[];
 
 function separatorAt(grid: Grid, w: Word, cell: WordCell): CellSeparator {
   const axis = Direction.markerAxis(w.key.direction);
   return CellMarker.read(Grid.cellAt(grid, cell.row, cell.col).marker, axis);
 }
 
-function appendSeparator(pieces: string[], run: number, separator: CellSeparator): number {
+function appendSeparator(pieces: (number | CellSeparator)[], run: number, separator: CellSeparator): number {
   if (separator === 'space') {
-    pieces.push(String(run), ', ');
+    pieces.push(run, 'space');
     return 1;
   }
   if (separator === 'hyphen') {
-    pieces.push(String(run), '-');
+    pieces.push(run, 'hyphen');
     return 1;
   }
   return run + 1;
@@ -29,20 +29,20 @@ function appendSeparator(pieces: string[], run: number, separator: CellSeparator
 
 function singleWordPattern(grid: Grid, w: Word): LengthPattern {
   let run = 1;
-  const pieces: string[] = [];
+  const pieces: (number | CellSeparator)[] = [];
   const cells = WordGeometry.cells(w);
 
   for (const cell of cells.slice(0, cells.length - 1)) {
     run = appendSeparator(pieces, run, separatorAt(grid, w, cell));
   }
 
-  pieces.push(String(run));
-  return pieces.join('');
+  pieces.push(run);
+  return pieces;
 }
 
 function chainPattern(grid: Grid, members: Word[]): LengthPattern {
   let run = 1;
-  const pieces: string[] = [];
+  const pieces: (number | CellSeparator)[] = [];
 
   for (const [memberIndex, w] of members.entries()) {
     const cells = WordGeometry.cells(w);
@@ -56,8 +56,8 @@ function chainPattern(grid: Grid, members: Word[]): LengthPattern {
     }
   }
 
-  pieces.push(String(run));
-  return pieces.join('');
+  pieces.push(run);
+  return pieces;
 }
 
 export const LengthPattern: {

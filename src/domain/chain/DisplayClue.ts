@@ -1,12 +1,17 @@
 import type { Word } from '../word/Word';
+import type { Direction } from '../word/Direction';
 import type { ChainIndex } from './ChainIndex';
 
+export type DisplayClueFact =
+  | { kind: 'head'; clue: string }
+  | { kind: 'reference'; headNumber: number; headDirection: Direction };
+
 export const DisplayClue: {
-  forWord(index: ChainIndex, w: Word): string;
+  forWord(index: ChainIndex, w: Word): DisplayClueFact;
 } = {
-  forWord(index: ChainIndex, w: Word): string {
+  forWord(index: ChainIndex, w: Word): DisplayClueFact {
     if (index.isHead(w.key)) {
-      return w.clue;
+      return { kind: 'head', clue: w.clue };
     }
 
     const headKey = index.headOf(w.key);
@@ -15,7 +20,10 @@ export const DisplayClue: {
       throw new Error('DisplayClue.forWord: head missing from word map');
     }
 
-    const directionName = head.key.direction.charAt(0).toUpperCase() + head.key.direction.slice(1);
-    return `See ${Number(head.number)} ${directionName}`;
+    return {
+      kind: 'reference',
+      headNumber: Number(head.number),
+      headDirection: head.key.direction,
+    };
   },
 };

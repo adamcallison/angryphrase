@@ -10,8 +10,6 @@ import { WordLength } from '../../../../src/domain/word/WordLength';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { BuilderSubMode } from '../../../../src/builder/state/state';
 import type { DisplacedClueId } from '../../../../src/domain/builder/DisplacedClueId';
-import { LengthPattern } from '../../../../src/domain/chain/LengthPattern';
-import { ChainIndex } from '../../../../src/domain/chain/ChainIndex';
 
 function blankGrid() {
   return Grid.blank(GridSize.of(3));
@@ -75,23 +73,23 @@ describe('deriveCluePanelVM', () => {
     expect(vm.down[0]!.number).toBe(1);
   });
 
-  it('deriveCluePanelVM: head word has displayClue = w.clue, lengthPattern = LengthPattern.forWord', () => {
+  it('deriveCluePanelVM: head word has displayClue = w.clue, lengthPatternLabel = "(4)" for the fixture\'s boundary-merged 2+2 chain', () => {
     const head: Word = { ...across1(), nextWord: down1().key };
     const words = [head, down1()];
     const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
     const entry = findEntry(vm, head.key)!;
     expect(entry.displayClue).toBe(head.clue);
-    expect(entry.lengthPattern).toBe(LengthPattern.forWord(blankGrid(), ChainIndex.build(words), head));
+    expect(entry.lengthPatternLabel).toBe('(4)');
   });
 
-  it('deriveCluePanelVM: non-head word has displayClue = "See N Direction", lengthPattern = null', () => {
+  it('deriveCluePanelVM: non-head word has displayClue = "See N Direction", lengthPatternLabel = null', () => {
     const head: Word = { ...across1(), nextWord: down1().key };
     const tail = down1();
     const words = [head, tail];
     const vm = deriveCluePanelVM({ grid: blankGrid(), words, highlightedWordKey: null, isBuilder: false });
     const entry = findEntry(vm, tail.key)!;
     expect(entry.displayClue).toBe('See 1 Across');
-    expect(entry.lengthPattern).toBeNull();
+    expect(entry.lengthPatternLabel).toBeNull();
   });
 
   it('deriveCluePanelVM: isChainHead true for head, false for non-head', () => {

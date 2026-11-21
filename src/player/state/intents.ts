@@ -13,10 +13,10 @@ import type {
 
 export type PlayerIntent =
   // import (NOT guarded — Player import has no existing work to overwrite; progress is keyed and retained)
-  | { kind: 'import-puzzle'; target: 'player'; fileContent: string }            // complete format only; on reject sets lastImportError and emits toast; on success emits `load-player-progress` event (bindings layer then dispatches apply-loaded-progress)
-  // dispatched by the Player import screen facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; sets lastImportError + emits error toast (kind shared with BuilderIntent)
+  | { kind: 'import-puzzle'; target: 'player'; fileContent: string }            // complete format only; on reject sets lastImportErrors and emits toast; on success emits `load-player-progress` event (bindings layer then dispatches apply-loaded-progress)
+  // dispatched by the Player import screen facade when FilePickPort.readDroppedFile returns { kind: 'failed' }; sets lastImportErrors + emits error toast (kind shared with BuilderIntent)
   | { kind: 'report-import-read-failure'; target: 'player' }
-  // dispatched by the Player import screen facade when FilePickPort.pickFile returns { kind: 'failed' }; sets lastImportError + emits error toast (kind shared with BuilderIntent)
+  // dispatched by the Player import screen facade when FilePickPort.pickFile returns { kind: 'failed' }; sets lastImportErrors + emits error toast (kind shared with BuilderIntent)
   | { kind: 'report-pick-failure'; target: 'player' }
   | { kind: 'apply-loaded-progress'; target: 'player'; playerLetters: (Letter|null)[][]; savedGridSize: GridSize }  // dispatched by the bindings layer after observing `load-player-progress`; playerLetters is exactly savedGridSize × savedGridSize, guaranteed by the codec (the blob's sole minter path); the reducer applies the saved letters only to white cells of a matching grid size
   | { kind: 'import-new-puzzle'; target: 'player' }                              // returns to 'import' phase, retains autosaved progress in localStorage

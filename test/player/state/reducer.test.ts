@@ -31,13 +31,13 @@ describe('reducePlayer', () => {
   it('import-new-puzzle returns to import screen from solving phase', () => {
     const result = reducePlayer(solvingState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
-    expect((result.state as { lastImportError: unknown }).lastImportError).toBe(null);
+    expect((result.state as { lastImportErrors: unknown }).lastImportErrors).toEqual([]);
   });
 
   it('import-new-puzzle returns to import screen even from import phase', () => {
     const result = reducePlayer(importState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
-    expect((result.state as { lastImportError: unknown }).lastImportError).toBe(null);
+    expect((result.state as { lastImportErrors: unknown }).lastImportErrors).toEqual([]);
   });
 
   it('escape closes anagram modal when open', () => {
@@ -250,7 +250,7 @@ describe('reducePlayer', () => {
       expect(result.events[0]).toEqual({ kind: 'load-player-progress', key: expect.any(String) });
     });
 
-    it('import-puzzle: parse failure sets lastImportError and emits error toast', () => {
+    it('import-puzzle: parse failure sets lastImportErrors and emits error toast', () => {
       const result = reducePlayer(
         importState(),
         { kind: 'import-puzzle', target: 'player', fileContent: 'not json' },
@@ -258,6 +258,8 @@ describe('reducePlayer', () => {
       );
 
       expect(result.state.phase).toBe('import');
+      if (result.state.phase !== 'import') throw new Error('expected import');
+      expect(result.state.lastImportErrors).toEqual(['File is not valid JSON.']);
       expect(result.events).toHaveLength(1);
       expect(result.events[0]).toEqual({
         kind: 'toast',

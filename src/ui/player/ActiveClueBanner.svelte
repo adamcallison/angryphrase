@@ -11,8 +11,8 @@
     <span class="font-bold text-lg">{vm.wordNumber}</span>
     <span class="text-xs uppercase tracking-wide text-gray-500">{vm.direction}</span>
     <span class="flex-1 text-sm">{vm.displayClue}</span>
-    {#if vm.lengthPattern !== null}
-      <span class="text-xs text-gray-500">({vm.lengthPattern})</span>
+    {#if vm.lengthPatternLabel !== null}
+      <span class="text-xs text-gray-500">{vm.lengthPatternLabel}</span>
     {/if}
   {/if}
 </div>

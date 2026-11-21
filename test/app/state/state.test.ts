@@ -16,7 +16,7 @@ describe('AppState', () => {
     expect(state.builder.displacedClues).toEqual([]);
     expect(state.player.phase).toBe('import');
     if (state.player.phase === 'import') {
-      expect(state.player.lastImportError).toBeNull();
+      expect(state.player.lastImportErrors).toEqual([]);
     }
     expect(state.toasts).toEqual([]);
     expect(state.modal).toBeNull();

@@ -647,6 +647,20 @@ readers, restructuring the import-error list, or any future i18n requires editin
 non-display modules and their pinned tests. Changing the placement is an architecture
 amendment and a human decision, not a cleanup.
 
+**Status 2026-11-21:** that human decision has now been made, on the merits (the options
+round set the historical blessing aside and re-decided): Class C is being resolved by the
+staged copy-home migration — architecture.md §9's "Copy home" paragraph is the governing
+spec, superseding this section's reading of the old §7/§9 sanctions. Stages 1, 2 and 4
+landed (2026-11-21): the length-pattern display token, the import-error state shape, and
+the `DisplayClue`/`LengthPattern` facts with the `clueCopy` render home (see C1's two
+entries and C2's entry). C3's contrast is dissolved — see its entry. The one remaining
+item is stage 3 — the reason-code machinery that would carry the remaining C2 reducer
+toast copy and C1's domain message functions — and it is gated on a real
+i18n/copy-restructure motive, not scheduled, **tracked as F6 in Follow-ups**; until then
+those sites are
+current truth, recorded as such in the copy-home paragraph. The `domain/format`
+parse-failure copy is explicitly blessed to stay deep (rule-adjacent byte diagnostics).
+
 - **C1 — domain mints display strings.** `domain/chain/DisplayClue.ts` interpolates
   "See N Direction" (a presentation affordance, not a clue); `LengthPattern.forWord`
   bakes the display separators `", "` and `"-"` — while the surrounding parentheses are
@@ -654,6 +668,76 @@ amendment and a human decision, not a cleanup.
   `ActiveClueBanner`): one visual token, split across two layers and three sites.
   Also `CompletenessCheck.message`, `ChainAdmission.message`, `GridSize.invalidMessage`,
   `Anagram.validateChainInput` reasons.
+  *Partially resolved 2026-11-21 (stage 1 of the staged copy-home migration). Human decision
+  after a merits round that set the architecture's historical deep-placement blessing aside
+  and re-decided on first principles; the governing spec is now architecture.md §9's "Copy
+  home" policy paragraph (VM layer = the single home for interaction copy; domain/state
+  export structured facts; `domain/format` parse-failure copy blessed to stay deep as
+  rule-adjacent byte diagnostics). This stage unifies the parenthesised length-pattern
+  display token — the audit's "one visual token, split across two layers and three sites";
+  count reconciled: three component spellings at audit time, plus a fourth added later by
+  the banner-announcement round (the A5 speech mirror composed its own parens). Inventory
+  (Lead's walk): S1 `cluePanelVM.ts` (field + mint), S2 `playerVM.ts` (banner field +
+  announcement's fourth spelling), S3 `PlayerCluePanel.svelte`, S4 `BuilderCluePanel.svelte`,
+  S5 `ActiveClueBanner.svelte` (the three component paren spellings), S6 two dead type
+  re-exports (`LengthPattern` from cluePanelVM, `LengthPatternType` from playerVM —
+  grep-verified zero consumers, free wins folded in), S7 the test pins (cluePanelVM ×2,
+  playerVM ×6). Design as implemented: field `lengthPattern` → `lengthPatternLabel`, value
+  the complete display token including parentheses ("(3, 4-2)"), one mint site per
+  derivation (`(` + `LengthPattern.forWord` + `)`); components render it verbatim and now
+  carry zero display copy for the token; the banner announcement composes from the same
+  label with byte-identical output. Implementer deviation, accepted after lead
+  verification: the dispatch demanded a new announcement byte-pin test, but one already
+  existed ('cursor on head word → announcement "1 across: Head clue (3)"') — the Lead's
+  pre-dispatch grep was colon-anchored and missed it; no duplicate was added, and the
+  untouched pre-existing pin passing against the new composition is the byte-preservation
+  proof. Deliberate scope boundary: the pattern's *contents* still mint in the domain
+  (`LengthPattern.forWord`, separators included) — that is stage 4's landing site, not this
+  stage's. Verification, re-run by the lead: full CI green (93 files / 1409 tests, count
+  unchanged — no test could observe a display-only change), build; grep walk: word-boundary
+  `\blengthPattern\b` zero hits under `src/`+`test/` (boundary required — the new name
+  contains the old as a substring), type re-exports gone, value imports present in both VM
+  files; DOM spans byte-identical by construction (diff walked: `({x})` → `{label}` where
+  label = `(x)`). Remaining for C1, each with a named landing site: `DisplayClue`'s "See N
+  Direction" and `LengthPattern`'s baked separators → copy-home stage 4;
+  `CompletenessCheck.message`, `ChainAdmission.message`, `GridSize.invalidMessage`,
+  `Anagram.validateChainInput` → stage 3's reason-code machinery, taken only if a real
+  i18n/copy-restructure motive arrives (architecture.md's copy-home paragraph records each
+  as current truth until then).*
+  *Resolved for its DisplayClue/LengthPattern half 2026-11-21 (copy-home stage 4; together
+  with stage 1 above, C1's two copy-bearing chain mints are closed). Inventory (Lead's
+  walk): S1 `DisplayClue.ts` (fact union + `forWord`), S2 `LengthPattern.ts` (token fact,
+  loop shape unchanged), S3 `ui/bindings/viewmodels/clueCopy.ts` (new — the render home
+  for clue copy), S4 `cluePanelVM.ts`, S5 `playerVM.ts` (both mints render through
+  clueCopy; stage 1's two inline paren templates die — the parens' owner consolidates from
+  one-per-derivation to one total), S6–S9 the four test files (`DisplayClue.test`,
+  `LengthPattern.test`, `clueCopy.test` new, `cluePanelVM.test`). Zero component files;
+  the VM types did not change — the components' contract is untouched. Design as
+  implemented: `DisplayClue.forWord` returns `{ kind: 'head'; clue } | { kind:
+  'reference'; headNumber; headDirection }` — the "See N Direction" phrasing,
+  capitalisation included, renders in clueCopy; `LengthPattern` becomes `readonly
+  (number | CellSeparator)[]` — runs with their terminating separators, 'none' boundaries
+  pre-merged into longer runs, the `", "`/`"-"` glyphs render in clueCopy;
+  `renderDisplayClue` + `renderLengthPatternLabel` are clueCopy's only exports; the
+  head-missing throw guard stays (invariant breach, unchanged message). Implementer
+  deviations, all accepted after lead verification: the cluePanelVM pin became the exact
+  literal '(4)' — the fixture's 2+2 chain with no boundary marker merges to one run of 4,
+  and the pre-change composed assertion had evaluated the same fixture to the same '(4)',
+  so the literal preserves the byte contract and is stronger than the old self-referential
+  composition; LengthPattern test titles that quoted dead display strings were updated to
+  quote the token arrays (fixtures untouched — honest titles beat the Lead's spec
+  literalism); the then-unused `ChainIndex` import dropped from cluePanelVM.test
+  (lint-forced, inert). Verification, re-run by the lead: full CI green — 94 files / 1417
+  tests (1410 + the 7 new clueCopy cases; one cluePanelVM pin moved from composed to
+  literal), svelte-check 0/0, build; grep walk: `See ${` only in clueCopy, `forWord`
+  value-imported only by the two VM files, the old glyph spellings zero hits;
+  byte-preservation proof: every pre-existing literal pin in playerVM.test and
+  cluePanelVM.test ('See 1 Across', '(3)', both announcements) passed untouched. Remaining
+  for C1, all at one landing site: `CompletenessCheck.message`,
+  `ChainAdmission.message`, `GridSize.invalidMessage`, `Anagram.validateChainInput`
+  reasons → stage 3's reason-code machinery, gated on a real i18n/copy-restructure motive
+  (the copy-home paragraph records them as current truth until then; tracked as F6 in
+  Follow-ups).*
 - **C2 — state reducers mint toast copy.** `reconcileWords.ts` ("Word N Direction was
   shortened/lengthened"), `importExport.ts` (displaced-clue export warning with inline
   pluralisation; the parse-failure list joined with `'\n'` here — the display join format
@@ -662,11 +746,63 @@ amendment and a human decision, not a cleanup.
   `PlayerState.lastImportError` stores the display string **in state**, so
   restructuring how the import screen shows errors (e.g. a list) is a state-shape
   change.
+  *Partially resolved 2026-11-21 (stage 2 of the staged copy-home migration; the
+  `lastImportError` half of this finding — the remaining reducer toast copy belongs to
+  stage 3, gated). Reconciliation with this finding's own text: as written, C2 also
+  named `app/state/reducer.ts`'s save-failure copy — that site had already left the
+  reducer before this round (the save-banner resolution, same day but earlier, moved it
+  to `saveBannerVM.ts` with state storing booleans only), so it appears in no inventory
+  below and no remaining list. Human decision on the merits; governing spec
+  architecture.md §9 "Copy home". Inventory (Lead's walk): S1 `player/state/state.ts` (field + `importScreen()`),
+  S2 `lifecycle.ts` (the four mints — the parse-failure join plus three single-message
+  paths), S3 `intents.ts` (three comment lines naming the field), S4 `playerVM.ts`
+  (`derivePlayerShellVM`'s import branch — the join's new home), S5 `ImportScreen.svelte`
+  (examined, deliberately unchanged: its VM field `importError: string | null` is
+  byte-compatible, so the visible error box is untouched), S6–S12 the test pins
+  (state.test, lifecycle.test ×6, player reducer.test, app reducer.test ×2, app
+  state.test, playerVM.test fixture + one NEW join case, playerFacade.test ×3). Design as
+  implemented: the import phase stores `lastImportErrors: string[]` — the *individual*
+  parse-failure messages for a parse reject, one-element arrays for the three
+  single-message rejects; the `'\n'` join moved from the pure reducer to the VM derivation
+  (`importError = list.join('\n')` when non-empty, else null), so restructuring the import
+  display is now a VM/component change, never a state-shape change; the toast event keeps
+  a joined payload (toast events carry strings today — current truth recorded in the
+  copy-home paragraph, reason codes are stage 3's and gated). Two Lead spec errors caught
+  by the implementer, both verified by the Lead against the files: the dispatch named a
+  nonexistent read-failure case in `player reducer.test.ts` (the file's only
+  field-touching case is the parse-failure one, which got the array pin instead), and the
+  playerFacade valid-JSON case never asserted the field (only its title named it — title
+  reworded, assertions untouched). Improvement over the spec, accepted: the old
+  parse-failure toast pin was circular (`message: result.state.lastImportError` — the
+  event compared to the state, not to bytes); the rewrite pins both the five-element
+  state array and the joined toast message to exact literals, so a state↔event divergence
+  is now testable. Verification, re-run by the lead: full CI green — 93 files / 1410
+  tests (1409 + the one NEW join pin), svelte-check 0/0, build; word-boundary
+  `\blastImportError\b` zero hits under `src/`+`test/`; `ImportScreen.svelte` absent from
+  the diff — the display is byte-identical by untouched file. Deliberate behaviour
+  changes: none visible; the only semantic change is the state's shape (facts where a
+  rendering was). Remaining for C2, landing site stage 3 (gated on a real i18n or
+  copy-restructure motive, not scheduled): the reducer-minted toast copy
+  (`reconcileWords` shortened/lengthened, `importExport`'s displaced-clue warning and
+  display join, `fillMode`, the `lifecycle` message constants, `app/state/reducer.ts`'s
+  download/grid-size toasts) and `Toast.message` in state — each recorded as current
+  truth in the copy-home paragraph; tracked as F6 in Follow-ups.*
 - **C3 — the VM layer also mints copy.** `modalVM.ts` (titles/bodies/labels — the
   correct home by the architecture's own logic), `playerVM.ts` check-result messages,
   `builderVM.ts` violation labels with singular/plural. The contrast between C2 and C3
   is the finding: the same concept (user-facing message) has no single owner, and the
   deepest of its three homes is the one the architecture blessed.
+  *Resolved 2026-11-21 (by the staged copy-home migration, stages 1+2+4). The finding was
+  the contrast — three homes for one concept — and the migration dissolves the contrast
+  by construction: the VM layer is now the single home for interaction copy. C3's own
+  inventory (modalVM, playerVM check-result copy, builderVM violation labels) needed no
+  change — it was already at the home the policy now names; what changed is everything
+  around it: clue copy renders in `viewmodels/clueCopy.ts`, the import-error display
+  mints in the VM derivation, domain/state export facts (`DisplayClueFact`, the
+  `LengthPattern` token list, `lastImportErrors`), and the deep copy that remains is
+  recorded as current truth pending the gated stage 3. The blessed-deepest-home reading
+  of §7/§9 is superseded by architecture.md §9's "Copy home" paragraph (human decision
+  on the merits, same date). Leftover from C3: none of its own.*
 
 ## Class D — the display spec itself has rotted
 
@@ -1213,3 +1349,36 @@ real work with a named landing site, tracked here so they are not lost.
   window key-routing is the established precedent for where such a handler
   lives). Not started; no code exists for it. Landing site: an undo design
   round, human-initiated.
+- **F6 — the remaining dispatch-time copy: toast reason codes (gated, not scheduled).**
+  Surfaced 2026-11-21 as the residual of the Class C staged copy-home resolution: the
+  three landed stages moved every *derivable* display string to the VM home, but copy
+  minted at dispatch time and carried through events and state as finished strings cannot
+  be re-derived at render time — the facts that produced the sentence (which word was
+  rejected, which clue was displaced, which reason fired) are gone once the event has been
+  folded. Inventory (each site recorded as current truth, not violation, in
+  architecture.md §9's copy-home paragraph): the domain message functions
+  (`ChainAdmission.message`, `CompletenessCheck.message`, `GridSize.invalidMessage` —
+  their reason taxonomies are correctly domain-owned and stay; `Anagram.validateChainInput`,
+  which returns English sentences *as* its `reason` and would need a taxonomy minted
+  before it could move); the reducer-minted toast copy (`reconcileWords`'
+  shortened/lengthened — the `change` fact already exists beside the sentence;
+  `importExport`'s displaced-clue warning with inline pluralisation; `fillMode`'s
+  non-head-clue rejection; player `lifecycle`'s three import-failure constants;
+  `app/state/reducer.ts`'s download/grid-size toasts); and the plumbing that carries all
+  of it (the `toast` event's `message: string`, `Toast` values in `AppState.toasts`, the
+  appStore fold). Target shape if taken: toast events carry reason codes + params, state
+  stores the fact, and one message table at the bindings seam renders it — the
+  `viewmodels/clueCopy.ts` pattern scaled up, so visible and spoken toast copy mint at
+  one site. The domain taxonomies stay domain-owned;
+  `reconcileWords`' invariant-violation strings and `domain/format`'s parse-failure
+  messages stay deep under the rule-adjacent-diagnostics blessing. Cost: contract changes
+  to the event union, the `Toast` value object, the fold and the app reducer plus every
+  minter above — roughly ten modules and their pinned-sentence tests. Gate (human
+  decision, on record with the staged-route acceptance): the migration pays off only
+  under a real i18n motive (the message table is its prerequisite) or a restructuring of
+  the toast/import copy itself; without either it buys consistency only, and the current
+  state is consistent, honestly recorded, and pinned. Not started; no code exists for it.
+  Landing site: a copy-reason design round, human-initiated when one of those motives
+  exists; no re-audit needed — this entry plus the copy-home paragraph carry the complete
+  inventory.
+

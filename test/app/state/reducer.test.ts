@@ -250,7 +250,7 @@ describe('reduceApp', () => {
     const playResult = reduceApp(playState, { target: 'player', kind: 'report-import-read-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
-    expect(playResult.state.player.lastImportError).toBe('Could not read that file. Please try again.');
+    expect(playResult.state.player.lastImportErrors).toEqual(['Could not read that file. Please try again.']);
     expect(playResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
@@ -275,7 +275,7 @@ describe('reduceApp', () => {
     const playResult = reduceApp(playState, { target: 'player', kind: 'report-pick-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
-    expect(playResult.state.player.lastImportError).toBe('Could not open or read that file. Please try again.');
+    expect(playResult.state.player.lastImportErrors).toEqual(['Could not open or read that file. Please try again.']);
     expect(playResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',

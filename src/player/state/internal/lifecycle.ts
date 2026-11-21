@@ -18,16 +18,18 @@ export function handleImportPuzzle(
 ): ReducerResult<PlayerState> {
   const result = parsePuzzle(intent.fileContent);
   if (!result.ok) {
-    const message = result.failures.map((f) => f.message).join('\n');
+    const errors = result.failures.map((f) => f.message);
     return Result.withEvents(
-      { phase: 'import', lastImportError: message },
-      [{ kind: 'toast', toastKind: 'error', message }],
+      { phase: 'import', lastImportErrors: errors },
+      // Toast events carry a single string today; the joined payload is the
+      // current truth until toasts move to reason codes in a later copy-home stage.
+      [{ kind: 'toast', toastKind: 'error', message: errors.join('\n') }],
     );
   }
 
   if (result.fileType !== 'complete') {
     return Result.withEvents(
-      { phase: 'import', lastImportError: INCOMPLETE_REJECT_MSG },
+      { phase: 'import', lastImportErrors: [INCOMPLETE_REJECT_MSG] },
       [{ kind: 'toast', toastKind: 'error', message: INCOMPLETE_REJECT_MSG }],
     );
   }
@@ -82,14 +84,14 @@ export function handleImportNewPuzzle(): ReducerResult<PlayerState> {
 
 export function handleReportImportReadFailure(): ReducerResult<PlayerState> {
   return Result.withEvents(
-    { phase: 'import', lastImportError: IMPORT_READ_FAILURE_MSG },
+    { phase: 'import', lastImportErrors: [IMPORT_READ_FAILURE_MSG] },
     [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }],
   );
 }
 
 export function handleReportPickFailure(): ReducerResult<PlayerState> {
   return Result.withEvents(
-    { phase: 'import', lastImportError: PICK_FAILURE_MSG },
+    { phase: 'import', lastImportErrors: [PICK_FAILURE_MSG] },
     [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }],
   );
 }

@@ -22,7 +22,7 @@ export type AnagramModalState = {
 };
 
 export type PlayerState =
-  | { phase: 'import'; lastImportError: string | null }
+  | { phase: 'import'; lastImportErrors: string[] }
   | {
       phase: 'solving';
       puzzle: Puzzle;
@@ -37,7 +37,7 @@ export const PlayerState: {
   loaded(p: Puzzle): PlayerState;
 } = {
   importScreen(): PlayerState {
-    return { phase: 'import', lastImportError: null };
+    return { phase: 'import', lastImportErrors: [] };
   },
 
   loaded(p: Puzzle): PlayerState {

@@ -61,40 +61,40 @@ function applyBoundaryMarker(grid: Grid, w: Word, flag: 'space-right' | 'space-b
 }
 
 describe('LengthPattern', () => {
-  it('head word with nextWord null and no markers returns String(length)', () => {
+  it('head word with nextWord null and no markers returns a single run token', () => {
     const grid = Grid.blank(GridSize.of(5));
     const w = makeWord(0, 0, 'across', null, 5);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('5');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([5]);
   });
 
-  it('head word with nextWord null, single space marker between cells 1-2 of 4 returns "2, 2"', () => {
+  it("head word with nextWord null, single space marker between cells 1-2 of 4 returns [2, 'space', 2]", () => {
     let grid = Grid.blank(GridSize.of(5));
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('2, 2');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([2, 'space', 2]);
   });
 
-  it('head word with nextWord null, single hyphen marker between cells 1-2 of 4 returns "2-2"', () => {
+  it("head word with nextWord null, single hyphen marker between cells 1-2 of 4 returns [2, 'hyphen', 2]", () => {
     let grid = Grid.blank(GridSize.of(5));
     grid = applyMarker(grid, 0, 1, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 4);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('2-2');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([2, 'hyphen', 2]);
   });
 
-  it('head word with nextWord null, mixed space and hyphen markers returns "2, 2-2"', () => {
+  it("head word with nextWord null, mixed space and hyphen markers returns [2, 'space', 2, 'hyphen', 2]", () => {
     let grid = Grid.blank(GridSize.of(6));
     grid = applyMarker(grid, 0, 1, markerFlag('space-right'));
     grid = applyMarker(grid, 0, 3, markerFlag('hyphen-right'));
     const w = makeWord(0, 0, 'across', null, 6);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('2, 2-2');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([2, 'space', 2, 'hyphen', 2]);
   });
 
   it('across word reads right-axis markers', () => {
@@ -108,7 +108,7 @@ describe('LengthPattern', () => {
     const w = makeWord(0, 0, 'across', null, 4);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('2, 2');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([2, 'space', 2]);
   });
 
   it('down word reads bottom-axis markers', () => {
@@ -122,20 +122,20 @@ describe('LengthPattern', () => {
     const w = makeWord(0, 1, 'down', null, 4);
     const index = buildIndex([w]);
 
-    expect(LengthPattern.forWord(grid, index, w)).toBe('2, 2');
+    expect(LengthPattern.forWord(grid, index, w)).toEqual([2, 'space', 2]);
   });
 
-  it('word with nextWord != null joins separator-aware member patterns with comma+space', () => {
+  it('word with nextWord != null joins separator-aware member patterns with a space token', () => {
     let grid = Grid.blank(GridSize.of(7));
     const b = makeWord(1, 1, 'across', null, 4);
     const a = makeWord(0, 0, 'across', b.key, 3);
     grid = applyBoundaryMarker(grid, a, 'space-right');
     const index = buildIndex([a, b]);
 
-    expect(LengthPattern.forWord(grid, index, a)).toBe('3, 4');
+    expect(LengthPattern.forWord(grid, index, a)).toEqual([3, 'space', 4]);
   });
 
-  it('three-deep chain A->B->C returns "lenA, lenB, lenC"', () => {
+  it("three-deep chain A->B->C returns [lenA, 'space', lenB, 'space', lenC]", () => {
     let grid = Grid.blank(GridSize.of(7));
     const c = makeWord(2, 2, 'across', null, 5);
     const b = makeWord(1, 1, 'across', c.key, 4);
@@ -144,7 +144,7 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, b, 'space-right');
     const index = buildIndex([a, b, c]);
 
-    expect(LengthPattern.forWord(grid, index, a)).toBe('3, 4, 5');
+    expect(LengthPattern.forWord(grid, index, a)).toEqual([3, 'space', 4, 'space', 5]);
   });
 
   it('chain head enumeration splits a non-head member on its space marker', () => {
@@ -157,7 +157,7 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('5, 9, 2, 5');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([5, 'space', 9, 'space', 2, 'space', 5]);
   });
 
   it('chain head enumeration splits a non-head member on its hyphen marker', () => {
@@ -170,7 +170,7 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('5, 9, 2-5');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([5, 'space', 9, 'space', 2, 'hyphen', 5]);
   });
 
   it('chain head with markers in two members enumerates each separator-aware', () => {
@@ -182,7 +182,7 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, head, 'space-right');
     const index = buildIndex([head, middle]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('2, 2, 2-2');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([2, 'space', 2, 'space', 2, 'hyphen', 2]);
   });
 
   it('chain head with a marked head member and plain tail', () => {
@@ -193,10 +193,10 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, head, 'space-right');
     const index = buildIndex([head, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('2, 2, 5');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([2, 'space', 2, 'space', 5]);
   });
 
-  it('chain with hyphen boundary markers renders 5-9-7', () => {
+  it("chain with hyphen boundary markers renders [5, 'hyphen', 9, 'hyphen', 7]", () => {
     let grid = Grid.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
@@ -205,20 +205,20 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, middle, 'hyphen-right');
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('5-9-7');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([5, 'hyphen', 9, 'hyphen', 7]);
   });
 
-  it('chain with empty boundary markers merges member lengths into 21', () => {
+  it('chain with empty boundary markers merges member lengths into one run token', () => {
     const grid = Grid.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
     const head = makeWord(0, 0, 'across', middle.key, 5);
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('21');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([21]);
   });
 
-  it('chain with mixed boundaries renders 5, 9-7', () => {
+  it("chain with mixed boundaries renders [5, 'space', 9, 'hyphen', 7]", () => {
     let grid = Grid.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
@@ -227,10 +227,10 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, middle, 'hyphen-right');
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('5, 9-7');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([5, 'space', 9, 'hyphen', 7]);
   });
 
-  it('none boundary merges the run into the next member\'s internal space split (7, 7, 7)', () => {
+  it("none boundary merges the run into the next member's internal space split", () => {
     let grid = Grid.blank(GridSize.of(11));
     const tail = makeWord(2, 0, 'across', null, 7);
     const middle = makeWord(1, 0, 'across', tail.key, 9);
@@ -239,7 +239,7 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, middle, 'space-right');
     const index = buildIndex([head, middle, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('7, 7, 7');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([7, 'space', 7, 'space', 7]);
   });
 
   it('boundary marker on a down-word member reads the bottom pair', () => {
@@ -249,6 +249,6 @@ describe('LengthPattern', () => {
     grid = applyBoundaryMarker(grid, head, 'space-bottom');
     const index = buildIndex([head, tail]);
 
-    expect(LengthPattern.forWord(grid, index, head)).toBe('5, 5');
+    expect(LengthPattern.forWord(grid, index, head)).toEqual([5, 'space', 5]);
   });
 });
