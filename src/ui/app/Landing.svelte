@@ -4,8 +4,8 @@
   let { actions }: { actions: LandingActions } = $props();
 </script>
 
-<main class="mx-auto flex max-w-3xl flex-col items-center gap-12 px-4 py-16">
-  <p class="text-lg text-gray-700">What would you like to do?</p>
+<div class="mx-auto flex max-w-3xl flex-col items-center gap-12 px-4 py-16">
+  <h2 class="text-lg text-gray-700">What would you like to do?</h2>
   <div class="flex w-full max-w-md gap-6">
     <button
       type="button"
@@ -20,4 +20,4 @@
       Play
     </button>
   </div>
-</main>
+</div>

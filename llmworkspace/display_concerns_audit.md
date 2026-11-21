@@ -390,6 +390,54 @@ suppressions exist repo-wide; zero `aria-live`, `tabindex`, `aria-current`,
   The Builder route has no heading at all (Player route uses `h2`, Landing uses `p`).
   `FilePicker.svelte`'s `role="region" aria-label="File drop zone"` labels the
   drag-drop surface, not the pick control it contains.
+  *Resolved 2026-11-21 (Option 1, human-chosen with two sub-decisions both (a);
+  alternatives presented to the human and rejected: landmarks-only with headings
+  deferred to the B1/B2 shell round (leaves the Builder route invisible to heading
+  navigation until an undated round), and nested-mains-only (paper-over — the
+  FilePicker label would keep lying and the Builder would stay heading-less).
+  Inventory reconciliation — the audit's site list was incomplete: it named
+  ImportScreen's nested `<main>` but MISSED that `Landing.svelte` renders its own
+  `<main>` inside App's too (same kind, same bug, found by the Lead's walk);
+  recorded here per the do-not-trust-a-list rule. Inventory: S1 App.svelte's
+  `<main>` (the wrapper — sole owner after the fix), S2 ImportScreen's nested
+  `<main>`, S3 Landing's nested `<main>` (audit-missed), S4 the Builder route's
+  missing heading, S5 Landing's `<p>` posing as a heading, S6 FilePicker's
+  mislabelled `role="region"`. Design as implemented: App.svelte keeps the sole
+  `<main>`, untouched; ImportScreen and Landing demote their roots to `<div>`s
+  with classes unchanged (grep-verified pre-change that no CSS targets the `main`
+  element anywhere — `app.css`, `tailwind.config.ts` — so the demotion is
+  pixel-invisible); Landing's "What would you like to do?" becomes an `<h2>`
+  keeping the former `<p>`'s classes verbatim (semantic-only change, pixel-
+  identical under Tailwind preflight); BuilderShell gains a static visible
+  `<h2>` "Build a puzzle" above the toolbar (class composition matches
+  PlayerShell's h2), deliberately NOT the puzzle title — the title is an
+  editable input in the Builder toolbar and a heading mirroring its live value
+  would duplicate it (alternatives (b) title-mirror and (c) sr-only offered and
+  rejected by the human); FilePicker's `role="region"` + aria-label deleted —
+  the drag surface is decorative pointer-only chrome, the pick button's visible
+  text is its label, and drag-drop is mouse-only so AT users reach it via the
+  button (sub-decision (a); re-labelling the region to "Pick or drop a file" was
+  offered and rejected as keeping a pointless jump target). The round's only
+  visible UI delta is the Builder heading. Implementer deviation, accepted:
+  removing the region role left the drag-handler `<div>` role-less, and
+  `a11y_no_static_element_interactions` fails lint on handler-bearing static
+  elements — the honest resolution is a `svelte-ignore` with a prose comment
+  citing §11's rationale (a role would contradict the recorded decision;
+  OverlayDialog's backdrop suppressions are the repo precedent). Repo a11y
+  suppression count is now three (OverlayDialog ×2, owned by A2; FilePicker ×1,
+  owned here). §11 amended before code (visual-conventions paragraph + the
+  BuilderShell / ImportScreen / FilePicker / top-level-layout rows). Files:
+  `src/ui/player/ImportScreen.svelte`, `src/ui/app/Landing.svelte`,
+  `src/ui/builder/BuilderShell.svelte`, `src/ui/shared/FilePicker.svelte`;
+  doc: architecture.md §11 (lead-edited pre-dispatch). Verification: full CI
+  green, re-run by the lead — eslint + madge, svelte-check 0 errors/0 warnings,
+  1397 tests (all pre-existing, `test/` absent from the diff — the
+  behaviour-preservation proof), build; grep walk: exactly one `<main>`
+  repo-wide (App.svelte), zero `role="region"`, heading inventory as specced
+  (h1 Header; route-level h2 in Landing / Import / Player / Builder; section
+  h2s untouched); emitted bundle carries "Build a puzzle" and no region role.
+  No DOM harness (§12), so screen-reader landmark/heading jump menus join the
+  manual checklist. Leftover from A7: none.*
 
 ## Class B — form-factor decisions duplicated or drifting (blocks the fit goal directly)
 
@@ -612,7 +660,8 @@ real work with a named landing site, tracked here so they are not lost.
   re-landed here: destination is a **focus-model round**, human-initiated and gated
   on the F3 harness (both are behavioural decisions exactly the harness exists to
   pin). A6's focus convention does not pre-empt either: it styles where focus
-  lands, it does not change where focus goes.*
+  lands, it does not change where focus goes. F4 below later joined this
+  destination as the round's third question.*
 - **F3 — DOM harness decision, proven twice in one day, still pending.** The
   focus-steal (F2) and its round-2 fix were both invisible to the repo's test
   suite by construction: no test renders a `.svelte` file (architecture.md §12),
@@ -625,3 +674,51 @@ real work with a named landing site, tracked here so they are not lost.
   Not commissioned — the human has the offer on record; landing site: a harness
   design round, human-initiated. Until then the manual checklist carries these
   items.
+- **F4 — the grid typing surface has no visible focus indicator.** Surfaced
+  2026-11-21 by the human during keyboard testing after the A6 round ("still no
+  visible selection for grid"). Not an A6 leftover — every A6 decision stands
+  (the hidden input deliberately ringless; pointer affordances ringless); the gap
+  is that keyboard-*acquired* typing focus (the F2-minted Tab stop into grid
+  typing) has no visual encoding anywhere: the yellow cursor cell is the *cursor*,
+  not focus, and it was already yellow before the Tab; A5's live region speaks
+  the cell, but a sighted keyboard user sees nothing change on entering grid
+  typing.
+  **Empirical finding (lead's throwaway probe, real Chrome via Playwright-core,
+  no repo changes — the F3 method):** text inputs match `:focus-visible` on
+  *every* acquisition path — Tab, direct click into the input, `focus()` called
+  inside a click handler (the grid-mint path), and cold script focus. Therefore
+  no pure-CSS keyboard-only form exists: `focus-within` and
+  `:has(:focus-visible)` on the existing grid wrapper (identical
+  `relative overflow-x-auto` div around `Grid` + `TypingSurface` in both shells)
+  both fire on the mouse mint too. A convention-clean fix needs a modality
+  source somewhere other than CSS.
+  Options examined with the human: (A) wrapper ring on `:focus-within` —
+  rejected: fires on mouse mints, breaking the A6 convention
+  ("ring = keyboard-acquired focus"); the human overruled the Lead's "true
+  fact" framing — correctly, a broken convention is a broken convention.
+  (D) carrying interaction modality in intents — dead by the Focus boundary
+  rule (new state surface whose only consumer is a visual fact; fails the
+  headless-consumer test). (B) **leaf modality gate** — `TypingSurface` tracks
+  last-interaction modality from window `pointerdown`/`keydown` capture
+  listeners (OverlayDialog's window keydown is the listener precedent; E2 IME
+  normalisation is the leaf-owned-keyboard-fact precedent; `FilePicker`'s
+  `dragOver` is the transient-pointer-fact-as-local-`$state` precedent) and
+  reports keyboard-acquired focus up via a callback prop; the shells toggle a
+  `.focus-ring-within`-style class (same `app.css` home as the A6 convention)
+  on the wrapper. Conventions audit: breaks nothing written; one new pattern
+  either way — B1 keeps the boolean in the shells (first-ever shell-local
+  `$state`; ten other components already hold local `$state`) vs B2 extracts
+  the wrapper trio into a shared leaf (shells stay pure; cost: a new plumbing
+  component + §11 row, riding the B1/B2-family duplication already scheduled).
+  Lead's recommendation if taken: B1.
+  Human decision 2026-11-21: **record + defer.** Accepted state, recorded: a
+  keyboard user entering grid typing sees no indicator until this lands; the
+  hidden input's `aria-label` and A5's announcements carry AT users meanwhile.
+  Landing site: the **focus-model round** — the same destination as F2's two
+  re-landed questions (grid-first key routing, Tab-into-clicked-row), making
+  this its third question; human-initiated, F3-harness-gated (the modality
+  gate is DOM-timing behaviour exactly the manual checklist currently holds
+  and only a rendered harness can pin). Not started; no code exists for it.
+  Touch caveat, pre-recorded: on the B forms a touch tap (pointerdown) suppresses
+  the ring — mobile users keep the yellow cursor as their indicator, consistent
+  with the convention's meaning.

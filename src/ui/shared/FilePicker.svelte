@@ -40,9 +40,10 @@
   }
 </script>
 
+<!-- Drag surface is decorative pointer-only chrome: AT users reach
+     the control via the pick button below, so no region role is warranted. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  role="region"
-  aria-label="File drop zone"
   class="border-2 border-dashed border-gray-300 p-4 rounded-md text-center transition-colors {dragOver ? 'border-blue-500 bg-blue-50' : ''}"
   ondragover={onDragOver}
   ondragleave={onDragLeave}

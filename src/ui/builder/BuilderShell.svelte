@@ -18,6 +18,7 @@
 </script>
 
 <div class="mx-auto max-w-7xl px-4 py-4 flex flex-col gap-4">
+  <h2 class="text-lg font-bold text-gray-800">Build a puzzle</h2>
   <BuilderToolbar vm={vm.toolbar} title={vm.title} author={vm.author} actions={builderFacade.actions.toolbar} pick={builderFacade.pickFile} />
 
   {#if vm.subModeBanner.kind !== 'none'}
