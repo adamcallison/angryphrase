@@ -142,7 +142,7 @@ describe('appStore.svelte.ts', () => {
     expect(toasts).toHaveLength(1);
     expect(toasts[0]).toBeDefined();
     expect(typeof toasts[0]!.id).toBe('string');
-    expect(toasts[0]!.message).toContain('valid');
+    expect(toasts[0]!.reason).toEqual({ code: 'import-parse-failures', messages: ['File is not valid JSON.'] });
   });
 
   it('appStore: a builder request-* guard emits modal-request event → getModal() populated and getPendingConfirmIntent() populated', () => {
@@ -257,7 +257,7 @@ describe('appStore.svelte.ts', () => {
     const toasts = store.getToasts();
     expect(toasts).toHaveLength(1);
     expect(toasts[0]!.kind).toBe('error');
-    expect(toasts[0]!.message).toBe('Download failed. Please try again.');
+    expect(toasts[0]!.reason).toEqual({ code: 'download-failure' });
   });
 
   it('appStore: clear-builder-storage event calls scheduler.clearBuilder() — verify storage cleared (no pending save fires later)', () => {

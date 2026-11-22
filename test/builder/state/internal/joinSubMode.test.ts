@@ -430,7 +430,7 @@ describe('resolveJoin', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Source already has a chain link.',
+        reason: { code: 'chain-admission-rejected', reason: 'source-has-link' },
       },
     ]);
   });
@@ -453,7 +453,7 @@ describe('resolveJoin', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Target is already linked to by another word.',
+        reason: { code: 'chain-admission-rejected', reason: 'target-already-linked' },
       },
     ]);
   });

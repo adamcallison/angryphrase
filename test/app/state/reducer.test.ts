@@ -49,9 +49,9 @@ describe('reduceApp', () => {
     const rng1 = new SeededRng(10);
     const rng2 = new SeededRng(20);
     const clock = new FakeClock(5000);
-    const toast1 = Toast.create(rng1, 'info', 'a', () => clock.now());
+    const toast1 = Toast.create(rng1, 'info', { code: 'download-failure' }, () => clock.now());
     clock.advance(1);
-    const toast2 = Toast.create(rng2, 'info', 'b', () => clock.now());
+    const toast2 = Toast.create(rng2, 'info', { code: 'download-failure' }, () => clock.now());
     const stateWithToasts = { ...state, toasts: [toast1, toast2] };
     const deps = makeDeps();
     const result = reduceApp(stateWithToasts, { kind: 'dismiss-toast', id: toast1.id }, deps);
@@ -69,7 +69,7 @@ describe('reduceApp', () => {
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Download failed. Please try again.',
+      reason: { code: 'download-failure' },
     });
   });
 
@@ -113,7 +113,7 @@ describe('reduceApp', () => {
     expect(playerResult.events).toEqual([]);
   });
 
-  it('report-grid-size-failure: returns a toast event with the domain message and leaves the state unchanged', () => {
+  it('report-grid-size-failure: returns a toast event with the grid-size-invalid reason and leaves the state unchanged', () => {
     const state = makeState();
     const deps = makeDeps();
     const result = reduceApp(state, { kind: 'report-grid-size-failure' }, deps);
@@ -122,7 +122,7 @@ describe('reduceApp', () => {
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: GridSize.invalidMessage(),
+      reason: { code: 'grid-size-invalid' },
     });
   });
 
@@ -250,11 +250,11 @@ describe('reduceApp', () => {
     const playResult = reduceApp(playState, { target: 'player', kind: 'report-import-read-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
-    expect(playResult.state.player.lastImportErrors).toEqual(['Could not read that file. Please try again.']);
+    expect(playResult.state.player.lastImportReject).toEqual({ code: 'import-read-failure' });
     expect(playResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Could not read that file. Please try again.',
+      reason: { code: 'import-read-failure' },
     });
 
     const buildState = { ...state, route: 'build' as const };
@@ -263,7 +263,7 @@ describe('reduceApp', () => {
     expect(buildResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Could not read that file. Please try again.',
+      reason: { code: 'import-read-failure' },
     });
   });
 
@@ -275,11 +275,11 @@ describe('reduceApp', () => {
     const playResult = reduceApp(playState, { target: 'player', kind: 'report-pick-failure' }, deps);
     expect(playResult.state.player.phase).toBe('import');
     if (playResult.state.player.phase !== 'import') throw new Error('expected import');
-    expect(playResult.state.player.lastImportErrors).toEqual(['Could not open or read that file. Please try again.']);
+    expect(playResult.state.player.lastImportReject).toEqual({ code: 'import-pick-failure' });
     expect(playResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Could not open or read that file. Please try again.',
+      reason: { code: 'import-pick-failure' },
     });
 
     const buildState = { ...state, route: 'build' as const };
@@ -288,7 +288,7 @@ describe('reduceApp', () => {
     expect(buildResult.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Could not open or read that file. Please try again.',
+      reason: { code: 'import-pick-failure' },
     });
   });
 
@@ -303,7 +303,7 @@ describe('reduceApp', () => {
     expect(result.events).toContainEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: expect.stringContaining('valid'),
+      reason: { code: 'import-parse-failures', messages: ['File is not valid JSON.'] },
     });
     expect(result.state.toasts).toBe(state.toasts);
     expect(result.state.builder).toBe(state.builder);

@@ -9,10 +9,6 @@ import { Puzzle } from '../../../domain/puzzle/Puzzle';
 import { Row } from '../../../domain/grid/Row';
 import { Col } from '../../../domain/grid/Col';
 
-const INCOMPLETE_REJECT_MSG = 'Only complete puzzle files can be loaded into the Player.';
-const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
-const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
-
 export function handleImportPuzzle(
   intent: PlayerIntentOf<'import-puzzle'>,
 ): ReducerResult<PlayerState> {
@@ -20,17 +16,15 @@ export function handleImportPuzzle(
   if (!result.ok) {
     const errors = result.failures.map((f) => f.message);
     return Result.withEvents(
-      { phase: 'import', lastImportErrors: errors },
-      // Toast events carry a single string today; the joined payload is the
-      // current truth until toasts move to reason codes in a later copy-home stage.
-      [{ kind: 'toast', toastKind: 'error', message: errors.join('\n') }],
+      { phase: 'import', lastImportReject: { code: 'import-parse-failures', messages: errors } },
+      [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-parse-failures', messages: errors } }],
     );
   }
 
   if (result.fileType !== 'complete') {
     return Result.withEvents(
-      { phase: 'import', lastImportErrors: [INCOMPLETE_REJECT_MSG] },
-      [{ kind: 'toast', toastKind: 'error', message: INCOMPLETE_REJECT_MSG }],
+      { phase: 'import', lastImportReject: { code: 'import-file-incomplete' } },
+      [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-file-incomplete' } }],
     );
   }
 
@@ -84,15 +78,15 @@ export function handleImportNewPuzzle(): ReducerResult<PlayerState> {
 
 export function handleReportImportReadFailure(): ReducerResult<PlayerState> {
   return Result.withEvents(
-    { phase: 'import', lastImportErrors: [IMPORT_READ_FAILURE_MSG] },
-    [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }],
+    { phase: 'import', lastImportReject: { code: 'import-read-failure' } },
+    [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-read-failure' } }],
   );
 }
 
 export function handleReportPickFailure(): ReducerResult<PlayerState> {
   return Result.withEvents(
-    { phase: 'import', lastImportErrors: [PICK_FAILURE_MSG] },
-    [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }],
+    { phase: 'import', lastImportReject: { code: 'import-pick-failure' } },
+    [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-pick-failure' } }],
   );
 }
 

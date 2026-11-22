@@ -1421,4 +1421,75 @@ real work with a named landing site, tracked here so they are not lost.
   Landing site: a copy-reason design round, human-initiated when one of those motives
   exists; no re-audit needed — this entry plus the copy-home paragraph carry the complete
   inventory.
+  *Resolved 2026-11-22 (Option 1, the full stage-3 migration, human decision in the options
+  round — the i18n motive accepted: the message table is i18n's prerequisite, and the
+  minter count was still small). Governing spec: architecture.md §9 "Copy home" paragraph,
+  stage 3 — amended before any code, per design-first. Three dispatches: the Anagram
+  taxonomy, the new ToastReason/toastCopy pair, then the atomic contract flip.
+  Inventory (the entry's own list, walked by the Lead before dispatch): S1–S3 the
+  plumbing (Event.ts's toast member, the `Toast` value's `message`, the effects fold),
+  S4 `ChainAdmission.message`, S5 `CompletenessCheck.message`, S6 `GridSize.invalidMessage`
+  (all three deleted — taxonomies stay domain-owned), S7 `Anagram.validateChainInput`
+  (English-sentence reasons → the minted `AnagramInputRejection` taxonomy:
+  `wrong-length {expected, got}` / `fixed-letters-not-covered`), S8–S14 the reducer mint
+  sites (`reconcileWords` word-reconciled, `importExport` ×5 — parse join, read, pick,
+  per-violation completeness, displaced-count pluralisation, `fillMode`, `joinSubMode`,
+  `reattachSubMode`, player `lifecycle` ×4, app reducer ×2), S15 `Toast.message` in
+  `AppState.toasts` (state stores the fact), S16 `PlayerState.lastImportErrors` — the
+  stage-2 `string[]` carried the three single-message rejects as sentences; superseded
+  same-day by the fact form `lastImportReject: ImportReject | null` (an `Extract` of the
+  four import codes), so the import screen's box and the toast render through the one
+  table and cannot drift (stage-2's own "facts where a rendering was" rationale, applied
+  to the constants it had left as strings). Design as implemented: `ToastReason`
+  (domain/notifications/ToastReason.ts) — an eleven-code discriminated union on `code`,
+  params domain facts only (`WordNumber`, `Direction`, `LinkRejection`/`ReattachRejection`
+  as the `chain-admission-rejected` param, `CompletenessViolation` as the
+  `export-completeness-violation` param, the blessed parse-failure strings as the
+  `import-parse-failures` `messages` param, `grid-size-invalid` paramless — the table
+  interpolates `GridSize.MIN`/`MAX`); `renderToastReason` (viewmodels/toastCopy.ts, the
+  `clueCopy.ts` pattern) is the single render site for visible and spoken toast copy —
+  `toastVM` derives `message` and the A3 announcement from it, so i18n swaps one table.
+  The Anagram pair renders inline in `anagramVM` (the `playerVM` check-result precedent,
+  its only consumer). Deliberate behaviour changes: none visible — every rendered string
+  is byte-identical (proof below); the semantic changes are the event/value/state shapes
+  (facts where sentences were) and the deleted domain renderers. Files (src): new
+  `domain/notifications/ToastReason.ts`, `ui/bindings/viewmodels/toastCopy.ts`; changed
+  `Event.ts`, `Toast.ts`, `app/state/effects.ts`, `app/state/reducer.ts`,
+  `reconcileWords.ts`, `importExport.ts`, `fillMode.ts`, `joinSubMode.ts`,
+  `reattachSubMode.ts`, player `lifecycle.ts`, `player/state/state.ts`,
+  `player/state/intents.ts` (3 comment lines), `ChainAdmission.ts`,
+  `CompletenessCheck.ts`, `GridSize.ts`, `Anagram.ts`, `anagramVM.ts`, `toastVM.ts`,
+  `playerVM.ts`. Zero component files (ImportScreen/Toast/ToastHost untouched — the VM
+  contracts `importError: string | null` and `ToastVM.message: string` are unchanged).
+  Tests: 21 new toastCopy byte pins + Anagram reason re-pins; ~23 test files re-pinned
+  from sentence assertions to fact assertions; 10 dead-fn cases deleted (1 GridSize +
+  8 ChainAdmission + 1 CompletenessCheck) — 1417 pre-round → 1428 (95 files), all green.
+  Verification, re-run by the lead after every dispatch: full vitest 1428/1428,
+  tsc clean, eslint clean, madge no cycles, svelte-check 0 errors/0 warnings, build
+  green; grep walks — `invalidMessage`/`ChainAdmission.message`/`CompletenessCheck.message`/
+  `lastImportErrors` zero hits repo-wide, zero user-facing copy strings under
+  `src/builder`, `src/player`, `src/app`, `src/domain` outside the two blessed sites
+  (`domain/format/v1.ts` byte-diagnostics, which now ride as the `messages` param;
+  `reconcileWords`' invariant-violation throw strings, never toasted), `reason:` on
+  every toast mint, diff contains no `.svelte` file. Behaviour-preservation proof: the
+  21 toastCopy pins pin every live rendered string byte-exact (the Lead diffed them
+  against the pre-change minter sources during review), and the pre-existing
+  `anagramVM` and `playerVM` `importError` string pins passed UNTOUCHED — the render
+  path is provably unchanged. Implementer notes, all accepted after lead verification:
+  the compiler surfaced toast fixtures the Lead's test walk had missed
+  (`effects.test.ts`, `Event/Toast.test.ts`, `appStore.test.ts` ~145, one importExport
+  pin at ~339) — re-pinned to facts, no casts; `renderInputRejection` in anagramVM uses
+  the `never`-default exhaustiveness idiom (noImplicitReturns is off in tsconfig, so a
+  bare switch would not have failed compile on a future third kind — the stronger form,
+  forced by config); a one-line comment on `ImportReject` cites §9's own vocabulary, not
+  audit tags (referencing rule respected — zero audit-item references in src/ or test/).
+  Consequence: the copy-home migration is complete — all four stages landed; the VM
+  layer is the single home for interaction copy, and a future i18n pass swaps
+  `toastCopy` (plus the per-derivation mints it does not own: modalVM, playerVM
+  check-result, builderVM labels, saveBannerVM, clueCopy, anagramVM's two) — those are
+  at the home the policy names, so the pass is a translation exercise, not an
+  architecture change. Leftover from F6: none.*
+  *Addendum 2026-11-22: the audit's Class C status paragraph above ("the one remaining
+  item is stage 3 … tracked as F6") is superseded by this resolution — all four stages
+  landed; the live doc set (architecture.md §9) carries the current truth.*
 

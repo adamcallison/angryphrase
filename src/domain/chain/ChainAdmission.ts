@@ -30,7 +30,6 @@ export const ChainAdmission: {
     displacedClueId: DisplacedClueId,
     target: WordKey,
   ): ReattachAdmission;
-  message(result: LinkAdmission | ReattachAdmission): string;
 } = {
   canLink(words: readonly Word[], source: WordKey, target: WordKey): LinkAdmission {
     const sourceWord = words.find(w => WordKey.equals(w.key, source));
@@ -85,28 +84,5 @@ export const ChainAdmission: {
     }
 
     return { ok: true, clue: displacedClue, target: targetWord };
-  },
-
-  message(result: LinkAdmission | ReattachAdmission): string {
-    if (result.ok) {
-      return '';
-    }
-
-    switch (result.reason) {
-      case 'source-not-found':
-        return 'Source word not found.';
-      case 'target-not-found':
-        return 'Target word not found.';
-      case 'source-has-link':
-        return 'Source already has a chain link.';
-      case 'target-already-linked':
-        return 'Target is already linked to by another word.';
-      case 'clue-not-found':
-        return 'Displaced clue not found.';
-      case 'target-has-clue':
-        return 'Target already has a clue.';
-      case 'target-non-head':
-        return 'Target is a non-head chain word and cannot be given a clue.';
-    }
   },
 };

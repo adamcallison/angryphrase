@@ -12,6 +12,7 @@ import { deriveGridVM, type GridVM } from './gridVM';
 import { deriveCluePanelVM, type CluePanelVM } from './cluePanelVM';
 import { deriveAnagramModalVM, type AnagramModalVM } from './anagramVM';
 import { renderDisplayClue, renderLengthPatternLabel } from './clueCopy';
+import { renderToastReason } from './toastCopy';
 
 export type ActiveClueBannerVM = {
   wordNumber: number | null;
@@ -170,7 +171,7 @@ export function derivePlayerShellVM(state: PlayerState): PlayerShellVM {
   if (state.phase === 'import') {
     return {
       phase: 'import',
-      importError: state.lastImportErrors.length > 0 ? state.lastImportErrors.join('\n') : null,
+      importError: state.lastImportReject === null ? null : renderToastReason(state.lastImportReject),
     };
   }
 

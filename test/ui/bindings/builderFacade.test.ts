@@ -205,7 +205,7 @@ describe('builderFacade.ts', () => {
       expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
       expect(store.getBuilder()).toBe(before);
       expect(store.getToasts()).toHaveLength(1);
-      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'grid-size-invalid' } });
       dispatchSpy.mockRestore();
     });
 
@@ -220,7 +220,7 @@ describe('builderFacade.ts', () => {
       expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
       expect(store.getBuilder()).toBe(before);
       expect(store.getToasts()).toHaveLength(1);
-      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'grid-size-invalid' } });
       dispatchSpy.mockRestore();
     });
 
@@ -235,7 +235,7 @@ describe('builderFacade.ts', () => {
       expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-grid-size-failure' });
       expect(store.getBuilder()).toBe(before);
       expect(store.getToasts()).toHaveLength(1);
-      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'grid-size-invalid' } });
       dispatchSpy.mockRestore();
     });
 
@@ -254,7 +254,7 @@ describe('builderFacade.ts', () => {
       expect(result).toBe(false);
       expect(store.getBuilder()).toBe(before);
       expect(store.getToasts()).toHaveLength(1);
-      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'grid-size-invalid' } });
     });
 
     it('builderFacade: changeGridSize rejects a non-integer size the same way', () => {
@@ -265,7 +265,7 @@ describe('builderFacade.ts', () => {
       expect(result).toBe(false);
       expect(store.getBuilder()).toBe(before);
       expect(store.getToasts()).toHaveLength(1);
-      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', message: GridSize.invalidMessage() });
+      expect(store.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'grid-size-invalid' } });
     });
 
     it('dispatchTypeLetter("A") sets letter A on selected cell', () => {
@@ -414,7 +414,7 @@ describe('builderFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
-    expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not open or read that file. Please try again.' });
+    expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-pick-failure' } });
     expect(storeWithPick.getBuilder()).toBe(builderBefore);
     warnSpy.mockRestore();
   });
@@ -461,7 +461,7 @@ describe('builderFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('builderFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
-    expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
+    expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-read-failure' } });
     expect(storeWithDrop.getBuilder()).toBe(builderBefore);
     warnSpy.mockRestore();
   });

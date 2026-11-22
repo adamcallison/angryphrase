@@ -173,7 +173,7 @@ describe('toggle-design-cell', () => {
     expect(result.events).toContainEqual({
       kind: 'toast',
       toastKind: 'info',
-      message: 'Word 1 across was shortened.',
+      reason: { code: 'word-reconciled', number: 1, direction: 'across', change: 'shortened' },
     });
   });
 

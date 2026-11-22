@@ -24,7 +24,7 @@ import { Numbering } from '../../../../src/domain/word/Numbering';
 import type { Direction } from '../../../../src/domain/word/Direction';
 import type { Word } from '../../../../src/domain/word/Word';
 import type { Cursor } from '../../../../src/domain/grid/Cursor';
-import type { PlayerState, CheckResult, AnagramModalState } from '../../../../src/player/state/state';
+import type { PlayerState, CheckResult, AnagramModalState, ImportReject } from '../../../../src/player/state/state';
 
 function makeKey(): PuzzleKey {
   return PuzzleKey.try('00000000-0000-4000-8000-000000000000')!;
@@ -86,8 +86,8 @@ function makeWord(opts: {
   };
 }
 
-function makeImportState(lastImportErrors: string[] = []): PlayerState {
-  return { phase: 'import', lastImportErrors };
+function makeImportState(lastImportReject: ImportReject | null = null): PlayerState {
+  return { phase: 'import', lastImportReject };
 }
 
 function makeSolvingState(opts: {
@@ -415,20 +415,22 @@ describe('deriveCheckResultVM', () => {
 
 describe('derivePlayerShellVM', () => {
   it('derivePlayerShellVM: import phase returns a view-model with only phase and importError', () => {
-    const state = makeImportState(['bad import']);
+    const state = makeImportState({ code: 'import-file-incomplete' });
     const vm = derivePlayerShellVM(state);
     expect(Object.keys(vm)).toEqual(['phase', 'importError']);
     expect(vm.phase).toBe('import');
     if (vm.phase !== 'import') throw new Error('unreachable');
-    expect(vm.importError).toBe('bad import');
+    expect(vm.importError).toBe('Only complete puzzle files can be loaded into the Player.');
 
     const empty = derivePlayerShellVM(makeImportState());
     if (empty.phase !== 'import') throw new Error('unreachable');
     expect(empty.importError).toBeNull();
   });
 
-  it('derivePlayerShellVM: import phase joins the failure list with newlines into importError', () => {
-    const vm = derivePlayerShellVM(makeImportState(['first failure', 'second failure']));
+  it('derivePlayerShellVM: import phase renders the parse-failure list joined with newlines into importError', () => {
+    const vm = derivePlayerShellVM(
+      makeImportState({ code: 'import-parse-failures', messages: ['first failure', 'second failure'] }),
+    );
 
     expect(vm.phase).toBe('import');
     if (vm.phase !== 'import') throw new Error('unreachable');

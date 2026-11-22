@@ -4,6 +4,14 @@ import type { Col } from '../../domain/grid/Col';
 import type { Letter } from '../../domain/letter/Letter';
 import type { WordKey } from '../../domain/word/WordKey';
 import type { Cursor } from '../../domain/grid/Cursor';
+import type { ToastReason } from '../../domain/notifications/ToastReason';
+
+// The import rejects the toast channel carries, stored as state so the import
+// screen's error box and the toast render through the same table (copy-home §9).
+export type ImportReject = Extract<
+  ToastReason,
+  { code: 'import-parse-failures' | 'import-read-failure' | 'import-pick-failure' | 'import-file-incomplete' }
+>;
 
 export type CheckClassification =
   | 'complete-correct' | 'incomplete-correct'
@@ -22,7 +30,7 @@ export type AnagramModalState = {
 };
 
 export type PlayerState =
-  | { phase: 'import'; lastImportErrors: string[] }
+  | { phase: 'import'; lastImportReject: ImportReject | null }
   | {
       phase: 'solving';
       puzzle: Puzzle;
@@ -37,7 +45,7 @@ export const PlayerState: {
   loaded(p: Puzzle): PlayerState;
 } = {
   importScreen(): PlayerState {
-    return { phase: 'import', lastImportErrors: [] };
+    return { phase: 'import', lastImportReject: null };
   },
 
   loaded(p: Puzzle): PlayerState {

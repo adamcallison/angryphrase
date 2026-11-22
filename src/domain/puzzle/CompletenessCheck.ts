@@ -16,7 +16,6 @@ export type CompletenessViolationKind = CompletenessViolation['kind'];
 export const CompletenessCheck: {
   check(p: Puzzle): CompletenessViolation[];
   clueViolations(words: Word[]): CompletenessViolation[];
-  message(v: CompletenessViolation): string;
 } = {
   check(p: Puzzle): CompletenessViolation[] {
     const violations: CompletenessViolation[] = [];
@@ -60,16 +59,5 @@ export const CompletenessCheck: {
     }
 
     return violations;
-  },
-
-  message(v: CompletenessViolation): string {
-    switch (v.kind) {
-      case 'missing-answer-letter':
-        return `Missing answer letter at row ${Number(v.row)}, col ${Number(v.col)}.`;
-      case 'missing-clue':
-        return `Missing clue for word ${Number(v.wordNumber)} ${v.direction}.`;
-      case 'non-head-clue':
-        return `Word ${Number(v.wordNumber)} ${v.direction} is a non-head chain word with a non-empty clue.`;
-    }
   },
 };

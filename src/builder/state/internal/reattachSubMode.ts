@@ -68,7 +68,7 @@ export function resolveReattach(
     return Result.withEvents(state, [{
       kind: 'toast',
       toastKind: 'error',
-      message: ChainAdmission.message(admission),
+      reason: { code: 'chain-admission-rejected', reason: admission.reason },
     }]);
   }
 

@@ -5,9 +5,9 @@ import { EpochMs } from '../../../src/domain/time/EpochMs';
 describe('Toast', () => {
   it('Toast.create sets all fields and a fresh id', () => {
     const rng: Rng = { nextInt: () => 0 };
-    const toast = Toast.create(rng, 'info', 'hello', () => EpochMs.of(12345));
+    const toast = Toast.create(rng, 'info', { code: 'download-failure' }, () => EpochMs.of(12345));
     expect(toast.kind).toBe('info');
-    expect(toast.message).toBe('hello');
+    expect(toast.reason).toEqual({ code: 'download-failure' });
     expect(toast.createdAt).toBe(12345);
     expect(toast.ttlMs).toBe(3500);
     expect(toast.id).toHaveLength(36);
@@ -16,7 +16,7 @@ describe('Toast', () => {
 
   it('Toast.create default ttlMs is 3500', () => {
     const rng: Rng = { nextInt: () => 0 };
-    const toast = Toast.create(rng, 'warning', 'oops', () => EpochMs.of(0));
+    const toast = Toast.create(rng, 'warning', { code: 'import-read-failure' }, () => EpochMs.of(0));
     expect(toast.ttlMs).toBe(3500);
   });
 
@@ -33,7 +33,7 @@ describe('Toast', () => {
       nowCalls += 1;
       return EpochMs.of(nowCalls * 1000);
     };
-    const toast = Toast.create(rng, 'error', 'fail', now);
+    const toast = Toast.create(rng, 'error', { code: 'import-pick-failure' }, now);
     expect(rngCalls).toBeGreaterThanOrEqual(16);
     expect(toast.createdAt).toBe(1000);
     expect(nowCalls).toBe(1);

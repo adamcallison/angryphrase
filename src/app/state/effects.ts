@@ -14,7 +14,7 @@ export function applyEventsToApp(
   for (const e of events) {
     switch (e.kind) {
       case 'toast': {
-        const toast = Toast.create(deps.rng, e.toastKind, e.message, deps.now);
+        const toast = Toast.create(deps.rng, e.toastKind, e.reason, deps.now);
         next = { ...next, toasts: [...next.toasts, toast] };
         break;
       }

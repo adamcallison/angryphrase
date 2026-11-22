@@ -1,6 +1,7 @@
 import type { Toast } from '../../../domain/notifications/Toast';
 import type { ToastId } from '../../../domain/notifications/Toast';
 import type { ToastKind } from '../../../domain/notifications/Toast';
+import { renderToastReason } from './toastCopy';
 
 // `kind` is colour-only in the visual toast, so the announcement prefix is its
 // only encoding for assistive tech. Exhaustive Record: a fifth ToastKind fails
@@ -21,12 +22,13 @@ export type ToastVM = {
 };
 
 export function deriveToastVM(toast: Toast): ToastVM {
+  const message = renderToastReason(toast.reason);
   return {
     id: toast.id,
     kind: toast.kind,
-    message: toast.message,
+    message,
     ttlMs: toast.ttlMs,
-    announcement: `${KIND_WORD[toast.kind]} ${toast.message}`,
+    announcement: `${KIND_WORD[toast.kind]} ${message}`,
   };
 }
 

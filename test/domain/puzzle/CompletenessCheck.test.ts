@@ -207,30 +207,4 @@ describe('CompletenessCheck', () => {
     ]);
   });
 
-  it('message returns the exact user-facing string for each violation kind', () => {
-    expect(
-      CompletenessCheck.message({
-        kind: 'missing-answer-letter',
-        row: Row.of(5),
-        col: Col.of(7),
-      }),
-    ).toBe('Missing answer letter at row 5, col 7.');
-
-    expect(
-      CompletenessCheck.message({
-        kind: 'missing-clue',
-        wordNumber: WordNumber.of(3),
-        direction: 'across',
-      }),
-    ).toBe('Missing clue for word 3 across.');
-
-    expect(
-      CompletenessCheck.message({
-        kind: 'non-head-clue',
-        wordNumber: WordNumber.of(3),
-        direction: 'across',
-      }),
-    ).toBe('Word 3 across is a non-head chain word with a non-empty clue.');
-  });
-
 });

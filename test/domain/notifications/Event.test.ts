@@ -12,7 +12,7 @@ describe('Event', () => {
   });
 
   it('Result.withEvents returns { state, events }', () => {
-    const toast: DomainEvent = { kind: 'toast', toastKind: 'success', message: 'saved' };
+    const toast: DomainEvent = { kind: 'toast', toastKind: 'success', reason: { code: 'download-failure' } };
     const result = Result.withEvents({ mode: 'edit' }, [toast]);
     expect(result.state).toEqual({ mode: 'edit' });
     expect(result.events).toEqual([toast]);
@@ -20,7 +20,7 @@ describe('Event', () => {
 
   it('DomainEvent discriminated union narrows correctly on kind', () => {
     const events: DomainEvent[] = [
-      { kind: 'toast', toastKind: 'info', message: 'hi' },
+      { kind: 'toast', toastKind: 'info', reason: { code: 'grid-size-invalid' } },
       { kind: 'modal-request', modal: { kind: 'confirm-design-switch' } as ModalRequest, confirmIntent: { target: 'builder', kind: 'confirm-switch-to-design' } },
       { kind: 'load-player-progress', key: 'puzzle-key' as PuzzleKey },
       { kind: 'download', filename: 'foo.txt', content: 'bar' },

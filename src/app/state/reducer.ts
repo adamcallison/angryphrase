@@ -5,7 +5,6 @@ import type { EpochMs } from '../../domain/time/EpochMs';
 import type { ReducerResult } from '../../domain/notifications/Event';
 import { reduceBuilder } from '../../builder/state/reducer';
 import { reducePlayer } from '../../player/state/reducer';
-import { GridSize } from '../../domain/grid/GridSize';
 
 export function reduceApp(
   state: AppState,
@@ -22,7 +21,7 @@ export function reduceApp(
     case 'dismiss-toast':
       return { state: { ...state, toasts: state.toasts.filter(t => t.id !== intent.id) }, events: [] };
     case 'report-download-failure':
-      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: 'Download failed. Please try again.' }] };
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, reason: { code: 'download-failure' } }] };
     case 'report-builder-save-result': {
       // The store dispatches on every attempted write; the no-op guard keeps the
       // common path (flag already matches) from churning the state reference.
@@ -40,7 +39,7 @@ export function reduceApp(
       return { state: { ...state, playerSaveFailed: flag }, events: [] };
     }
     case 'report-grid-size-failure':
-      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, message: GridSize.invalidMessage() }] };
+      return { state, events: [{ kind: 'toast' as const, toastKind: 'error' as const, reason: { code: 'grid-size-invalid' } }] };
   }
 
   // Builder or Player intent: dispatch by target.

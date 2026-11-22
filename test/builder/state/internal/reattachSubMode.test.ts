@@ -343,7 +343,7 @@ describe('resolveReattach', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Target already has a clue.',
+        reason: { code: 'chain-admission-rejected', reason: 'target-has-clue' },
       },
     ]);
   });
@@ -364,7 +364,7 @@ describe('resolveReattach', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Target is a non-head chain word and cannot be given a clue.',
+        reason: { code: 'chain-admission-rejected', reason: 'target-non-head' },
       },
     ]);
   });

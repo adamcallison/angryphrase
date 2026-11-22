@@ -183,7 +183,7 @@ describe('reconcileWords', () => {
     expect(events[0]).toEqual({
       kind: 'toast',
       toastKind: 'info',
-      message: 'Word 1 across was shortened.',
+      reason: { code: 'word-reconciled', number: 1, direction: 'across', change: 'shortened' },
     });
   });
 
@@ -201,7 +201,7 @@ describe('reconcileWords', () => {
     expect(events[0]).toEqual({
       kind: 'toast',
       toastKind: 'info',
-      message: 'Word 1 across was lengthened.',
+      reason: { code: 'word-reconciled', number: 1, direction: 'across', change: 'lengthened' },
     });
   });
 

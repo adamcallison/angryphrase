@@ -233,7 +233,7 @@ describe('request-import-puzzle', () => {
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Unknown or missing version.',
+      reason: { code: 'import-parse-failures', messages: ['Unknown or missing version.'] },
     });
   });
 
@@ -248,7 +248,7 @@ describe('request-import-puzzle', () => {
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'File is not valid JSON.',
+      reason: { code: 'import-parse-failures', messages: ['File is not valid JSON.'] },
     });
   });
 
@@ -338,7 +338,7 @@ describe('confirm-import-puzzle', () => {
     expect(result.events[0]).toEqual({
       kind: 'toast',
       toastKind: 'error',
-      message: 'Unknown or missing version.',
+      reason: { code: 'import-parse-failures', messages: ['Unknown or missing version.'] },
     });
   });
 
@@ -466,23 +466,24 @@ describe('export-complete', () => {
     expect(result.events.every((e) => e.kind === 'toast' && e.toastKind === 'error')).toBe(true);
   });
 
-  it('missing-answer-letter violation emits a relevant toast message (includes row and col)', () => {
+  it('missing-answer-letter violation emits an export-completeness-violation toast fact (row and col)', () => {
     const base = completeState(2);
     const grid = Grid.setCell(base.puzzle.grid, Row.of(0), Col.of(0), Cell.white());
     const state = { ...base, puzzle: Puzzle.withGrid(base.puzzle, grid) };
 
     const result = handleExportComplete(state);
 
-    const toast = result.events.find(
-      (e): e is { kind: 'toast'; toastKind: 'error'; message: string } =>
-        e.kind === 'toast' && e.message.includes('row 0') && e.message.includes('col 0'),
-    );
-    expect(toast).toBeDefined();
-    expect(toast!.kind).toBe('toast');
-    expect(toast!.toastKind).toBe('error');
+    expect(result.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      reason: {
+        code: 'export-completeness-violation',
+        violation: { kind: 'missing-answer-letter', row: 0, col: 0 },
+      },
+    });
   });
 
-  it('missing-clue violation emits a relevant toast message (includes word number and direction)', () => {
+  it('missing-clue violation emits an export-completeness-violation toast fact (word number and direction)', () => {
     const base = completeState(2);
     const words = base.puzzle.words.map((w) =>
       w.number === WordNumber.of(1) && w.key.direction === 'across' ? { ...w, clue: '' } : w,
@@ -491,13 +492,14 @@ describe('export-complete', () => {
 
     const result = handleExportComplete(state);
 
-    const toast = result.events.find(
-      (e): e is { kind: 'toast'; toastKind: 'error'; message: string } =>
-        e.kind === 'toast' && e.message.includes('word 1') && e.message.includes('across'),
-    );
-    expect(toast).toBeDefined();
-    expect(toast!.kind).toBe('toast');
-    expect(toast!.toastKind).toBe('error');
+    expect(result.events).toContainEqual({
+      kind: 'toast',
+      toastKind: 'error',
+      reason: {
+        code: 'export-completeness-violation',
+        violation: { kind: 'missing-clue', wordNumber: 1, direction: 'across' },
+      },
+    });
   });
 
   it('multiple violations emit multiple toast events (no download)', () => {
@@ -548,7 +550,7 @@ describe('export-complete', () => {
     expect(result.events[1]).toEqual({
       kind: 'toast',
       toastKind: 'warning',
-      message: 'Exported without 2 displaced clues. They remain in the Displaced Clues panel.',
+      reason: { code: 'export-displaced-clues', count: 2 },
     });
   });
 
@@ -565,7 +567,7 @@ describe('export-complete', () => {
     expect(result.events[1]).toEqual({
       kind: 'toast',
       toastKind: 'warning',
-      message: 'Exported without 1 displaced clue. They remain in the Displaced Clues panel.',
+      reason: { code: 'export-displaced-clues', count: 1 },
     });
   });
 });
@@ -577,20 +579,20 @@ describe('report-import-read-failure', () => {
     const result = handleReportImportReadFailure(state);
 
     expect(result.events).toEqual([
-      { kind: 'toast', toastKind: 'error', message: 'Could not read that file. Please try again.' },
+      { kind: 'toast', toastKind: 'error', reason: { code: 'import-read-failure' } },
     ]);
     expect(result.state).toBe(state);
   });
 });
 
 describe('report-pick-failure', () => {
-  it('emits an error toast event with exact copy, state unchanged', () => {
+  it('emits an error toast event, state unchanged', () => {
     const state = blankState();
 
     const result = handleReportPickFailure(state);
 
     expect(result.events).toEqual([
-      { kind: 'toast', toastKind: 'error', message: 'Could not open or read that file. Please try again.' },
+      { kind: 'toast', toastKind: 'error', reason: { code: 'import-pick-failure' } },
     ]);
     expect(result.state).toBe(state);
   });
@@ -645,7 +647,8 @@ describe('export/import round-trip', () => {
         (e) =>
           e.kind === 'toast' &&
           e.toastKind === 'error' &&
-          e.message.includes('non-head chain word with a non-empty clue'),
+          e.reason.code === 'export-completeness-violation' &&
+          e.reason.violation.kind === 'non-head-clue',
       ),
     ).toBe(true);
 
@@ -672,7 +675,7 @@ describe('export/import round-trip', () => {
     expect(result.events[1]).toEqual({
       kind: 'toast',
       toastKind: 'warning',
-      message: 'Exported without 2 displaced clues. They remain in the Displaced Clues panel.',
+      reason: { code: 'export-displaced-clues', count: 2 },
     });
 
     const content = (result.events[0] as { kind: 'download'; content: string }).content;

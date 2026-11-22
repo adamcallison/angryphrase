@@ -3,6 +3,7 @@ import { brand, type Brand } from '../brand';
 import { uuidv4 } from '../uuid/uuidv4';
 import type { EpochMs } from '../time/EpochMs';
 import { DurationMs } from '../time/DurationMs';
+import type { ToastReason } from './ToastReason';
 
 export type ToastId = Brand<'ToastId', string>;
 
@@ -19,19 +20,19 @@ export type ToastKind = 'info' | 'success' | 'warning' | 'error';
 export type Toast = {
   id: ToastId;
   kind: ToastKind;
-  message: string;
+  reason: ToastReason;
   createdAt: EpochMs;
   ttlMs: DurationMs;
 };
 
 export const Toast: {
-  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs): Toast;
+  create(rng: Rng, kind: ToastKind, reason: ToastReason, now: () => EpochMs): Toast;
 } = {
-  create(rng: Rng, kind: ToastKind, message: string, now: () => EpochMs): Toast {
+  create(rng: Rng, kind: ToastKind, reason: ToastReason, now: () => EpochMs): Toast {
     return {
       id: ToastId.generate(rng),
       kind,
-      message,
+      reason,
       createdAt: now(),
       ttlMs: DurationMs.DEFAULT,
     };

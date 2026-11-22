@@ -1,4 +1,5 @@
 import type { ToastKind } from './Toast';
+import type { ToastReason } from './ToastReason';
 import type { PuzzleKey } from '../puzzle/PuzzleKey';
 
 export type ModalKind =
@@ -10,7 +11,7 @@ export type ModalKind =
 export type ModalRequest = { kind: ModalKind };
 
 export type DomainEvent =
-  | { kind: 'toast'; toastKind: ToastKind; message: string }
+  | { kind: 'toast'; toastKind: ToastKind; reason: ToastReason }
   | { kind: 'modal-request'; modal: ModalRequest; confirmIntent: ConfirmableIntent }
   | { kind: 'load-player-progress'; key: PuzzleKey }
   | { kind: 'download'; filename: string; content: string }

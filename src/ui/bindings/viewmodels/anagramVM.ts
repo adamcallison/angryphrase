@@ -2,6 +2,7 @@ import type { Grid } from '../../../domain/grid/Grid';
 import type { Word } from '../../../domain/word/Word';
 import type { CellSeparator } from '../../../domain/grid/CellSeparator';
 import type { AnagramModalState } from '../../../player/state/state';
+import type { AnagramInputRejection } from '../../../domain/anagram/Anagram';
 import { Anagram } from '../../../domain/anagram/Anagram';
 import { ChainIndex } from '../../../domain/chain/ChainIndex';
 
@@ -21,6 +22,20 @@ export type AnagramModalVM = {
   scrambleEnabled: boolean;
   errorMessage: string | null;
 };
+
+function renderInputRejection(reason: AnagramInputRejection): string {
+  switch (reason.kind) {
+    case 'wrong-length':
+      return `Input must be ${reason.expected} letters (got ${reason.got}).`;
+    case 'fixed-letters-not-covered':
+      return 'Input letters do not cover the fixed-position letters.';
+    default: {
+      // Exhaustiveness guard: a future rejection kind fails here at compile time.
+      const exhaustive: never = reason;
+      return exhaustive;
+    }
+  }
+}
 
 export function deriveAnagramModalVM(input: {
   anagramModal: AnagramModalState | null;
@@ -45,7 +60,7 @@ export function deriveAnagramModalVM(input: {
   const { entries, separators } = Anagram.buildChainModel(grid, members);
   const validation = Anagram.validateChainInput(totalLength, entries, anagramModal.input);
   const inputValid = validation.ok;
-  const errorMessage = validation.ok ? null : validation.reason;
+  const errorMessage = validation.ok ? null : renderInputRejection(validation.reason);
 
   const counts = new Map<string, { letter: string; count: number }>();
   for (const e of entries) {

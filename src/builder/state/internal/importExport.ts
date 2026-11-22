@@ -5,18 +5,14 @@ import { Result, confirmEvent } from '../../../domain/notifications/Event';
 import { parsePuzzle, serializeComplete, serializeIncomplete, Filename } from '../../../domain/format/v1Json';
 import { CompletenessCheck } from '../../../domain/puzzle/CompletenessCheck';
 
-const IMPORT_READ_FAILURE_MSG = 'Could not read that file. Please try again.';
-const PICK_FAILURE_MSG = 'Could not open or read that file. Please try again.';
-
 function executeImport(state: BuilderState, fileContent: string): ReducerResult<BuilderState> {
   const result = parsePuzzle(fileContent);
   if (!result.ok) {
-    const message = result.failures.map((f) => f.message).join('\n');
     return Result.withEvents(state, [
       {
         kind: 'toast',
         toastKind: 'error',
-        message,
+        reason: { code: 'import-parse-failures', messages: result.failures.map((f) => f.message) },
       },
     ]);
   }
@@ -50,11 +46,11 @@ export function handleConfirmImportPuzzle(
 }
 
 export function handleReportImportReadFailure(state: BuilderState): ReducerResult<BuilderState> {
-  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: IMPORT_READ_FAILURE_MSG }]);
+  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-read-failure' } }]);
 }
 
 export function handleReportPickFailure(state: BuilderState): ReducerResult<BuilderState> {
-  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', message: PICK_FAILURE_MSG }]);
+  return Result.withEvents(state, [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-pick-failure' } }]);
 }
 
 export function handleExportIncomplete(state: BuilderState): ReducerResult<BuilderState> {
@@ -77,7 +73,7 @@ export function handleExportComplete(state: BuilderState): ReducerResult<Builder
       violations.map((v) => ({
         kind: 'toast' as const,
         toastKind: 'error' as const,
-        message: CompletenessCheck.message(v),
+        reason: { code: 'export-completeness-violation', violation: v },
       })),
     );
   }
@@ -91,11 +87,10 @@ export function handleExportComplete(state: BuilderState): ReducerResult<Builder
     },
   ];
   if (state.displacedClues.length > 0) {
-    const n = state.displacedClues.length;
     events.push({
       kind: 'toast' as const,
       toastKind: 'warning' as const,
-      message: `Exported without ${n} displaced clue${n === 1 ? '' : 's'}. They remain in the Displaced Clues panel.`,
+      reason: { code: 'export-displaced-clues', count: state.displacedClues.length },
     });
   }
   return Result.withEvents(state, events);

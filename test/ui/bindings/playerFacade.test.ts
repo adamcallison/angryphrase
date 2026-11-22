@@ -391,8 +391,8 @@ describe('playerFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: pickFile failed:', new Error('pick failed'));
     expect(storeWithPick.getToasts()).toHaveLength(1);
-    expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not open or read that file. Please try again.' });
-    expect(storeWithPick.getPlayer()).toEqual({ phase: 'import', lastImportErrors: ['Could not open or read that file. Please try again.'] });
+    expect(storeWithPick.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-pick-failure' } });
+    expect(storeWithPick.getPlayer()).toEqual({ phase: 'import', lastImportReject: { code: 'import-pick-failure' } });
     warnSpy.mockRestore();
   });
 
@@ -436,8 +436,8 @@ describe('playerFacade.ts', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith('playerFacade: failed to read dropped file:', new Error('read error'));
     expect(storeWithDrop.getToasts()).toHaveLength(1);
-    expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', message: 'Could not read that file. Please try again.' });
-    expect(storeWithDrop.getPlayer()).toEqual({ phase: 'import', lastImportErrors: ['Could not read that file. Please try again.'] });
+    expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-read-failure' } });
+    expect(storeWithDrop.getPlayer()).toEqual({ phase: 'import', lastImportReject: { code: 'import-read-failure' } });
     warnSpy.mockRestore();
   });
 

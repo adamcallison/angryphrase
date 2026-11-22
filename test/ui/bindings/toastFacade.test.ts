@@ -12,6 +12,7 @@ import { PuzzleKey } from '../../../src/domain/puzzle/PuzzleKey';
 import { brand } from '../../../src/domain/brand';
 import type { Toast } from '../../../src/domain/notifications/Toast';
 import type { ToastId } from '../../../src/domain/notifications/Toast';
+import type { ToastReason } from '../../../src/domain/notifications/ToastReason';
 import { EpochMs } from '../../../src/domain/time/EpochMs';
 import { DurationMs } from '../../../src/domain/time/DurationMs';
 
@@ -25,11 +26,11 @@ function makeBlankAppState(seed: number): AppStateType {
   return AppState.blank(GridSize.of(15), key);
 }
 
-function makeToast(id: string, kind: Toast['kind'], message: string): Toast {
+function makeToast(id: string, kind: Toast['kind'], reason: ToastReason): Toast {
   return {
     id: brand<'ToastId', string>(id),
     kind,
-    message,
+    reason,
     createdAt: EpochMs.of(1000),
     ttlMs: DurationMs.DEFAULT,
   };
@@ -68,7 +69,7 @@ describe('toastFacade.ts', () => {
   });
 
   it('toastFacade: toastVMs() projects toasts into ToastVMs (id, kind, message)', () => {
-    const toast = makeToast('toast-1', 'success', 'saved');
+    const toast = makeToast('toast-1', 'success', { code: 'download-failure' });
     const freshStore = createAppStore(
       { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
@@ -81,14 +82,14 @@ describe('toastFacade.ts', () => {
     expect(vms[0]).toEqual({
       id: toast.id,
       kind: 'success',
-      message: 'saved',
+      message: 'Download failed. Please try again.',
       ttlMs: toast.ttlMs,
-      announcement: 'Success: saved',
+      announcement: 'Success: Download failed. Please try again.',
     });
   });
 
   it('toastFacade: toastVMs() reflects updates after fresh createAppStore changes state.toasts', () => {
-    const first = makeToast('first', 'info', 'first message');
+    const first = makeToast('first', 'info', { code: 'import-read-failure' });
     const firstStore = createAppStore(
       { ...initial, toasts: [first] },
       { rng: seededRng, now: () => fakeClock.now() },
@@ -96,9 +97,9 @@ describe('toastFacade.ts', () => {
     );
     const firstToastFacade = createToastFacade(firstStore);
     expect(firstToastFacade.toastVMs()).toHaveLength(1);
-    expect(firstToastFacade.toastVMs()[0]!.message).toBe('first message');
+    expect(firstToastFacade.toastVMs()[0]!.message).toBe('Could not read that file. Please try again.');
 
-    const second = makeToast('second', 'warning', 'second message');
+    const second = makeToast('second', 'warning', { code: 'import-pick-failure' });
     const secondStore = createAppStore(
       { ...initial, toasts: [first, second] },
       { rng: seededRng, now: () => fakeClock.now() },
@@ -107,13 +108,13 @@ describe('toastFacade.ts', () => {
     const secondToastFacade = createToastFacade(secondStore);
     const vms = secondToastFacade.toastVMs();
     expect(vms).toHaveLength(2);
-    expect(vms[0]!.message).toBe('first message');
-    expect(vms[1]!.message).toBe('second message');
+    expect(vms[0]!.message).toBe('Could not read that file. Please try again.');
+    expect(vms[1]!.message).toBe('Could not open or read that file. Please try again.');
     expect(vms[1]!.kind).toBe('warning');
   });
 
   it('toastFacade: dismissToast(id) dispatches { kind: "dismiss-toast", id } — verify it is removed from getToasts()', () => {
-    const toast = makeToast('dismiss-me', 'info', 'dismissible');
+    const toast = makeToast('dismiss-me', 'info', { code: 'edit-clue-non-head' });
     const freshStore = createAppStore(
       { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },
@@ -128,7 +129,7 @@ describe('toastFacade.ts', () => {
   });
 
   it('toastFacade: dismissToast on a non-existent id is a no-op (no throw, toasts unchanged)', () => {
-    const toast = makeToast('existing', 'info', 'still here');
+    const toast = makeToast('existing', 'info', { code: 'grid-size-invalid' });
     const freshStore = createAppStore(
       { ...initial, toasts: [toast] },
       { rng: seededRng, now: () => fakeClock.now() },

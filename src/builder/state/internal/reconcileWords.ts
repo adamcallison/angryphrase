@@ -116,7 +116,7 @@ export function reconcileWords(
     lengthChangeEvents.push({
       kind: 'toast',
       toastKind: 'info',
-      message: `Word ${Number(numbered.number)} ${direction} was ${change}.`,
+      reason: { code: 'word-reconciled', number: numbered.number, direction, change },
     });
   }
 

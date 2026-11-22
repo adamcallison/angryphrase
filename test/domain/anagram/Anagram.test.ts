@@ -397,7 +397,7 @@ describe('Anagram', () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it('validateChainInput fails when input length < total length', () => {
+  it('validateChainInput rejects with wrong-length { expected, got } when input length < total length', () => {
     const grid = blankGrid(5);
     const member1 = buildWord({
       length: 3,
@@ -411,10 +411,10 @@ describe('Anagram', () => {
     const { entries } = Anagram.buildChainModel(grid, [member1, member2]);
     const result = Anagram.validateChainInput(7, entries, 'ABCDE');
 
-    expect(result).toEqual({ ok: false, reason: 'Input must be 7 letters (got 5).' });
+    expect(result).toEqual({ ok: false, reason: { kind: 'wrong-length', expected: 7, got: 5 } });
   });
 
-  it('validateChainInput fails when input lacks a fixed letter', () => {
+  it('validateChainInput rejects with fixed-letters-not-covered when input lacks a fixed letter', () => {
     let grid = blankGrid(5);
     grid = setPlayerLetter(grid, 0, 0, 'A');
     grid = setPlayerLetter(grid, 1, 2, 'E');
@@ -431,10 +431,7 @@ describe('Anagram', () => {
     const { entries } = Anagram.buildChainModel(grid, [member1, member2]);
     const result = Anagram.validateChainInput(7, entries, 'EBCDFGH');
 
-    expect(result).toEqual({
-      ok: false,
-      reason: 'Input letters do not cover the fixed-position letters.',
-    });
+    expect(result).toEqual({ ok: false, reason: { kind: 'fixed-letters-not-covered' } });
   });
 
   describe('sanitizeInput', () => {

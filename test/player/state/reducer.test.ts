@@ -31,13 +31,13 @@ describe('reducePlayer', () => {
   it('import-new-puzzle returns to import screen from solving phase', () => {
     const result = reducePlayer(solvingState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
-    expect((result.state as { lastImportErrors: unknown }).lastImportErrors).toEqual([]);
+    expect((result.state as { lastImportReject: unknown }).lastImportReject).toEqual(null);
   });
 
   it('import-new-puzzle returns to import screen even from import phase', () => {
     const result = reducePlayer(importState(), { kind: 'import-new-puzzle', target: 'player' }, deps);
     expect(result.state.phase).toBe('import');
-    expect((result.state as { lastImportErrors: unknown }).lastImportErrors).toEqual([]);
+    expect((result.state as { lastImportReject: unknown }).lastImportReject).toEqual(null);
   });
 
   it('escape closes anagram modal when open', () => {
@@ -250,7 +250,7 @@ describe('reducePlayer', () => {
       expect(result.events[0]).toEqual({ kind: 'load-player-progress', key: expect.any(String) });
     });
 
-    it('import-puzzle: parse failure sets lastImportErrors and emits error toast', () => {
+    it('import-puzzle: parse failure sets lastImportReject and emits an error toast reason', () => {
       const result = reducePlayer(
         importState(),
         { kind: 'import-puzzle', target: 'player', fileContent: 'not json' },
@@ -259,12 +259,15 @@ describe('reducePlayer', () => {
 
       expect(result.state.phase).toBe('import');
       if (result.state.phase !== 'import') throw new Error('expected import');
-      expect(result.state.lastImportErrors).toEqual(['File is not valid JSON.']);
+      expect(result.state.lastImportReject).toEqual({
+        code: 'import-parse-failures',
+        messages: ['File is not valid JSON.'],
+      });
       expect(result.events).toHaveLength(1);
       expect(result.events[0]).toEqual({
         kind: 'toast',
         toastKind: 'error',
-        message: 'File is not valid JSON.',
+        reason: { code: 'import-parse-failures', messages: ['File is not valid JSON.'] },
       });
     });
 
@@ -304,7 +307,7 @@ describe('reducePlayer', () => {
       expect(result.events[0]).toEqual({
         kind: 'toast',
         toastKind: 'error',
-        message: 'Only complete puzzle files can be loaded into the Player.',
+        reason: { code: 'import-file-incomplete' },
       });
     });
   });

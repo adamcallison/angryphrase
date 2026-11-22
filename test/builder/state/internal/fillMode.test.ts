@@ -730,7 +730,7 @@ describe('handleEditClue', () => {
       {
         kind: 'toast',
         toastKind: 'error',
-        message: 'Cannot edit clue of a non-head chain word.',
+        reason: { code: 'edit-clue-non-head' },
       },
     ]);
   });

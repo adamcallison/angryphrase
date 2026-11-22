@@ -11,15 +11,19 @@ export type AnagramEntry =
   | { fixed: true; letter: Letter }
   | { fixed: false; letter: Letter | null };
 
+export type AnagramInputRejection =
+  | { kind: 'wrong-length'; expected: number; got: number }
+  | { kind: 'fixed-letters-not-covered' };
+
 function validateAgainst(
   totalLength: number,
   entries: AnagramEntry[],
   input: string
-): { ok: true } | { ok: false; reason: string } {
+): { ok: true } | { ok: false; reason: AnagramInputRejection } {
   const filtered = Letter.from(input);
 
   if (filtered.length !== totalLength) {
-    return { ok: false, reason: `Input must be ${totalLength} letters (got ${filtered.length}).` };
+    return { ok: false, reason: { kind: 'wrong-length', expected: totalLength, got: filtered.length } };
   }
 
   const fixedCounts = new Map<string, number>();
@@ -37,7 +41,7 @@ function validateAgainst(
 
   for (const [letter, count] of fixedCounts) {
     if ((inputCounts.get(letter) ?? 0) < count) {
-      return { ok: false, reason: 'Input letters do not cover the fixed-position letters.' };
+      return { ok: false, reason: { kind: 'fixed-letters-not-covered' } };
     }
   }
 
@@ -52,7 +56,7 @@ export const Anagram: {
     totalLength: number,
     entries: AnagramEntry[],
     input: string
-  ): { ok: true } | { ok: false; reason: string };
+  ): { ok: true } | { ok: false; reason: AnagramInputRejection };
   scramble(entries: AnagramEntry[], input: string, rng: Rng): AnagramEntry[];
 } = {
   buildWordModel(grid: Grid, word: Word): { entries: AnagramEntry[]; separators: CellSeparator[] } {
@@ -114,7 +118,7 @@ export const Anagram: {
     totalLength: number,
     entries: AnagramEntry[],
     input: string
-  ): { ok: true } | { ok: false; reason: string } {
+  ): { ok: true } | { ok: false; reason: AnagramInputRejection } {
     return validateAgainst(totalLength, entries, input);
   },
 
