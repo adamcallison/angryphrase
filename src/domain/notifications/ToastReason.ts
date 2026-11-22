@@ -13,6 +13,7 @@ export type ToastReason =
   | { code: 'import-parse-failures'; messages: string[] }
   | { code: 'import-read-failure' }
   | { code: 'import-pick-failure' }
+  | { code: 'import-url-load-failure' }
   | { code: 'import-file-incomplete' }
   | { code: 'export-completeness-violation'; violation: CompletenessViolation }
   | { code: 'export-displaced-clues'; count: number }

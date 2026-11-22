@@ -23,7 +23,7 @@ describe('filePickActions.ts', () => {
       getPlayer: () => null as never,
       getSaveHealth: () => ({ builder: false, player: false }),
       getScheduler: () => null as never,
-      getPorts: () => ({ storage: null as never, download: null as never, filePick }),
+      getPorts: () => ({ storage: null as never, download: null as never, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } }),
       dispatch: () => {},
     };
   }

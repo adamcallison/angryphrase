@@ -1,11 +1,11 @@
 # angryphrase
 
-A client-only web app for building and solving cryptic-style crossword puzzles. Runs entirely in the browser, persists to `localStorage`, and ships as a **single self-contained HTML file** (all JS/CSS/favicon inlined; no external runtime fetches). No backend, no accounts.
+A client-only web app for building and solving cryptic-style crossword puzzles. Runs entirely in the browser, persists to `localStorage`, and ships as a **single self-contained HTML file** (all JS/CSS/favicon inlined; the only external network request is the Player's optional puzzle-URL import, issued only when you ask for it). No backend, no accounts.
 
-Two top-level experiences, connected only by puzzle JSON files exported to and imported from your file system:
+Two top-level experiences, connected only via puzzle JSON — exported to and imported from your file system, or (Player side) fetched from a URL you supply:
 
 - **Builder** — design a grid (2–25 square, black cells, word separators), type answers, edit clues, link words into clue chains, and export the puzzle as JSON (incomplete or complete — complete exports are gated by a completeness check).
-- **Player** — import a completed puzzle, solve it with an anagram helper, check your answers, and clear errors. Progress autosaves per puzzle.
+- **Player** — import a completed puzzle (file picker, drag-and-drop, or a URL to its JSON) and solve it with an anagram helper, check your answers, and clear errors. Progress autosaves per puzzle. URL import is subject to the browser's cross-site rules: the host serving the JSON must permit cross-site reads (same-site hosting and CORS-enabled hosts like `raw.githubusercontent.com` work; a plain web server without CORS headers will be rejected by the browser).
 
 ## Use it
 

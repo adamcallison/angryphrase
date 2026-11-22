@@ -31,6 +31,12 @@ describe('toastCopy', () => {
     expect(renderToastReason({ code: 'import-pick-failure' })).toBe('Could not open or read that file. Please try again.');
   });
 
+  it('import-url-load-failure: renders the url-load-failure copy', () => {
+    expect(renderToastReason({ code: 'import-url-load-failure' })).toBe(
+      'Could not load that URL. It may be mistyped, unreachable, or the server may not permit cross-site requests.',
+    );
+  });
+
   it('import-file-incomplete: renders the incomplete-file copy', () => {
     expect(renderToastReason({ code: 'import-file-incomplete' })).toBe('Only complete puzzle files can be loaded into the Player.');
   });

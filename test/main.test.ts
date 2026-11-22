@@ -20,6 +20,7 @@ function makeStore(storage: InMemoryStoragePort) {
       pickFile: async () => ({ kind: 'picked' as const, text: '' }),
       readDroppedFile: async () => ({ kind: 'read' as const, text: '' }),
     },
+    urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) },
   };
   return createAppStore(initial, { rng, now: () => new FakeClock(0).now() }, ports);
 }

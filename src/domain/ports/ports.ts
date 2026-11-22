@@ -31,3 +31,11 @@ export interface FilePickPort {
   pickFile(): Promise<PickResult>;
   readDroppedFile(file: File): Promise<DroppedFileResult>; // drag-and-drop read; a 2-way union — a drop has no cancel path
 }
+
+export type UrlLoadResult =
+  | { kind: 'loaded'; text: string }
+  | { kind: 'failed'; error: Error };
+
+export interface UrlLoadPort {
+  load(url: string): Promise<UrlLoadResult>; // user-supplied puzzle URL; 2-way union — no cancel path
+}

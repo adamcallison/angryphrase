@@ -33,6 +33,7 @@ function makePorts(storage: InMemoryStoragePort): AppPorts {
       pickFile: async () => ({ kind: 'picked' as const, text: '' }),
       readDroppedFile: async () => ({ kind: 'read' as const, text: '' }),
     },
+    urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) },
   };
 }
 
