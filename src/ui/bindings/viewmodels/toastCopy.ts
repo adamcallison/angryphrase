@@ -11,6 +11,8 @@ export function renderToastReason(reason: ToastReason): string {
       return 'Could not read that file. Please try again.';
     case 'import-pick-failure':
       return 'Could not open or read that file. Please try again.';
+    case 'import-url-load-failure':
+      return 'Could not load that URL. It may be mistyped, unreachable, or the server may not permit cross-site requests.';
     case 'import-file-incomplete':
       return 'Only complete puzzle files can be loaded into the Player.';
     case 'export-completeness-violation':

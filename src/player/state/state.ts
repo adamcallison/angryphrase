@@ -10,7 +10,7 @@ import type { ToastReason } from '../../domain/notifications/ToastReason';
 // screen's error box and the toast render through the same table (copy-home §9).
 export type ImportReject = Extract<
   ToastReason,
-  { code: 'import-parse-failures' | 'import-read-failure' | 'import-pick-failure' | 'import-file-incomplete' }
+  { code: 'import-parse-failures' | 'import-read-failure' | 'import-pick-failure' | 'import-url-load-failure' | 'import-file-incomplete' }
 >;
 
 export type CheckClassification =

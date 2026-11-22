@@ -65,7 +65,7 @@ describe('playerFacade.ts', () => {
   let playerFacade: PlayerFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) }, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
   }
 
   beforeEach(() => {
@@ -335,7 +335,7 @@ describe('playerFacade.ts', () => {
 
   it('playerFacade: pickFile returns text and dispatches nothing when port returns picked', async () => {
     const filePick = { pickFile: vi.fn(async () => ({ kind: 'picked' as const, text: 'known-file-content' })), readDroppedFile: vi.fn(async () => ({ kind: 'read' as const, text: '' })) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -354,7 +354,7 @@ describe('playerFacade.ts', () => {
 
   it('playerFacade: pickFile returns null and dispatches nothing when port returns cancelled', async () => {
     const filePick = { pickFile: async () => ({ kind: 'cancelled' as const }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -373,7 +373,7 @@ describe('playerFacade.ts', () => {
   it('playerFacade: pickFile returns null, warns once, dispatches report-pick-failure, and surfaces error toast when port returns failed', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const filePick = { pickFile: async () => ({ kind: 'failed' as const, error: new Error('pick failed') }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -399,7 +399,7 @@ describe('playerFacade.ts', () => {
   it('playerFacade: importDroppedFile dispatches import-puzzle with the port-read text when readDroppedFile succeeds', async () => {
     const file = new File([], 'puzzle.json');
     const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'read' as const, text: 'dropped text' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -419,7 +419,7 @@ describe('playerFacade.ts', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const file = new File([], 'puzzle.json');
     const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'failed' as const, error: new Error('read error') }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -438,6 +438,51 @@ describe('playerFacade.ts', () => {
     expect(storeWithDrop.getToasts()).toHaveLength(1);
     expect(storeWithDrop.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-read-failure' } });
     expect(storeWithDrop.getPlayer()).toEqual({ phase: 'import', lastImportReject: { code: 'import-read-failure' } });
+    warnSpy.mockRestore();
+  });
+
+  it('playerFacade: importFromUrl dispatches import-puzzle with the fetched text when the port loads', async () => {
+    const urlLoad = { load: vi.fn(async () => ({ kind: 'loaded' as const, text: 'fetched text' })) };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) }, urlLoad };
+    const storeWithUrl = createAppStore(
+      makeBlankAppState(42),
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+    storeWithUrl.dispatch({ kind: 'navigate', route: 'play' });
+    const playerWithUrl = createPlayerFacade(storeWithUrl);
+    const dispatchSpy = vi.spyOn(storeWithUrl, 'dispatch');
+
+    await playerWithUrl.actions.importScreen.importFromUrl('https://example.com/puzzle.json');
+
+    expect(urlLoad.load).toHaveBeenCalledWith('https://example.com/puzzle.json');
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'import-puzzle', target: 'player', fileContent: 'fetched text' });
+  });
+
+  it('playerFacade: importFromUrl dispatches report-url-load-failure and not import-puzzle when the port fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const urlLoad = { load: vi.fn(async () => ({ kind: 'failed' as const, error: new Error('load error') })) };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) }, urlLoad };
+    const storeWithUrl = createAppStore(
+      makeBlankAppState(42),
+      { rng: seededRng, now: () => fakeClock.now() },
+      ports,
+    );
+    storeWithUrl.dispatch({ kind: 'navigate', route: 'play' });
+    const playerWithUrl = createPlayerFacade(storeWithUrl);
+    const dispatchSpy = vi.spyOn(storeWithUrl, 'dispatch');
+
+    await playerWithUrl.actions.importScreen.importFromUrl('https://example.com/puzzle.json');
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect(dispatchSpy).toHaveBeenCalledWith({ kind: 'report-url-load-failure', target: 'player' });
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'import-puzzle' }));
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith('playerFacade: failed to load URL:', new Error('load error'));
+    expect(storeWithUrl.getToasts()).toHaveLength(1);
+    expect(storeWithUrl.getToasts()[0]).toMatchObject({ kind: 'error', reason: { code: 'import-url-load-failure' } });
+    expect(storeWithUrl.getPlayer()).toEqual({ phase: 'import', lastImportReject: { code: 'import-url-load-failure' } });
     warnSpy.mockRestore();
   });
 

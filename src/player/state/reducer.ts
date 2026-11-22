@@ -10,6 +10,7 @@ import {
   handleImportPuzzle,
   handleReportImportReadFailure,
   handleReportPickFailure,
+  handleReportUrlLoadFailure,
   handleRequestResetPlayer,
 } from './internal/lifecycle';
 import {
@@ -47,6 +48,9 @@ export function reducePlayer(
 
     case 'report-pick-failure':
       return handleReportPickFailure();
+
+    case 'report-url-load-failure':
+      return handleReportUrlLoadFailure();
 
     case 'apply-loaded-progress':
       return handleApplyLoadedProgress(state, intent);

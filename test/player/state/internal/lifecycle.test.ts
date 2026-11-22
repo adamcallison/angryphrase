@@ -6,6 +6,7 @@ import {
   handleImportPuzzle,
   handleReportImportReadFailure,
   handleReportPickFailure,
+  handleReportUrlLoadFailure,
   handleRequestResetPlayer,
 } from '../../../../src/player/state/internal/lifecycle';
 import { PlayerState } from '../../../../src/player/state/state';
@@ -490,6 +491,20 @@ describe('report-pick-failure', () => {
     });
     expect(result.events).toEqual([
       { kind: 'toast', toastKind: 'error', reason: { code: 'import-pick-failure' } },
+    ]);
+  });
+});
+
+describe('report-url-load-failure', () => {
+  it('report-url-load-failure → phase=import with lastImportReject set + error toast event', () => {
+    const result = handleReportUrlLoadFailure();
+
+    expect(result.state).toEqual({
+      phase: 'import',
+      lastImportReject: { code: 'import-url-load-failure' },
+    });
+    expect(result.events).toEqual([
+      { kind: 'toast', toastKind: 'error', reason: { code: 'import-url-load-failure' } },
     ]);
   });
 });

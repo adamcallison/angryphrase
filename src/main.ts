@@ -15,10 +15,11 @@ import { installTeardown } from './ui/bindings/teardown';
 import { localStoragePort } from './ports/localStoragePort';
 import { downloadPort } from './ports/downloadPort';
 import { filePickPort } from './ports/filePickPort';
+import { urlLoadPort } from './ports/urlLoadPort';
 import { rngPort } from './ports/rngPort';
 import { EpochMs } from './domain/time/EpochMs';
 
-const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort };
+const ports = { storage: localStoragePort, download: downloadPort, filePick: filePickPort, urlLoad: urlLoadPort };
 const deps = { rng: rngPort, now: () => EpochMs.of(Date.now()) };
 
 const initial = createInitialAppState(ports, deps);

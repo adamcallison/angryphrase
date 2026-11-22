@@ -7,6 +7,7 @@ import type { AppStore } from './appStore.svelte';
 import type { WordKey } from '../../domain/word/WordKey';
 import { createGridActions } from './gridActions';
 import { createFilePickActions } from './filePickActions';
+import { createUrlLoadActions } from './urlLoadActions';
 
 export type { PlayerShellVM };
 
@@ -34,6 +35,7 @@ export type PlayerCluePanelActions = {
 export type PlayerImportScreenActions = {
   importPuzzle(fileContent: string): void;
   importDroppedFile(file: File): void;
+  importFromUrl(url: string): Promise<void>;
 };
 
 export type PlayerAnagramActions = {
@@ -65,6 +67,13 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     appStore,
     'playerFacade',
     'player',
+    (intent) => appStore.dispatch(intent),
+    (text) => d({ kind: 'import-puzzle', fileContent: text }),
+  );
+
+  const urlLoad = createUrlLoadActions(
+    appStore,
+    'playerFacade',
     (intent) => appStore.dispatch(intent),
     (text) => d({ kind: 'import-puzzle', fileContent: text }),
   );
@@ -111,6 +120,9 @@ export function createPlayerFacade(appStore: AppStore): PlayerFacade {
     },
     async importDroppedFile(file: File) {
       await filePick.importDroppedFile(file);
+    },
+    async importFromUrl(url: string) {
+      await urlLoad.loadUrl(url);
     },
   };
 

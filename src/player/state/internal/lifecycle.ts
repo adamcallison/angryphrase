@@ -90,6 +90,13 @@ export function handleReportPickFailure(): ReducerResult<PlayerState> {
   );
 }
 
+export function handleReportUrlLoadFailure(): ReducerResult<PlayerState> {
+  return Result.withEvents(
+    { phase: 'import', lastImportReject: { code: 'import-url-load-failure' } },
+    [{ kind: 'toast', toastKind: 'error', reason: { code: 'import-url-load-failure' } }],
+  );
+}
+
 export function handleRequestResetPlayer(
   state: PlayerState,
 ): ReducerResult<PlayerState> {

@@ -9,6 +9,7 @@ import type { ModalRequest } from '../../domain/notifications/Event';
 import type { StoragePort } from '../../domain/ports/ports';
 import type { DownloadPort } from '../../domain/ports/ports';
 import type { FilePickPort } from '../../domain/ports/ports';
+import type { UrlLoadPort } from '../../domain/ports/ports';
 import type { PuzzleKey } from '../../domain/puzzle/PuzzleKey';
 import type { BuilderState } from '../../builder/state/state';
 import type { PlayerState } from '../../player/state/state';
@@ -18,7 +19,7 @@ import { createPersistenceScheduler, type PersistenceScheduler } from './persist
 import { parsePlayerProgress } from './persistenceCodec';
 
 export type AppDeps = { rng: Rng; now: () => EpochMs };
-export type AppPorts = { storage: StoragePort; download: DownloadPort; filePick: FilePickPort };
+export type AppPorts = { storage: StoragePort; download: DownloadPort; filePick: FilePickPort; urlLoad: UrlLoadPort };
 export type LandingActions = { build(): void; play(): void };
 
 export type AppStore = {

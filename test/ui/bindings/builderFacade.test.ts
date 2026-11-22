@@ -63,7 +63,7 @@ describe('builderFacade.ts', () => {
   let builderFacade: BuilderFacade;
 
   function makePorts(): AppPorts {
-    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) } };
+    return { storage: inMemoryStorage, download: stubDownload, filePick: { pickFile: async () => ({ kind: 'picked', text: '' }), readDroppedFile: async () => ({ kind: 'read', text: '' }) }, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
   }
 
   beforeEach(() => {
@@ -357,7 +357,7 @@ describe('builderFacade.ts', () => {
 
   it('builderFacade: pickFile returns text and dispatches nothing when port returns picked', async () => {
     const filePick = { pickFile: vi.fn(async () => ({ kind: 'picked' as const, text: 'known-file-content' })), readDroppedFile: vi.fn(async () => ({ kind: 'read' as const, text: '' })) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -376,7 +376,7 @@ describe('builderFacade.ts', () => {
 
   it('builderFacade: pickFile returns null and dispatches nothing when port returns cancelled', async () => {
     const filePick = { pickFile: async () => ({ kind: 'cancelled' as const }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -395,7 +395,7 @@ describe('builderFacade.ts', () => {
   it('builderFacade: pickFile returns null, warns once, dispatches report-pick-failure, and surfaces error toast when port returns failed', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const filePick = { pickFile: async () => ({ kind: 'failed' as const, error: new Error('pick failed') }), readDroppedFile: async () => ({ kind: 'read' as const, text: '' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithPick = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -422,7 +422,7 @@ describe('builderFacade.ts', () => {
   it('builderFacade: importDroppedFile dispatches request-import-puzzle with the port-read text when readDroppedFile succeeds', async () => {
     const file = new File([], 'puzzle.json');
     const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'read' as const, text: 'dropped text' }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
@@ -443,7 +443,7 @@ describe('builderFacade.ts', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const file = new File([], 'puzzle.json');
     const filePick = { pickFile: async () => ({ kind: 'picked' as const, text: '' }), readDroppedFile: async () => ({ kind: 'failed' as const, error: new Error('read error') }) };
-    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick };
+    const ports: AppPorts = { storage: inMemoryStorage, download: stubDownload, filePick, urlLoad: { load: async () => ({ kind: 'failed', error: new Error('url load stub') }) } };
     const storeWithDrop = createAppStore(
       makeBlankAppState(42),
       { rng: seededRng, now: () => fakeClock.now() },
