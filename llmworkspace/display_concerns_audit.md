@@ -1347,8 +1347,48 @@ real work with a named landing site, tracked here so they are not lost.
   interplay (dispatch-only history; keyed-blob resurrection edges);
   (d) the undo gesture itself (button vs Ctrl+Z — the focus-model round's
   window key-routing is the established precedent for where such a handler
-  lives). Not started; no code exists for it. Landing site: an undo design
-  round, human-initiated.
+  lives). Not started; no code exists for it. Landing site: an undo
+  design round, human-initiated.
+  *Addendum 2026-11-22: the undo-critical reading was re-decided by the human before
+  any code existed — the four draft sites are **ephemeral by design**, not an undo
+  prerequisite, and the centralization round is cancelled. Rationale, examined in a
+  design discussion: undo has two scopes separated by focus (Excel model) — the
+  browser's native per-field undo owns mid-composition text, app-level undo owns
+  committed intents only; DOM blur-before-click ordering means a focused draft
+  commits before any pointer-activated action runs, so app undo and uncommitted
+  drafts are temporally disjoint under a button gesture, and a keyboard gesture's
+  editable-target guard (the grid-first router's) keeps them disjoint under
+  Ctrl+Z; a draft overriding a restored clue is correct behaviour (composition is
+  untouchable by undo), not staleness. The anagram asymmetry is justified by
+  function (reducer sanitisation + modal close/reopen survival), not undo. Chained
+  fall-through (field undo exhausted → next Ctrl+Z becomes app undo) was considered
+  and rejected: no DOM API exposes a field's native undo depth, and the
+  value-equality heuristic misfires both ways. The inventory's other classes stand
+  unchanged: the ephemeral UI facts, the scheduler interplay, and the browser-owned
+  facts were already recorded as ignore-by-design. Decisions restated where they
+  live (per the referencing rule): architecture.md §7 "Drafts (composing text is
+  ephemeral by design)" and future_considerations.md "Undo" — the latter now the
+  landing site for the round's open questions (history granularity, gesture,
+  untouched-field fall-through option). F5's residue: the future undo design round
+  shrinks to those open questions; no draft centralization, no code change, nothing
+  to verify. Leftover from F5: the undo design round itself, human-initiated.
+  Second addendum 2026-11-22: a consistency walk prompted by the same discussion
+  found the four draft sites consistent in name/concept but split in mechanism —
+  the clue panel's override idiom (draft wins display, mechanism-protected)
+  vs the title/author/grid-size mirrors (`$effect` resync could clobber a dirty
+  draft on a non-blurring state change — the direct-import-on-blank edge).
+  Unified (human decision): all four sites now use the override form
+  (`draft ?? committed` in the input's `value` expression; `$effect`s and their
+  `svelte-ignore`s deleted), spec architecture.md §7 "Drafts" (amended before
+  code). One deliberate behaviour change: mid-edit title/author text survives a
+  direct blank import instead of being silently clobbered. Files:
+  `src/ui/builder/BuilderToolbar.svelte`, `src/ui/builder/GridSizeControl.svelte`.
+  Verification: full CI green, re-run by the lead — eslint + madge, svelte-check
+  0 errors/0 warnings, 1417 tests all pre-existing (`test/` absent from the diff
+  is the behaviour-preservation proof), build; grep walk: zero `bind:value`
+  remains in `src/ui`, the two draft `svelte-ignore`s gone (App.svelte's four are
+  unrelated). No DOM harness (§12), so clean-input display refresh after
+  import/reset and the mid-edit-survival edge join the manual checklist.*
 - **F6 — the remaining dispatch-time copy: toast reason codes (gated, not scheduled).**
   Surfaced 2026-11-21 as the residual of the Class C staged copy-home resolution: the
   three landed stages moved every *derivable* display string to the VM home, but copy

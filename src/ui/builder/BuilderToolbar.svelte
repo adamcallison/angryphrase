@@ -18,17 +18,8 @@
     pick: () => Promise<string | null>;
   } = $props();
 
-  // svelte-ignore state_referenced_locally
-  let titleDraft = $state(title);
-  // svelte-ignore state_referenced_locally
-  let authorDraft = $state(author);
-
-  $effect(() => {
-    titleDraft = title;
-  });
-  $effect(() => {
-    authorDraft = author;
-  });
+  let titleDraft = $state<string | null>(null);
+  let authorDraft = $state<string | null>(null);
 
   const markerButtons: { axis: 'right' | 'bottom'; separator: 'space' | 'hyphen'; label: string }[] = [
     { axis: 'right', separator: 'space', label: 'Space right' },
@@ -47,8 +38,14 @@
       Title
       <input
         type="text"
-        bind:value={titleDraft}
-        onchange={() => actions.editTitle(titleDraft)}
+        value={titleDraft ?? title}
+        oninput={(e) => {
+          titleDraft = e.currentTarget.value;
+        }}
+        onchange={() => {
+          actions.editTitle(titleDraft ?? title);
+          titleDraft = null;
+        }}
         class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
       />
     </label>
@@ -56,8 +53,14 @@
       Author
       <input
         type="text"
-        bind:value={authorDraft}
-        onchange={() => actions.editAuthor(authorDraft)}
+        value={authorDraft ?? author}
+        oninput={(e) => {
+          authorDraft = e.currentTarget.value;
+        }}
+        onchange={() => {
+          actions.editAuthor(authorDraft ?? author);
+          authorDraft = null;
+        }}
         class="rounded border border-gray-300 px-2 py-1 text-sm focus-ring"
       />
     </label>

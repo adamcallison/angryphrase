@@ -15,22 +15,14 @@
     onCommit: (newValue: number) => boolean;
   } = $props();
 
-  // svelte-ignore state_referenced_locally
-  let draft = $state<number | null>(value);
-  $effect(() => {
-    draft = value;
-  });
+  let draft = $state<string | null>(null);
 
   function onBlur(): void {
     const n = parseGridSizeDraft(draft);
-    if (n === null) {
-      draft = value;
-      return;
+    if (n !== null) {
+      onCommit(n);
     }
-    const accepted = onCommit(n);
-    if (!accepted) {
-      draft = value;
-    }
+    draft = null;
   }
 </script>
 
@@ -42,8 +34,11 @@
     {min}
     {max}
     step="1"
-    bind:value={draft}
+    value={draft ?? value}
     {disabled}
+    oninput={(e) => {
+      draft = e.currentTarget.value;
+    }}
     onblur={onBlur}
     class="w-16 rounded border border-gray-300 px-2 py-1 text-sm disabled:bg-gray-100 disabled:text-gray-400 focus-ring"
   />
